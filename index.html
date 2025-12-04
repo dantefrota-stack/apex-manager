@@ -21,8 +21,12 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
         }
         
-        .result-input { font-weight: 600; transition: all 0.2s; padding-left: 1.2rem; }
-        .result-input:focus { transform: scale(1.01); outline: none; border-color: #6366f1; } /* Removido o ring azul forte */
+        /* Ajuste fino no input para alinhar com o $ */
+        .result-input { 
+            font-weight: 600; 
+            transition: all 0.2s; 
+        } 
+        .result-input:focus { transform: scale(1.01); outline: none; border-color: #6366f1; }
 
         #sidebar { transition: transform 0.3s ease-in-out; }
         .sidebar-open { transform: translateX(0); }
@@ -197,7 +201,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // 2. CONFIGURAÇÃO FIREBASE (JÁ CONFIGURADO)
+        // 2. CONFIGURAÇÃO FIREBASE (Agora com suas chaves REAIS)
         const firebaseConfig = {
             apiKey: "AIzaSyCu5pQrMnrpSj45lto_GXKx9xIWq2kyDjg",
             authDomain: "df-apex-manager.firebaseapp.com",
@@ -215,7 +219,7 @@
             console.log("Firebase Conectado!");
         } catch (e) {
             console.error("Erro Firebase:", e);
-            alert("Erro na configuração do Firebase. Verifique o código.");
+            alert("Erro na configuração do Firebase.");
         }
 
         const RULES = {
@@ -376,7 +380,21 @@
             const y=store.date.getFullYear(); const m=store.date.getMonth(); els.calendarTitle.textContent=`${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m]} ${y}`; els.calendarBody.innerHTML=''; const daysInMonth=new Date(y,m+1,0).getDate(); 
             for(let d=1;d<=daysInMonth;d++){ 
                 const date=new Date(y,m,d); const iso=date.toISOString().split('T')[0]; const entry=acc.data[iso]||{val:0,note:'',holiday:false,withdrawn:false}; const isW=date.getDay()===0||date.getDay()===6; const tr=document.createElement('tr'); if(isW)tr.className="bg-slate-50 opacity-50"; if(entry.withdrawn)tr.className="bg-green-50"; 
-                tr.innerHTML=`<td class="px-4 py-2 font-medium text-slate-600">${d}</td><td class="px-4 py-2 relative"><div class="relative w-full"><span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold z-10 pointer-events-none select-none">$</span><input type="number" class="result-input w-full pl-6 pr-2 py-1 bg-transparent border-b border-transparent focus:border-indigo-500 text-slate-800 ${entry.val>0?'text-green-600':(entry.val<0?'text-red-600':'')}" value="${entry.val!==0?entry.val:''}" placeholder="0.00" onchange="updateData('${iso}','val',this.value)" ${isW?'disabled':''}></div></td><td class="px-4 py-2"><input type="text" class="w-full bg-transparent text-xs" value="${entry.note||''}" placeholder="..." onchange="updateData('${iso}','note',this.value)" ${isW?'disabled':''}></td><td class="px-4 py-2 text-center"><input type="checkbox" ${entry.holiday?'checked':''} onchange="updateData('${iso}','holiday',this.checked)" ${isW?'disabled':''} title="Feriado/Folga (Não conta)"></td><td class="px-4 py-2 text-center"><input type="checkbox" class="accent-green-600" ${entry.withdrawn?'checked':''} onchange="updateData('${iso}','withdrawn',this.checked)" ${isW?'disabled':''} title="Saque realizado"></td>`; els.calendarBody.appendChild(tr); 
+                
+                // CORREÇÃO VISUAL DO $: Usando top-50% e translate-y-50% para centralização absoluta perfeita
+                tr.innerHTML=`
+                    <td class="px-4 py-2 font-medium text-slate-600">${d}</td>
+                    <td class="px-4 py-2 relative">
+                        <div class="relative w-full">
+                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold z-10 pointer-events-none select-none">$</span>
+                            <input type="number" class="result-input w-full pl-6 pr-2 py-1 bg-transparent border-b border-transparent focus:border-indigo-500 text-slate-800 ${entry.val>0?'text-green-600':(entry.val<0?'text-red-600':'')}" value="${entry.val!==0?entry.val:''}" placeholder="0.00" onchange="updateData('${iso}','val',this.value)" ${isW?'disabled':''}>
+                        </div>
+                    </td>
+                    <td class="px-4 py-2"><input type="text" class="w-full bg-transparent text-xs" value="${entry.note||''}" placeholder="..." onchange="updateData('${iso}','note',this.value)" ${isW?'disabled':''}></td>
+                    <td class="px-4 py-2 text-center"><input type="checkbox" ${entry.holiday?'checked':''} onchange="updateData('${iso}','holiday',this.checked)" ${isW?'disabled':''} title="Feriado/Folga (Não conta)"></td>
+                    <td class="px-4 py-2 text-center"><input type="checkbox" class="accent-green-600" ${entry.withdrawn?'checked':''} onchange="updateData('${iso}','withdrawn',this.checked)" ${isW?'disabled':''} title="Saque realizado"></td>
+                `;
+                els.calendarBody.appendChild(tr);
             } 
         }
         
