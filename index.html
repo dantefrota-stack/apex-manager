@@ -21,7 +21,7 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
         }
         
-        .result-input { font-weight: 600; transition: all 0.2s; }
+        .result-input { font-weight: 600; transition: all 0.2s; padding-left: 1.2rem; }
         .result-input:focus { transform: scale(1.01); outline: none; border-color: #6366f1; }
 
         #sidebar { transition: transform 0.3s ease-in-out; }
@@ -279,20 +279,23 @@
 
         async function init() {
             lucide.createIcons();
-            await loadFromCloud(); // Carrega do Firebase
+            await loadFromCloud(); 
             
-            // Se não tiver nada na nuvem, cria padrão
             if (!store.activeId) {
                 const defaultId = 'acc_' + Date.now();
                 store.activeId = defaultId;
                 store.accounts = {};
                 store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] };
-                saveToCloud(); // Salva inicial
+                saveToCloud(); 
             }
 
             renderSidebar();
             loadAccount(store.activeId);
-            els.loader.classList.add('hidden'); // Esconde loader
+            els.loader.classList.add('hidden');
+            
+            // --- CORREÇÃO VISUAL: Força o status "Online" ao carregar ---
+            setStatus('saved'); // Mostra "Salvo" ou "Online" verde
+            document.getElementById('status-text').textContent = "Online"; // Texto explícito
 
             // Listeners
             document.getElementById('open-sidebar').onclick = toggleSidebar;
@@ -310,12 +313,12 @@
         // --- CLOUD FUNCTIONS ---
         async function loadFromCloud() {
             try {
-                const docRef = doc(db, "users", "dante_data"); // ID Único
+                const docRef = doc(db, "users", "dante_data"); 
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     store = JSON.parse(data.store_json);
-                    store.date = new Date(store.date || new Date()); // Fix Data
+                    store.date = new Date(store.date || new Date()); 
                 }
             } catch (e) {
                 console.error("Erro ao carregar:", e);
@@ -326,7 +329,6 @@
         async function saveToCloud() {
             setStatus('saving');
             try {
-                // Salva tudo num único documento JSON
                 await setDoc(doc(db, "users", "dante_data"), {
                     store_json: JSON.stringify(store),
                     last_update: new Date()
@@ -345,17 +347,14 @@
             else { text.textContent = 'Erro Sync'; text.className = 'status-error'; }
         }
 
-        // --- MODIFIED DATA HANDLERS (Auto-Save) ---
+        // --- HANDLERS ---
         
         window.updateData = function(iso, field, val) {
             const acc = getActive();
             if (!acc.data[iso]) acc.data[iso] = {};
             if (field === 'val') val = parseFloat(val) || 0;
             acc.data[iso][field] = val;
-            
             renderDashboard();
-            
-            // Debounce Save
             clearTimeout(saveTimeout);
             saveTimeout = setTimeout(saveToCloud, 1000); 
         };
@@ -368,15 +367,13 @@
         }
 
         function renameAccount() { 
-            const acc = getActive(); 
-            const newName = prompt("Nome:", acc.name); 
+            const acc = getActive(); const newName = prompt("Nome:", acc.name); 
             if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } 
         }
 
         function loadAccount(id) {
             if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
-            store.activeId = id;
-            const acc = store.accounts[id];
+            store.activeId = id; const acc = store.accounts[id];
             els.activeName.textContent = acc.name;
             els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`;
             els.inpSize.value = acc.size; els.inpMonth.value = acc.monthType;
@@ -384,20 +381,18 @@
         }
 
         function updateConfig() {
-            const acc = getActive();
-            acc.size = els.inpSize.value; acc.monthType = parseInt(els.inpMonth.value);
+            const acc = getActive(); acc.size = els.inpSize.value; acc.monthType = parseInt(els.inpMonth.value);
             saveToCloud(); els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; renderDashboard();
         }
 
         function executePayout(v) {
             const note = prompt(`Valor: ${formatCurrency(v)}\n\nRef (Opcional):`);
             if(note === null) return;
-            const acc = getActive();
-            acc.payouts.push({date:new Date().toISOString(), amount:v, note: note||''});
+            const acc = getActive(); acc.payouts.push({date:new Date().toISOString(), amount:v, note: note||''});
             saveToCloud(); renderDashboard(); alert("Saque salvo na nuvem!");
         }
 
-        // --- FUNÇÕES AUXILIARES ---
+        // --- RENDER & LOGIC ---
         function toggleSidebar() { const isOpen=!els.sidebar.classList.contains('sidebar-closed'); if(isOpen){els.sidebar.classList.add('sidebar-closed');els.sidebar.classList.remove('sidebar-open');els.backdrop.classList.add('hidden');}else{els.sidebar.classList.remove('sidebar-closed');els.sidebar.classList.add('sidebar-open');els.backdrop.classList.remove('hidden');} }
         function renderSidebar() { els.accList.innerHTML=''; Object.values(store.accounts).forEach(acc=>{ const stats=calculateStats(acc); const div=document.createElement('div'); div.className=`account-item p-3 rounded-lg cursor-pointer transition-colors mb-2 ${acc.id===store.activeId?'active':'bg-slate-800'}`; div.onclick=()=>{loadAccount(acc.id);toggleSidebar();}; div.innerHTML=`<div class="flex justify-between items-center"><span class="font-bold text-sm text-slate-200">${acc.name}</span><span class="text-xs text-indigo-300 font-mono">${acc.size}</span></div><div class="flex justify-between items-center mt-1"><span class="text-xs text-slate-400">Saldo:</span><span class="text-xs font-bold ${stats.currentEquity>=RULES[acc.size].start?'text-green-400':'text-red-400'}">${formatCurrency(stats.currentEquity)}</span></div>`; els.accList.appendChild(div); }); }
         
@@ -409,11 +404,10 @@
             
             renderCalendar(acc); 
             
-            // --- CÁLCULO ESTATÍSTICAS NOVAS ---
+            // Stats
             els.stats10.textContent=formatCurrency(calcPeriod(acc,10)); 
             els.stats20.textContent=formatCurrency(calcPeriod(acc,20)); 
             els.stats30.textContent=formatCurrency(calcPeriod(acc,30));
-            
             const proj = calcProjection(acc);
             els.statsAvg.textContent = formatCurrency(proj.avg);
             els.statsProj.textContent = formatCurrency(proj.projection);
@@ -457,22 +451,18 @@
             return sum;
         }
 
-        // --- CÁLCULO DE PROJEÇÃO ---
         function calcProjection(acc) {
             const tradedDays = getTradedDays(acc);
             const last11Days = tradedDays.slice(0, 11);
-            
             let sum = 0;
             last11Days.forEach(iso => sum += (acc.data[iso].val || 0));
-            
             const count = last11Days.length;
             const avg = count > 0 ? sum / count : 0;
-            const projection = avg * 22; // Base mensal de 22 dias
-            
+            const projection = avg * 22; 
             return { avg, projection };
         }
 
-        function changeMonth(d){store.date.setMonth(store.date.getMonth()+d);renderDashboard();} // Não precisa salvar view state na nuvem
+        function changeMonth(d){store.date.setMonth(store.date.getMonth()+d);renderDashboard();} 
         function getActive(){return store.accounts[store.activeId];} function formatCurrency(v){return v.toLocaleString('en-US',{style:'currency',currency:'USD'});}
 
         init();
