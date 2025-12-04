@@ -105,25 +105,21 @@
     </div>
 
     <div class="container mx-auto px-4 py-6 space-y-6 no-print">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="dashboard-card p-4 border-l-4 border-l-indigo-500">
                 <p class="text-xs font-bold text-gray-400 uppercase">Saldo Atual (Equity)</p>
                 <h2 id="current-equity" class="text-3xl font-extrabold text-slate-800 mt-1">$0.00</h2>
                 <p id="equity-diff" class="text-xs font-medium mt-1 text-gray-500">--</p>
             </div>
-            <div class="dashboard-card p-4 border-l-4 border-l-red-500 relative overflow-hidden">
-                <div class="flex justify-between items-start">
-                    <div><p class="text-xs font-bold text-red-900 uppercase flex items-center gap-1"><i data-lucide="shield-off" class="w-3 h-3"></i> Risco Disponível</p><h2 id="risk-available" class="text-2xl font-bold text-red-600 mt-1">$0.00</h2></div>
-                </div>
-                <p class="text-xs text-gray-500 mt-1">Stop da Conta (Drawdown)</p>
-            </div>
+            
             <div class="dashboard-card p-4 border-l-4 border-l-green-500 relative overflow-hidden">
                 <div class="flex justify-between items-start">
                     <div><p class="text-xs font-bold text-green-900 uppercase flex items-center gap-1"><i data-lucide="target" class="w-3 h-3"></i> Teto 30% (Hoje)</p><h2 id="gain-cap" class="text-2xl font-bold text-green-600 mt-1">$0.00</h2></div>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">Limite sugerido p/ consistência.</p>
             </div>
-             <div class="dashboard-card p-4 border-l-4 border-l-yellow-500">
+            
+            <div class="dashboard-card p-4 border-l-4 border-l-yellow-500">
                 <p class="text-xs font-bold text-yellow-700 uppercase">Saque</p>
                 <div class="flex items-center justify-between mt-2"><span id="payout-status" class="text-lg font-bold text-slate-700">Analisando...</span></div>
                 <p id="payout-msg" class="text-xs text-slate-400 mt-1">--</p>
@@ -263,7 +259,7 @@
             activeName: document.getElementById('active-account-name'), activeConfig: document.getElementById('active-account-config'), 
             inpSize: document.getElementById('config-size'), inpMonth: document.getElementById('config-month'), 
             equity: document.getElementById('current-equity'), equityDiff: document.getElementById('equity-diff'), 
-            risk: document.getElementById('risk-available'), gainCap: document.getElementById('gain-cap'), 
+            gainCap: document.getElementById('gain-cap'), 
             stats10: document.getElementById('stats-10'), stats20: document.getElementById('stats-20'), stats30: document.getElementById('stats-30'), 
             statsMonth: document.getElementById('stats-month'), statsAvg: document.getElementById('stats-avg'), statsProj: document.getElementById('stats-proj'),
             weeklyList: document.getElementById('weekly-list'), 
@@ -294,8 +290,8 @@
             els.loader.classList.add('hidden');
             
             // --- CORREÇÃO VISUAL: Força o status "Online" ao carregar ---
-            setStatus('saved'); // Mostra "Salvo" ou "Online" verde
-            document.getElementById('status-text').textContent = "Online"; // Texto explícito
+            setStatus('saved'); 
+            document.getElementById('status-text').textContent = "Online"; 
 
             // Listeners
             document.getElementById('open-sidebar').onclick = toggleSidebar;
@@ -399,8 +395,10 @@
         function renderDashboard() { 
             const acc=getActive(); const rules=RULES[acc.size]; const stats=calculateStats(acc); 
             els.equity.textContent=formatCurrency(stats.currentEquity); const diff=stats.currentEquity-rules.start; els.equityDiff.textContent=`Lucro: ${formatCurrency(diff)}`; els.equityDiff.className=diff>=0?"text-xs font-medium mt-1 text-green-600":"text-xs font-medium mt-1 text-red-500"; 
-            const safetyFloor=rules.start+100; let currentStop=(stats.peakEquity>=(safetyFloor+rules.drawdown))?safetyFloor:Math.min(Math.max(rules.start-rules.drawdown,stats.peakEquity-rules.drawdown),safetyFloor); 
-            els.risk.textContent=formatCurrency(Math.max(0,stats.currentEquity-currentStop)); let gainCap=(stats.totalProfit>0)?(stats.totalProfit*0.30)/0.70:0; els.gainCap.textContent=gainCap>0?formatCurrency(gainCap):"Fazer Gordura"; 
+            
+            // Risk logic removed here as card was removed from HTML
+            
+            let gainCap=(stats.totalProfit>0)?(stats.totalProfit*0.30)/0.70:0; els.gainCap.textContent=gainCap>0?formatCurrency(gainCap):"Fazer Gordura"; 
             
             renderCalendar(acc); 
             
@@ -423,7 +421,20 @@
             const y=store.date.getFullYear(); const m=store.date.getMonth(); els.calendarTitle.textContent=`${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m]} ${y}`; els.calendarBody.innerHTML=''; const daysInMonth=new Date(y,m+1,0).getDate(); 
             for(let d=1;d<=daysInMonth;d++){ 
                 const date=new Date(y,m,d); const iso=date.toISOString().split('T')[0]; const entry=acc.data[iso]||{val:0,note:'',holiday:false,withdrawn:false}; const isW=date.getDay()===0||date.getDay()===6; const tr=document.createElement('tr'); if(isW)tr.className="bg-slate-50 opacity-50"; if(entry.withdrawn)tr.className="bg-green-50"; 
-                tr.innerHTML=`<td class="px-4 py-2 font-medium text-slate-600">${d}</td><td class="px-4 py-2 relative"><div class="relative w-full"><span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold z-10 pointer-events-none select-none">$</span><input type="number" class="result-input w-full pl-6 pr-2 py-1 bg-transparent border-b border-transparent focus:border-indigo-500 text-slate-800 ${entry.val>0?'text-green-600':(entry.val<0?'text-red-600':'')}" value="${entry.val!==0?entry.val:''}" placeholder="0.00" onchange="updateData('${iso}','val',this.value)" ${isW?'disabled':''}></div></td><td class="px-4 py-2"><input type="text" class="w-full bg-transparent text-xs" value="${entry.note||''}" placeholder="..." onchange="updateData('${iso}','note',this.value)" ${isW?'disabled':''}></td><td class="px-4 py-2 text-center"><input type="checkbox" ${entry.holiday?'checked':''} onchange="updateData('${iso}','holiday',this.checked)" ${isW?'disabled':''} title="Feriado/Folga (Não conta)"></td><td class="px-4 py-2 text-center"><input type="checkbox" class="accent-green-600" ${entry.withdrawn?'checked':''} onchange="updateData('${iso}','withdrawn',this.checked)" ${isW?'disabled':''} title="Saque realizado"></td>`; els.calendarBody.appendChild(tr); 
+                
+                tr.innerHTML=`
+                    <td class="px-4 py-2 font-medium text-slate-600">${d}</td>
+                    <td class="px-4 py-2 relative">
+                        <div class="relative w-full">
+                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold z-10 pointer-events-none select-none">$</span>
+                            <input type="number" class="result-input w-full pl-6 pr-2 py-1 bg-transparent border-b border-transparent focus:border-indigo-500 text-slate-800 ${entry.val>0?'text-green-600':(entry.val<0?'text-red-600':'')}" value="${entry.val!==0?entry.val:''}" placeholder="0.00" onchange="updateData('${iso}','val',this.value)" ${isW?'disabled':''}>
+                        </div>
+                    </td>
+                    <td class="px-4 py-2"><input type="text" class="w-full bg-transparent text-xs" value="${entry.note||''}" placeholder="..." onchange="updateData('${iso}','note',this.value)" ${isW?'disabled':''}></td>
+                    <td class="px-4 py-2 text-center"><input type="checkbox" ${entry.holiday?'checked':''} onchange="updateData('${iso}','holiday',this.checked)" ${isW?'disabled':''} title="Feriado/Folga (Não conta)"></td>
+                    <td class="px-4 py-2 text-center"><input type="checkbox" class="accent-green-600" ${entry.withdrawn?'checked':''} onchange="updateData('${iso}','withdrawn',this.checked)" ${isW?'disabled':''} title="Saque realizado"></td>
+                `;
+                els.calendarBody.appendChild(tr);
             } 
         }
         
