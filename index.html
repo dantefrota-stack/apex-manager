@@ -21,12 +21,8 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
         }
         
-        /* Ajuste fino no input para alinhar com o $ */
-        .result-input { 
-            font-weight: 600; 
-            transition: all 0.2s; 
-        } 
-        .result-input:focus { transform: scale(1.01); outline: none; border-color: #6366f1; }
+        .result-input { font-weight: 600; transition: all 0.2s; padding-left: 1.2rem; }
+        .result-input:focus { transform: scale(1.01); outline: none; border-color: #6366f1; } /* Removido o ring azul forte */
 
         #sidebar { transition: transform 0.3s ease-in-out; }
         .sidebar-open { transform: translateX(0); }
@@ -161,7 +157,7 @@
 
             <div class="lg:col-span-1 space-y-4">
                 <div class="dashboard-card p-5">
-                    <h3 class="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wide">Performance Recente</h3>
+                    <h3 class="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wide">Performance (Dias Operados)</h3>
                     <div class="space-y-3">
                         <div class="flex justify-between items-center"><span class="text-sm text-slate-500">Últimos 14 Dias</span><span id="stats-14" class="font-bold text-slate-700">$0.00</span></div>
                         <div class="flex justify-between items-center"><span class="text-sm text-slate-500">Últimos 30 Dias</span><span id="stats-30" class="font-bold text-slate-700">$0.00</span></div>
@@ -201,7 +197,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // 2. CONFIGURAÇÃO FIREBASE
+        // 2. CONFIGURAÇÃO FIREBASE (JÁ CONFIGURADO)
         const firebaseConfig = {
             apiKey: "AIzaSyCu5pQrMnrpSj45lto_GXKx9xIWq2kyDjg",
             authDomain: "df-apex-manager.firebaseapp.com",
@@ -305,7 +301,7 @@
             const text = document.getElementById('status-text');
             if(state === 'saving') { text.textContent = 'Salvando...'; text.className = 'status-saving'; }
             else if(state === 'saved') { text.textContent = 'Salvo'; text.className = 'status-saved'; }
-            else { text.textContent = 'Erro Sync (Falta BD)'; text.className = 'status-error'; }
+            else { text.textContent = 'Erro Sync'; text.className = 'status-error'; }
         }
 
         // --- MODIFIED DATA HANDLERS (Auto-Save) ---
@@ -389,7 +385,34 @@
         function checkPayoutStatus(acc,stats,rules,ratio,dist){ const d=stats.daysTraded>=8; const s=dist<=0; const c=ratio<=30; let avail=0; if(d&&s&&c) avail=Math.min(stats.currentEquity-rules.safetyThreshold, acc.monthType<=3?rules.payouts[0]:999999); if(avail>=500){ els.payoutStatus.textContent="Disponível"; els.payoutStatus.className="text-lg font-bold text-green-600"; els.payoutMsg.textContent=`Pode sacar ${formatCurrency(avail)}`; els.btnPayout.disabled=false; els.btnPayout.className="w-full py-2 rounded bg-green-600 hover:bg-green-700 text-white font-bold text-sm shadow transition flex justify-center items-center gap-2"; els.btnPayout.innerHTML=`<i data-lucide="dollar-sign" class="w-4 h-4"></i> Sacar ${formatCurrency(avail)}`; els.btnPayout.onclick=()=>executePayout(avail); } else { els.payoutStatus.textContent="Em Progresso"; els.payoutStatus.className="text-lg font-bold text-slate-700"; els.payoutMsg.textContent=!s?"Falta atingir a rede.":(!d?`Faltam ${8-stats.daysTraded} dias.`:(!c?"Ajustar consistência.":"Mínimo $500 excedente.")); els.btnPayout.disabled=true; els.btnPayout.className="w-full py-2 rounded bg-slate-700 text-slate-500 font-bold text-sm cursor-not-allowed flex justify-center items-center gap-2"; els.btnPayout.innerHTML=`<i data-lucide="lock" class="w-4 h-4"></i> Indisponível`; } }
         function renderPayoutHistory(acc){ els.payoutHistory.innerHTML='';let t=0; if(!acc.payouts||!acc.payouts.length) els.payoutHistory.innerHTML='<p class="text-xs text-slate-400 italic">Nenhum saque.</p>'; else { acc.payouts.slice().reverse().forEach(p=>{ t+=p.amount; const d=document.createElement('div'); d.className="border-b border-slate-50 pb-2 mb-2 last:border-0"; d.innerHTML=`<div class="flex justify-between items-center"><span class="text-xs text-slate-500">${new Date(p.date).toLocaleDateString()}</span><span class="font-bold text-green-600">${formatCurrency(p.amount)}</span></div>${p.note ? `<div class="text-xs text-slate-400 mt-0.5 italic">Ref: ${p.note}</div>` : ''}`; els.payoutHistory.appendChild(d); }); } els.totalWithdrawn.textContent=formatCurrency(t); }
         function printReport() { const acc = getActive(); let total = 0; let html = `<div style="font-family: sans-serif; max-width: 800px; margin: 0 auto;"><div style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px;"><div><h1 style="margin:0; color:#0f172a;">Relatório de Saques</h1><p style="margin:5px 0 0; color:#64748b;">Apex Cloud | DF Strategic</p></div><div style="text-align:right;"><h3 style="margin:0;">${acc.name}</h3><p style="margin:0; color:#64748b;">${acc.size} • ${new Date().toLocaleDateString()}</p></div></div><table style="width:100%; border-collapse: collapse; margin-bottom: 30px;"><thead><tr style="background-color: #f1f5f9; text-align:left;"><th style="padding: 12px; border-bottom: 1px solid #cbd5e1;">Data</th><th style="padding: 12px; border-bottom: 1px solid #cbd5e1;">Referência / Período</th><th style="padding: 12px; border-bottom: 1px solid #cbd5e1; text-align:right;">Valor (USD)</th></tr></thead><tbody>`; if(acc.payouts && acc.payouts.length > 0) { acc.payouts.forEach(p => { total += p.amount; html += `<tr><td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${new Date(p.date).toLocaleDateString()}</td><td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${p.note || '-'}</td><td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align:right; font-weight:bold;">${formatCurrency(p.amount)}</td></tr>`; }); } else { html += `<tr><td colspan="3" style="padding:20px; text-align:center; color:#64748b;">Nenhum saque registrado.</td></tr>`; } html += `</tbody><tfoot><tr style="background-color: #f8fafc;"><td colspan="2" style="padding: 12px; text-align:right; font-weight:bold; color:#334155;">TOTAL SACADO:</td><td style="padding: 12px; text-align:right; font-weight:bold; color:#16a34a; font-size:1.1em;">${formatCurrency(total)}</td></tr></tfoot></table><div style="margin-top: 50px; text-align:center; font-size: 0.8em; color: #94a3b8;"><p>Gerado automaticamente pelo sistema Apex Cloud</p></div></div>`; const printArea = document.getElementById('print-area'); printArea.innerHTML = html; window.print(); }
-        function calcPeriod(acc,days){ const t=new Date();let s=0; for(let i=0;i<days;i++){ const d=new Date();d.setDate(t.getDate()-i);const iso=d.toISOString().split('T')[0];const e=acc.data[iso]; if(e&&!e.holiday) s += (e.val || 0); } return s; }
+        
+        // --- UPDATED CALC PERIOD LOGIC (TRADING DAYS ONLY) ---
+        function calcPeriod(acc, daysLimit) {
+            // Get all ISO dates that have valid data
+            const allDates = Object.keys(acc.data);
+            
+            // Filter: Must have value != 0 AND not be a holiday
+            const tradingDays = allDates.filter(iso => {
+                const entry = acc.data[iso];
+                const val = entry.val || 0;
+                return val !== 0 && !entry.holiday;
+            });
+
+            // Sort descending (Newest first)
+            tradingDays.sort((a, b) => new Date(b) - new Date(a));
+
+            // Take the top 'daysLimit' (14 or 30)
+            const recentDays = tradingDays.slice(0, daysLimit);
+
+            // Sum the values
+            let sum = 0;
+            recentDays.forEach(iso => {
+                sum += (acc.data[iso].val || 0);
+            });
+            
+            return sum;
+        }
+
         function changeMonth(d){store.date.setMonth(store.date.getMonth()+d);renderDashboard();} // Não precisa salvar view state na nuvem
         function getActive(){return store.accounts[store.activeId];} function formatCurrency(v){return v.toLocaleString('en-US',{style:'currency',currency:'USD'});}
 
