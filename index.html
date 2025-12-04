@@ -12,7 +12,7 @@
 
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; overflow-x: hidden; }
-        /* input number styles removed as we switched to text/decimal */
+        input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         
         .text-profit { color: #16a34a; }
         .text-loss { color: #dc2626; }
@@ -22,12 +22,7 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;
         }
         
-        /* Ajuste fino no input */
-        .result-input { 
-            font-weight: 600; 
-            transition: all 0.2s; 
-            padding-left: 1.5rem; /* Espaço para o $ fixo */
-        } 
+        .result-input { font-weight: 600; transition: all 0.2s; padding-left: 1.2rem; }
         .result-input:focus { transform: scale(1.01); outline: none; border-color: #6366f1; }
 
         #sidebar { transition: transform 0.3s ease-in-out; }
@@ -115,7 +110,7 @@
             </div>
              <div class="dashboard-card p-4 border-l-4 border-l-yellow-500">
                 <p class="text-xs font-bold text-yellow-700 uppercase">Saque</p>
-                <div class="flex items-center justify-between mt-2"><span id="payout-status" class="text-lg font-bold text-slate-700">...</span></div>
+                <div class="flex items-center justify-between mt-2"><span id="payout-status" class="text-lg font-bold text-slate-700">Analisando...</span></div>
                 <p id="payout-msg" class="text-xs text-slate-400 mt-1">--</p>
             </div>
         </div>
@@ -176,7 +171,7 @@
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
-        // KEYS & CONFIG
+        // KEYS
         const firebaseConfig = {
             apiKey: "AIzaSyCu5pQrMnrpSj45lto_GXKx9xIWq2kyDjg",
             authDomain: "df-apex-manager.firebaseapp.com",
@@ -204,6 +199,7 @@
         let store = { activeId: null, date: new Date(), accounts: {} };
         let saveTimeout;
 
+        // ELEMENTS (REMOVED RISK)
         const els = { 
             sidebar: document.getElementById('sidebar'), backdrop: document.getElementById('sidebar-backdrop'), accList: document.getElementById('account-list'), 
             activeName: document.getElementById('active-account-name'), activeConfig: document.getElementById('active-account-config'), 
@@ -273,20 +269,84 @@
             else { text.textContent = 'Erro'; text.className = 'status-error'; }
         }
 
-        // --- UPDATE DATA WITH FORMATTER ---
         function updateData(iso, field, val) {
             const acc = getActive();
             if (!acc.data[iso]) acc.data[iso] = {};
             if (field === 'val') val = parseFloat(val) || 0;
             acc.data[iso][field] = val;
-            
-            // Re-render to force correct decimal display
             renderDashboard();
-            
             clearTimeout(saveTimeout);
             saveTimeout = setTimeout(saveToCloud, 1000); 
         }
 
+        // --- DASHBOARD RENDER ---
+        function renderDashboard() { 
+            const acc=getActive(); const rules=RULES[acc.size]; const stats=calculateStats(acc); 
+            
+            if(els.equity) els.equity.textContent=formatCurrency(stats.currentEquity); 
+            if(els.equityDiff) {
+                const diff=stats.currentEquity-rules.start; 
+                els.equityDiff.textContent=`Lucro: ${formatCurrency(diff)}`; 
+                els.equityDiff.className=diff>=0?"text-xs font-medium mt-1 text-green-600":"text-xs font-medium mt-1 text-red-500"; 
+            }
+            
+            let gainCap=(stats.totalProfit>0)?(stats.totalProfit*0.30)/0.70:0; 
+            if(els.gainCap) els.gainCap.textContent=gainCap>0?formatCurrency(gainCap):"Fazer Gordura"; 
+            
+            renderCalendar(acc); 
+            
+            if(els.stats10) els.stats10.textContent=formatCurrency(calcPeriod(acc,10)); 
+            if(els.stats20) els.stats20.textContent=formatCurrency(calcPeriod(acc,20)); 
+            if(els.stats30) els.stats30.textContent=formatCurrency(calcPeriod(acc,30));
+            const proj = calcProjection(acc); 
+            if(els.statsAvg) els.statsAvg.textContent = formatCurrency(proj.avg); 
+            if(els.statsProj) els.statsProj.textContent = formatCurrency(proj.projection);
+            
+            const mData=getMonthlyDataFixed(acc); 
+            if(els.statsMonth) els.statsMonth.textContent=formatCurrency(mData.total); 
+            if(els.weeklyList) els.weeklyList.innerHTML=mData.html; 
+            
+            if(els.safetyTarget) els.safetyTarget.textContent=formatCurrency(rules.safetyThreshold); 
+            const distSafety=rules.safetyThreshold-stats.currentEquity; 
+            if(els.safetyBar) {
+                if(distSafety<=0){els.safetyBar.style.width='100%';els.safetyBar.classList.replace('bg-indigo-500','bg-green-500');} 
+                else {const pct=Math.max(0,Math.min(100,((stats.currentEquity-rules.start)/(rules.safetyThreshold-rules.start))*100));els.safetyBar.style.width=`${pct}%`;} 
+            }
+            
+            const ratio=stats.totalProfit>0?(stats.maxDay/stats.totalProfit)*100:0; 
+            if(els.consRatio) els.consRatio.textContent=`${ratio.toFixed(1)}%`; 
+            if(els.consBar) {
+                els.consBar.style.width=`${Math.min(100,ratio)}%`; 
+                els.consBar.className=ratio>30?"h-full bg-red-500":"h-full bg-indigo-500"; 
+            }
+            
+            checkPayoutStatus(acc,stats,rules,ratio,distSafety); 
+            renderPayoutHistory(acc); 
+            lucide.createIcons(); 
+        }
+
+        // --- GEMINI FIX: Model gemini-pro ---
+        async function askGemini() {
+            const prompt = els.aiPrompt.value.trim();
+            if (!prompt) return;
+            els.aiBtn.disabled = true; els.aiBtn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>';
+            els.aiContainer.classList.remove('hidden'); els.aiOutput.innerHTML = '<p class="text-slate-400 italic">Analisando...</p>';
+            try {
+                const acc = getActive(); const stats = calculateStats(acc);
+                const tradedDays = getTradedDays(acc);
+                const recentHistory = tradedDays.map(d => `${d}: $${acc.data[d].val}`).join('\n');
+                const context = `Analista Apex. Dados: ${acc.name}. Lucro Total: ${formatCurrency(stats.totalProfit)}. Saldo: ${formatCurrency(stats.currentEquity)}. Histórico: ${recentHistory}. Pergunta: "${prompt}"`;
+                
+                const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+                // MUDANÇA AQUI: Modelo estável
+                const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+                const result = await model.generateContent(context);
+                els.aiOutput.innerHTML = marked.parse(result.response.text());
+            } catch (error) { els.aiOutput.innerHTML = `<p class="text-red-500">Erro: ${error.message}</p>`; } 
+            finally { els.aiBtn.disabled = false; els.aiBtn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4"></i> Analisar'; lucide.createIcons(); }
+        }
+
+        function printAI() { const w = window.open('', '', 'height=600,width=800'); w.document.write(els.aiOutput.innerHTML); w.print(); }
         function createAccount() { const name = prompt("Nome:"); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [] }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); }
         function renameAccount() { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } }
         function loadAccount(id) { if (!store.accounts[id]) id = Object.keys(store.accounts)[0]; store.activeId = id; const acc = store.accounts[id]; els.activeName.textContent = acc.name; els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; els.inpSize.value = acc.size; els.inpMonth.value = acc.monthType; renderSidebar(); renderDashboard(); }
@@ -296,24 +356,10 @@
         function toggleSidebar() { const isOpen=!els.sidebar.classList.contains('sidebar-closed'); if(isOpen){els.sidebar.classList.add('sidebar-closed');els.sidebar.classList.remove('sidebar-open');els.backdrop.classList.add('hidden');}else{els.sidebar.classList.remove('sidebar-closed');els.sidebar.classList.add('sidebar-open');els.backdrop.classList.remove('hidden');} }
         function renderSidebar() { els.accList.innerHTML=''; Object.values(store.accounts).forEach(acc=>{ const stats=calculateStats(acc); const div=document.createElement('div'); div.className=`account-item p-3 rounded-lg cursor-pointer transition-colors mb-2 ${acc.id===store.activeId?'active':'bg-slate-800'}`; div.onclick=()=>{loadAccount(acc.id);toggleSidebar();}; div.innerHTML=`<div class="flex justify-between items-center"><span class="font-bold text-sm text-slate-200">${acc.name}</span><span class="text-xs text-indigo-300 font-mono">${acc.size}</span></div><div class="flex justify-between items-center mt-1"><span class="text-xs text-slate-400">Saldo:</span><span class="text-xs font-bold ${stats.currentEquity>=RULES[acc.size].start?'text-green-400':'text-red-400'}">${formatCurrency(stats.currentEquity)}</span></div>`; els.accList.appendChild(div); }); }
         
-        function renderDashboard() { 
-            const acc=getActive(); const rules=RULES[acc.size]; const stats=calculateStats(acc); 
-            els.equity.textContent=formatCurrency(stats.currentEquity); const diff=stats.currentEquity-rules.start; els.equityDiff.textContent=`Lucro: ${formatCurrency(diff)}`; els.equityDiff.className=diff>=0?"text-xs font-medium mt-1 text-green-600":"text-xs font-medium mt-1 text-red-500"; 
-            let gainCap=(stats.totalProfit>0)?(stats.totalProfit*0.30)/0.70:0; els.gainCap.textContent=gainCap>0?formatCurrency(gainCap):"Fazer Gordura"; 
-            renderCalendar(acc); 
-            els.stats10.textContent=formatCurrency(calcPeriod(acc,10)); els.stats20.textContent=formatCurrency(calcPeriod(acc,20)); els.stats30.textContent=formatCurrency(calcPeriod(acc,30));
-            const proj = calcProjection(acc); els.statsAvg.textContent = formatCurrency(proj.avg); els.statsProj.textContent = formatCurrency(proj.projection);
-            const mData=getMonthlyDataFixed(acc); els.statsMonth.textContent=formatCurrency(mData.total); els.weeklyList.innerHTML=mData.html; 
-            els.safetyTarget.textContent=formatCurrency(rules.safetyThreshold); const distSafety=rules.safetyThreshold-stats.currentEquity; if(distSafety<=0){els.safetyBar.style.width='100%';els.safetyBar.classList.replace('bg-indigo-500','bg-green-500');} else {const pct=Math.max(0,Math.min(100,((stats.currentEquity-rules.start)/(rules.safetyThreshold-rules.start))*100));els.safetyBar.style.width=`${pct}%`;} 
-            const ratio=stats.totalProfit>0?(stats.maxDay/stats.totalProfit)*100:0; els.consRatio.textContent=`${ratio.toFixed(1)}%`; els.consBar.style.width=`${Math.min(100,ratio)}%`; els.consBar.className=ratio>30?"h-full bg-red-500":"h-full bg-indigo-500"; 
-            checkPayoutStatus(acc,stats,rules,ratio,distSafety); renderPayoutHistory(acc); lucide.createIcons(); 
-        }
-        
         function renderCalendar(acc) { 
             const y=store.date.getFullYear(); const m=store.date.getMonth(); els.calendarTitle.textContent=`${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m]} ${y}`; els.calendarBody.innerHTML=''; const daysInMonth=new Date(y,m+1,0).getDate(); 
             for(let d=1;d<=daysInMonth;d++){ 
                 const date=new Date(y,m,d); const iso=date.toISOString().split('T')[0]; const entry=acc.data[iso]||{val:0,note:'',holiday:false,withdrawn:false}; const isW=date.getDay()===0||date.getDay()===6; const tr=document.createElement('tr'); if(isW)tr.className="bg-slate-50 opacity-50"; if(entry.withdrawn)tr.className="bg-green-50"; 
-                // CHANGED TO TEXT INPUT FOR PRECISION LOCK
                 tr.innerHTML=`<td class="px-4 py-2 font-medium text-slate-600">${d}</td><td class="px-4 py-2 relative"><div class="relative w-full"><span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold z-10 pointer-events-none select-none">$</span><input type="text" inputmode="decimal" class="result-input w-full pl-6 pr-2 py-1 bg-transparent border-b border-transparent focus:border-indigo-500 text-slate-800 ${entry.val>0?'text-green-600':(entry.val<0?'text-red-600':'')}" value="${entry.val!==0?entry.val.toFixed(2):''}" placeholder="0.00" onblur="updateData('${iso}','val',this.value)" ${isW?'disabled':''}></div></td><td class="px-4 py-2"><input type="text" class="w-full bg-transparent text-xs" value="${entry.note||''}" placeholder="..." onchange="updateData('${iso}','note',this.value)" ${isW?'disabled':''}></td><td class="px-4 py-2 text-center"><input type="checkbox" ${entry.holiday?'checked':''} onchange="updateData('${iso}','holiday',this.checked)" ${isW?'disabled':''} title="Feriado"></td><td class="px-4 py-2 text-center"><input type="checkbox" class="accent-green-600" ${entry.withdrawn?'checked':''} onchange="updateData('${iso}','withdrawn',this.checked)" ${isW?'disabled':''} title="Saque"></td>`; els.calendarBody.appendChild(tr); 
             } 
         }
@@ -328,25 +374,6 @@
         function calcProjection(acc) { const tradedDays = getTradedDays(acc); const last11Days = tradedDays.slice(0, 11); let sum = 0; last11Days.forEach(iso => sum += (acc.data[iso].val || 0)); const count = last11Days.length; const avg = count > 0 ? sum / count : 0; const projection = avg * 22; return { avg, projection }; }
         function changeMonth(d){store.date.setMonth(store.date.getMonth()+d);renderDashboard();} 
         function getActive(){return store.accounts[store.activeId];} function formatCurrency(v){return v.toLocaleString('en-US',{style:'currency',currency:'USD'});}
-
-        // GEMINI
-        async function askGemini() {
-            const prompt = els.aiPrompt.value.trim(); if (!prompt) return;
-            els.aiBtn.disabled = true; els.aiBtn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>';
-            els.aiContainer.classList.remove('hidden'); els.aiOutput.innerHTML = '<p class="text-slate-400 italic">Analisando...</p>';
-            try {
-                const acc = getActive(); const stats = calculateStats(acc);
-                const tradedDays = getTradedDays(acc);
-                const recentHistory = tradedDays.map(d => `${d}: $${acc.data[d].val}`).join('\n');
-                const context = `Analista Apex. Dados: ${acc.name}. Lucro Total: ${formatCurrency(stats.totalProfit)}. Saldo: ${formatCurrency(stats.currentEquity)}. Histórico: ${recentHistory}. Pergunta: "${prompt}"`;
-                const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-                const result = await model.generateContent(context);
-                els.aiOutput.innerHTML = marked.parse(result.response.text());
-            } catch (error) { els.aiOutput.innerHTML = `<p class="text-red-500">Erro: ${error.message}</p>`; } 
-            finally { els.aiBtn.disabled = false; els.aiBtn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4"></i> Analisar'; lucide.createIcons(); }
-        }
-        function printAI() { const w = window.open('', '', 'height=600,width=800'); w.document.write(els.aiOutput.innerHTML); w.print(); }
 
         init();
     </script>
