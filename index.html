@@ -40,9 +40,9 @@
 </head>
 <body class="pb-12">
 
-    <div id="app-loader" class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col items-center justify-center text-white transition-opacity duration-500">
+    <div id="app-loader" class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col items-center justify-center text-white">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
-        <p class="text-sm animate-pulse">Conectando...</p>
+        <p class="text-sm animate-pulse">Conectando ao Banco de Dados...</p>
     </div>
 
     <div id="print-area" class="hidden"></div>
@@ -86,7 +86,7 @@
                     <div class="flex justify-between items-center mb-2">
                         <h3 class="font-bold text-slate-800 flex items-center gap-2"><span class="bg-indigo-600 text-white p-1 rounded-md"><i data-lucide="bot" class="w-4 h-4"></i></span> Apex AI (Gemini Pro)</h3>
                     </div>
-                    <div class="flex gap-2 w-full"><input type="text" id="ai-prompt" placeholder="Ex: Analise meus últimos 10 dias..." class="flex-1 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"><button onclick="askGemini()" id="btn-ask-ai" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition disabled:opacity-50 whitespace-nowrap"><i data-lucide="sparkles" class="w-4 h-4"></i> Analisar</button></div>
+                    <div class="flex gap-2 w-full"><input type="text" id="ai-prompt" placeholder="Ex: Qual foi meu melhor dia e por quê?" class="flex-1 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"><button onclick="askGemini()" id="btn-ask-ai" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition disabled:opacity-50 whitespace-nowrap"><i data-lucide="sparkles" class="w-4 h-4"></i> Analisar</button></div>
                 </div>
             </div>
             <div id="ai-result-container" class="hidden mt-4 pt-4 border-t border-slate-200">
@@ -193,10 +193,10 @@
             messagingSenderId: "761037562102",
             appId: "1:761037562102:web:a7622dca93a157dc21ccd7"
         };
-        // SUA NOVA CHAVE AQUI
-        const GEMINI_API_KEY = "AIzaSyD9pDXkis0BMCyFIeEV-0BQxaMLDkOHXAE";
+        
+        // --- 🔴 SUA CHAVE DO GEMINI ---
+        const GEMINI_API_KEY = "AIzaSyD9pDXkis0BMCyFIeEV-0BQxaMLDkOHXAE"; 
 
-        // INIT DB
         let db;
         try { const app = initializeApp(firebaseConfig); db = getFirestore(app); console.log("Firebase OK"); } catch (e) { console.error(e); }
 
@@ -213,7 +213,7 @@
         let store = { activeId: null, date: new Date(), accounts: {} };
         let saveTimeout;
 
-        // ELEMENTS
+        // ELEMENTS (NO RISK VAR)
         const els = { 
             sidebar: document.getElementById('sidebar'), backdrop: document.getElementById('sidebar-backdrop'), accList: document.getElementById('account-list'), 
             activeName: document.getElementById('active-account-name'), activeConfig: document.getElementById('active-account-config'), 
@@ -249,7 +249,7 @@
                 if(val!==0 && !e.holiday){ 
                     tp+=val; dt++; re+=val; 
                     if(re>pe)pe=re; 
-                    if(val>md) { md=val; mDate=d; } 
+                    if(val>md) { md=val; mDate=d; } // CAPTURA A DATA DO MELHOR DIA
                 } 
             }); 
             const w=(acc.payouts||[]).reduce((s,p)=>s+p.amount,0); 
@@ -263,10 +263,146 @@
         function calcCycle(acc, startDay) {
             const today = new Date();
             let startDate = new Date(today);
-            // If we are before the start day of this month, the cycle started last month
             if (today.getDate() < startDay) { startDate.setMonth(startDate.getMonth() - 1); }
             startDate.setDate(startDay); startDate.setHours(0,0,0,0);
-            
             let sum = 0;
             Object.keys(acc.data).forEach(iso => {
-                const d = new Date(iso); d.setHours(0,0,0,
+                const d = new Date(iso); d.setHours(0,0,0,0);
+                if (d >= startDate) {
+                     const entry = acc.data[iso]; const val = entry.val || 0;
+                     if(val !== 0 && !entry.holiday) sum += val;
+                }
+            });
+            return sum;
+        }
+
+        function checkPayoutStatus(acc,stats,rules,ratio,dist){ const d=stats.daysTraded>=8; const s=dist<=0; const c=ratio<=30; let avail=0; if(d&&s&&c) avail=Math.min(stats.currentEquity-rules.safetyThreshold, acc.monthType<=3?rules.payouts[0]:999999); if(avail>=500){ els.payoutStatus.textContent="Disponível"; els.payoutStatus.className="text-lg font-bold text-green-600"; els.payoutMsg.textContent=`Pode sacar ${formatCurrency(avail)}`; els.btnPayout.disabled=false; els.btnPayout.className="w-full py-2 rounded bg-green-600 hover:bg-green-700 text-white font-bold text-sm shadow transition flex justify-center items-center gap-2"; els.btnPayout.innerHTML=`<i data-lucide="dollar-sign" class="w-4 h-4"></i> Sacar ${formatCurrency(avail)}`; els.btnPayout.onclick=()=>executePayout(avail); } else { els.payoutStatus.textContent="Em Progresso"; els.payoutStatus.className="text-lg font-bold text-slate-700"; els.payoutMsg.textContent=!s?"Falta atingir a rede.":(!d?`Faltam ${8-stats.daysTraded} dias.`:(!c?"Ajustar consistência.":"Mínimo $500 excedente.")); els.btnPayout.disabled=true; els.btnPayout.className="w-full py-2 rounded bg-slate-700 text-slate-500 font-bold text-sm cursor-not-allowed flex justify-center items-center gap-2"; els.btnPayout.innerHTML=`<i data-lucide="lock" class="w-4 h-4"></i> Indisponível`; } }
+        function renderPayoutHistory(acc){ els.payoutHistory.innerHTML='';let t=0; if(!acc.payouts||!acc.payouts.length) els.payoutHistory.innerHTML='<p class="text-xs text-slate-400 italic">Vazio.</p>'; else { acc.payouts.slice().reverse().forEach(p=>{ t+=p.amount; const d=document.createElement('div'); d.className="border-b border-slate-50 pb-2 mb-2 last:border-0"; d.innerHTML=`<div class="flex justify-between items-center"><span class="text-xs text-slate-500">${new Date(p.date).toLocaleDateString()}</span><span class="font-bold text-green-600">${formatCurrency(p.amount)}</span></div>${p.note ? `<div class="text-xs text-slate-400 mt-0.5 italic">Ref: ${p.note}</div>` : ''}`; els.payoutHistory.appendChild(d); }); } els.totalWithdrawn.textContent=formatCurrency(t); }
+        
+        function printReport() { 
+            const acc = getActive(); let total = 0; 
+            let html = `<div style="font-family:sans-serif;max-width:800px;margin:0 auto;"><div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #333;padding-bottom:20px;margin-bottom:30px;"><div><h1 style="margin:0;color:#0f172a;">Relatório de Saques</h1><p style="margin:5px 0 0;color:#64748b;">Apex Enterprise | DF Strategic</p></div><div style="text-align:right;"><h3 style="margin:0;">${acc.name}</h3><p style="margin:0;color:#64748b;">${acc.size} • ${new Date().toLocaleDateString()}</p></div></div><table style="width:100%;border-collapse:collapse;margin-bottom:30px;"><thead><tr style="background-color:#f1f5f9;text-align:left;"><th style="padding:12px;border-bottom:1px solid #cbd5e1;">Data</th><th style="padding:12px;border-bottom:1px solid #cbd5e1;">Referência</th><th style="padding:12px;border-bottom:1px solid #cbd5e1;text-align:right;">Valor (USD)</th></tr></thead><tbody>`;
+            if(acc.payouts && acc.payouts.length > 0) { acc.payouts.forEach(p => { total += p.amount; html += `<tr><td style="padding:12px;border-bottom:1px solid #e2e8f0;">${new Date(p.date).toLocaleDateString()}</td><td style="padding:12px;border-bottom:1px solid #e2e8f0;">${p.note||'-'}</td><td style="padding:12px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:bold;">${formatCurrency(p.amount)}</td></tr>`; }); } else { html += `<tr><td colspan="3" style="padding:20px;text-align:center;color:#64748b;">Nenhum saque.</td></tr>`; }
+            html += `</tbody><tfoot><tr style="background-color:#f8fafc;"><td colspan="2" style="padding:12px;text-align:right;font-weight:bold;color:#334155;">TOTAL:</td><td style="padding:12px;text-align:right;font-weight:bold;color:#16a34a;font-size:1.1em;">${formatCurrency(total)}</td></tr></tfoot></table></div>`;
+            const win = window.open('', '_blank'); win.document.write(html); win.document.close(); win.print();
+        }
+
+        function shareReport() {
+            const acc = getActive(); const stats = calculateStats(acc); const totalPayouts = (acc.payouts||[]).reduce((sum, p) => sum + p.amount, 0);
+            const text = `*Apex Enterprise Report* 📊\n*Conta:* ${acc.name} (${acc.size})\n*Saldo:* ${formatCurrency(stats.currentEquity)}\n*Lucro Total:* ${formatCurrency(stats.totalProfit)}\n*Total Sacado:* ${formatCurrency(totalPayouts)}\n\nGerado por DF Strategic App`;
+            if (navigator.share) { navigator.share({ title: 'Relatório Apex', text: text }).catch(console.error); } else { navigator.clipboard.writeText(text).then(() => alert("Copiado para área de transferência!")); }
+        }
+        
+        function shareAI() {
+            const text = els.aiOutput.innerText;
+             if (navigator.share) { navigator.share({ title: 'Análise AI', text: text }).catch(console.error); } else { navigator.clipboard.writeText(text).then(() => alert("Análise copiada!")); }
+        }
+
+        function printAI() {
+            const content = els.aiOutput.innerHTML; const win = window.open('', '_blank');
+            win.document.write('<html><head><title>Análise AI</title><style>body{font-family:sans-serif;padding:20px;line-height:1.5} h1,h2{color:#333}</style></head><body>');
+            win.document.write(content); win.document.write('</body></html>'); win.document.close(); win.print();
+        }
+
+        // --- GEMINI (DIRECT REST API) ---
+        async function askGemini() {
+            const prompt = els.aiPrompt.value.trim(); if (!prompt) return;
+            els.aiBtn.disabled = true; els.aiBtn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>';
+            els.aiContainer.classList.remove('hidden'); els.aiOutput.innerHTML = '<p class="text-slate-400 italic">Analisando...</p>';
+            try {
+                const acc = getActive(); const stats = calculateStats(acc);
+                const tradedDays = getTradedDays(acc);
+                const recentHistory = tradedDays.map(d => {
+                    const dateObj = new Date(d);
+                    const dateStr = dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                    return `${dateStr}: ${formatCurrency(acc.data[d].val)}`;
+                }).join('\n');
+                
+                const bestDayStr = stats.maxDate ? `${new Date(stats.maxDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} com ${formatCurrency(stats.maxDay)}` : "Nenhum";
+
+                const context = `Analista Apex. Dados: ${acc.name}. Lucro: ${formatCurrency(stats.totalProfit)}. Saldo: ${formatCurrency(stats.currentEquity)}. Melhor Dia: ${bestDayStr}. Histórico: ${recentHistory}. Pergunta: "${prompt}"`;
+                
+                // USE GEMINI-PRO (STABLE)
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: context }] }] })
+                });
+
+                if (!response.ok) { 
+                    const err = await response.json(); 
+                    throw new Error(err.error?.message || response.status); 
+                }
+                const data = await response.json();
+                els.aiOutput.innerHTML = marked.parse(data.candidates[0].content.parts[0].text);
+
+            } catch (error) { els.aiOutput.innerHTML = `<p class="text-red-500">Erro: ${error.message}</p>`; } 
+            finally { els.aiBtn.disabled = false; els.aiBtn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4"></i> Analisar'; lucide.createIcons(); }
+        }
+
+        // --- INIT ---
+        function setStatus(state) {
+            const text = document.getElementById('status-text');
+            if(state === 'saving') { text.textContent = 'Salvando...'; text.className = 'status-saving'; }
+            else if(state === 'saved') { text.textContent = 'Online'; text.className = 'status-saved'; }
+            else { text.textContent = 'Erro'; text.className = 'status-error'; }
+        }
+
+        async function loadFromCloud() {
+            try {
+                const docSnap = await getDoc(doc(db, "users", "dante_data"));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    store = JSON.parse(data.store_json);
+                    store.date = new Date(store.date || new Date());
+                }
+            } catch (e) { console.error(e); setStatus('error'); }
+        }
+
+        async function saveToCloud() {
+            setStatus('saving');
+            try {
+                await setDoc(doc(db, "users", "dante_data"), { store_json: JSON.stringify(store), last_update: new Date() });
+                setStatus('saved');
+            } catch (e) { setStatus('error'); }
+        }
+
+        async function init() {
+            lucide.createIcons();
+            try {
+                // Safety timeout
+                const loadPromise = loadFromCloud();
+                const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2000));
+                await Promise.race([loadPromise, timeoutPromise]);
+            } catch (e) {} 
+            
+            if (!store.activeId) {
+                const defaultId = 'acc_' + Date.now();
+                store.activeId = defaultId;
+                store.accounts = {};
+                store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] };
+                saveToCloud(); 
+            }
+            renderSidebar(); loadAccount(store.activeId); 
+            els.loader.classList.add('opacity-0');
+            setTimeout(() => els.loader.classList.add('hidden'), 500);
+            setStatus('saved'); document.getElementById('status-text').textContent = "Online";
+            setupListeners();
+            
+            window.updateData = updateData; window.askGemini = askGemini; window.closeAI = () => els.aiContainer.classList.add('hidden'); window.printAI = printAI; window.printReport = printReport; window.shareReport = shareReport; window.shareAI = shareAI;
+        }
+
+        function setupListeners() {
+            document.getElementById('open-sidebar').onclick = toggleSidebar; document.getElementById('close-sidebar').onclick = toggleSidebar; els.backdrop.onclick = toggleSidebar;
+            document.getElementById('add-account-btn').onclick = createAccount; document.getElementById('rename-account-btn').onclick = renameAccount;
+            els.inpSize.onchange = updateConfig; els.inpMonth.onchange = updateConfig;
+            document.getElementById('prev-month').onclick = () => changeMonth(-1); document.getElementById('next-month').onclick = () => changeMonth(1);
+            els.aiPrompt.addEventListener("keypress", (e) => { if (e.key === "Enter") { e.preventDefault(); askGemini(); } });
+        }
+
+        init();
+    </script>
+</body>
+</html>
