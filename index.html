@@ -14,9 +14,10 @@
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; overflow-x: hidden; }
         input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         
+        /* Cores de Resultado */
         .val-pos { color: #16a34a; font-weight: 700; }
         .val-neg { color: #dc2626; font-weight: 700; }
-        .val-zero { color: #64748b; }
+        .val-zero { color: #94a3b8; }
 
         .dashboard-card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
         .result-input { font-weight: 600; transition: all 0.2s; padding-left: 1.2rem; }
@@ -84,9 +85,9 @@
             <div class="flex flex-col md:flex-row justify-between md:items-start gap-4">
                 <div class="flex-1 w-full">
                     <div class="flex justify-between items-center mb-2">
-                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><span class="bg-green-600 text-white p-1 rounded-md"><i data-lucide="bot" class="w-4 h-4"></i></span> Apex AI (ChatGPT)</h3>
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><span class="bg-indigo-600 text-white p-1 rounded-md"><i data-lucide="bot" class="w-4 h-4"></i></span> Apex AI (Gemini 1.5)</h3>
                     </div>
-                    <div class="flex gap-2 w-full"><input type="text" id="ai-prompt" placeholder="Ex: Qual foi meu melhor dia e por quê?" class="flex-1 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"><button onclick="askGPT()" id="btn-ask-ai" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition disabled:opacity-50 whitespace-nowrap"><i data-lucide="sparkles" class="w-4 h-4"></i> Analisar</button></div>
+                    <div class="flex gap-2 w-full"><input type="text" id="ai-prompt" placeholder="Ex: Analise meus últimos 10 dias..." class="flex-1 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"><button onclick="askGemini()" id="btn-ask-ai" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition disabled:opacity-50 whitespace-nowrap"><i data-lucide="sparkles" class="w-4 h-4"></i> Analisar</button></div>
                 </div>
             </div>
             <div id="ai-result-container" class="hidden mt-4 pt-4 border-t border-slate-200">
@@ -184,6 +185,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // CONFIGS
         const firebaseConfig = {
             apiKey: "AIzaSyCu5pQrMnrpSj45lto_GXKx9xIWq2kyDjg",
             authDomain: "df-apex-manager.firebaseapp.com",
@@ -192,7 +194,9 @@
             messagingSenderId: "761037562102",
             appId: "1:761037562102:web:a7622dca93a157dc21ccd7"
         };
-        const OPENAI_API_KEY = "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";
+        
+        // --- 🔴 CHAVE GEMINI NOVA ---
+        const GEMINI_API_KEY = "AIzaSyDLXeKnowzTMbM17Kgift_Zi0hDr8Cgo6Q"; 
 
         let db;
         try { const app = initializeApp(firebaseConfig); db = getFirestore(app); console.log("Firebase OK"); } catch (e) { console.error(e); }
@@ -218,7 +222,6 @@
             equity: document.getElementById('current-equity'), equityDiff: document.getElementById('equity-diff'), 
             gainCap: document.getElementById('gain-cap'), 
             
-            // New Cycle Stats
             statsMonth: document.getElementById('stats-month'),
             statsC10: document.getElementById('stats-c10'),
             statsC15: document.getElementById('stats-c15'),
@@ -254,44 +257,33 @@
             return {currentEquity:rules.start+tp-w, totalProfit:tp, daysTraded:dt, peakEquity:pe, maxDay:md, maxDate:mDate}; 
         }
         function getTradedDays(acc) { const allDates = Object.keys(acc.data); return allDates.filter(iso => { const entry = acc.data[iso]; const val = entry.val || 0; return val !== 0 && !entry.holiday; }).sort((a, b) => new Date(b) - new Date(a)); }
-        
-        // --- NEW FIXED CYCLE LOGIC ---
+        function calcPeriod(acc, daysLimit) { const tradedDays = getTradedDays(acc); const recentDays = tradedDays.slice(0, daysLimit); let sum = 0; recentDays.forEach(iso => sum += (acc.data[iso].val || 0)); return sum; }
+        function calcProjection(acc) { const tradedDays = getTradedDays(acc); const last11Days = tradedDays.slice(0, 11); let sum = 0; last11Days.forEach(iso => sum += (acc.data[iso].val || 0)); const count = last11Days.length; const avg = count > 0 ? sum / count : 0; const projection = avg * 22; return { avg, projection }; }
+        function getMonthlyDataFixed(acc) { const y = store.date.getFullYear(); const m = store.date.getMonth(); const daysInMonth = new Date(y, m+1, 0).getDate(); let weeks = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; let total = 0; for(let d=1; d<=daysInMonth; d++) { const date = new Date(y, m, d); const iso = date.toISOString().split('T')[0]; const entry = acc.data[iso]; const weekIndex = Math.ceil(d / 7); if(entry && !entry.holiday) { weeks[weekIndex] += (entry.val || 0); total += (entry.val || 0); } } let html = ''; for(let i=1; i<=5; i++) { const startDay = (i - 1) * 7 + 1; if (startDay > daysInMonth) continue; const label = `Semana ${i} (${startDay < 10 ? '0'+startDay : startDay}/${m+1 < 10 ? '0'+(m+1) : m+1})`; const val = weeks[i]; html += `<div class="flex justify-between border-b border-slate-50 pb-1 last:border-0 text-xs"><span class="text-slate-500">${label}</span><span class="font-bold ${val >= 0 ? 'val-pos' : 'val-neg'}">${formatCurrency(val)}</span></div>`; } if(!html) html = '<span class="italic text-xs text-slate-400">Sem dados</span>'; return { total, html }; }
+
         function calcCycle(acc, startDay) {
             const today = new Date();
             let startDate = new Date(today);
-            
-            // If today is before the start day (e.g. today is 5th, cycle starts 10th),
-            // then the cycle started in the PREVIOUS month.
-            if (today.getDate() < startDay) {
-                startDate.setMonth(startDate.getMonth() - 1);
-            }
-            startDate.setDate(startDay);
-            startDate.setHours(0,0,0,0);
-            
-            // Limit for end date is just "now" or "end of cycle", but usually we just want "Current Cycle to Date"
-            // So we sum everything >= startDate
-            
+            if (today.getDate() < startDay) { startDate.setMonth(startDate.getMonth() - 1); }
+            startDate.setDate(startDay); startDate.setHours(0,0,0,0);
             let sum = 0;
             Object.keys(acc.data).forEach(iso => {
-                const d = new Date(iso);
-                d.setHours(0,0,0,0); // normalize
-                
-                // We only care if d >= startDate
+                const d = new Date(iso); d.setHours(0,0,0,0);
                 if (d >= startDate) {
-                     const entry = acc.data[iso];
-                     const val = entry.val || 0;
+                     const entry = acc.data[iso]; const val = entry.val || 0;
                      if(val !== 0 && !entry.holiday) sum += val;
                 }
             });
             return sum;
         }
 
-        function calcProjection(acc) { const tradedDays = getTradedDays(acc); const last11Days = tradedDays.slice(0, 11); let sum = 0; last11Days.forEach(iso => sum += (acc.data[iso].val || 0)); const count = last11Days.length; const avg = count > 0 ? sum / count : 0; const projection = avg * 22; return { avg, projection }; }
-        function getMonthlyDataFixed(acc) { const y = store.date.getFullYear(); const m = store.date.getMonth(); const daysInMonth = new Date(y, m+1, 0).getDate(); let weeks = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; let total = 0; for(let d=1; d<=daysInMonth; d++) { const date = new Date(y, m, d); const iso = date.toISOString().split('T')[0]; const entry = acc.data[iso]; const weekIndex = Math.ceil(d / 7); if(entry && !entry.holiday) { weeks[weekIndex] += (entry.val || 0); total += (entry.val || 0); } } let html = ''; for(let i=1; i<=5; i++) { const startDay = (i - 1) * 7 + 1; if (startDay > daysInMonth) continue; const label = `Semana ${i} (${startDay < 10 ? '0'+startDay : startDay}/${m+1 < 10 ? '0'+(m+1) : m+1})`; const val = weeks[i]; html += `<div class="flex justify-between border-b border-slate-50 pb-1 last:border-0 text-xs"><span class="text-slate-500">${label}</span><span class="font-bold ${val >= 0 ? 'val-pos' : 'val-neg'}">${formatCurrency(val)}</span></div>`; } if(!html) html = '<span class="italic text-xs text-slate-400">Sem dados</span>'; return { total, html }; }
-
         function checkPayoutStatus(acc,stats,rules,ratio,dist){ const d=stats.daysTraded>=8; const s=dist<=0; const c=ratio<=30; let avail=0; if(d&&s&&c) avail=Math.min(stats.currentEquity-rules.safetyThreshold, acc.monthType<=3?rules.payouts[0]:999999); if(avail>=500){ els.payoutStatus.textContent="Disponível"; els.payoutStatus.className="text-lg font-bold text-green-600"; els.payoutMsg.textContent=`Pode sacar ${formatCurrency(avail)}`; els.btnPayout.disabled=false; els.btnPayout.className="w-full py-2 rounded bg-green-600 hover:bg-green-700 text-white font-bold text-sm shadow transition flex justify-center items-center gap-2"; els.btnPayout.innerHTML=`<i data-lucide="dollar-sign" class="w-4 h-4"></i> Sacar ${formatCurrency(avail)}`; els.btnPayout.onclick=()=>executePayout(avail); } else { els.payoutStatus.textContent="Em Progresso"; els.payoutStatus.className="text-lg font-bold text-slate-700"; els.payoutMsg.textContent=!s?"Falta atingir a rede.":(!d?`Faltam ${8-stats.daysTraded} dias.`:(!c?"Ajustar consistência.":"Mínimo $500 excedente.")); els.btnPayout.disabled=true; els.btnPayout.className="w-full py-2 rounded bg-slate-700 text-slate-500 font-bold text-sm cursor-not-allowed flex justify-center items-center gap-2"; els.btnPayout.innerHTML=`<i data-lucide="lock" class="w-4 h-4"></i> Indisponível`; } }
         function renderPayoutHistory(acc){ els.payoutHistory.innerHTML='';let t=0; if(!acc.payouts||!acc.payouts.length) els.payoutHistory.innerHTML='<p class="text-xs text-slate-400 italic">Vazio.</p>'; else { acc.payouts.slice().reverse().forEach(p=>{ t+=p.amount; const d=document.createElement('div'); d.className="border-b border-slate-50 pb-2 mb-2 last:border-0"; d.innerHTML=`<div class="flex justify-between items-center"><span class="text-xs text-slate-500">${new Date(p.date).toLocaleDateString()}</span><span class="font-bold text-green-600">${formatCurrency(p.amount)}</span></div>${p.note ? `<div class="text-xs text-slate-400 mt-0.5 italic">Ref: ${p.note}</div>` : ''}`; els.payoutHistory.appendChild(d); }); } els.totalWithdrawn.textContent=formatCurrency(t); }
-        function printReport() { const acc = getActive(); let total = 0; let html = `<div style="font-family:sans-serif;max-width:800px;margin:0 auto;"><div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #333;padding-bottom:20px;margin-bottom:30px;"><div><h1 style="margin:0;color:#0f172a;">Relatório de Saques</h1><p style="margin:5px 0 0;color:#64748b;">Apex Enterprise | DF Strategic</p></div><div style="text-align:right;"><h3 style="margin:0;">${acc.name}</h3><p style="margin:0;color:#64748b;">${acc.size} • ${new Date().toLocaleDateString()}</p></div></div><table style="width:100%;border-collapse:collapse;margin-bottom:30px;"><thead><tr style="background-color:#f1f5f9;text-align:left;"><th style="padding:12px;border-bottom:1px solid #cbd5e1;">Data</th><th style="padding:12px;border-bottom:1px solid #cbd5e1;">Referência</th><th style="padding:12px;border-bottom:1px solid #cbd5e1;text-align:right;">Valor (USD)</th></tr></thead><tbody>`;
+        
+        // PRINT & SHARE
+        function printReport() { 
+            const acc = getActive(); let total = 0; 
+            let html = `<div style="font-family:sans-serif;max-width:800px;margin:0 auto;"><div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #333;padding-bottom:20px;margin-bottom:30px;"><div><h1 style="margin:0;color:#0f172a;">Relatório de Saques</h1><p style="margin:5px 0 0;color:#64748b;">Apex Enterprise | DF Strategic</p></div><div style="text-align:right;"><h3 style="margin:0;">${acc.name}</h3><p style="margin:0;color:#64748b;">${acc.size} • ${new Date().toLocaleDateString()}</p></div></div><table style="width:100%;border-collapse:collapse;margin-bottom:30px;"><thead><tr style="background-color:#f1f5f9;text-align:left;"><th style="padding:12px;border-bottom:1px solid #cbd5e1;">Data</th><th style="padding:12px;border-bottom:1px solid #cbd5e1;">Referência</th><th style="padding:12px;border-bottom:1px solid #cbd5e1;text-align:right;">Valor (USD)</th></tr></thead><tbody>`;
             if(acc.payouts && acc.payouts.length > 0) { acc.payouts.forEach(p => { total += p.amount; html += `<tr><td style="padding:12px;border-bottom:1px solid #e2e8f0;">${new Date(p.date).toLocaleDateString()}</td><td style="padding:12px;border-bottom:1px solid #e2e8f0;">${p.note||'-'}</td><td style="padding:12px;border-bottom:1px solid #e2e8f0;text-align:right;font-weight:bold;">${formatCurrency(p.amount)}</td></tr>`; }); } else { html += `<tr><td colspan="3" style="padding:20px;text-align:center;color:#64748b;">Nenhum saque.</td></tr>`; }
             html += `</tbody><tfoot><tr style="background-color:#f8fafc;"><td colspan="2" style="padding:12px;text-align:right;font-weight:bold;color:#334155;">TOTAL:</td><td style="padding:12px;text-align:right;font-weight:bold;color:#16a34a;font-size:1.1em;">${formatCurrency(total)}</td></tr></tfoot></table></div>`;
             const win = window.open('', '_blank'); win.document.write(html); win.document.close(); win.print();
@@ -314,14 +306,11 @@
             win.document.write(content); win.document.write('</body></html>'); win.document.close(); win.print();
         }
 
-        // --- OPENAI CHATGPT (Improved Context) ---
-        async function askGPT() {
+        // --- GEMINI (DIRECT REST API - THE FIX) ---
+        async function askGemini() {
             const prompt = els.aiPrompt.value.trim(); if (!prompt) return;
-            const apiKey = OPENAI_API_KEY;
-
             els.aiBtn.disabled = true; els.aiBtn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>';
-            els.aiContainer.classList.remove('hidden'); els.aiOutput.innerHTML = '<p class="text-slate-400 italic">Pensando...</p>';
-
+            els.aiContainer.classList.remove('hidden'); els.aiOutput.innerHTML = '<p class="text-slate-400 italic">Analisando...</p>';
             try {
                 const acc = getActive(); const stats = calculateStats(acc);
                 const tradedDays = getTradedDays(acc);
@@ -333,124 +322,26 @@
                 
                 const bestDayStr = stats.maxDate ? `${new Date(stats.maxDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} com ${formatCurrency(stats.maxDay)}` : "Nenhum";
 
-                const systemPrompt = `Você é um analista financeiro sênior da 'Apex Enterprise'.
-                Use EXATAMENTE os dados abaixo. Não invente valores.
+                const context = `Analista Apex. Dados: ${acc.name}. Lucro: ${formatCurrency(stats.totalProfit)}. Saldo: ${formatCurrency(stats.currentEquity)}. Melhor Dia: ${bestDayStr}. Histórico: ${recentHistory}. Pergunta: "${prompt}"`;
                 
-                DADOS DA CONTA:
-                - Nome: ${acc.name} (${acc.size})
-                - Lucro Total Acumulado: ${formatCurrency(stats.totalProfit)}
-                - Saldo Atual (Equity): ${formatCurrency(stats.currentEquity)}
-                - Dias Operados: ${stats.daysTraded}
-                - MELHOR DIA (Recorde): ${bestDayStr}
+                // USE v1beta Endpoint directly
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
                 
-                HISTÓRICO RECENTE (Data: Valor):
-                ${recentHistory}
-                
-                Responda à pergunta do usuário com base NESSES DADOS. Seja direto.`;
-
-                const response = await fetch("https://api.openai.com/v1/chat/completions", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-                    body: JSON.stringify({ model: "gpt-4o-mini", messages: [{role: "system", content: systemPrompt}, {role: "user", content: prompt}] })
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: context }] }] })
                 });
 
-                if (!response.ok) { const err = await response.json(); throw new Error(err.error?.message || response.status); }
+                if (!response.ok) { 
+                    const err = await response.json(); 
+                    throw new Error(err.error?.message || response.status); 
+                }
                 const data = await response.json();
-                els.aiOutput.innerHTML = marked.parse(data.choices[0].message.content);
+                els.aiOutput.innerHTML = marked.parse(data.candidates[0].content.parts[0].text);
 
             } catch (error) { els.aiOutput.innerHTML = `<p class="text-red-500">Erro: ${error.message}</p>`; } 
             finally { els.aiBtn.disabled = false; els.aiBtn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4"></i> Analisar'; lucide.createIcons(); }
-        }
-
-        function changeMonth(d){store.date.setMonth(store.date.getMonth()+d);renderDashboard();} 
-        
-        function updateData(iso, field, val) {
-            const acc = getActive();
-            if (!acc.data[iso]) acc.data[iso] = {};
-            if (field === 'val') val = parseFloat(val) || 0;
-            acc.data[iso][field] = val;
-            renderDashboard();
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(saveToCloud, 1000); 
-        }
-
-        function createAccount() { const name = prompt("Nome:"); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [] }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); }
-        function renameAccount() { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } }
-        function loadAccount(id) { if (!store.accounts[id]) id = Object.keys(store.accounts)[0]; store.activeId = id; const acc = store.accounts[id]; els.activeName.textContent = acc.name; els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; els.inpSize.value = acc.size; els.inpMonth.value = acc.monthType; renderSidebar(); renderDashboard(); }
-        function updateConfig() { const acc = getActive(); acc.size = els.inpSize.value; acc.monthType = parseInt(els.inpMonth.value); saveToCloud(); els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; renderDashboard(); }
-        function executePayout(v) { const note = prompt(`Valor: ${formatCurrency(v)}\n\nRef (Opcional):`); if(note === null) return; const acc = getActive(); acc.payouts.push({date:new Date().toISOString(), amount:v, note: note||''}); saveToCloud(); renderDashboard(); alert("Saque salvo!"); }
-
-        function renderDashboard() { 
-            const acc=getActive(); const rules=RULES[acc.size]; const stats=calculateStats(acc); 
-            if(els.equity) els.equity.textContent=formatCurrency(stats.currentEquity); 
-            if(els.equityDiff) {
-                const diff=stats.currentEquity-rules.start; 
-                els.equityDiff.textContent=`Lucro: ${formatCurrency(diff)}`; 
-                els.equityDiff.className=diff>=0?"text-xs font-medium mt-1 text-green-600":"text-xs font-medium mt-1 text-red-500"; 
-            }
-            
-            let gainCap=(stats.totalProfit>0)?(stats.totalProfit*0.30)/0.70:0; 
-            if(els.gainCap) els.gainCap.textContent=gainCap>0?formatCurrency(gainCap):"Fazer Gordura"; 
-            
-            renderCalendar(acc); 
-            
-            // --- UPDATED STATS TO FIXED CYCLES ---
-            if(els.statsMonth) els.statsMonth.textContent = formatCurrency(calcCycle(acc, 1)); // Mensal
-            if(els.statsC10) els.statsC10.textContent = formatCurrency(calcCycle(acc, 10)); // 10 a 10
-            if(els.statsC15) els.statsC15.textContent = formatCurrency(calcCycle(acc, 15)); // 15 a 15
-            if(els.statsC20) els.statsC20.textContent = formatCurrency(calcCycle(acc, 20)); // 20 a 20
-
-            const proj = calcProjection(acc); 
-            if(els.statsAvg) els.statsAvg.textContent = formatCurrency(proj.avg); 
-            if(els.statsProj) els.statsProj.textContent = formatCurrency(proj.projection);
-            
-            const mData=getMonthlyDataFixed(acc); 
-            if(els.weeklyList) els.weeklyList.innerHTML=mData.html; 
-            
-            if(els.safetyTarget) els.safetyTarget.textContent=formatCurrency(rules.safetyThreshold); 
-            const distSafety=rules.safetyThreshold-stats.currentEquity; 
-            if(els.safetyBar) {
-                if(distSafety<=0){els.safetyBar.style.width='100%';els.safetyBar.classList.replace('bg-indigo-500','bg-green-500');} 
-                else {const pct=Math.max(0,Math.min(100,((stats.currentEquity-rules.start)/(rules.safetyThreshold-rules.start))*100));els.safetyBar.style.width=`${pct}%`;} 
-            }
-            
-            const ratio=stats.totalProfit>0?(stats.maxDay/stats.totalProfit)*100:0; 
-            if(els.consRatio) els.consRatio.textContent=`${ratio.toFixed(1)}%`; 
-            if(els.consBar) {
-                els.consBar.style.width=`${Math.min(100,ratio)}%`; 
-                els.consBar.className=ratio>30?"h-full bg-red-500":"h-full bg-indigo-500"; 
-            }
-            
-            checkPayoutStatus(acc,stats,rules,ratio,distSafety); 
-            renderPayoutHistory(acc); 
-            lucide.createIcons(); 
-        }
-
-        // --- CALENDAR RENDER (WITH COLORS & TEXT INPUT) ---
-        function renderCalendar(acc) { 
-            const y=store.date.getFullYear(); const m=store.date.getMonth(); els.calendarTitle.textContent=`${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m]} ${y}`; els.calendarBody.innerHTML=''; const daysInMonth=new Date(y,m+1,0).getDate(); 
-            for(let d=1;d<=daysInMonth;d++){ 
-                const date=new Date(y,m,d); const iso=date.toISOString().split('T')[0]; const entry=acc.data[iso]||{val:0,note:'',holiday:false,withdrawn:false}; const isW=date.getDay()===0||date.getDay()===6; const tr=document.createElement('tr'); if(isW)tr.className="bg-slate-50 opacity-50"; if(entry.withdrawn)tr.className="bg-green-50"; 
-                
-                // Color Logic
-                let colorClass = 'val-zero';
-                if(entry.val > 0) colorClass = 'val-pos';
-                else if(entry.val < 0) colorClass = 'val-neg';
-
-                tr.innerHTML=`
-                    <td class="px-4 py-2 font-medium text-slate-600">${d}</td>
-                    <td class="px-4 py-2 relative">
-                        <div class="relative w-full">
-                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold z-10 pointer-events-none select-none">$</span>
-                            <input type="text" inputmode="decimal" class="result-input w-full pl-6 pr-2 py-1 bg-transparent border-b border-transparent focus:border-indigo-500 ${colorClass}" value="${entry.val!==0?entry.val.toFixed(2):''}" placeholder="0.00" onblur="updateData('${iso}','val',this.value)" ${isW?'disabled':''}>
-                        </div>
-                    </td>
-                    <td class="px-4 py-2"><input type="text" class="w-full bg-transparent text-xs" value="${entry.note||''}" placeholder="..." onchange="updateData('${iso}','note',this.value)" ${isW?'disabled':''}></td>
-                    <td class="px-4 py-2 text-center"><input type="checkbox" ${entry.holiday?'checked':''} onchange="updateData('${iso}','holiday',this.checked)" ${isW?'disabled':''} title="Feriado"></td>
-                    <td class="px-4 py-2 text-center"><input type="checkbox" class="accent-green-600" ${entry.withdrawn?'checked':''} onchange="updateData('${iso}','withdrawn',this.checked)" ${isW?'disabled':''} title="Saque"></td>
-                `;
-                els.calendarBody.appendChild(tr);
-            } 
         }
 
         // --- INIT ---
@@ -498,7 +389,7 @@
             setStatus('saved'); document.getElementById('status-text').textContent = "Online";
             setupListeners();
             
-            window.updateData = updateData; window.askGPT = askGPT; window.closeAI = () => els.aiContainer.classList.add('hidden'); window.printAI = printAI; window.printReport = printReport; window.shareReport = shareReport; window.shareAI = shareAI;
+            window.updateData = updateData; window.askGemini = askGemini; window.closeAI = () => els.aiContainer.classList.add('hidden'); window.printAI = printAI; window.printReport = printReport; window.shareReport = shareReport; window.shareAI = shareAI;
         }
 
         function setupListeners() {
@@ -506,7 +397,7 @@
             document.getElementById('add-account-btn').onclick = createAccount; document.getElementById('rename-account-btn').onclick = renameAccount;
             els.inpSize.onchange = updateConfig; els.inpMonth.onchange = updateConfig;
             document.getElementById('prev-month').onclick = () => changeMonth(-1); document.getElementById('next-month').onclick = () => changeMonth(1);
-            els.aiPrompt.addEventListener("keypress", (e) => { if (e.key === "Enter") { e.preventDefault(); askGPT(); } });
+            els.aiPrompt.addEventListener("keypress", (e) => { if (e.key === "Enter") { e.preventDefault(); askGemini(); } });
         }
 
         init();
