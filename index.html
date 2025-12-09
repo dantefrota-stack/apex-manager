@@ -38,14 +38,6 @@
             body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } 
             #print-area { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: white; z-index: 9999; padding: 0; }
             #sidebar, #header-main, .no-print { display: none !important; } 
-            /* Print Specifics for Big Layout */
-            .print-container { width: 100%; max-width: 100%; padding: 20px; font-size: 14pt; }
-            .print-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-            .print-chart { width: 100%; height: 400px; margin-bottom: 30px; border: 1px solid #ddd; border-radius: 8px; }
-            .print-table { width: 100%; border-collapse: collapse; font-size: 12pt; margin-bottom: 20px; }
-            .print-table th { background-color: #f1f5f9; text-align: left; padding: 12px; border-bottom: 1px solid #ccc; }
-            .print-table td { padding: 12px; border-bottom: 1px solid #eee; }
-            .print-card { background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; }
         }
     </style>
 </head>
@@ -53,7 +45,7 @@
 
     <div id="app-loader" class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col items-center justify-center text-white">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
-        <p class="text-sm animate-pulse">Carregando Dados...</p>
+        <p class="text-sm animate-pulse">Carregando...</p>
     </div>
 
     <div id="print-area" class="hidden"></div>
@@ -235,7 +227,7 @@
         };
 
         let db;
-        let chartInstance = null; // Graph instance
+        let chartInstance = null; 
         try { const app = initializeApp(firebaseConfig); db = getFirestore(app); console.log("Firebase OK"); } catch (e) { console.error(e); }
 
         const RULES = {
@@ -273,13 +265,11 @@
             payoutHistory: document.getElementById('payout-history'), totalWithdrawn: document.getElementById('total-withdrawn'), 
             printArea: document.getElementById('print-area'), loader: document.getElementById('app-loader'), cloudStatus: document.getElementById('status-text'),
             
-            // ANALYTICS PANEL ELEMENTS
             customResult: document.getElementById('custom-result'), customWinrate: document.getElementById('custom-winrate'),
             customBest: document.getElementById('custom-best'), customWorst: document.getElementById('custom-worst'),
             filterStart: document.getElementById('filter-start'), filterEnd: document.getElementById('filter-end')
         };
 
-        // --- FUNCTIONS ---
         function toggleSidebar() { const isOpen=!els.sidebar.classList.contains('sidebar-closed'); if(isOpen){els.sidebar.classList.add('sidebar-closed');els.sidebar.classList.remove('sidebar-open');els.backdrop.classList.add('hidden');}else{els.sidebar.classList.remove('sidebar-closed');els.sidebar.classList.add('sidebar-open');els.backdrop.classList.remove('hidden');} }
         function renderSidebar() { els.accList.innerHTML=''; Object.values(store.accounts).forEach(acc=>{ const stats=calculateStats(acc); const div=document.createElement('div'); div.className=`account-item p-3 rounded-lg cursor-pointer transition-colors mb-2 ${acc.id===store.activeId?'active':'bg-slate-800'}`; div.onclick=()=>{loadAccount(acc.id);toggleSidebar();}; div.innerHTML=`<div class="flex justify-between items-center"><span class="font-bold text-sm text-slate-200">${acc.name}</span><span class="text-xs text-indigo-300 font-mono">${acc.size}</span></div><div class="flex justify-between items-center mt-1"><span class="text-xs text-slate-400">Saldo:</span><span class="text-xs font-bold ${stats.currentEquity>=RULES[acc.size].start?'text-green-400':'text-red-400'}">${formatCurrency(stats.currentEquity)}</span></div>`; els.accList.appendChild(div); }); }
         function formatCurrency(v){return v.toLocaleString('en-US',{style:'currency',currency:'USD'});}
@@ -298,11 +288,12 @@
                     tp+=val; dt++; re+=val; 
                     if(re>pe)pe=re; 
                     if(val>md) { md=val; mDate=d; } 
+                    if(val<wd) { wd=val; wDate=d; }
                     if(val>0) wins++; else losses++;
                 } 
             }); 
             const w=(acc.payouts||[]).reduce((s,p)=>s+p.amount,0); 
-            return {currentEquity:rules.start+tp-w, totalProfit:tp, daysTraded:dt, peakEquity:pe, maxDay:md===-Infinity?0:md, maxDate:mDate, wins, losses}; 
+            return {currentEquity:rules.start+tp-w, totalProfit:tp, daysTraded:dt, peakEquity:pe, maxDay:md===-Infinity?0:md, maxDate:mDate, minDay:wd===Infinity?0:wd, minDate:wDate, wins, losses}; 
         }
 
         window.filterReport = function() {
@@ -402,6 +393,7 @@
         function checkPayoutStatus(acc,stats,rules,ratio,dist){ const d=stats.daysTraded>=8; const s=dist<=0; const c=ratio<=30; let avail=0; if(d&&s&&c) avail=Math.min(stats.currentEquity-rules.safetyThreshold, acc.monthType<=3?rules.payouts[0]:999999); if(avail>=500){ els.payoutStatus.textContent="Disponível"; els.payoutStatus.className="text-lg font-bold text-green-600"; els.payoutMsg.textContent=`Pode sacar ${formatCurrency(avail)}`; els.btnPayout.disabled=false; els.btnPayout.className="w-full py-2 rounded bg-green-600 hover:bg-green-700 text-white font-bold text-sm shadow transition flex justify-center items-center gap-2"; els.btnPayout.innerHTML=`<i data-lucide="dollar-sign" class="w-4 h-4"></i> Sacar ${formatCurrency(avail)}`; els.btnPayout.onclick=()=>executePayout(avail); } else { els.payoutStatus.textContent="Em Progresso"; els.payoutStatus.className="text-lg font-bold text-slate-700"; els.payoutMsg.textContent=!s?"Falta atingir a rede.":(!d?`Faltam ${8-stats.daysTraded} dias.`:(!c?"Ajustar consistência.":"Mínimo $500 excedente.")); els.btnPayout.disabled=true; els.btnPayout.className="w-full py-2 rounded bg-slate-700 text-slate-500 font-bold text-sm cursor-not-allowed flex justify-center items-center gap-2"; els.btnPayout.innerHTML=`<i data-lucide="lock" class="w-4 h-4"></i> Indisponível`; } }
         function renderPayoutHistory(acc){ els.payoutHistory.innerHTML='';let t=0; if(!acc.payouts||!acc.payouts.length) els.payoutHistory.innerHTML='<p class="text-xs text-slate-400 italic">Vazio.</p>'; else { acc.payouts.slice().reverse().forEach(p=>{ t+=p.amount; const d=document.createElement('div'); d.className="border-b border-slate-50 pb-2 mb-2 last:border-0"; d.innerHTML=`<div class="flex justify-between items-center"><span class="text-xs text-slate-500">${new Date(p.date).toLocaleDateString()}</span><span class="font-bold text-green-600">${formatCurrency(p.amount)}</span></div>${p.note ? `<div class="text-xs text-slate-400 mt-0.5 italic">Ref: ${p.note}</div>` : ''}`; els.payoutHistory.appendChild(d); }); } els.totalWithdrawn.textContent=formatCurrency(t); }
         
+        // --- PRINT & SHARE OPTIMIZED ---
         function printReport() { 
             const acc = getActive(); 
             const stats = calculateStats(acc);
@@ -416,48 +408,43 @@
             let chartImg = "";
             if(chartInstance) { chartImg = chartInstance.toBase64Image(); }
             
-            let html = `<div class="print-container">
-                <div class="print-header">
-                    <h1 style="color:#0f172a;margin:0;">Performance Report</h1>
-                    <p style="color:#64748b;margin-top:5px;">DF Strategic | ${acc.name}</p>
-                    <p style="font-size:12px;color:#94a3b8;">Gerado em ${new Date().toLocaleDateString()}</p>
+            let html = `
+            <div style="font-family:sans-serif;width:100%;padding:20px;box-sizing:border-box;">
+                <div style="text-align:center;margin-bottom:20px;">
+                    <h1 style="color:#0f172a;margin:0;font-size:24px;">Performance Report</h1>
+                    <p style="color:#64748b;margin:5px 0 0;">DF Strategic | ${acc.name}</p>
                 </div>
                 
-                ${chartImg ? `<img src="${chartImg}" class="print-chart">` : ''}
+                ${chartImg ? `<div style="width:100%;height:300px;margin-bottom:20px;border:1px solid #eee;border-radius:8px;overflow:hidden;display:flex;justify-content:center;"><img src="${chartImg}" style="max-width:100%;max-height:100%;object-fit:contain;"></div>` : ''}
 
-                <div class="print-card">
-                    <h3 style="margin-top:0;">Resumo do Período (${start} - ${end})</h3>
-                    <table style="width:100%">
-                        <tr>
-                            <td><strong>Resultado:</strong> <span style="color:${res.includes('-')?'red':'green'}">${res}</span></td>
-                            <td><strong>Win Rate:</strong> ${els.customWinrate.textContent}</td>
-                            <td><strong>Melhor Dia:</strong> ${els.customBest.textContent}</td>
-                        </tr>
-                    </table>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+                    <div style="background:#f8fafc;padding:15px;border-radius:8px;border:1px solid #eee;">
+                        <h3 style="margin-top:0;font-size:14px;color:#0f172a;">Período (${start} - ${end})</h3>
+                        <div style="font-size:12px;color:#64748b;margin-bottom:5px;">RESULTADO</div>
+                        <div style="font-size:20px;font-weight:bold;color:${res.includes('-')?'#dc2626':'#16a34a'}">${res}</div>
+                        <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12px;">
+                            <span>Win Rate: <strong style="color:#4f46e5">${els.customWinrate.textContent}</strong></span>
+                            <span>Melhor Dia: <strong style="color:#16a34a">${els.customBest.textContent}</strong></span>
+                        </div>
+                    </div>
+                    <div style="background:#fff;padding:0;border:none;">
+                         <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                            <tr style="background:#f1f5f9;"><th style="padding:8px;text-align:left;">Ciclo</th><th style="padding:8px;text-align:right;">Total</th></tr>
+                            <tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">Mensal</td><td style="padding:8px;text-align:right;font-weight:bold;">${formatCurrency(mData.total)}</td></tr>
+                            <tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">10-10</td><td style="padding:8px;text-align:right;">${formatCurrency(calcCycle(acc,10))}</td></tr>
+                            <tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">15-15</td><td style="padding:8px;text-align:right;">${formatCurrency(calcCycle(acc,15))}</td></tr>
+                            <tr><td style="padding:8px;">20-20</td><td style="padding:8px;text-align:right;">${formatCurrency(calcCycle(acc,20))}</td></tr>
+                        </table>
+                    </div>
                 </div>
-
-                <h3>Ciclos Atuais</h3>
-                <table class="print-table">
-                    <tr><td style="padding:8px;">Mensal (Visualizado)</td><td style="padding:8px;text-align:right;font-weight:bold;">${formatCurrency(mData.total)}</td></tr>
-                    <tr><td style="padding:8px;">Ciclo 10-10 (Atual)</td><td style="padding:8px;text-align:right;">${formatCurrency(calcCycle(acc,10))}</td></tr>
-                    <tr><td style="padding:8px;">Ciclo 15-15 (Atual)</td><td style="padding:8px;text-align:right;">${formatCurrency(calcCycle(acc,15))}</td></tr>
-                    <tr><td style="padding:8px;">Ciclo 20-20 (Atual)</td><td style="padding:8px;text-align:right;">${formatCurrency(calcCycle(acc,20))}</td></tr>
-                </table>
+                
+                <p style="font-size:9px;color:#ccc;text-align:center;margin-top:20px;">Gerado em ${new Date().toLocaleDateString()}</p>
             </div>`;
+
             const win = window.open('', '_blank'); 
-            // Inject CSS for printing
-            win.document.write(`<html><head><title>Relatório</title><style>
-                body { font-family: sans-serif; -webkit-print-color-adjust: exact; }
-                .print-container { max-width: 1000px; margin: 0 auto; padding: 40px; }
-                .print-header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-                .print-chart { width: 100%; height: auto; max-height: 400px; margin-bottom: 30px; border: 1px solid #ddd; border-radius: 8px; }
-                .print-card { background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; }
-                .print-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                .print-table td { padding: 12px; border-bottom: 1px solid #eee; }
-            </style></head><body>`);
-            win.document.write(html); win.document.write('</body></html>'); 
+            win.document.write(`<html><head><title>Relatório</title><style>@page { size: A4 portrait; margin: 10mm; } body { margin: 0; }</style></head><body>${html}</body></html>`); 
             win.document.close(); 
-            setTimeout(() => win.print(), 800); // Allow image load
+            setTimeout(() => win.print(), 800); 
         }
 
         function shareReport() {
