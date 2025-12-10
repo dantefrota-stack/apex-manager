@@ -46,7 +46,7 @@
 
     <div id="app-loader" class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col items-center justify-center text-white transition-opacity duration-700">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
-        <p class="text-sm animate-pulse">Carregando Sistema...</p>
+        <p class="text-sm animate-pulse">Iniciando...</p>
     </div>
 
     <div id="print-area" class="hidden"></div>
@@ -80,4 +80,648 @@
             <div class="flex gap-2 text-sm">
                 <select id="config-size" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs outline-none"><option value="25k">25k</option><option value="50k">50k</option><option value="75k">75k</option><option value="100k">100k</option><option value="150k">150k</option><option value="250k">250k</option><option value="300k">300k</option></select>
                 <select id="config-month" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs outline-none"><option value="1">Mês 1-3</option><option value="4">Mês 4+</option></select>
-                <button id="rename-account-btn" class="p-1.5 bg-slate-100 hover:
+                <button id="rename-account-btn" class="p-1.5 bg-slate-100 hover:bg-indigo-100 text-slate-500 hover:text-indigo-600 rounded transition"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-6 space-y-6 no-print">
+        
+        <div class="dashboard-card p-6 bg-gradient-to-r from-slate-50 to-white border-indigo-100 border">
+            <div class="flex flex-col md:flex-row justify-between md:items-start gap-4">
+                <div class="flex-1 w-full">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="font-bold text-slate-800 flex items-center gap-2"><span class="bg-indigo-600 text-white p-1 rounded-md"><i data-lucide="bot" class="w-4 h-4"></i></span> Apex AI Analyst</h3>
+                    </div>
+                    <div class="flex gap-2 w-full"><input type="text" id="ai-prompt" placeholder="Ex: Qual foi meu melhor dia e por quê?" class="flex-1 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"><button onclick="askGemini()" id="btn-ask-ai" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-sm flex items-center gap-2 transition disabled:opacity-50 whitespace-nowrap"><i data-lucide="sparkles" class="w-4 h-4"></i> Analisar</button></div>
+                </div>
+            </div>
+            <div id="ai-result-container" class="hidden mt-4 pt-4 border-t border-slate-200">
+                <div class="flex justify-between items-center mb-2"><span class="text-xs font-bold text-indigo-600 uppercase tracking-wide">Resposta AI</span><div class="flex gap-2"><button onclick="shareAI()" class="text-xs bg-green-50 hover:bg-green-100 text-green-700 px-3 py-1 rounded border border-green-200 flex items-center gap-1"><i data-lucide="share-2" class="w-3 h-3"></i> Zap/Share</button><button onclick="printAI()" class="text-xs bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 px-3 py-1 rounded flex items-center gap-1"><i data-lucide="printer" class="w-3 h-3"></i> Imprimir</button><button onclick="closeAI()" class="text-slate-400 hover:text-red-500"><i data-lucide="x" class="w-4 h-4"></i></button></div></div>
+                <div id="ai-output" class="ai-response text-sm text-slate-700 bg-slate-50 p-4 rounded-lg border border-slate-200"></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 dashboard-card p-6 bg-white border border-slate-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="bar-chart" class="w-4 h-4 text-indigo-600"></i> Evolução da Performance</h3>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="equityChart"></canvas>
+                </div>
+            </div>
+
+            <div class="lg:col-span-1 dashboard-card p-6 bg-slate-50 border border-slate-200">
+                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="filter" class="w-4 h-4 text-indigo-600"></i> Análise por Período</h3>
+                
+                <div class="flex gap-2 mb-4">
+                    <input type="date" id="filter-start" class="w-full text-xs p-2 border rounded">
+                    <input type="date" id="filter-end" class="w-full text-xs p-2 border rounded">
+                    <button onclick="filterReport()" class="bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700"><i data-lucide="search" class="w-4 h-4"></i></button>
+                </div>
+
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-500">Resultado Período</span>
+                        <span id="custom-result" class="font-bold text-slate-800">--</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-500">Taxa de Acerto</span>
+                        <span id="custom-winrate" class="font-bold text-indigo-600">--</span>
+                    </div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2">
+                        <span class="text-slate-500">Melhor Dia</span>
+                        <span id="custom-best" class="font-bold text-green-600">--</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Pior Dia</span>
+                        <span id="custom-worst" class="font-bold text-red-600">--</span>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2 mt-4">
+                     <button onclick="shareReport()" class="w-full py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded text-xs font-bold flex justify-center items-center gap-1"><i data-lucide="share-2" class="w-3 h-3"></i> Zap/Share</button>
+                     <button onclick="printReport()" class="w-full py-2 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 flex justify-center items-center gap-1"><i data-lucide="printer" class="w-3 h-3"></i> PDF</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="dashboard-card p-4 border-l-4 border-l-indigo-500">
+                <p class="text-xs font-bold text-gray-400 uppercase">Saldo Atual (Equity)</p>
+                <h2 id="current-equity" class="text-3xl font-extrabold text-slate-800 mt-1">$0.00</h2>
+                <p id="equity-diff" class="text-xs font-medium mt-1 text-gray-500">--</p>
+            </div>
+            <div class="dashboard-card p-4 border-l-4 border-l-green-500 relative overflow-hidden">
+                <div class="flex justify-between items-start"><div><p class="text-xs font-bold text-green-900 uppercase flex items-center gap-1"><i data-lucide="target" class="w-3 h-3"></i> Teto 30% (Hoje)</p><h2 id="gain-cap" class="text-2xl font-bold text-green-600 mt-1">$0.00</h2></div></div>
+                <p class="text-xs text-gray-500 mt-1">Limite sugerido p/ consistência.</p>
+            </div>
+            
+            <div class="dashboard-card p-4 border-l-4 border-l-yellow-500 relative">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-xs font-bold text-yellow-700 uppercase">Gestão de Saque</p>
+                        <div class="flex items-end gap-1 mt-1">
+                             <h2 id="payout-amount" class="text-2xl font-bold text-slate-700">--</h2>
+                             <span class="text-xs text-slate-400 mb-1">disponível</span>
+                        </div>
+                    </div>
+                     <div class="text-right">
+                        <p class="text-[10px] text-slate-400 uppercase font-bold">Próx. Data</p>
+                        <p id="next-payout-date" class="text-sm font-bold text-indigo-600">--</p>
+                    </div>
+                </div>
+                
+                <div class="mt-2 text-xs text-slate-500 flex justify-between border-t border-yellow-100 pt-2">
+                    <span>Excedente (Gordura):</span>
+                    <span id="surplus-val" class="font-bold text-slate-700">--</span>
+                </div>
+                
+                <button id="btn-payout" disabled class="w-full mt-3 py-2 rounded bg-slate-100 text-slate-400 font-bold text-xs flex justify-center items-center gap-2 cursor-not-allowed">
+                    <i data-lucide="lock" class="w-3 h-3"></i> Bloqueado
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-4">
+                <div class="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm border border-slate-200">
+                    <button id="prev-month" class="p-2 hover:bg-slate-100 rounded-full"><i data-lucide="chevron-left"></i></button>
+                    <h2 id="calendar-title" class="text-xl font-bold text-slate-700">--</h2>
+                    <button id="next-month" class="p-2 hover:bg-slate-100 rounded-full"><i data-lucide="chevron-right"></i></button>
+                </div>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs">
+                                <tr><th class="px-4 py-3">Data</th><th class="px-4 py-3 w-32">Resultado</th><th class="px-4 py-3">Notas</th><th class="px-4 py-3 text-center w-10" title="Folga"><i data-lucide="coffee" class="w-3 h-3 mx-auto"></i></th><th class="px-4 py-3 text-center w-10" title="Sacado"><i data-lucide="check-circle-2" class="w-3 h-3 mx-auto text-green-600"></i></th></tr>
+                            </thead>
+                            <tbody id="calendar-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-1 space-y-4">
+                <div class="dashboard-card p-5">
+                    <h3 class="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2"><i data-lucide="calendar-check" class="w-4 h-4"></i> Performance (Ciclos Atuais)</h3>
+                    <div class="space-y-3 text-sm">
+                        
+                        <div class="flex justify-between items-center border-b border-slate-50 pb-1">
+                            <span class="text-slate-500 font-medium">Mensal (1 a 31)</span>
+                            <span id="stats-month" class="font-bold text-slate-800">$0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-slate-50 pb-1">
+                            <span class="text-slate-500">Ciclo 10 a 10</span>
+                            <span id="stats-c10" class="font-bold text-slate-700">$0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-slate-50 pb-1">
+                            <span class="text-slate-500">Ciclo 15 a 15</span>
+                            <span id="stats-c15" class="font-bold text-slate-700">$0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center border-b border-slate-50 pb-1">
+                            <span class="text-slate-500">Ciclo 20 a 20</span>
+                            <span id="stats-c20" class="font-bold text-slate-700">$0.00</span>
+                        </div>
+                        
+                        <div class="mt-4 pt-2 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                            <div class="flex justify-between items-center mb-1"><span class="text-xs font-semibold text-indigo-400 uppercase">Média Diária (10d)</span><span id="stats-avg" class="font-bold text-indigo-600">$0.00</span></div>
+                            <div class="flex justify-between items-center"><span class="text-xs font-bold text-indigo-800 uppercase">Projeção (22 dias)</span><span id="stats-proj" class="font-bold text-lg text-indigo-700">$0.00</span></div>
+                        </div>
+                    </div>
+                    <div id="weekly-list" class="mt-4 space-y-1 text-xs text-slate-500"></div>
+                </div>
+
+                <div class="dashboard-card p-5">
+                    <div class="flex justify-between items-center mb-2"><h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Histórico de Saques</h3></div>
+                    <div class="max-h-40 overflow-y-auto text-sm space-y-2" id="payout-history"><p class="text-xs text-slate-400 italic">Vazio.</p></div>
+                    <div class="pt-2 mt-2 border-t border-slate-100 flex justify-between text-xs font-bold"><span>Total Sacado:</span><span id="total-withdrawn" class="text-green-600">$0.00</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // KEYS
+        const firebaseConfig = {
+            apiKey: "AIzaSyCu5pQrMnrpSj45lto_GXKx9xIWq2kyDjg",
+            authDomain: "df-apex-manager.firebaseapp.com",
+            projectId: "df-apex-manager",
+            storageBucket: "df-apex-manager.firebasestorage.app",
+            messagingSenderId: "761037562102",
+            appId: "1:761037562102:web:a7622dca93a157dc21ccd7"
+        };
+        const GEMINI_API_KEY = "AIzaSyDLXeKnowzTMbM17Kgift_Zi0hDr8Cgo6Q";
+
+        let db;
+        let chartInstance = null; 
+        try { const app = initializeApp(firebaseConfig); db = getFirestore(app); console.log("Firebase OK"); } catch (e) { console.error(e); }
+
+        const RULES = {
+            '25k': { start: 25000, drawdown: 1500, safetyThreshold: 26600, payouts: [1500, 1500, 1500] },
+            '50k': { start: 50000, drawdown: 2500, safetyThreshold: 52600, payouts: [2000, 2000, 2000] },
+            '75k': { start: 75000, drawdown: 2750, safetyThreshold: 77850, payouts: [2250, 2250, 2250] },
+            '100k': { start: 100000, drawdown: 3000, safetyThreshold: 103100, payouts: [2500, 2500, 2500] },
+            '150k': { start: 150000, drawdown: 5000, safetyThreshold: 155100, payouts: [2750, 2750, 2750] },
+            '250k': { start: 250000, drawdown: 6500, safetyThreshold: 256600, payouts: [3000, 3000, 3000] },
+            '300k': { start: 300000, drawdown: 7500, safetyThreshold: 307600, payouts: [3000, 3000, 3000] }
+        };
+
+        let store = { activeId: null, date: new Date(), accounts: {} };
+        let saveTimeout;
+
+        // ELEMENTS
+        const els = { 
+            sidebar: document.getElementById('sidebar'), backdrop: document.getElementById('sidebar-backdrop'), accList: document.getElementById('account-list'), 
+            activeName: document.getElementById('active-account-name'), activeConfig: document.getElementById('active-account-config'), 
+            inpSize: document.getElementById('config-size'), inpMonth: document.getElementById('config-month'), 
+            equity: document.getElementById('current-equity'), equityDiff: document.getElementById('equity-diff'), 
+            gainCap: document.getElementById('gain-cap'), 
+            
+            statsMonth: document.getElementById('stats-month'),
+            statsC10: document.getElementById('stats-c10'),
+            statsC15: document.getElementById('stats-c15'),
+            statsC20: document.getElementById('stats-c20'),
+            
+            statsAvg: document.getElementById('stats-avg'), statsProj: document.getElementById('stats-proj'),
+            weeklyList: document.getElementById('weekly-list'), 
+            calendarTitle: document.getElementById('calendar-title'), calendarBody: document.getElementById('calendar-body'), 
+            safetyBar: document.getElementById('safety-bar'), safetyTarget: document.getElementById('safety-target'), 
+            consBar: document.getElementById('cons-bar'), consRatio: document.getElementById('cons-ratio'), 
+            
+            payoutAmount: document.getElementById('payout-amount'), 
+            surplusVal: document.getElementById('surplus-val'), 
+            nextPayoutDate: document.getElementById('next-payout-date'),
+            btnPayout: document.getElementById('btn-payout'), 
+            
+            payoutHistory: document.getElementById('payout-history'), totalWithdrawn: document.getElementById('total-withdrawn'), 
+            printArea: document.getElementById('print-area'), loader: document.getElementById('app-loader'), cloudStatus: document.getElementById('status-text'),
+            
+            customResult: document.getElementById('custom-result'), customWinrate: document.getElementById('custom-winrate'),
+            customBest: document.getElementById('custom-best'), customWorst: document.getElementById('custom-worst'),
+            filterStart: document.getElementById('filter-start'), filterEnd: document.getElementById('filter-end'),
+            aiPrompt: document.getElementById('ai-prompt'), aiBtn: document.getElementById('btn-ask-ai'), aiOutput: document.getElementById('ai-output'), aiContainer: document.getElementById('ai-result-container')
+        };
+
+        // --- FUNCTIONS ---
+        function toggleSidebar() { const isOpen=!els.sidebar.classList.contains('sidebar-closed'); if(isOpen){els.sidebar.classList.add('sidebar-closed');els.sidebar.classList.remove('sidebar-open');els.backdrop.classList.add('hidden');}else{els.sidebar.classList.remove('sidebar-closed');els.sidebar.classList.add('sidebar-open');els.backdrop.classList.remove('hidden');} }
+        function renderSidebar() { els.accList.innerHTML=''; Object.values(store.accounts).forEach(acc=>{ const stats=calculateStats(acc); const div=document.createElement('div'); div.className=`account-item p-3 rounded-lg cursor-pointer transition-colors mb-2 ${acc.id===store.activeId?'active':'bg-slate-800'}`; div.onclick=()=>{loadAccount(acc.id);toggleSidebar();}; div.innerHTML=`<div class="flex justify-between items-center"><span class="font-bold text-sm text-slate-200">${acc.name}</span><span class="text-xs text-indigo-300 font-mono">${acc.size}</span></div><div class="flex justify-between items-center mt-1"><span class="text-xs text-slate-400">Saldo:</span><span class="text-xs font-bold ${stats.currentEquity>=RULES[acc.size].start?'text-green-400':'text-red-400'}">${formatCurrency(stats.currentEquity)}</span></div>`; els.accList.appendChild(div); }); }
+        function formatCurrency(v){return v.toLocaleString('en-US',{style:'currency',currency:'USD'});}
+        function getActive(){return store.accounts[store.activeId];}
+        
+        function calculateStats(acc) { 
+            const rules=RULES[acc.size]; let tp=0; let dt=0; let pe=rules.start; 
+            let md=-Infinity; let mDate=null; 
+            let wd=Infinity; let wDate=null;
+            let wins=0; let losses=0;
+
+            const keys=Object.keys(acc.data).sort(); let re=rules.start; 
+            keys.forEach(d=>{ 
+                const e=acc.data[d]; const val = e.val || 0; 
+                if(val!==0 && !e.holiday){ 
+                    tp+=val; dt++; re+=val; 
+                    if(re>pe)pe=re; 
+                    if(val>md) { md=val; mDate=d; } 
+                    if(val<wd) { wd=val; wDate=d; }
+                    if(val>0) wins++; else losses++;
+                } 
+            }); 
+            const w=(acc.payouts||[]).reduce((s,p)=>s+p.amount,0); 
+            return {currentEquity:rules.start+tp-w, totalProfit:tp, daysTraded:dt, peakEquity:pe, maxDay:md===-Infinity?0:md, maxDate:mDate, minDay:wd===Infinity?0:wd, minDate:wDate, wins, losses}; 
+        }
+
+        // SYNC DATE FUNCTION
+        function syncDatesToView() {
+            const y = store.date.getFullYear();
+            const m = store.date.getMonth();
+            const start = new Date(y, m, 1);
+            const end = new Date(y, m + 1, 0);
+            
+            const fmt = (d) => {
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+            
+            els.filterStart.value = fmt(start);
+            els.filterEnd.value = fmt(end);
+        }
+
+        window.filterReport = function() {
+            const start = els.filterStart.value;
+            const end = els.filterEnd.value;
+            if(!start || !end) { return; }
+            
+            const acc = getActive();
+            let sum = 0; let wins = 0; let count = 0; let best = -Infinity; let worst = Infinity;
+            let chartLabels = []; let chartData = []; let cumSum = 0;
+            
+            Object.keys(acc.data).sort().forEach(iso => {
+                if(iso >= start && iso <= end) {
+                    const val = acc.data[iso].val || 0;
+                    if(val !== 0 && !acc.data[iso].holiday) {
+                        sum += val; count++;
+                        if(val > 0) wins++;
+                        if(val > best) best = val;
+                        if(val < worst) worst = val;
+                        
+                        cumSum += val;
+                        chartLabels.push(new Date(iso).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}));
+                        chartData.push(cumSum);
+                    }
+                }
+            });
+            
+            els.customResult.textContent = formatCurrency(sum);
+            els.customResult.className = sum >= 0 ? "font-bold text-green-600" : "font-bold text-red-600";
+            els.customWinrate.textContent = count > 0 ? ((wins/count)*100).toFixed(0)+"%" : "0%";
+            els.customBest.textContent = best > -Infinity ? formatCurrency(best) : "--";
+            els.customWorst.textContent = worst < Infinity ? formatCurrency(worst) : "--";
+            
+            updateChart(chartLabels, chartData);
+        }
+
+        function updateChart(labels, data) {
+            const ctx = document.getElementById('equityChart').getContext('2d');
+            if(chartInstance) chartInstance.destroy();
+            
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Lucro Acumulado',
+                        data: data,
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#4f46e5',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { display: false } },
+                    scales: { y: { grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
+                }
+            });
+        }
+        
+        function getTradedDays(acc) { const allDates = Object.keys(acc.data); return allDates.filter(iso => { const entry = acc.data[iso]; const val = entry.val || 0; return val !== 0 && !entry.holiday; }).sort((a, b) => new Date(b) - new Date(a)); }
+        function calcProjection(acc) { 
+            const tradedDays = getTradedDays(acc); 
+            const last10Days = tradedDays.slice(0, 10); 
+            let sum = 0; 
+            last10Days.forEach(iso => sum += (acc.data[iso].val || 0)); 
+            const count = last10Days.length; 
+            const avg = count > 0 ? sum / count : 0; 
+            const projection = avg * 22; 
+            return { avg, projection }; 
+        }
+        
+        function getMonthlyDataFixed(acc) { const y = store.date.getFullYear(); const m = store.date.getMonth(); const daysInMonth = new Date(y, m+1, 0).getDate(); let weeks = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; let total = 0; for(let d=1; d<=daysInMonth; d++) { const date = new Date(y, m, d); const iso = date.toISOString().split('T')[0]; const entry = acc.data[iso]; const weekIndex = Math.ceil(d / 7); if(entry && !entry.holiday) { weeks[weekIndex] += (entry.val || 0); total += (entry.val || 0); } } let html = ''; for(let i=1; i<=5; i++) { const startDay = (i - 1) * 7 + 1; if (startDay > daysInMonth) continue; const label = `Semana ${i} (${startDay < 10 ? '0'+startDay : startDay}/${m+1 < 10 ? '0'+(m+1) : m+1})`; const val = weeks[i]; html += `<div class="flex justify-between border-b border-slate-50 pb-1 last:border-0 text-xs"><span class="text-slate-500">${label}</span><span class="font-bold ${val >= 0 ? 'val-pos' : 'val-neg'}">${formatCurrency(val)}</span></div>`; } if(!html) html = '<span class="italic text-xs text-slate-400">Sem dados</span>'; return { total, html }; }
+
+        function calcCycle(acc, startDay) {
+            const today = new Date();
+            let startDate = new Date(today);
+            if (today.getDate() < startDay) { startDate.setMonth(startDate.getMonth() - 1); }
+            startDate.setDate(startDay); startDate.setHours(0,0,0,0);
+            let sum = 0;
+            Object.keys(acc.data).forEach(iso => {
+                const d = new Date(iso); d.setHours(0,0,0,0);
+                if (d >= startDate) {
+                     const entry = acc.data[iso]; const val = entry.val || 0;
+                     if(val !== 0 && !entry.holiday) sum += val;
+                }
+            });
+            return sum;
+        }
+
+        function checkPayoutStatus(acc,stats,rules,ratio,dist){ const d=stats.daysTraded>=8; const s=dist<=0; const c=ratio<=30; let avail=0; if(d&&s&&c) avail=Math.min(stats.currentEquity-rules.safetyThreshold, acc.monthType<=3?rules.payouts[0]:999999); if(avail>=500){ els.payoutStatus.textContent="Disponível"; els.payoutStatus.className="text-lg font-bold text-green-600"; els.payoutMsg.textContent=`Pode sacar ${formatCurrency(avail)}`; els.btnPayout.disabled=false; els.btnPayout.className="w-full py-2 rounded bg-green-600 hover:bg-green-700 text-white font-bold text-sm shadow transition flex justify-center items-center gap-2"; els.btnPayout.innerHTML=`<i data-lucide="dollar-sign" class="w-4 h-4"></i> Sacar ${formatCurrency(avail)}`; els.btnPayout.onclick=()=>executePayout(avail); } else { els.payoutStatus.textContent="Em Progresso"; els.payoutStatus.className="text-lg font-bold text-slate-700"; els.payoutMsg.textContent=!s?"Falta atingir a rede.":(!d?`Faltam ${8-stats.daysTraded} dias.`:(!c?"Ajustar consistência.":"Mínimo $500 excedente.")); els.btnPayout.disabled=true; els.btnPayout.className="w-full py-2 rounded bg-slate-700 text-slate-500 font-bold text-sm cursor-not-allowed flex justify-center items-center gap-2"; els.btnPayout.innerHTML=`<i data-lucide="lock" class="w-4 h-4"></i> Indisponível`; } }
+        function renderPayoutHistory(acc){ els.payoutHistory.innerHTML='';let t=0; if(!acc.payouts||!acc.payouts.length) els.payoutHistory.innerHTML='<p class="text-xs text-slate-400 italic">Vazio.</p>'; else { acc.payouts.slice().reverse().forEach(p=>{ t+=p.amount; const d=document.createElement('div'); d.className="border-b border-slate-50 pb-2 mb-2 last:border-0"; d.innerHTML=`<div class="flex justify-between items-center"><span class="text-xs text-slate-500">${new Date(p.date).toLocaleDateString()}</span><span class="font-bold text-green-600">${formatCurrency(p.amount)}</span></div>${p.note ? `<div class="text-xs text-slate-400 mt-0.5 italic">Ref: ${p.note}</div>` : ''}`; els.payoutHistory.appendChild(d); }); } els.totalWithdrawn.textContent=formatCurrency(t); }
+        
+        function printReport() { 
+            const acc = getActive(); 
+            const stats = calculateStats(acc);
+            const mData = getMonthlyDataFixed(acc);
+            
+            const start = els.filterStart.value ? new Date(els.filterStart.value).toLocaleDateString() : "Início";
+            const end = els.filterEnd.value ? new Date(els.filterEnd.value).toLocaleDateString() : "Hoje";
+            const res = els.customResult.textContent;
+            
+            let chartImg = "";
+            if(chartInstance) { chartImg = chartInstance.toBase64Image(); }
+            
+            let html = `
+            <div style="font-family:sans-serif;width:100%;padding:20px;box-sizing:border-box;">
+                <div style="text-align:center;margin-bottom:20px;">
+                    <h1 style="color:#0f172a;margin:0;font-size:24px;">Performance Report</h1>
+                    <p style="color:#64748b;margin:5px 0 0;">DF Strategic | ${acc.name}</p>
+                </div>
+                ${chartImg ? `<div style="width:100%;height:300px;margin-bottom:20px;border:1px solid #eee;border-radius:8px;overflow:hidden;display:flex;justify-content:center;"><img src="${chartImg}" style="max-width:100%;max-height:100%;object-fit:contain;"></div>` : ''}
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">
+                    <div style="background:#f8fafc;padding:15px;border-radius:8px;border:1px solid #eee;">
+                        <h3 style="margin-top:0;font-size:14px;color:#0f172a;">Período (${start} - ${end})</h3>
+                        <div style="font-size:12px;color:#64748b;margin-bottom:5px;">RESULTADO</div>
+                        <div style="font-size:20px;font-weight:bold;color:${res.includes('-')?'#dc2626':'#16a34a'}">${res}</div>
+                        <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:12px;">
+                            <span>Win Rate: <strong style="color:#4f46e5">${els.customWinrate.textContent}</strong></span>
+                            <span>Melhor Dia: <strong style="color:#16a34a">${els.customBest.textContent}</strong></span>
+                        </div>
+                    </div>
+                    <div style="background:#fff;padding:0;border:none;">
+                         <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                            <tr style="background:#f1f5f9;"><th style="padding:8px;text-align:left;">Ciclo</th><th style="padding:8px;text-align:right;">Total</th></tr>
+                            <tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">Mensal</td><td style="padding:8px;text-align:right;font-weight:bold;">${formatCurrency(mData.total)}</td></tr>
+                            <tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">10-10</td><td style="padding:8px;text-align:right;">${formatCurrency(calcCycle(acc,10))}</td></tr>
+                            <tr style="border-bottom:1px solid #eee;"><td style="padding:8px;">15-15</td><td style="padding:8px;text-align:right;">${formatCurrency(calcCycle(acc,15))}</td></tr>
+                            <tr><td style="padding:8px;">20-20</td><td style="padding:8px;text-align:right;">${formatCurrency(calcCycle(acc,20))}</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <p style="font-size:9px;color:#ccc;text-align:center;margin-top:20px;">Gerado em ${new Date().toLocaleDateString()}</p>
+            </div>`;
+
+            const win = window.open('', '_blank'); 
+            win.document.write(`<html><head><title>Relatório</title><style>@page { size: A4 portrait; margin: 10mm; } body { margin: 0; }</style></head><body>${html}</body></html>`); 
+            win.document.close(); 
+            setTimeout(() => win.print(), 800); 
+        }
+
+        function shareReport() {
+            const acc = getActive(); 
+            const res = els.customResult.textContent;
+            const period = els.filterStart.value ? `(${new Date(els.filterStart.value).toLocaleDateString()} - ${new Date(els.filterEnd.value).toLocaleDateString()})` : "(Geral)";
+            
+            const text = `*Performance Report - DF Strategic* 📊\n${period}\n\n` +
+                         `*Resultado:* ${res}\n` +
+                         `*Win Rate:* ${els.customWinrate.textContent}\n` +
+                         `*Melhor Dia:* ${els.customBest.textContent}\n\n` +
+                         `*Ciclos Atuais:*\n` +
+                         `Mensal: ${formatCurrency(getMonthlyDataFixed(acc).total)}\n` +
+                         `10-10: ${formatCurrency(calcCycle(acc, 10))}\n` +
+                         `15-15: ${formatCurrency(calcCycle(acc, 15))}\n` +
+                         `20-20: ${formatCurrency(calcCycle(acc, 20))}`; 
+            
+            if (navigator.share) { navigator.share({ title: 'Performance Report', text: text }).catch(console.error); } 
+            else { navigator.clipboard.writeText(text).then(() => alert("Resumo copiado!")); }
+        }
+
+        function changeMonth(d){
+            store.date.setMonth(store.date.getMonth()+d);
+            syncDatesToView(); 
+            renderDashboard();
+        } 
+        
+        function updateData(iso, field, val) {
+            const acc = getActive();
+            if (!acc.data[iso]) acc.data[iso] = {};
+            if (field === 'val') val = parseFloat(val) || 0;
+            acc.data[iso][field] = val;
+            renderDashboard();
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveToCloud, 1000); 
+        }
+
+        function createAccount() { const name = prompt("Nome:"); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [] }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); }
+        function renameAccount() { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } }
+        function loadAccount(id) { if (!store.accounts[id]) id = Object.keys(store.accounts)[0]; store.activeId = id; const acc = store.accounts[id]; els.activeName.textContent = acc.name; els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; els.inpSize.value = acc.size; els.inpMonth.value = acc.monthType; renderSidebar(); renderDashboard(); }
+        function updateConfig() { const acc = getActive(); acc.size = els.inpSize.value; acc.monthType = parseInt(els.inpMonth.value); saveToCloud(); els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; renderDashboard(); }
+        function executePayout(v) { const note = prompt(`Valor: ${formatCurrency(v)}\n\nRef (Opcional):`); if(note === null) return; const acc = getActive(); acc.payouts.push({date:new Date().toISOString(), amount:v, note: note||''}); saveToCloud(); renderDashboard(); alert("Saque salvo!"); }
+
+        // --- GEMINI (DIRECT REST API) ---
+        async function askGemini() {
+            const prompt = els.aiPrompt.value.trim(); if (!prompt) return;
+            els.aiBtn.disabled = true; els.aiBtn.innerHTML = '<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>';
+            els.aiContainer.classList.remove('hidden'); els.aiOutput.innerHTML = '<p class="text-slate-400 italic">Analisando...</p>';
+            try {
+                const acc = getActive(); const stats = calculateStats(acc);
+                const tradedDays = getTradedDays(acc);
+                const recentHistory = tradedDays.map(d => {
+                    const dateObj = new Date(d);
+                    const dateStr = dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                    return `${dateStr}: ${formatCurrency(acc.data[d].val)}`;
+                }).join('\n');
+                
+                const bestDayStr = stats.maxDate ? `${new Date(stats.maxDate).toLocaleDateString('pt-BR', { timeZone: 'UTC' })} com ${formatCurrency(stats.maxDay)}` : "Nenhum";
+
+                const context = `Analista Apex. Dados: ${acc.name}. Lucro: ${formatCurrency(stats.totalProfit)}. Saldo: ${formatCurrency(stats.currentEquity)}. Melhor Dia: ${bestDayStr}. Histórico: ${recentHistory}. Pergunta: "${prompt}"`;
+                
+                // USE v1beta Endpoint directly with GEMINI KEY
+                const GEMINI_API_KEY = "AIzaSyDLXeKnowzTMbM17Kgift_Zi0hDr8Cgo6Q";
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: context }] }] })
+                });
+
+                if (!response.ok) { 
+                    const err = await response.json(); 
+                    throw new Error(err.error?.message || response.status); 
+                }
+                const data = await response.json();
+                els.aiOutput.innerHTML = marked.parse(data.candidates[0].content.parts[0].text);
+
+            } catch (error) { els.aiOutput.innerHTML = `<p class="text-red-500">Erro: ${error.message}</p>`; } 
+            finally { els.aiBtn.disabled = false; els.aiBtn.innerHTML = '<i data-lucide="sparkles" class="w-4 h-4"></i> Analisar'; lucide.createIcons(); }
+        }
+
+        function renderDashboard() { 
+            const acc=getActive(); const rules=RULES[acc.size]; const stats=calculateStats(acc); 
+            if(els.equity) els.equity.textContent=formatCurrency(stats.currentEquity); 
+            if(els.equityDiff) {
+                const diff=stats.currentEquity-rules.start; 
+                els.equityDiff.textContent=`Lucro: ${formatCurrency(diff)}`; 
+                els.equityDiff.className=diff>=0?"text-xs font-medium mt-1 text-green-600":"text-xs font-medium mt-1 text-red-500"; 
+            }
+            
+            let gainCap=(stats.totalProfit>0)?(stats.totalProfit*0.30)/0.70:0; 
+            if(els.gainCap) els.gainCap.textContent=gainCap>0?formatCurrency(gainCap):"Fazer Gordura"; 
+            
+            renderCalendar(acc); 
+            
+            if(els.statsMonth) els.statsMonth.textContent = formatCurrency(getMonthlyDataFixed(acc).total); 
+            if(els.statsC10) els.statsC10.textContent = formatCurrency(calcCycle(acc, 10)); 
+            if(els.statsC15) els.statsC15.textContent = formatCurrency(calcCycle(acc, 15)); 
+            if(els.statsC20) els.statsC20.textContent = formatCurrency(calcCycle(acc, 20)); 
+
+            const proj = calcProjection(acc); 
+            if(els.statsAvg) els.statsAvg.textContent = formatCurrency(proj.avg); 
+            if(els.statsProj) els.statsProj.textContent = formatCurrency(proj.projection);
+            
+            // Sync filters ONLY IF not set or if changing view
+            if(!els.filterStart.value) { syncDatesToView(); }
+            filterReport();
+            
+            const mData=getMonthlyDataFixed(acc); 
+            if(els.weeklyList) els.weeklyList.innerHTML=mData.html; 
+            
+            if(els.safetyTarget) els.safetyTarget.textContent=formatCurrency(rules.safetyThreshold); 
+            const distSafety=rules.safetyThreshold-stats.currentEquity; 
+            if(els.safetyBar) {
+                if(distSafety<=0){els.safetyBar.style.width='100%';els.safetyBar.classList.replace('bg-indigo-500','bg-green-500');} 
+                else {const pct=Math.max(0,Math.min(100,((stats.currentEquity-rules.start)/(rules.safetyThreshold-rules.start))*100));els.safetyBar.style.width=`${pct}%`;} 
+            }
+            
+            const ratio=stats.totalProfit>0?(stats.maxDay/stats.totalProfit)*100:0; 
+            if(els.consRatio) els.consRatio.textContent=`${ratio.toFixed(1)}%`; 
+            if(els.consBar) {
+                els.consBar.style.width=`${Math.min(100,ratio)}%`; 
+                els.consBar.className=ratio>30?"h-full bg-red-500":"h-full bg-indigo-500"; 
+            }
+            
+            checkPayoutStatus(acc,stats,rules,ratio,distSafety); 
+            renderPayoutHistory(acc); 
+            lucide.createIcons(); 
+        }
+
+        // --- CALENDAR RENDER (WITH COLORS & TEXT INPUT) ---
+        function renderCalendar(acc) { 
+            const y=store.date.getFullYear(); const m=store.date.getMonth(); els.calendarTitle.textContent=`${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m]} ${y}`; els.calendarBody.innerHTML=''; const daysInMonth=new Date(y,m+1,0).getDate(); 
+            for(let d=1;d<=daysInMonth;d++){ 
+                const date=new Date(y,m,d); const iso=date.toISOString().split('T')[0]; const entry=acc.data[iso]||{val:0,note:'',holiday:false,withdrawn:false}; const isW=date.getDay()===0||date.getDay()===6; const tr=document.createElement('tr'); if(isW)tr.className="bg-slate-50 opacity-50"; if(entry.withdrawn)tr.className="bg-green-50"; 
+                
+                let colorClass = 'val-zero';
+                if(entry.val > 0) colorClass = 'val-pos';
+                else if(entry.val < 0) colorClass = 'val-neg';
+
+                tr.innerHTML=`
+                    <td class="px-4 py-2 font-medium text-slate-600">${d}</td>
+                    <td class="px-4 py-2 relative">
+                        <div class="relative w-full">
+                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold z-10 pointer-events-none select-none">$</span>
+                            <input type="text" inputmode="decimal" class="result-input w-full pl-6 pr-2 py-1 bg-transparent border-b border-transparent focus:border-indigo-500 ${colorClass}" value="${entry.val!==0?entry.val.toFixed(2):''}" placeholder="0.00" onblur="updateData('${iso}','val',this.value)" ${isW?'disabled':''}>
+                        </div>
+                    </td>
+                    <td class="px-4 py-2"><input type="text" class="w-full bg-transparent text-xs" value="${entry.note||''}" placeholder="..." onchange="updateData('${iso}','note',this.value)" ${isW?'disabled':''}></td>
+                    <td class="px-4 py-2 text-center"><input type="checkbox" ${entry.holiday?'checked':''} onchange="updateData('${iso}','holiday',this.checked)" ${isW?'disabled':''} title="Feriado"></td>
+                    <td class="px-4 py-2 text-center"><input type="checkbox" class="accent-green-600" ${entry.withdrawn?'checked':''} onchange="updateData('${iso}','withdrawn',this.checked)" ${isW?'disabled':''} title="Saque"></td>
+                `;
+                els.calendarBody.appendChild(tr);
+            } 
+        }
+
+        // --- INIT ---
+        function setStatus(state) {
+            const text = document.getElementById('status-text');
+            if(state === 'saving') { text.textContent = 'Salvando...'; text.className = 'status-saving'; }
+            else if(state === 'saved') { text.textContent = 'Online'; text.className = 'status-saved'; }
+            else { text.textContent = 'Erro'; text.className = 'status-error'; }
+        }
+
+        async function loadFromCloud() {
+            try {
+                const docSnap = await getDoc(doc(db, "users", "dante_data"));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    store = JSON.parse(data.store_json);
+                    store.date = new Date(store.date || new Date());
+                }
+            } catch (e) { console.error(e); setStatus('error'); }
+        }
+
+        async function saveToCloud() {
+            setStatus('saving');
+            try {
+                await setDoc(doc(db, "users", "dante_data"), { store_json: JSON.stringify(store), last_update: new Date() });
+                setStatus('saved');
+            } catch (e) { setStatus('error'); }
+        }
+
+        async function init() {
+            lucide.createIcons();
+            try {
+                // Safety timeout
+                const loadPromise = loadFromCloud();
+                const timeoutPromise = new Promise(resolve => setTimeout(resolve, 2000));
+                await Promise.race([loadPromise, timeoutPromise]);
+            } catch (e) {} 
+            
+            if (!store.activeId) {
+                const defaultId = 'acc_' + Date.now();
+                store.activeId = defaultId;
+                store.accounts = {};
+                store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] };
+                saveToCloud(); 
+            }
+            renderSidebar(); loadAccount(store.activeId); 
+            
+            // Force reset to current month on load and sync dates
+            store.date = new Date();
+            syncDatesToView();
+
+            // FORCE REMOVE LOADER AFTER 3s GUARANTEED
+            setTimeout(() => {
+                const l = document.getElementById('app-loader');
+                if(l) { l.classList.add('opacity-0'); setTimeout(()=>l.style.display='none', 500); }
+            }, 3000);
+
+            setStatus('saved'); document.getElementById('status-text').textContent = "Online";
+            setupListeners();
+            
+            window.updateData = updateData; window.printReport = printReport; window.shareReport = shareReport; window.filterReport = filterReport; window.askGemini = askGemini; window.closeAI = () => els.aiContainer.classList.add('hidden');
+        }
+
+        function setupListeners() {
+            document.getElementById('open-sidebar').onclick = toggleSidebar; document.getElementById('close-sidebar').onclick = toggleSidebar; els.backdrop.onclick = toggleSidebar;
+            document.getElementById('add-account-btn').onclick = createAccount; document.getElementById('rename-account-btn').onclick = renameAccount;
+            els.inpSize.onchange = updateConfig; els.inpMonth.onchange = updateConfig;
+            document.getElementById('prev-month').onclick = () => changeMonth(-1); document.getElementById('next-month').onclick = () => changeMonth(1);
+            els.aiPrompt.addEventListener("keypress", (e) => { if (e.key === "Enter") { e.preventDefault(); askGemini(); } });
+        }
+
+        init();
+    </script>
+</body>
+</html>
