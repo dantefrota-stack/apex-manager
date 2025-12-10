@@ -296,10 +296,28 @@
             return {currentEquity:rules.start+tp-w, totalProfit:tp, daysTraded:dt, peakEquity:pe, maxDay:md===-Infinity?0:md, maxDate:mDate, minDay:wd===Infinity?0:wd, minDate:wDate, wins, losses}; 
         }
 
+        // NEW: Sync dates function
+        function syncDatesToView() {
+            const y = store.date.getFullYear();
+            const m = store.date.getMonth();
+            const start = new Date(y, m, 1);
+            const end = new Date(y, m + 1, 0); // Last day of month
+            
+            const fmt = (d) => {
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+            
+            els.filterStart.value = fmt(start);
+            els.filterEnd.value = fmt(end);
+        }
+
         window.filterReport = function() {
             const start = els.filterStart.value;
             const end = els.filterEnd.value;
-            if(!start || !end) { return; } // Removed alert, just return if not set
+            if(!start || !end) { return; }
             
             const acc = getActive();
             let sum = 0; let wins = 0; let count = 0; let best = -Infinity; let worst = Infinity;
@@ -465,7 +483,11 @@
             else { navigator.clipboard.writeText(text).then(() => alert("Resumo copiado!")); }
         }
 
-        function changeMonth(d){store.date.setMonth(store.date.getMonth()+d);renderDashboard();} 
+        function changeMonth(d){
+            store.date.setMonth(store.date.getMonth()+d);
+            syncDatesToView(); // Sync Dates!
+            renderDashboard();
+        } 
         
         function updateData(iso, field, val) {
             const acc = getActive();
@@ -506,12 +528,8 @@
             if(els.statsAvg) els.statsAvg.textContent = formatCurrency(proj.avg); 
             if(els.statsProj) els.statsProj.textContent = formatCurrency(proj.projection);
             
-            // AUTO FILTER IF EMPTY
-            if(!els.filterStart.value) {
-                const now = new Date();
-                els.filterStart.value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-                els.filterEnd.value = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
-            }
+            // Sync filters ONLY IF not set or if changing view
+            if(!els.filterStart.value) { syncDatesToView(); }
             filterReport();
             
             const mData=getMonthlyDataFixed(acc); 
@@ -607,8 +625,9 @@
             }
             renderSidebar(); loadAccount(store.activeId); 
             
-            // Force reset to current month on load
+            // Force reset to current month on load and sync dates
             store.date = new Date();
+            syncDatesToView();
 
             els.loader.classList.add('opacity-0');
             setTimeout(() => els.loader.classList.add('hidden'), 500);
