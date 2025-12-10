@@ -39,6 +39,9 @@
             #print-area { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: white; z-index: 9999; padding: 0; }
             #sidebar, #header-main, .no-print { display: none !important; } 
         }
+        
+        .animate-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="pb-12">
@@ -79,7 +82,8 @@
             <div class="flex gap-2 text-sm">
                 <select id="config-size" onchange="updateConfig()" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs outline-none"><option value="25k">25k</option><option value="50k">50k</option><option value="75k">75k</option><option value="100k">100k</option><option value="150k">150k</option><option value="250k">250k</option><option value="300k">300k</option></select>
                 <select id="config-month" onchange="updateConfig()" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs outline-none"><option value="1">Mês 1-3</option><option value="4">Mês 4+</option></select>
-                <button onclick="renameAccount()" class="p-1.5 bg-slate-100 hover:bg-indigo-100 text-slate-500 hover:text-indigo-600 rounded transition"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                <button onclick="renameAccount()" class="p-1.5 bg-slate-100 hover:bg-indigo-100 text-slate-500 hover:text-indigo-600 rounded transition" title="Renomear"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                <button onclick="deleteAccount()" class="p-1.5 bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-600 rounded transition" title="Excluir Conta"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
         </div>
     </div>
@@ -120,17 +124,13 @@
                 <h2 id="current-equity" class="text-3xl font-extrabold text-slate-800 mt-1">$0.00</h2>
                 <p id="equity-diff" class="text-xs font-medium mt-1 text-gray-500">--</p>
             </div>
+            
             <div class="dashboard-card p-4 border-l-4 border-l-green-500 relative overflow-hidden">
                 <div class="flex justify-between items-start"><div><p class="text-xs font-bold text-green-900 uppercase flex items-center gap-1"><i data-lucide="target" class="w-3 h-3"></i> Teto 30% (Hoje)</p><h2 id="gain-cap" class="text-2xl font-bold text-green-600 mt-1">$0.00</h2></div></div>
                 <p class="text-xs text-gray-500 mt-1">Limite sugerido p/ consistência.</p>
             </div>
-             <div class="dashboard-card p-4 border-l-4 border-l-yellow-500">
-                <div class="flex justify-between items-start">
-                     <div><p class="text-xs font-bold text-yellow-700 uppercase">Saque</p><div class="flex items-end gap-1 mt-1"><span id="payout-status" class="text-lg font-bold text-slate-700">--</span></div></div>
-                </div>
-                <p id="payout-msg" class="text-xs text-slate-400 mt-1">--</p>
-                <button onclick="handleManualPayout()" class="w-full mt-3 py-2 rounded bg-slate-100 text-slate-500 font-bold text-xs flex justify-center items-center gap-2 hover:bg-slate-200 cursor-pointer"><i data-lucide="plus-circle" class="w-3 h-3"></i> Registrar Saque Manual</button>
-            </div>
+
+            <div id="payout-manager-container" class="dashboard-card p-4 border-l-4 border-l-yellow-500 relative bg-white"></div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -140,7 +140,9 @@
                     <h2 id="calendar-title" class="text-xl font-bold text-slate-700">--</h2>
                     <button onclick="changeMonth(1)" class="p-2 hover:bg-slate-100 rounded-full"><i data-lucide="chevron-right"></i></button>
                 </div>
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"><div class="overflow-x-auto"><table class="w-full text-sm text-left"><thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs"><tr><th class="px-4 py-3">Data</th><th class="px-4 py-3 w-32">Resultado</th><th class="px-4 py-3">Notas</th><th class="px-4 py-3 text-center w-10" title="Folga"><i data-lucide="coffee" class="w-3 h-3 mx-auto"></i></th><th class="px-4 py-3 text-center w-10" title="Sacado"><i data-lucide="check-circle-2" class="w-3 h-3 mx-auto text-green-600"></i></th></tr></thead><tbody id="calendar-body" class="divide-y divide-slate-100"></tbody></table></div></div>
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"><div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left"><thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs"><tr><th class="px-4 py-3">Data</th><th class="px-4 py-3 w-32">Resultado</th><th class="px-4 py-3">Notas</th><th class="px-4 py-3 text-center w-10" title="Folga"><i data-lucide="coffee" class="w-3 h-3 mx-auto"></i></th></tr></thead><tbody id="calendar-body" class="divide-y divide-slate-100"></tbody></table>
+                </div></div>
             </div>
 
             <div class="lg:col-span-1 space-y-4">
@@ -191,7 +193,6 @@
         };
 
         let store = { activeId: null, date: new Date(), accounts: {} };
-        let saveTimeout;
 
         // ELEMENTS
         const els = { 
@@ -204,9 +205,6 @@
             statsAvg: document.getElementById('stats-avg'), statsProj: document.getElementById('stats-proj'),
             weeklyList: document.getElementById('weekly-list'), 
             calendarTitle: document.getElementById('calendar-title'), calendarBody: document.getElementById('calendar-body'), 
-            safetyBar: document.getElementById('safety-bar'), safetyTarget: document.getElementById('safety-target'), 
-            consBar: document.getElementById('cons-bar'), consRatio: document.getElementById('cons-ratio'), 
-            payoutStatus: document.getElementById('payout-status'), payoutMsg: document.getElementById('payout-msg'), 
             payoutHistory: document.getElementById('payout-history'), totalWithdrawn: document.getElementById('total-withdrawn'), 
             printArea: document.getElementById('print-area'), loader: document.getElementById('app-loader'), cloudStatus: document.getElementById('status-text'),
             customResult: document.getElementById('custom-result'), customWinrate: document.getElementById('custom-winrate'),
@@ -214,27 +212,151 @@
             filterStart: document.getElementById('filter-start'), filterEnd: document.getElementById('filter-end')
         };
 
-        // EXPOSE FUNCTIONS TO WINDOW TO FIX "REFERENCE ERROR"
+        // EXPOSE FUNCTIONS TO WINDOW
         window.toggleSidebar = () => { const isOpen=!els.sidebar.classList.contains('sidebar-closed'); if(isOpen){els.sidebar.classList.add('sidebar-closed');els.sidebar.classList.remove('sidebar-open');els.backdrop.classList.add('hidden');}else{els.sidebar.classList.remove('sidebar-closed');els.sidebar.classList.add('sidebar-open');els.backdrop.classList.remove('hidden');} };
         window.formatCurrency = (v) => v.toLocaleString('en-US',{style:'currency',currency:'USD'});
         window.createAccount = () => { const name = prompt("Nome:"); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [] }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); };
         window.renameAccount = () => { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } };
+        
+        window.deleteAccount = () => {
+            const acc = getActive();
+            if(Object.keys(store.accounts).length <= 1) return alert("Você precisa manter pelo menos uma conta.");
+            if(confirm(`Tem certeza que deseja EXCLUIR a conta "${acc.name}"?\nTodos os dados dela serão perdidos permanentemente.`)) {
+                delete store.accounts[acc.id];
+                const nextId = Object.keys(store.accounts)[0];
+                store.activeId = nextId;
+                saveToCloud();
+                renderSidebar();
+                loadAccount(nextId);
+            }
+        };
+
         window.updateConfig = () => { const acc = getActive(); acc.size = els.inpSize.value; acc.monthType = parseInt(els.inpMonth.value); saveToCloud(); els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; renderDashboard(); };
         window.changeMonth = (d) => { store.date.setMonth(store.date.getMonth()+d); syncDatesToView(); renderDashboard(); };
         window.filterReport = () => filterReportInternal();
         window.printReport = () => printReportInternal();
         window.shareReport = () => shareReportInternal();
-        window.handleManualPayout = () => { const v = prompt("Valor do Saque:"); if(v) { const acc = getActive(); acc.payouts.push({date:new Date().toISOString(), amount:parseFloat(v), note:''}); saveToCloud(); renderDashboard(); alert("Saque salvo!"); } };
-        window.updateData = (iso, type, val) => { const acc = getActive(); if(!acc.data[iso]) acc.data[iso] = {}; acc.data[iso][type] = val; renderDashboard(); saveToCloud(); };
+
+        window.updateData = (iso, type, val) => { 
+            const acc = getActive(); 
+            if(!acc.data[iso]) acc.data[iso] = {}; 
+            
+            if(type === 'val') {
+                if(val === '' || val === null) val = 0;
+                else if(typeof val === 'string') {
+                    val = parseFloat(val.replace(',', '.')) || 0;
+                }
+            }
+            
+            acc.data[iso][type] = val; 
+            renderDashboard(); 
+            saveToCloud(); 
+        };
+
+        // --- GESTÃO DE SAQUES (ATUALIZADO) ---
+        window.togglePayoutForm = () => {
+            const form = document.getElementById('payout-form-area');
+            const btn = document.getElementById('payout-action-btn');
+            if (form.classList.contains('hidden')) { form.classList.remove('hidden'); btn.classList.add('hidden'); } 
+            else { form.classList.add('hidden'); btn.classList.remove('hidden'); }
+        };
+
+        // SUBMIT PAYOUT ATUALIZADO (Com ID e Voided Status)
+        window.submitPayout = (maxAvailable) => {
+            const input = document.getElementById('payout-input-amount');
+            const val = parseFloat(input.value);
+            if (!val || val <= 0) return alert("Digite um valor válido.");
+            if (val > maxAvailable) return alert(`Valor excede o disponível de ${formatCurrency(maxAvailable)}.`);
+            if (val % 500 !== 0) return alert("O valor deve ser múltiplo de $500 (ex: 500, 1000, 1500).");
+
+            if (confirm(`Confirmar saque de ${formatCurrency(val)}?`)) {
+                const acc = getActive();
+                // Adiciona ID único e status active
+                acc.payouts.push({ 
+                    id: Date.now(),
+                    date: new Date().toISOString(), 
+                    amount: val, 
+                    note: 'Saque Aprovado (Sistema)',
+                    voided: false 
+                });
+                saveToCloud(); 
+                renderDashboard();
+                alert("Saque registrado com sucesso!");
+            }
+        };
+
+        // NOVA FUNÇÃO: Cancelar Saque (Soft Delete)
+        window.voidPayout = (id) => {
+            const acc = getActive();
+            // Encontra o saque pelo ID
+            const payoutIndex = acc.payouts.findIndex(p => p.id === id);
+            
+            if (payoutIndex === -1) return;
+
+            const payout = acc.payouts[payoutIndex];
+            
+            if (confirm(`ATENÇÃO:\nDeseja cancelar o registro de saque de ${formatCurrency(payout.amount)}?\n\nO valor retornará ao seu Saldo (Equity) e o registro ficará riscado para auditoria.`)) {
+                // Marca como cancelado (não apaga o objeto)
+                acc.payouts[payoutIndex].voided = true;
+                acc.payouts[payoutIndex].voidedAt = new Date().toISOString();
+                
+                saveToCloud();
+                renderDashboard();
+            }
+        };
+
+        function getNextWindow() {
+            const d = new Date(); const day = d.getDate(); const m = d.getMonth(); const y = d.getFullYear();
+            let targetDay; let targetMonth = m; let targetYear = y;
+
+            if (day <= 10) targetDay = 10; else if (day <= 20) targetDay = 20; else if (day <= 30) targetDay = 30;
+            else { targetDay = 10; targetMonth = m + 1; }
+            if (targetMonth === 1 && targetDay === 30) targetDay = 28; 
+
+            const targetDate = new Date(targetYear, targetMonth, targetDay);
+            const diffTime = Math.abs(targetDate - d);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            
+            if (day === targetDay) return "HOJE";
+            return `${targetDay}/${targetMonth + 1} (${diffDays} dias)`;
+        }
+
+        function renderPayoutManager() {
+            const acc = getActive(); const rules = RULES[acc.size]; const stats = calculateStats(acc);
+            const currentEquity = stats.currentEquity; const threshold = rules.safetyThreshold;
+            const rawSurplus = Math.max(0, currentEquity - threshold);
+            const availablePayout = Math.floor(rawSurplus / 500) * 500;
+            const canRequest = availablePayout >= 500;
+            const btnClass = canRequest ? "bg-green-600 hover:bg-green-700 text-white" : "bg-slate-200 text-slate-400 cursor-not-allowed";
+            const btnAction = canRequest ? "togglePayoutForm()" : "";
+
+            const html = `
+                <div class="flex justify-between items-start mb-2">
+                    <div><p class="text-xs font-bold text-yellow-700 uppercase tracking-wider">Gestão de Saques</p><div class="flex items-baseline gap-1 mt-1"><span class="text-2xl font-extrabold text-slate-800">${formatCurrency(availablePayout)}</span><span class="text-xs font-medium text-slate-500">Disponível</span></div></div>
+                    <div class="text-right"><p class="text-[10px] font-bold text-slate-400 uppercase">Próxima Janela</p><p class="text-sm font-bold text-indigo-600">${getNextWindow()}</p></div>
+                </div>
+                <div class="bg-yellow-50 rounded border border-yellow-100 p-2 mb-3">
+                    <div class="flex justify-between text-xs mb-1"><span class="text-slate-500">Saldo Atual:</span><span class="font-mono font-bold text-slate-700">${formatCurrency(currentEquity)}</span></div>
+                    <div class="flex justify-between text-xs mb-1"><span class="text-slate-500">Limite Segurança:</span><span class="font-mono font-bold text-slate-700">${formatCurrency(threshold)}</span></div>
+                    <div class="flex justify-between text-xs border-t border-yellow-200 pt-1 mt-1"><span class="text-yellow-700 font-bold">Excedente Real:</span><span class="font-mono font-bold text-yellow-700">${formatCurrency(rawSurplus)}</span></div>
+                </div>
+                <button id="payout-action-btn" onclick="${btnAction}" class="w-full py-2 rounded text-xs font-bold transition flex justify-center items-center gap-2 ${btnClass}"><i data-lucide="dollar-sign" class="w-3 h-3"></i> Solicitar Saque</button>
+                <div id="payout-form-area" class="hidden animate-in fade-in slide-in-from-top-2 duration-200"><div class="flex gap-2"><input type="number" id="payout-input-amount" step="500" min="500" max="${availablePayout}" placeholder="Múltiplo de 500" class="w-full text-xs p-2 border border-slate-300 rounded focus:border-indigo-500 outline-none font-bold text-slate-700"><button onclick="submitPayout(${availablePayout})" class="bg-green-600 text-white px-3 rounded hover:bg-green-700"><i data-lucide="check" class="w-4 h-4"></i></button><button onclick="togglePayoutForm()" class="bg-slate-200 text-slate-600 px-3 rounded hover:bg-slate-300"><i data-lucide="x" class="w-4 h-4"></i></button></div><p class="text-[10px] text-slate-400 mt-1 text-center">*Valor será deduzido do Equity.</p></div>
+            `;
+            const container = document.getElementById('payout-manager-container');
+            if(container) { container.innerHTML = html; lucide.createIcons(); }
+        }
 
         function getActive(){return store.accounts[store.activeId];}
 
+        // CALCULATE STATS ATUALIZADO (Ignora Voided)
         function calculateStats(acc) { 
             const rules=RULES[acc.size]; let tp=0; let dt=0; let pe=rules.start; 
             let md=-Infinity; let mDate=null; let wd=Infinity; let wDate=null; let wins=0; let losses=0;
             const keys=Object.keys(acc.data).sort(); let re=rules.start; 
             keys.forEach(d=>{ 
-                const e=acc.data[d]; const val = e.val || 0; 
+                const e=acc.data[d]; 
+                const val = parseFloat(e.val) || 0; 
                 if(val!==0 && !e.holiday){ 
                     tp+=val; dt++; re+=val; 
                     if(re>pe)pe=re; 
@@ -242,7 +364,12 @@
                     if(val>0) wins++; else losses++;
                 } 
             }); 
-            const w=(acc.payouts||[]).reduce((s,p)=>s+p.amount,0); 
+            
+            // SOMA DE SAQUES: Ignora os que tem voided=true
+            const w = (acc.payouts||[]).reduce((s,p) => {
+                return p.voided ? s : s + p.amount;
+            }, 0);
+
             return {currentEquity:rules.start+tp-w, totalProfit:tp, daysTraded:dt, peakEquity:pe, maxDay:md===-Infinity?0:md, maxDate:mDate, minDay:wd===Infinity?0:wd, minDate:wDate, wins, losses}; 
         }
 
@@ -259,7 +386,7 @@
             const acc = getActive(); let sum=0; let wins=0; let count=0; let best=-Infinity; let worst=Infinity; let chartLabels=[]; let chartData=[]; let cumSum=0;
             Object.keys(acc.data).sort().forEach(iso => {
                 if(iso >= start && iso <= end) {
-                    const val = acc.data[iso].val || 0;
+                    const val = parseFloat(acc.data[iso].val) || 0;
                     if(val !== 0 && !acc.data[iso].holiday) {
                         sum += val; count++;
                         if(val > 0) wins++;
@@ -285,40 +412,80 @@
             });
         }
         
-        function getTradedDays(acc) { const allDates = Object.keys(acc.data); return allDates.filter(iso => { const entry = acc.data[iso]; const val = entry.val || 0; return val !== 0 && !entry.holiday; }).sort((a, b) => new Date(b) - new Date(a)); }
-        function calcProjection(acc) { const tradedDays = getTradedDays(acc); const last10Days = tradedDays.slice(0, 10); let sum = 0; last10Days.forEach(iso => sum += (acc.data[iso].val || 0)); const count = last10Days.length; const avg = count > 0 ? sum / count : 0; const projection = avg * 22; return { avg, projection }; }
-        function getMonthlyDataFixed(acc) { const y = store.date.getFullYear(); const m = store.date.getMonth(); const daysInMonth = new Date(y, m+1, 0).getDate(); let weeks = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; let total = 0; for(let d=1; d<=daysInMonth; d++) { const date = new Date(y, m, d); const iso = date.toISOString().split('T')[0]; const entry = acc.data[iso]; const weekIndex = Math.ceil(d / 7); if(entry && !entry.holiday) { weeks[weekIndex] += (entry.val || 0); total += (entry.val || 0); } } let html = ''; for(let i=1; i<=5; i++) { const startDay = (i - 1) * 7 + 1; if (startDay > daysInMonth) continue; const label = `Semana ${i} (${startDay < 10 ? '0'+startDay : startDay}/${m+1 < 10 ? '0'+(m+1) : m+1})`; const val = weeks[i]; html += `<div class="flex justify-between border-b border-slate-50 pb-1 last:border-0 text-xs"><span class="text-slate-500">${label}</span><span class="font-bold ${val >= 0 ? 'val-pos' : 'val-neg'}">${formatCurrency(val)}</span></div>`; } if(!html) html = '<span class="italic text-xs text-slate-400">Sem dados</span>'; return { total, html }; }
+        function getTradedDays(acc) { const allDates = Object.keys(acc.data); return allDates.filter(iso => { const entry = acc.data[iso]; const val = parseFloat(entry.val) || 0; return val !== 0 && !entry.holiday; }).sort((a, b) => new Date(b) - new Date(a)); }
+        function calcProjection(acc) { const tradedDays = getTradedDays(acc); const last10Days = tradedDays.slice(0, 10); let sum = 0; last10Days.forEach(iso => sum += (parseFloat(acc.data[iso].val) || 0)); const count = last10Days.length; const avg = count > 0 ? sum / count : 0; const projection = avg * 22; return { avg, projection }; }
+        function getMonthlyDataFixed(acc) { const y = store.date.getFullYear(); const m = store.date.getMonth(); const daysInMonth = new Date(y, m+1, 0).getDate(); let weeks = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; let total = 0; for(let d=1; d<=daysInMonth; d++) { const date = new Date(y, m, d); const iso = date.toISOString().split('T')[0]; const entry = acc.data[iso]; const weekIndex = Math.ceil(d / 7); if(entry && !entry.holiday) { const val = parseFloat(entry.val) || 0; weeks[weekIndex] += val; total += val; } } let html = ''; for(let i=1; i<=5; i++) { const startDay = (i - 1) * 7 + 1; if (startDay > daysInMonth) continue; const label = `Semana ${i} (${startDay < 10 ? '0'+startDay : startDay}/${m+1 < 10 ? '0'+(m+1) : m+1})`; const val = weeks[i]; html += `<div class="flex justify-between border-b border-slate-50 pb-1 last:border-0 text-xs"><span class="text-slate-500">${label}</span><span class="font-bold ${val >= 0 ? 'val-pos' : 'val-neg'}">${formatCurrency(val)}</span></div>`; } if(!html) html = '<span class="italic text-xs text-slate-400">Sem dados</span>'; return { total, html }; }
         function calcCycle(acc, startDay) {
             const today = new Date(); let startDate = new Date(today);
             if (today.getDate() < startDay) { startDate.setMonth(startDate.getMonth() - 1); }
             startDate.setDate(startDay); startDate.setHours(0,0,0,0);
-            let sum = 0; Object.keys(acc.data).forEach(iso => { const d = new Date(iso); d.setHours(0,0,0,0); if (d >= startDate) { const entry = acc.data[iso]; const val = entry.val || 0; if(val !== 0 && !entry.holiday) sum += val; } });
+            let sum = 0; Object.keys(acc.data).forEach(iso => { const d = new Date(iso); d.setHours(0,0,0,0); if (d >= startDate) { const entry = acc.data[iso]; const val = parseFloat(entry.val) || 0; if(val !== 0 && !entry.holiday) sum += val; } });
             return sum;
         }
 
-        function checkPayoutStatus(acc,stats,rules,ratio,dist){ 
-            const d=stats.daysTraded>=8; const s=dist<=0; const c=ratio<=30; 
-            if(d && s && c){ els.payoutStatus.textContent="Disponível"; els.payoutStatus.className="text-lg font-bold text-green-600"; els.payoutMsg.textContent="Meta atingida."; }
-            else { els.payoutStatus.textContent="Em Progresso"; els.payoutStatus.className="text-lg font-bold text-slate-700"; els.payoutMsg.textContent="Falta atingir a rede."; }
+        // RENDER PAYOUT HISTORY ATUALIZADO (Visual + Ação de Delete)
+        function renderPayoutHistory(acc){ 
+            els.payoutHistory.innerHTML='';
+            let t=0; 
+            
+            if(!acc.payouts||!acc.payouts.length) {
+                els.payoutHistory.innerHTML='<p class="text-xs text-slate-400 italic">Vazio.</p>'; 
+            } else { 
+                acc.payouts.slice().reverse().forEach(p => { 
+                    // Garante ID temporário para legados
+                    if(!p.id) p.id = Math.random(); 
+
+                    if(!p.voided) t += p.amount; // Só soma se ativo
+                    
+                    const div = document.createElement('div');
+                    
+                    if (p.voided) {
+                        // Visual de item cancelado
+                        div.className = "border-b border-slate-50 pb-2 mb-2 last:border-0 opacity-50 bg-slate-50 p-2 rounded";
+                        div.innerHTML = `
+                            <div class="flex justify-between items-center">
+                                <div class="flex flex-col">
+                                    <span class="text-xs text-slate-400 line-through">${new Date(p.date).toLocaleDateString()}</span>
+                                    <span class="text-[10px] text-red-400 font-bold uppercase">Cancelado</span>
+                                </div>
+                                <span class="font-bold text-slate-400 line-through">${formatCurrency(p.amount)}</span>
+                            </div>`;
+                    } else {
+                        // Visual de item ativo com botão de deletar
+                        div.className = "border-b border-slate-50 pb-2 mb-2 last:border-0 group";
+                        div.innerHTML = `
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-slate-500">${new Date(p.date).toLocaleDateString()}</span>
+                                <div class="flex items-center gap-3">
+                                    <span class="font-bold text-green-600">${formatCurrency(p.amount)}</span>
+                                    <button onclick="voidPayout(${p.id})" class="text-slate-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100" title="Cancelar Saque">
+                                        <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                    </button>
+                                </div>
+                            </div>`;
+                    }
+                    els.payoutHistory.appendChild(div); 
+                }); 
+            } 
+            els.totalWithdrawn.textContent = formatCurrency(t);
+            lucide.createIcons(); // Recarrega icones
         }
-        function renderPayoutHistory(acc){ els.payoutHistory.innerHTML='';let t=0; if(!acc.payouts||!acc.payouts.length) els.payoutHistory.innerHTML='<p class="text-xs text-slate-400 italic">Vazio.</p>'; else { acc.payouts.slice().reverse().forEach(p=>{ t+=p.amount; const d=document.createElement('div'); d.className="border-b border-slate-50 pb-2 mb-2 last:border-0"; d.innerHTML=`<div class="flex justify-between items-center"><span class="text-xs text-slate-500">${new Date(p.date).toLocaleDateString()}</span><span class="font-bold text-green-600">${formatCurrency(p.amount)}</span></div>`; els.payoutHistory.appendChild(d); }); } els.totalWithdrawn.textContent=formatCurrency(t); }
 
         function renderCalendar(acc) { 
             const y=store.date.getFullYear(); const m=store.date.getMonth(); els.calendarTitle.textContent=`${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m]} ${y}`; els.calendarBody.innerHTML=''; const daysInMonth=new Date(y,m+1,0).getDate(); 
             for(let d=1;d<=daysInMonth;d++){ 
                 const date=new Date(y,m,d); const iso=date.toISOString().split('T')[0]; const entry=acc.data[iso]||{val:0,note:'',holiday:false,withdrawn:false}; const isW=date.getDay()===0||date.getDay()===6; const tr=document.createElement('tr'); if(isW)tr.className="bg-slate-50 opacity-50"; if(entry.withdrawn)tr.className="bg-green-50"; 
-                let colorClass = 'val-zero'; if(entry.val > 0) colorClass = 'val-pos'; else if(entry.val < 0) colorClass = 'val-neg';
+                const valNum = parseFloat(entry.val) || 0;
+                let colorClass = 'val-zero'; if(valNum > 0) colorClass = 'val-pos'; else if(valNum < 0) colorClass = 'val-neg';
                 
                 tr.innerHTML = `<td class="px-4 py-2 font-medium text-slate-600">${d}</td>
-                    <td class="px-4 py-2 relative"><div class="relative w-full"><span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold z-10 pointer-events-none select-none">$</span><input type="text" inputmode="decimal" class="result-input w-full pl-6 pr-2 py-1 bg-transparent border-b border-transparent focus:border-indigo-500 ${colorClass}" value="${entry.val!==0?entry.val.toFixed(2):''}" placeholder="0.00" onblur="window.updateData('${iso}','val',this.value)" ${isW?'disabled':''}></div></td>
+                    <td class="px-4 py-2 relative"><div class="relative w-full"><span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold z-10 pointer-events-none select-none">$</span><input type="text" inputmode="decimal" class="result-input w-full pl-6 pr-2 py-1 bg-transparent border-b border-transparent focus:border-indigo-500 ${colorClass}" value="${valNum!==0?valNum.toFixed(2):''}" placeholder="0.00" onblur="window.updateData('${iso}','val',this.value)" ${isW?'disabled':''}></div></td>
                     <td class="px-4 py-2"><input type="text" class="w-full bg-transparent text-xs" value="${entry.note||''}" placeholder="..." onchange="window.updateData('${iso}','note',this.value)" ${isW?'disabled':''}></td>
-                    <td class="px-4 py-2 text-center"><input type="checkbox" ${entry.holiday?'checked':''} onchange="window.updateData('${iso}','holiday',this.checked)" ${isW?'disabled':''} title="Feriado"></td>
-                    <td class="px-4 py-2 text-center"><input type="checkbox" class="accent-green-600" ${entry.withdrawn?'checked':''} onchange="window.updateData('${iso}','withdrawn',this.checked)" ${isW?'disabled':''} title="Saque"></td>`;
+                    <td class="px-4 py-2 text-center"><input type="checkbox" ${entry.holiday?'checked':''} onchange="window.updateData('${iso}','holiday',this.checked)" ${isW?'disabled':''} title="Feriado"></td>`;
                 els.calendarBody.appendChild(tr);
             }
         }
 
-        // --- RENDER DASHBOARD ---
         function renderDashboard() { 
             const acc=getActive(); const rules=RULES[acc.size]; const stats=calculateStats(acc); 
             els.equity.textContent=formatCurrency(stats.currentEquity); 
@@ -338,20 +505,7 @@
             const mData=getMonthlyDataFixed(acc); 
             if(els.weeklyList) els.weeklyList.innerHTML=mData.html; 
             
-            if(els.safetyTarget) els.safetyTarget.textContent=formatCurrency(rules.safetyThreshold); 
-            const distSafety=rules.safetyThreshold-stats.currentEquity; 
-            if(els.safetyBar) {
-                if(distSafety<=0){els.safetyBar.style.width='100%';els.safetyBar.classList.replace('bg-indigo-500','bg-green-500');} 
-                else {const pct=Math.max(0,Math.min(100,((stats.currentEquity-rules.start)/(rules.safetyThreshold-rules.start))*100));els.safetyBar.style.width=`${pct}%`;} 
-            }
-            const ratio=stats.totalProfit>0?(stats.maxDay/stats.totalProfit)*100:0; 
-            if(els.consRatio) els.consRatio.textContent=`${ratio.toFixed(1)}%`; 
-            if(els.consBar) {
-                els.consBar.style.width=`${Math.min(100,ratio)}%`; 
-                els.consBar.className=ratio>30?"h-full bg-red-500":"h-full bg-indigo-500"; 
-            }
-            
-            checkPayoutStatus(acc,stats,rules,ratio,distSafety); 
+            renderPayoutManager(); 
             renderPayoutHistory(acc); 
             lucide.createIcons(); 
         }
@@ -458,7 +612,6 @@
             
             store.date = new Date(); syncDatesToView();
             
-            // FORCE REMOVE LOADER AFTER 3s GUARANTEED
             setTimeout(() => {
                 const l = document.getElementById('app-loader');
                 if(l) { l.classList.add('opacity-0'); setTimeout(()=>l.style.display='none', 500); }
@@ -466,7 +619,6 @@
 
             document.getElementById('status-text').textContent = "Online";
             
-            // EXPOSE RENDER TO WINDOW (THE FIX)
             window.renderSidebar = renderSidebar;
             window.renderDashboard = renderDashboard;
             window.saveToCloud = saveToCloud;
