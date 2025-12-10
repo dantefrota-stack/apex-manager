@@ -45,7 +45,7 @@
 
     <div id="app-loader" class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col items-center justify-center text-white">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
-        <p class="text-sm animate-pulse">Carregando...</p>
+        <p class="text-sm animate-pulse">Carregando Dados...</p>
     </div>
 
     <div id="print-area" class="hidden"></div>
@@ -299,7 +299,7 @@
         window.filterReport = function() {
             const start = els.filterStart.value;
             const end = els.filterEnd.value;
-            if(!start || !end) { alert("Selecione data de início e fim"); return; }
+            if(!start || !end) { return; } // Removed alert, just return if not set
             
             const acc = getActive();
             let sum = 0; let wins = 0; let count = 0; let best = -Infinity; let worst = Infinity;
@@ -393,7 +393,6 @@
         function checkPayoutStatus(acc,stats,rules,ratio,dist){ const d=stats.daysTraded>=8; const s=dist<=0; const c=ratio<=30; let avail=0; if(d&&s&&c) avail=Math.min(stats.currentEquity-rules.safetyThreshold, acc.monthType<=3?rules.payouts[0]:999999); if(avail>=500){ els.payoutStatus.textContent="Disponível"; els.payoutStatus.className="text-lg font-bold text-green-600"; els.payoutMsg.textContent=`Pode sacar ${formatCurrency(avail)}`; els.btnPayout.disabled=false; els.btnPayout.className="w-full py-2 rounded bg-green-600 hover:bg-green-700 text-white font-bold text-sm shadow transition flex justify-center items-center gap-2"; els.btnPayout.innerHTML=`<i data-lucide="dollar-sign" class="w-4 h-4"></i> Sacar ${formatCurrency(avail)}`; els.btnPayout.onclick=()=>executePayout(avail); } else { els.payoutStatus.textContent="Em Progresso"; els.payoutStatus.className="text-lg font-bold text-slate-700"; els.payoutMsg.textContent=!s?"Falta atingir a rede.":(!d?`Faltam ${8-stats.daysTraded} dias.`:(!c?"Ajustar consistência.":"Mínimo $500 excedente.")); els.btnPayout.disabled=true; els.btnPayout.className="w-full py-2 rounded bg-slate-700 text-slate-500 font-bold text-sm cursor-not-allowed flex justify-center items-center gap-2"; els.btnPayout.innerHTML=`<i data-lucide="lock" class="w-4 h-4"></i> Indisponível`; } }
         function renderPayoutHistory(acc){ els.payoutHistory.innerHTML='';let t=0; if(!acc.payouts||!acc.payouts.length) els.payoutHistory.innerHTML='<p class="text-xs text-slate-400 italic">Vazio.</p>'; else { acc.payouts.slice().reverse().forEach(p=>{ t+=p.amount; const d=document.createElement('div'); d.className="border-b border-slate-50 pb-2 mb-2 last:border-0"; d.innerHTML=`<div class="flex justify-between items-center"><span class="text-xs text-slate-500">${new Date(p.date).toLocaleDateString()}</span><span class="font-bold text-green-600">${formatCurrency(p.amount)}</span></div>${p.note ? `<div class="text-xs text-slate-400 mt-0.5 italic">Ref: ${p.note}</div>` : ''}`; els.payoutHistory.appendChild(d); }); } els.totalWithdrawn.textContent=formatCurrency(t); }
         
-        // --- PRINT & SHARE OPTIMIZED ---
         function printReport() { 
             const acc = getActive(); 
             const stats = calculateStats(acc);
@@ -607,6 +606,10 @@
                 saveToCloud(); 
             }
             renderSidebar(); loadAccount(store.activeId); 
+            
+            // Force reset to current month on load
+            store.date = new Date();
+
             els.loader.classList.add('opacity-0');
             setTimeout(() => els.loader.classList.add('hidden'), 500);
             setStatus('saved'); document.getElementById('status-text').textContent = "Online";
