@@ -43,7 +43,7 @@
 </head>
 <body class="pb-12">
 
-    <div id="app-loader" class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col items-center justify-center text-white transition-opacity duration-500">
+    <div id="app-loader" class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col items-center justify-center text-white transition-opacity duration-700">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
         <p class="text-sm animate-pulse">Iniciando Sistema...</p>
     </div>
@@ -230,6 +230,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyCu5pQrMnrpSj45lto_GXKx9xIWq2kyDjg",
             authDomain: "df-apex-manager.firebaseapp.com",
@@ -277,8 +278,10 @@
             filterStart: document.getElementById('filter-start'), filterEnd: document.getElementById('filter-end')
         };
 
-        // --- CORE FUNCTIONS ---
-        function formatCurrency(v){return v.toLocaleString('en-US',{style:'currency',currency:'USD'});}
+        // --- GLOBAL FUNCTIONS ATTACHMENT ---
+        window.toggleSidebar = function() { const isOpen=!els.sidebar.classList.contains('sidebar-closed'); if(isOpen){els.sidebar.classList.add('sidebar-closed');els.sidebar.classList.remove('sidebar-open');els.backdrop.classList.add('hidden');}else{els.sidebar.classList.remove('sidebar-closed');els.sidebar.classList.add('sidebar-open');els.backdrop.classList.remove('hidden');} }
+        window.formatCurrency = function(v){return v.toLocaleString('en-US',{style:'currency',currency:'USD'});}
+        
         function getActive(){return store.accounts[store.activeId];}
 
         function calculateStats(acc) { 
@@ -298,7 +301,6 @@
             return {currentEquity:rules.start+tp-w, totalProfit:tp, daysTraded:dt, peakEquity:pe, maxDay:md===-Infinity?0:md, maxDate:mDate, minDay:wd===Infinity?0:wd, minDate:wDate, wins, losses}; 
         }
 
-        // --- CHART & FILTER ---
         function syncDatesToView() {
             const y = store.date.getFullYear(); const m = store.date.getMonth();
             const start = new Date(y, m, 1); const end = new Date(y, m + 1, 0);
@@ -306,7 +308,7 @@
             els.filterStart.value = fmt(start); els.filterEnd.value = fmt(end);
         }
 
-        function filterReport() {
+        window.filterReport = function() {
             const start = els.filterStart.value; const end = els.filterEnd.value;
             if(!start || !end) return;
             const acc = getActive(); let sum=0; let wins=0; let count=0; let best=-Infinity; let worst=Infinity; let chartLabels=[]; let chartData=[]; let cumSum=0;
@@ -337,8 +339,7 @@
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } } }
             });
         }
-
-        // --- CYCLES & CALCULATIONS ---
+        
         function getTradedDays(acc) { const allDates = Object.keys(acc.data); return allDates.filter(iso => { const entry = acc.data[iso]; const val = entry.val || 0; return val !== 0 && !entry.holiday; }).sort((a, b) => new Date(b) - new Date(a)); }
         function calcProjection(acc) { const tradedDays = getTradedDays(acc); const last10Days = tradedDays.slice(0, 10); let sum = 0; last10Days.forEach(iso => sum += (acc.data[iso].val || 0)); const count = last10Days.length; const avg = count > 0 ? sum / count : 0; const projection = avg * 22; return { avg, projection }; }
         function getMonthlyDataFixed(acc) { const y = store.date.getFullYear(); const m = store.date.getMonth(); const daysInMonth = new Date(y, m+1, 0).getDate(); let weeks = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; let total = 0; for(let d=1; d<=daysInMonth; d++) { const date = new Date(y, m, d); const iso = date.toISOString().split('T')[0]; const entry = acc.data[iso]; const weekIndex = Math.ceil(d / 7); if(entry && !entry.holiday) { weeks[weekIndex] += (entry.val || 0); total += (entry.val || 0); } } let html = ''; for(let i=1; i<=5; i++) { const startDay = (i - 1) * 7 + 1; if (startDay > daysInMonth) continue; const label = `Semana ${i} (${startDay < 10 ? '0'+startDay : startDay}/${m+1 < 10 ? '0'+(m+1) : m+1})`; const val = weeks[i]; html += `<div class="flex justify-between border-b border-slate-50 pb-1 last:border-0 text-xs"><span class="text-slate-500">${label}</span><span class="font-bold ${val >= 0 ? 'val-pos' : 'val-neg'}">${formatCurrency(val)}</span></div>`; } if(!html) html = '<span class="italic text-xs text-slate-400">Sem dados</span>'; return { total, html }; }
@@ -420,7 +421,6 @@
             els.equity.textContent=formatCurrency(stats.currentEquity); 
             const diff=stats.currentEquity-rules.start; els.equityDiff.textContent=`Lucro: ${formatCurrency(diff)}`; els.equityDiff.className=diff>=0?"text-xs font-medium mt-1 text-green-600":"text-xs font-medium mt-1 text-red-500"; 
             let gainCap=(stats.totalProfit>0)?(stats.totalProfit*0.30)/0.70:0; els.gainCap.textContent=gainCap>0?formatCurrency(gainCap):"Fazer Gordura"; 
-            
             renderCalendar(acc); 
             
             if(els.statsMonth) els.statsMonth.textContent = formatCurrency(getMonthlyDataFixed(acc).total); 
@@ -428,32 +428,16 @@
             if(els.statsC15) els.statsC15.textContent = formatCurrency(calcCycle(acc, 15)); 
             if(els.statsC20) els.statsC20.textContent = formatCurrency(calcCycle(acc, 20)); 
 
-            const proj = calcProjection(acc); 
-            if(els.statsAvg) els.statsAvg.textContent = formatCurrency(proj.avg); 
-            if(els.statsProj) els.statsProj.textContent = formatCurrency(proj.projection);
+            const proj = calcProjection(acc); els.statsAvg.textContent = formatCurrency(proj.avg); els.statsProj.textContent = formatCurrency(proj.projection);
+            if(!els.filterStart.value) { syncDatesToView(); } filterReport();
             
-            if(!els.filterStart.value) { syncDatesToView(); }
-            filterReport();
-            
-            const mData=getMonthlyDataFixed(acc); 
-            if(els.weeklyList) els.weeklyList.innerHTML=mData.html; 
-            
-            if(els.safetyTarget) els.safetyTarget.textContent=formatCurrency(rules.safetyThreshold); 
+            els.safetyTarget.textContent=formatCurrency(rules.safetyThreshold); 
             const distSafety=rules.safetyThreshold-stats.currentEquity; 
-            if(els.safetyBar) {
-                if(distSafety<=0){els.safetyBar.style.width='100%';els.safetyBar.classList.replace('bg-indigo-500','bg-green-500');} 
-                else {const pct=Math.max(0,Math.min(100,((stats.currentEquity-rules.start)/(rules.safetyThreshold-rules.start))*100));els.safetyBar.style.width=`${pct}%`;} 
-            }
+            if(distSafety<=0){els.safetyBar.style.width='100%';els.safetyBar.classList.replace('bg-indigo-500','bg-green-500');} else {const pct=Math.max(0,Math.min(100,((stats.currentEquity-rules.start)/(rules.safetyThreshold-rules.start))*100));els.safetyBar.style.width=`${pct}%`;} 
             const ratio=stats.totalProfit>0?(stats.maxDay/stats.totalProfit)*100:0; 
-            if(els.consRatio) els.consRatio.textContent=`${ratio.toFixed(1)}%`; 
-            if(els.consBar) {
-                els.consBar.style.width=`${Math.min(100,ratio)}%`; 
-                els.consBar.className=ratio>30?"h-full bg-red-500":"h-full bg-indigo-500"; 
-            }
+            els.consRatio.textContent=`${ratio.toFixed(1)}%`; els.consBar.style.width=`${Math.min(100,ratio)}%`; els.consBar.className=ratio>30?"h-full bg-red-500":"h-full bg-indigo-500"; 
             
-            checkPayoutStatus(acc,stats,rules,ratio,distSafety); 
-            renderPayoutHistory(acc); 
-            lucide.createIcons(); 
+            checkPayoutStatus(acc,stats,rules,ratio,distSafety); renderPayoutHistory(acc); lucide.createIcons(); 
         }
 
         // --- PRINT & SHARE HANDLERS (DEFINED IN MODULE) ---
@@ -519,10 +503,6 @@
         }
 
         function changeMonth(d){ store.date.setMonth(store.date.getMonth()+d); syncDatesToView(); renderDashboard(); } 
-
-        function createAccount() { const name = prompt("Nome:"); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [] }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); }
-        function renameAccount() { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } }
-        function loadAccount(id) { if (!store.accounts[id]) id = Object.keys(store.accounts)[0]; store.activeId = id; const acc = store.accounts[id]; els.activeName.textContent = acc.name; els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; els.inpSize.value = acc.size; els.inpMonth.value = acc.monthType; renderSidebar(); renderDashboard(); }
         function updateConfig() { const acc = getActive(); acc.size = els.inpSize.value; acc.monthType = parseInt(els.inpMonth.value); saveToCloud(); els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; renderDashboard(); }
 
         // --- CLOUD ---
@@ -546,6 +526,10 @@
         }
 
         // --- INIT ---
+        function createAccount() { const name = prompt("Nome:"); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [] }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); }
+        function renameAccount() { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } }
+        function loadAccount(id) { if (!store.accounts[id]) id = Object.keys(store.accounts)[0]; store.activeId = id; const acc = store.accounts[id]; els.activeName.textContent = acc.name; els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; els.inpSize.value = acc.size; els.inpMonth.value = acc.monthType; renderSidebar(); renderDashboard(); }
+
         async function init() {
             lucide.createIcons();
             try { await loadFromCloud(); } catch (e) {} 
