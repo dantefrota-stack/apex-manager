@@ -293,7 +293,7 @@
             equity: document.getElementById('current-equity'), equityDiff: document.getElementById('equity-diff'), equityProgress: document.getElementById('equity-progress'),
             gainCap: document.getElementById('gain-cap'), 
             statsMonth: document.getElementById('stats-month'), statsC10: document.getElementById('stats-c10'), statsC15: document.getElementById('stats-c15'), statsC20: document.getElementById('stats-c20'),
-            // NOVOS ELEMENTOS DE MÉDIA
+            // ELEMENTOS DE MÉDIA
             statsAvg5: document.getElementById('stats-avg-5'), 
             statsAvg10: document.getElementById('stats-avg-10'), 
             statsAvg15: document.getElementById('stats-avg-15'), 
@@ -744,21 +744,65 @@
             } catch (e) { document.getElementById('status-text').textContent = "Erro"; }
         }
 
-        // --- INIT ---
+        // --- INIT ROBUSTO (CORREÇÃO DE LOOP + SEGURANÇA) ---
         async function init() {
             lucide.createIcons();
-            try { await loadFromCloud(); } catch (e) {} 
             
+            let carregouComSucesso = false;
+
+            try { 
+                await loadFromCloud();
+                // Verifica se carregou dados reais
+                if (store && store.activeId) {
+                    carregouComSucesso = true;
+                }
+            } catch (e) { 
+                console.error("Erro ao carregar:", e);
+                document.getElementById('status-text').textContent = "Erro Conexão";
+                document.getElementById('status-text').className = "status-error";
+                
+                // CORREÇÃO: Exibe tela de erro ao invés de travar no loader
+                const loader = document.getElementById('app-loader');
+                if (loader) {
+                    loader.innerHTML = `
+                        <div class="text-center p-6 max-w-sm mx-auto">
+                            <div class="text-red-500 mb-4 flex justify-center"><i data-lucide="wifi-off" class="w-12 h-12"></i></div>
+                            <h3 class="text-lg font-bold text-white mb-2">Erro de Conexão</h3>
+                            <p class="text-sm text-slate-400 mb-6">Não foi possível baixar seus dados. Para sua segurança, o sistema foi pausado para evitar sobrescrever informações.</p>
+                            <button onclick="location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">Tentar Novamente</button>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                }
+                
+                // Retorna para impedir execução do restante e proteção dos dados
+                return; 
+            } 
+            
+            // Só cria conta nova se conectou com sucesso E o banco estava realmente vazio
             if (!store.activeId) {
+                try {
+                    const docSnap = await getDoc(doc(db, "users", "dante_data"));
+                    if (docSnap.exists()) {
+                        alert("Erro crítico: Dados existem mas não puderam ser lidos. Contate suporte.");
+                        return;
+                    }
+                } catch(e) { return; }
+
+                console.log("Nenhum dado encontrado. Criando nova conta...");
                 const defaultId = 'acc_' + Date.now();
                 store.activeId = defaultId;
                 store.accounts = {};
                 store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] };
+                
                 saveToCloud(); 
             }
-            renderSidebar(); loadAccount(store.activeId); 
+
+            renderSidebar(); 
+            if (store.activeId) loadAccount(store.activeId); 
             
-            store.date = new Date(); syncDatesToView();
+            store.date = new Date(); 
+            syncDatesToView();
             
             setTimeout(() => {
                 const l = document.getElementById('app-loader');
