@@ -428,6 +428,23 @@
             document.body.removeChild(link);
         };
 
+        // FORCE RESET FUNCTION (USAR COM CAUTELA)
+        window.hardReset = async () => {
+            const confirm1 = prompt("Digite 'DELETAR' para apagar todos os dados e resetar o app.\nIsso não pode ser desfeito.");
+            if (confirm1 === 'DELETAR') {
+                try {
+                    const defaultId = 'acc_' + Date.now();
+                    store = { activeId: defaultId, date: new Date(), accounts: {} };
+                    store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] };
+                    await saveToCloud();
+                    alert("Dados resetados. Recarregando...");
+                    location.reload();
+                } catch(e) {
+                    alert("Erro ao resetar: " + e.message);
+                }
+            }
+        };
+
         function getNextWindow() {
             const d = new Date(); const day = d.getDate(); const m = d.getMonth(); const y = d.getFullYear();
             let targetDay; let targetMonth = m; let targetYear = y;
@@ -733,8 +750,12 @@
                     store = JSON.parse(data.store_json);
                     store.date = new Date(store.date || new Date());
                 }
-            } catch (e) { console.error(e); document.getElementById('status-text').textContent = "Erro"; }
+            } catch (e) { 
+                // CRÍTICO: Não engolir o erro. Repassar para o init.
+                throw e; 
+            }
         }
+        
         async function saveToCloud() {
             document.getElementById('status-text').textContent = "Salvando...";
             try {
@@ -744,58 +765,62 @@
             } catch (e) { document.getElementById('status-text').textContent = "Erro"; }
         }
 
-        // --- INIT ROBUSTO (CORREÇÃO DE LOOP + SEGURANÇA) ---
+        // --- INIT ROBUSTO FINAL ---
         async function init() {
             lucide.createIcons();
             
-            let carregouComSucesso = false;
-
-            try { 
-                await loadFromCloud();
-                // Verifica se carregou dados reais
-                if (store && store.activeId) {
-                    carregouComSucesso = true;
-                }
-            } catch (e) { 
-                console.error("Erro ao carregar:", e);
-                document.getElementById('status-text').textContent = "Erro Conexão";
-                document.getElementById('status-text').className = "status-error";
-                
-                // CORREÇÃO: Exibe tela de erro ao invés de travar no loader
-                const loader = document.getElementById('app-loader');
-                if (loader) {
+            // Função para mostrar a tela de erro fatal (substitui o loader)
+            const showFatalError = (title, msg) => {
+                 const loader = document.getElementById('app-loader');
+                 if (loader) {
                     loader.innerHTML = `
                         <div class="text-center p-6 max-w-sm mx-auto">
-                            <div class="text-red-500 mb-4 flex justify-center"><i data-lucide="wifi-off" class="w-12 h-12"></i></div>
-                            <h3 class="text-lg font-bold text-white mb-2">Erro de Conexão</h3>
-                            <p class="text-sm text-slate-400 mb-6">Não foi possível baixar seus dados. Para sua segurança, o sistema foi pausado para evitar sobrescrever informações.</p>
-                            <button onclick="location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">Tentar Novamente</button>
+                            <div class="text-red-500 mb-4 flex justify-center"><i data-lucide="alert-triangle" class="w-12 h-12"></i></div>
+                            <h3 class="text-lg font-bold text-white mb-2">${title}</h3>
+                            <p class="text-xs text-slate-400 mb-6 bg-slate-800 p-2 rounded border border-slate-700 font-mono">${msg}</p>
+                            <div class="space-y-3">
+                                <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">Tentar Novamente</button>
+                                <button onclick="window.hardReset()" class="w-full bg-transparent hover:bg-red-900/30 text-red-400 border border-red-900/50 py-2 px-6 rounded-full text-xs transition">⚠️ Iniciar do Zero (Apagar Tudo)</button>
+                            </div>
                         </div>
                     `;
                     lucide.createIcons();
-                }
-                
-                // Retorna para impedir execução do restante e proteção dos dados
-                return; 
+                 }
+            };
+
+            try { 
+                await loadFromCloud();
+            } catch (e) { 
+                console.error("Erro loadFromCloud:", e);
+                // Mostra o erro real para o usuário
+                showFatalError("Erro de Conexão ou Permissão", e.message || "Falha ao baixar dados.");
+                return; // PARE AQUI (Evita o loop)
             } 
             
-            // Só cria conta nova se conectou com sucesso E o banco estava realmente vazio
+            // Se não carregou nada localmente (store vazia)...
             if (!store.activeId) {
+                // Checa se existe no banco para evitar sobrescrita acidental
                 try {
                     const docSnap = await getDoc(doc(db, "users", "dante_data"));
                     if (docSnap.exists()) {
-                        alert("Erro crítico: Dados existem mas não puderam ser lidos. Contate suporte.");
-                        return;
+                         // O arquivo existe mas o loadFromCloud falhou em ler. Isso é corrupção ou erro de parse.
+                         showFatalError("Erro de Integridade", "Seus dados existem no servidor, mas não puderam ser lidos corretamente. Isso evita que sejam sobrescritos.");
+                         return; // PARE AQUI
                     }
-                } catch(e) { return; }
+                } catch(e) { 
+                    // Se falhar ao checar se existe (ex: sem internet), mostra erro também.
+                    showFatalError("Sem Conexão", "Não foi possível verificar se você já tem uma conta. Conecte-se à internet.");
+                    return; // PARE AQUI
+                }
 
+                // Se chegou aqui, é certeza que é usuário novo.
                 console.log("Nenhum dado encontrado. Criando nova conta...");
                 const defaultId = 'acc_' + Date.now();
                 store.activeId = defaultId;
                 store.accounts = {};
                 store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] };
                 
-                saveToCloud(); 
+                await saveToCloud(); 
             }
 
             renderSidebar(); 
@@ -804,10 +829,11 @@
             store.date = new Date(); 
             syncDatesToView();
             
+            // REMOVE O LOADER (SUCESSO)
             setTimeout(() => {
                 const l = document.getElementById('app-loader');
                 if(l) { l.classList.add('opacity-0'); setTimeout(()=>l.style.display='none', 500); }
-            }, 3000);
+            }, 1000);
 
             document.getElementById('status-text').textContent = "Online";
             
