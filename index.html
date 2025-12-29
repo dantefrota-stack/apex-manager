@@ -74,6 +74,10 @@
         body.dark .progress-bar-bg { background-color: #334155; }
         .progress-bar-fill { background-color: #4f46e5; height: 100%; transition: width 1s ease-in-out; }
         
+        /* Modal Styles */
+        .modal-enter { opacity: 0; transform: scale(0.9); }
+        .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 0.2s, transform 0.2s; }
+        
         @media print { 
             body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } 
             #print-area { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: white; z-index: 9999; padding: 0; color: black; }
@@ -88,6 +92,24 @@
     <div id="app-loader" class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col items-center justify-center text-white transition-opacity duration-700">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
         <p class="text-sm animate-pulse">Iniciando...</p>
+    </div>
+
+    <div id="note-modal" class="fixed inset-0 z-[60] hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="closeNoteModal()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-lg bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 transform transition-all">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2"><i data-lucide="file-edit" class="w-5 h-5 text-indigo-500"></i> Notas do Dia</h3>
+                    <p id="note-modal-date" class="text-xs text-slate-500 dark:text-slate-400 mt-1">--</p>
+                </div>
+                <button onclick="closeNoteModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <textarea id="note-modal-input" rows="8" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none resize-none mb-4 leading-relaxed" placeholder="Escreva aqui suas observações sobre o dia (estratégia, erros, acertos)..."></textarea>
+            <div class="flex justify-end gap-3">
+                <button onclick="closeNoteModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 text-sm font-medium transition">Cancelar</button>
+                <button onclick="saveNote()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/30 transition flex items-center gap-2"><i data-lucide="save" class="w-4 h-4"></i> Salvar Nota</button>
+            </div>
+        </div>
     </div>
 
     <div id="print-area" class="hidden"></div>
@@ -205,7 +227,7 @@
                                 <th class="px-4 py-3">Data</th>
                                 <th class="px-4 py-3 text-center w-48">Trade 1 <span class="text-slate-300 mx-1">|</span> Trade 2</th>
                                 <th class="px-4 py-3 text-right">Total</th>
-                                <th class="px-4 py-3">Notas</th>
+                                <th class="px-4 py-3 text-center w-16">Nota</th>
                                 <th class="px-4 py-3 text-center w-10"><i data-lucide="coffee" class="w-3 h-3 mx-auto"></i></th>
                             </tr>
                         </thead>
@@ -284,6 +306,8 @@
         };
 
         let store = { activeId: null, date: new Date(), accounts: {} };
+        let isOffline = false; // Flag para modo offline
+        let currentNoteIso = null; // Para saber qual dia estamos editando
 
         // ELEMENTS
         const els = { 
@@ -404,6 +428,43 @@
             }
         };
 
+        // --- FUNÇÕES DE NOTAS (MODAL) ---
+        window.openNoteModal = (iso) => {
+            currentNoteIso = iso;
+            const acc = getActive();
+            const entry = acc.data[iso] || {};
+            const dateStr = new Date(iso).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            
+            document.getElementById('note-modal-date').textContent = dateStr;
+            document.getElementById('note-modal-input').value = entry.note || '';
+            
+            const modal = document.getElementById('note-modal');
+            modal.classList.remove('hidden');
+            // Pequeno delay para animação de fade
+            setTimeout(() => {
+               modal.querySelector('.transform').classList.remove('scale-95', 'opacity-0');
+               modal.querySelector('.transform').classList.add('scale-100', 'opacity-100');
+            }, 10);
+        };
+
+        window.closeNoteModal = () => {
+            const modal = document.getElementById('note-modal');
+            modal.querySelector('.transform').classList.remove('scale-100', 'opacity-100');
+            modal.querySelector('.transform').classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+            currentNoteIso = null;
+        };
+
+        window.saveNote = () => {
+            if(!currentNoteIso) return;
+            const val = document.getElementById('note-modal-input').value;
+            window.updateData(currentNoteIso, 'note', val); // Reusa a lógica de salvamento existente
+            closeNoteModal();
+        };
+
         window.exportCSV = () => {
             const acc = getActive();
             let csvContent = "data:text/csv;charset=utf-8,Data,Trade 1,Trade 2,Total Dia,Notas\n";
@@ -414,7 +475,7 @@
                 const t1 = (parseFloat(d.t1) || 0).toFixed(2);
                 const t2 = (parseFloat(d.t2) || 0).toFixed(2);
                 const val = (parseFloat(d.val) || 0).toFixed(2);
-                const note = (d.note || '').replace(/,/g, ";");
+                const note = (d.note || '').replace(/[\r\n]+/g, " ").replace(/,/g, ";"); // Limpa quebras de linha e virgulas
                 if (parseFloat(val) !== 0 || note !== '') {
                     csvContent += `${dateStr},${t1},${t2},${val},${note}\n`;
                 }
@@ -428,22 +489,49 @@
             document.body.removeChild(link);
         };
 
-        // FORCE RESET FUNCTION (USAR COM CAUTELA)
-        window.hardReset = async () => {
-            const confirm1 = prompt("Digite 'DELETAR' para apagar todos os dados e resetar o app.\nIsso não pode ser desfeito.");
-            if (confirm1 === 'DELETAR') {
+        // --- MODO OFFLINE / RESET ---
+        window.forceOfflineMode = () => {
+            console.log("Entrando em modo offline...");
+            isOffline = true;
+            
+            // Tenta carregar do backup local
+            const localBackup = localStorage.getItem('df_backup_local');
+            if (localBackup) {
                 try {
-                    const defaultId = 'acc_' + Date.now();
-                    store = { activeId: defaultId, date: new Date(), accounts: {} };
-                    store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] };
-                    await saveToCloud();
-                    alert("Dados resetados. Recarregando...");
-                    location.reload();
-                } catch(e) {
-                    alert("Erro ao resetar: " + e.message);
-                }
+                    store = JSON.parse(localBackup);
+                    store.date = new Date(store.date || new Date());
+                } catch(e) { createNewStore(); }
+            } else {
+                createNewStore();
+            }
+
+            // Inicia interface
+            document.getElementById('status-text').textContent = "Modo Offline";
+            document.getElementById('status-text').className = "text-yellow-500 font-bold";
+            renderSidebar(); 
+            loadAccount(store.activeId);
+            store.date = new Date(); 
+            syncDatesToView();
+            
+            const loader = document.getElementById('app-loader');
+            if(loader) { loader.style.display='none'; }
+        };
+
+        window.hardReset = async () => {
+            const confirm1 = prompt("ATENÇÃO: Isso apagará seus dados locais e tentará criar uma nova conta.\n\nDigite 'DELETAR' para confirmar:");
+            if (confirm1 === 'DELETAR') {
+                createNewStore();
+                await saveToCloud(); // Tenta salvar, se falhar vai pro local
+                alert("Dados resetados. O sistema tentará reconectar.");
+                location.reload();
             }
         };
+
+        function createNewStore() {
+            const defaultId = 'acc_' + Date.now();
+            store = { activeId: defaultId, date: new Date(), accounts: {} };
+            store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] };
+        }
 
         function getNextWindow() {
             const d = new Date(); const day = d.getDate(); const m = d.getMonth(); const y = d.getFullYear();
@@ -642,10 +730,21 @@
                     </div>
                 `;
 
+                // NOTA COM ÍCONE E MODAL
+                const hasNote = entry.note && entry.note.trim().length > 0;
+                const noteIcon = hasNote ? 'message-circle' : 'message-square';
+                const noteBtnClass = hasNote 
+                    ? "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700" 
+                    : "text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800";
+
                 tr.innerHTML = `<td class="px-4 py-2 font-medium text-slate-600 dark:text-slate-400">${d}</td>
                     <td class="px-4 py-2 w-48">${inputsHtml}</td>
                     <td class="px-4 py-2 text-right"><span class="font-bold text-sm ${colorClass}">${valNum!==0 ? formatCurrency(valNum) : '--'}</span></td>
-                    <td class="px-4 py-2"><input type="text" class="w-full bg-transparent text-xs dark:text-slate-300 placeholder-slate-300 dark:placeholder-slate-600" value="${entry.note||''}" placeholder="..." onchange="window.updateData('${iso}','note',this.value)" ${isW?'disabled':''}></td>
+                    <td class="px-4 py-2 text-center w-16">
+                        <button onclick="openNoteModal('${iso}')" class="p-1.5 rounded-lg border transition ${noteBtnClass}" title="Editar Nota" ${isW?'disabled':''}>
+                            <i data-lucide="${noteIcon}" class="w-4 h-4"></i>
+                        </button>
+                    </td>
                     <td class="px-4 py-2 text-center"><input type="checkbox" ${entry.holiday?'checked':''} onchange="window.updateData('${iso}','holiday',this.checked)" ${isW?'disabled':''} title="Feriado"></td>`;
                 els.calendarBody.appendChild(tr);
             }
@@ -757,12 +856,26 @@
         }
         
         async function saveToCloud() {
+            // Se estiver em modo offline, salva apenas no localStorage e sai
+            if (isOffline) {
+                localStorage.setItem('df_backup_local', JSON.stringify(store));
+                document.getElementById('status-text').textContent = "Salvo (Local)";
+                document.getElementById('status-text').className = "text-yellow-500 font-bold";
+                return;
+            }
+
             document.getElementById('status-text').textContent = "Salvando...";
             try {
                 await setDoc(doc(db, "users", "dante_data"), { store_json: JSON.stringify(store), last_update: new Date() });
                 document.getElementById('status-text').textContent = "Online";
                 document.getElementById('status-text').className = "status-saved";
-            } catch (e) { document.getElementById('status-text').textContent = "Erro"; }
+            } catch (e) { 
+                console.warn("Erro ao salvar na nuvem:", e);
+                // Fallback silencioso para LocalStorage
+                localStorage.setItem('df_backup_local', JSON.stringify(store));
+                document.getElementById('status-text').textContent = "Erro (Salvo Local)";
+                document.getElementById('status-text').className = "text-orange-500 font-bold";
+            }
         }
 
         // --- INIT ROBUSTO FINAL ---
@@ -780,7 +893,8 @@
                             <p class="text-xs text-slate-400 mb-6 bg-slate-800 p-2 rounded border border-slate-700 font-mono">${msg}</p>
                             <div class="space-y-3">
                                 <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">Tentar Novamente</button>
-                                <button onclick="window.hardReset()" class="w-full bg-transparent hover:bg-red-900/30 text-red-400 border border-red-900/50 py-2 px-6 rounded-full text-xs transition">⚠️ Iniciar do Zero (Apagar Tudo)</button>
+                                <button onclick="window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2"><i data-lucide="wifi-off" class="w-4 h-4"></i> Usar em Modo Offline</button>
+                                <button onclick="window.hardReset()" class="w-full bg-transparent hover:bg-red-900/30 text-red-400 border border-red-900/50 py-2 px-6 rounded-full text-xs transition">⚠️ Resetar Tudo</button>
                             </div>
                         </div>
                     `;
