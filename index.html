@@ -49,20 +49,8 @@
 
         .dashboard-card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
         
-        /* Trade Input Styling */
-        .trade-input { 
-            text-align: center; 
-            font-weight: 600; 
-            transition: all 0.2s;
-            font-size: 0.9rem; /* Melhor legibilidade mobile */
-        }
-        .trade-input:focus { 
-            transform: scale(1.02); 
-            outline: none; 
-            border-color: #6366f1; 
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
-            z-index: 10;
-        }
+        .trade-input { text-align: center; font-weight: 600; transition: all 0.2s; font-size: 0.9rem; }
+        .trade-input:focus { transform: scale(1.02); outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); z-index: 10; }
         .trade-input::placeholder { color: #cbd5e1; font-weight: normal; font-size: 0.75rem; }
         
         #sidebar { transition: transform 0.3s ease-in-out; }
@@ -73,10 +61,6 @@
         .progress-bar-bg { background-color: #e2e8f0; border-radius: 999px; height: 6px; overflow: hidden; }
         body.dark .progress-bar-bg { background-color: #334155; }
         .progress-bar-fill { background-color: #4f46e5; height: 100%; transition: width 1s ease-in-out; }
-        
-        /* Modal Styles */
-        .modal-enter { opacity: 0; transform: scale(0.9); }
-        .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 0.2s, transform 0.2s; }
         
         @media print { 
             body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } 
@@ -100,7 +84,7 @@
             <div class="flex justify-between items-center mb-4">
                 <div>
                     <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2"><i data-lucide="file-edit" class="w-5 h-5 text-indigo-500"></i> Notas do Dia</h3>
-                    <p id="note-modal-date" class="text-xs text-slate-500 dark:text-slate-400 mt-1">--</p>
+                    <p id="note-modal-date" class="text-xs text-slate-500 dark:text-slate-400 mt-1 capitalize">--</p>
                 </div>
                 <button onclick="closeNoteModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
@@ -108,6 +92,33 @@
             <div class="flex justify-end gap-3">
                 <button onclick="closeNoteModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 text-sm font-medium transition">Cancelar</button>
                 <button onclick="saveNote()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/30 transition flex items-center gap-2"><i data-lucide="save" class="w-4 h-4"></i> Salvar Nota</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-logs-modal" class="fixed inset-0 z-[70] hidden">
+        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity" onclick="document.getElementById('admin-logs-modal').classList.add('hidden')"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] max-w-2xl bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 transform transition-all h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-200 dark:border-slate-700 pb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2"><i data-lucide="shield-alert" class="w-5 h-5 text-red-500"></i> Logs Administrativos</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Histórico de contas excluídas (Segurança)</p>
+                </div>
+                <button onclick="document.getElementById('admin-logs-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="flex-1 overflow-y-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 dark:bg-slate-900 text-slate-500 font-bold uppercase text-xs sticky top-0">
+                        <tr>
+                            <th class="px-4 py-3">Data Exclusão</th>
+                            <th class="px-4 py-3">Conta</th>
+                            <th class="px-4 py-3">Autor</th>
+                            <th class="px-4 py-3 text-right">Saldo Final</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-logs-body" class="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-300">
+                        </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -121,8 +132,9 @@
             <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
         </div>
         <div class="flex-1 overflow-y-auto p-4 space-y-2" id="account-list"></div>
-        <div class="p-4 border-t border-slate-700 bg-slate-800">
+        <div class="p-4 border-t border-slate-700 bg-slate-800 space-y-2">
             <button onclick="createAccount()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 rounded-md text-sm font-bold flex items-center justify-center gap-2 transition"><i data-lucide="plus-circle" class="w-4 h-4"></i> Nova Conta</button>
+            <button onclick="openAdminLogs()" class="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-md text-xs font-bold flex items-center justify-center gap-2 transition"><i data-lucide="shield" class="w-3 h-3"></i> Logs Admin</button>
         </div>
     </div>
 
@@ -225,7 +237,9 @@
                         <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs">
                             <tr>
                                 <th class="px-4 py-3">Data</th>
-                                <th class="px-4 py-3 text-center w-48">Trade 1 <span class="text-slate-300 mx-1">|</span> Trade 2</th>
+                                <th class="px-1 md:px-4 py-3 text-center w-40 md:w-48 whitespace-nowrap text-[10px] md:text-xs">
+                                    Trade 1 <span class="text-slate-300 mx-1">|</span> Trade 2
+                                </th>
                                 <th class="px-4 py-3 text-right">Total</th>
                                 <th class="px-4 py-3 text-center w-16">Nota</th>
                                 <th class="px-4 py-3 text-center w-10"><i data-lucide="coffee" class="w-3 h-3 mx-auto"></i></th>
@@ -305,9 +319,9 @@
             '300k': { start: 300000, drawdown: 7500, safetyThreshold: 307600 }
         };
 
-        let store = { activeId: null, date: new Date(), accounts: {} };
-        let isOffline = false; // Flag para modo offline
-        let currentNoteIso = null; // Para saber qual dia estamos editando
+        let store = { activeId: null, date: new Date(), accounts: {}, deletedLogs: [] };
+        let isOffline = false; 
+        let currentNoteIso = null;
 
         // ELEMENTS
         const els = { 
@@ -354,17 +368,71 @@
         window.createAccount = () => { const name = prompt("Nome:"); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [] }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); };
         window.renameAccount = () => { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } };
         
+        // --- DELETE WITH SECURITY ---
         window.deleteAccount = () => {
             const acc = getActive();
-            if(Object.keys(store.accounts).length <= 1) return alert("Você precisa manter pelo menos uma conta.");
-            if(confirm(`Tem certeza que deseja EXCLUIR a conta "${acc.name}"?\nTodos os dados dela serão perdidos permanentemente.`)) {
+            if(Object.keys(store.accounts).length <= 1) return alert("Você precisa manter pelo menos uma conta ativa.");
+            
+            const code = prompt("SEGURANÇA: Digite o código para excluir esta conta:");
+            let author = "";
+            
+            if(code === "1969") author = "Dante";
+            else if(code === "1987") author = "Felipe";
+            else return alert("Código incorreto. Ação cancelada.");
+
+            if(confirm(`ATENÇÃO:\nTem certeza que deseja EXCLUIR a conta "${acc.name}"?\n\nAutor da exclusão: ${author}`)) {
+                // Prepara log
+                if(!store.deletedLogs) store.deletedLogs = [];
+                const stats = calculateStats(acc);
+                const logEntry = {
+                    originalId: acc.id,
+                    name: acc.name,
+                    size: acc.size,
+                    finalEquity: stats.currentEquity,
+                    deletedBy: author,
+                    deletedAt: new Date().toISOString()
+                };
+                
+                // Salva no log e deleta a conta
+                store.deletedLogs.push(logEntry);
                 delete store.accounts[acc.id];
+                
+                // Muda para a proxima conta
                 const nextId = Object.keys(store.accounts)[0];
                 store.activeId = nextId;
+                
                 saveToCloud();
                 renderSidebar();
                 loadAccount(nextId);
+                alert(`Conta movida para Lixeira Administrativa por ${author}.`);
             }
+        };
+
+        // --- ADMIN LOGS ---
+        window.openAdminLogs = () => {
+            const modal = document.getElementById('admin-logs-modal');
+            const tbody = document.getElementById('admin-logs-body');
+            tbody.innerHTML = '';
+            
+            if(!store.deletedLogs || store.deletedLogs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-slate-400 italic">Nenhum registro de exclusão encontrado.</td></tr>';
+            } else {
+                // Ordena do mais recente para o mais antigo
+                store.deletedLogs.slice().reverse().forEach(log => {
+                    const row = document.createElement('tr');
+                    row.className = "border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50";
+                    row.innerHTML = `
+                        <td class="px-4 py-3">${new Date(log.deletedAt).toLocaleDateString()} ${new Date(log.deletedAt).toLocaleTimeString()}</td>
+                        <td class="px-4 py-3 font-medium">${log.name} <span class="text-xs text-slate-400">(${log.size})</span></td>
+                        <td class="px-4 py-3"><span class="px-2 py-1 bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 rounded text-xs font-bold uppercase">${log.deletedBy}</span></td>
+                        <td class="px-4 py-3 text-right font-mono font-bold">${formatCurrency(log.finalEquity)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+            
+            modal.classList.remove('hidden');
+            toggleSidebar(); // Fecha sidebar se estiver aberta
         };
 
         window.updateConfig = () => { const acc = getActive(); acc.size = els.inpSize.value; acc.monthType = parseInt(els.inpMonth.value); saveToCloud(); els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; renderDashboard(); };
@@ -433,14 +501,17 @@
             currentNoteIso = iso;
             const acc = getActive();
             const entry = acc.data[iso] || {};
-            const dateStr = new Date(iso).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            
+            // CORREÇÃO DATA 1: Criar data manual para evitar fuso horário
+            const [y, m, d] = iso.split('-'); 
+            const dateObj = new Date(y, m - 1, d); // Mês é base 0
+            const dateStr = dateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
             
             document.getElementById('note-modal-date').textContent = dateStr;
             document.getElementById('note-modal-input').value = entry.note || '';
             
             const modal = document.getElementById('note-modal');
             modal.classList.remove('hidden');
-            // Pequeno delay para animação de fade
             setTimeout(() => {
                modal.querySelector('.transform').classList.remove('scale-95', 'opacity-0');
                modal.querySelector('.transform').classList.add('scale-100', 'opacity-100');
@@ -529,7 +600,7 @@
 
         function createNewStore() {
             const defaultId = 'acc_' + Date.now();
-            store = { activeId: defaultId, date: new Date(), accounts: {} };
+            store = { activeId: defaultId, date: new Date(), accounts: {}, deletedLogs: [] };
             store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] };
         }
 
@@ -636,7 +707,16 @@
             els.customResult.textContent = formatCurrency(sum); els.customResult.className = sum >= 0 ? "font-bold text-green-600" : "font-bold text-red-600";
             const rate = totalTrades > 0 ? ((wins/totalTrades)*100).toFixed(0)+"%" : "0%";
             els.customWinrate.textContent = `${rate} (${wins}/${totalTrades})`;
-            els.customBest.textContent = best > -Infinity ? formatCurrency(best) : "--"; els.customWorst.textContent = worst < Infinity ? formatCurrency(worst) : "--";
+            els.customBest.textContent = best > -Infinity ? formatCurrency(best) : "--"; 
+            
+            // CORREÇÃO COR PIOR DIA
+            els.customWorst.textContent = worst < Infinity ? formatCurrency(worst) : "--";
+            if(worst < Infinity) {
+                els.customWorst.className = worst >= 0 ? "font-bold text-green-600" : "font-bold text-red-600";
+            } else {
+                els.customWorst.className = "font-bold text-slate-500";
+            }
+
             updateChart(chartLabels, chartData);
         }
 
@@ -840,7 +920,7 @@
             else { navigator.clipboard.writeText(text).then(() => alert("Resumo copiado!")); }
         }
 
-        // --- CLOUD ---
+        // --- CLOUD & OFFLINE LOGIC ---
         async function loadFromCloud() {
             try {
                 const docSnap = await getDoc(doc(db, "users", "dante_data"));
@@ -849,10 +929,7 @@
                     store = JSON.parse(data.store_json);
                     store.date = new Date(store.date || new Date());
                 }
-            } catch (e) { 
-                // CRÍTICO: Não engolir o erro. Repassar para o init.
-                throw e; 
-            }
+            } catch (e) { throw e; }
         }
         
         async function saveToCloud() {
@@ -907,7 +984,11 @@
             } catch (e) { 
                 console.error("Erro loadFromCloud:", e);
                 // Mostra o erro real para o usuário
-                showFatalError("Erro de Conexão ou Permissão", e.message || "Falha ao baixar dados.");
+                let msg = e.message || "Falha ao baixar dados.";
+                if(msg.includes("Missing or insufficient permissions")) {
+                    msg = "Permissão negada pelo Firebase. Regras de segurança podem ter expirado.";
+                }
+                showFatalError("Erro de Conexão ou Permissão", msg);
                 return; // PARE AQUI (Evita o loop)
             } 
             
