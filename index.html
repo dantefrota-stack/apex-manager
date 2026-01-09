@@ -313,7 +313,7 @@
         let store = { activeId: null, date: new Date(), accounts: {}, deletedLogs: [] };
         let isOffline = false; let currentNoteIso = null;
 
-        // --- DEFINIR FUNÇÕES DE NUVEM NO TOPO (Para evitar ReferenceError) ---
+        // --- DEFINIR FUNÇÕES DE NUVEM NO TOPO (CRUCIAL PARA ORDEM) ---
         async function loadFromCloud() {
             try {
                 const docSnap = await getDoc(doc(db, "users", "dante_data"));
@@ -346,7 +346,7 @@
             }
         }
 
-        // --- ELEMENTOS E FUNÇÕES DE UI ---
+        // --- DEFINIR FUNÇÕES DE UI ANTES DO INIT ---
         const els = { 
             sidebar: document.getElementById('sidebar'), backdrop: document.getElementById('sidebar-backdrop'), accList: document.getElementById('account-list'), 
             activeName: document.getElementById('active-account-name'), activeConfig: document.getElementById('active-account-config'), 
@@ -430,7 +430,7 @@
         function calcCycle(acc, startDay) { const today = new Date(); let startDate = new Date(today); if (today.getDate() < startDay) { startDate.setMonth(startDate.getMonth() - 1); } startDate.setDate(startDay); startDate.setHours(0,0,0,0); let sum = 0; Object.keys(acc.data).forEach(iso => { const d = new Date(iso); d.setHours(0,0,0,0); if (d >= startDate) { const entry = acc.data[iso]; const val = parseFloat(entry.val) || 0; if(val !== 0 && !entry.holiday) sum += val; } }); return sum; }
         function getTradedDays(acc) { const allDates = Object.keys(acc.data); return allDates.filter(iso => { const entry = acc.data[iso]; const val = parseFloat(entry.val) || 0; return val !== 0 && !entry.holiday; }).sort((a, b) => new Date(b) - new Date(a)); }
 
-        // --- NEW RENDER CALENDAR ---
+        // --- RENDER CALENDAR ---
         function renderCalendar(acc) { 
             const y=store.date.getFullYear(); const m=store.date.getMonth(); 
             els.calendarTitle.textContent=`${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m]} ${y}`; 
@@ -538,30 +538,78 @@
             const win = window.open('', '_blank'); win.document.write(`<html><head><title>Relatório - ${acc.name}</title><style>@page { size: A4 landscape; margin: 10mm; } body { margin: 0; -webkit-print-color-adjust: exact; }</style></head><body>${html}</body></html>`); win.document.close(); setTimeout(() => win.print(), 800); 
         }
 
-        // --- INIT ---
+        // --- INIT ROBUSTO (TIMEOUT FAILSAFE) ---
         async function init() {
             lucide.createIcons();
-            const showFatalError = (title, msg) => { const loader = document.getElementById('app-loader'); if (loader) { loader.innerHTML = `<div class="text-center p-6 max-w-sm mx-auto"><div class="text-red-500 mb-4 flex justify-center"><i data-lucide="alert-triangle" class="w-12 h-12"></i></div><h3 class="text-lg font-bold text-white mb-2">${title}</h3><p class="text-xs text-slate-400 mb-6 bg-slate-800 p-2 rounded border border-slate-700 font-mono">${msg}</p><div class="space-y-3"><button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">Tentar Novamente</button><button onclick="window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2"><i data-lucide="wifi-off" class="w-4 h-4"></i> Usar em Modo Offline</button><button onclick="window.hardReset()" class="w-full bg-transparent hover:bg-red-900/30 text-red-400 border border-red-900/50 py-2 px-6 rounded-full text-xs transition">⚠️ Resetar Tudo</button></div></div>`; lucide.createIcons(); } };
             
-            // Tenta carregar. Se falhar, captura e mostra erro.
-            try { await loadFromCloud(); } catch (e) { console.error("Erro loadFromCloud:", e); let msg = e.message || "Falha ao baixar dados."; if(msg.includes("Missing or insufficient permissions")) msg = "Permissão negada pelo Firebase."; showFatalError("Erro de Conexão ou Permissão", msg); return; } 
-            
-            // Se chegou aqui, conexão funcionou. Se store estiver vazia, inicializa.
-            if (!store.activeId) { try { const docSnap = await getDoc(doc(db, "users", "dante_data")); if (docSnap.exists()) { showFatalError("Erro de Integridade", "Dados existem mas não puderam ser lidos."); return; } } catch(e) { showFatalError("Sem Conexão", "Não foi possível verificar conta."); return; } console.log("Criando nova conta..."); const defaultId = 'acc_' + Date.now(); store.activeId = defaultId; store.accounts = {}; store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] }; await saveToCloud(); }
-            
-            renderSidebar(); 
-            if (store.activeId) loadAccount(store.activeId); 
-            store.date = new Date(); 
-            syncDatesToView(); 
-            
-            // Remove Loader
-            setTimeout(() => { const l = document.getElementById('app-loader'); if(l) { l.classList.add('opacity-0'); setTimeout(()=>l.style.display='none', 500); } }, 1000); 
-            document.getElementById('status-text').textContent = "Online";
-            
-            // Bind global functions
-            window.renderSidebar = renderSidebar; 
-            window.renderDashboard = renderDashboard; 
-            window.saveToCloud = saveToCloud;
+            // 1. Definição da tela de erro
+            const showFatalError = (title, msg) => { 
+                const loader = document.getElementById('app-loader'); 
+                if (loader) { 
+                    loader.innerHTML = `
+                        <div class="text-center p-6 max-w-sm mx-auto">
+                            <div class="text-red-500 mb-4 flex justify-center"><i data-lucide="alert-triangle" class="w-12 h-12"></i></div>
+                            <h3 class="text-lg font-bold text-white mb-2">${title}</h3>
+                            <p class="text-xs text-slate-400 mb-6 bg-slate-800 p-2 rounded border border-slate-700 font-mono">${msg}</p>
+                            <div class="space-y-3">
+                                <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">Tentar Novamente</button>
+                                <button onclick="window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2"><i data-lucide="wifi-off" class="w-4 h-4"></i> Usar em Modo Offline</button>
+                                <button onclick="window.hardReset()" class="w-full bg-transparent hover:bg-red-900/30 text-red-400 border border-red-900/50 py-2 px-6 rounded-full text-xs transition">⚠️ Resetar Tudo</button>
+                            </div>
+                        </div>`; 
+                    lucide.createIcons(); 
+                } 
+            };
+
+            // 2. Failsafe: Se travar por 8 segundos, força erro de timeout
+            const safetyTimeout = setTimeout(() => {
+                showFatalError("Tempo Esgotado", "O sistema demorou muito para responder. Verifique sua conexão ou use o Modo Offline.");
+            }, 8000);
+
+            try { 
+                // 3. Tenta carregar (se der erro, vai pro catch)
+                await loadFromCloud(); 
+                
+                // 4. Verificação de integridade
+                if (!store.activeId) { 
+                    try { 
+                        const docSnap = await getDoc(doc(db, "users", "dante_data")); 
+                        if (docSnap.exists()) { throw new Error("Dados existem mas não puderam ser lidos (Integridade)."); } 
+                    } catch(e) { 
+                        // Se for erro de permissão ou rede, lança para o catch principal
+                        if(e.message && e.message.includes("Integridade")) throw e;
+                    } 
+                    console.log("Criando nova conta..."); 
+                    const defaultId = 'acc_' + Date.now(); 
+                    store.activeId = defaultId; 
+                    store.accounts = {}; 
+                    store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] }; 
+                    await saveToCloud(); 
+                }
+                
+                // 5. Sucesso: Renderiza e Limpa Failsafe
+                renderSidebar(); 
+                if (store.activeId) loadAccount(store.activeId); 
+                store.date = new Date(); 
+                syncDatesToView(); 
+                
+                clearTimeout(safetyTimeout); // Cancela o erro de timeout
+                setTimeout(() => { const l = document.getElementById('app-loader'); if(l) { l.classList.add('opacity-0'); setTimeout(()=>l.style.display='none', 500); } }, 1000); 
+                document.getElementById('status-text').textContent = "Online";
+                
+                // Bind global functions
+                window.renderSidebar = renderSidebar; 
+                window.renderDashboard = renderDashboard; 
+                window.saveToCloud = saveToCloud;
+
+            } catch (e) { 
+                // 6. Captura de Erros Reais
+                clearTimeout(safetyTimeout);
+                console.error("Erro Fatal no Init:", e); 
+                let msg = e.message || "Falha desconhecida."; 
+                if(msg.includes("Missing or insufficient permissions")) msg = "Permissão negada pelo Firebase (Regras Expiradas)."; 
+                showFatalError("Erro de Conexão", msg); 
+            } 
         }
 
         // Executa init no final
