@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Performance Report - DF Strategic V7</title>
+    <title>Performance Report - DF Strategic V9</title>
     
     <link rel="apple-touch-icon" sizes="180x180" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
     <link rel="icon" type="image/png" sizes="32x32" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
@@ -71,19 +71,31 @@
         .modal-enter { opacity: 0; transform: scale(0.9); }
         .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 0.2s, transform 0.2s; }
         
-        /* IMPRESSÃO WYSISWYG (O que você vê é o que você tem) */
+        /* IMPRESSÃO WYSISWYG (Ajustado para não cortar topo) */
         @media print { 
-            @page { size: landscape; margin: 5mm; } /* Força paisagem */
-            body { background-color: white !important; color: black !important; -webkit-print-color-adjust: exact; }
+            @page { size: landscape; margin: 10mm; } /* Aumentado para 10mm para evitar cortes */
             
-            /* Esconder elementos de UI */
-            #sidebar, #sidebar-backdrop, #header-main, .no-print, button, #app-loader, #note-modal, .fixed { display: none !important; }
+            body { 
+                background-color: white !important; 
+                color: black !important; 
+                -webkit-print-color-adjust: exact; 
+                padding-top: 20px !important; /* Empurra o conteúdo para baixo */
+            }
+            
+            /* Esconder elementos de UI e Seções de Saque */
+            #sidebar, #sidebar-backdrop, #header-main, .no-print, button, #app-loader, #note-modal, .fixed,
+            #payout-manager-container, #payout-history-card { display: none !important; }
             
             /* Ajustes de Layout para Papel */
-            .container { max-width: 100% !important; padding: 0 !important; width: 100% !important; }
+            .container { 
+                max-width: 100% !important; 
+                width: 100% !important; 
+                padding: 0 10px !important; /* Padding lateral seguro */
+            }
+            
             .grid { display: grid !important; }
             
-            /* Forçar colunas do grid (Tailwind usa flex em print as vezes, forçamos grid) */
+            /* Forçar colunas do grid */
             .lg\:grid-cols-3 { grid-template-columns: repeat(3, 1fr) !important; }
             .lg\:col-span-2 { grid-column: span 2 / span 2 !important; }
             .lg\:col-span-1 { grid-column: span 1 / span 1 !important; }
@@ -104,7 +116,7 @@
         .animate-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Barra de Semana com Texto - DESIGN ATUALIZADO */
+        /* Barra de Semana com Texto */
         .week-separator td {
             background-color: #e2e8f0; /* Slate 200 */
             color: #475569; /* Slate 600 */
@@ -294,7 +306,7 @@
                     </div>
                     <div id="weekly-list" class="mt-4 space-y-1 text-xs text-slate-500"></div>
                 </div>
-                <div class="dashboard-card p-5">
+                <div id="payout-history-card" class="dashboard-card p-5">
                     <div class="flex justify-between items-center mb-2"><h3 class="font-bold text-slate-800 text-sm flex items-center gap-2 dark:text-white"><i data-lucide="history" class="w-4 h-4"></i> Histórico de Saques</h3></div>
                     <div class="max-h-40 overflow-y-auto text-sm space-y-2" id="payout-history"><p class="text-xs text-slate-400 italic">Vazio.</p></div>
                     <div class="pt-2 mt-2 border-t border-slate-100 flex justify-between text-xs font-bold dark:border-slate-700"><span>Total Sacado:</span><span id="total-withdrawn" class="text-green-600">$0.00</span></div>
