@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Performance Report - DF Strategic</title>
+    <title>Performance Report - DF Strategic V7</title>
     
     <link rel="apple-touch-icon" sizes="180x180" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
     <link rel="icon" type="image/png" sizes="32x32" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
@@ -24,6 +24,8 @@
 
     <style>
         body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; -webkit-font-smoothing: antialiased; }
+        
+        /* Dark Mode Overrides */
         body.dark { background-color: #0f172a; color: #f1f5f9; }
         body.dark .dashboard-card { background-color: #1e293b; border-color: #334155; color: #f1f5f9; }
         body.dark .bg-white { background-color: #1e293b; }
@@ -36,30 +38,91 @@
         body.dark input, body.dark select { background-color: #334155; color: white; border-color: #475569; }
         body.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #334155; }
         body.dark #header-main { background-color: #1e293b; border-bottom: 1px solid #334155; }
+        
+        /* Remove Spinners from Number Inputs */
         input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         input[type="number"] { -moz-appearance: textfield; }
+        
         .val-pos { color: #16a34a; font-weight: 700; }
         .val-neg { color: #ef4444; font-weight: 700; }
         .val-zero { color: #94a3b8; opacity: 0.5; }
+
         .dashboard-card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-        .trade-input { text-align: center; font-weight: 600; transition: all 0.2s; font-size: 0.9rem; }
-        .trade-input:focus { transform: scale(1.02); outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); z-index: 10; }
+        
+        /* Trade Input Styling */
+        .trade-input { 
+            text-align: center; font-weight: 600; transition: all 0.2s; font-size: 0.9rem; 
+        }
+        .trade-input:focus { 
+            transform: scale(1.02); outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); z-index: 10;
+        }
         .trade-input::placeholder { color: #cbd5e1; font-weight: normal; font-size: 0.75rem; }
+        
         #sidebar { transition: transform 0.3s ease-in-out; }
         .sidebar-open { transform: translateX(0); } .sidebar-closed { transform: translateX(-100%); }
         #cloud-status { transition: all 0.5s; }
         .status-saved { color: #16a34a; } .status-saving { color: #f59e0b; } .status-error { color: #dc2626; }
+        
         .progress-bar-bg { background-color: #e2e8f0; border-radius: 999px; height: 6px; overflow: hidden; }
         body.dark .progress-bar-bg { background-color: #334155; }
         .progress-bar-fill { background-color: #4f46e5; height: 100%; transition: width 1s ease-in-out; }
+        
+        /* Modal Styles */
         .modal-enter { opacity: 0; transform: scale(0.9); }
         .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 0.2s, transform 0.2s; }
+        
+        /* IMPRESSÃO WYSISWYG (O que você vê é o que você tem) */
         @media print { 
-            body * { visibility: hidden; } #print-area, #print-area * { visibility: visible; } 
-            #print-area { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: white; z-index: 9999; padding: 0; color: black; -webkit-print-color-adjust: exact; }
+            @page { size: landscape; margin: 5mm; } /* Força paisagem */
+            body { background-color: white !important; color: black !important; -webkit-print-color-adjust: exact; }
+            
+            /* Esconder elementos de UI */
+            #sidebar, #sidebar-backdrop, #header-main, .no-print, button, #app-loader, #note-modal, .fixed { display: none !important; }
+            
+            /* Ajustes de Layout para Papel */
+            .container { max-width: 100% !important; padding: 0 !important; width: 100% !important; }
+            .grid { display: grid !important; }
+            
+            /* Forçar colunas do grid (Tailwind usa flex em print as vezes, forçamos grid) */
+            .lg\:grid-cols-3 { grid-template-columns: repeat(3, 1fr) !important; }
+            .lg\:col-span-2 { grid-column: span 2 / span 2 !important; }
+            .lg\:col-span-1 { grid-column: span 1 / span 1 !important; }
+            
+            /* Cores e Bordas */
+            .dashboard-card { border: 1px solid #ccc !important; box-shadow: none !important; break-inside: avoid; margin-bottom: 10px; background: white !important; color: black !important; }
+            .bg-slate-50 { background-color: #f8fafc !important; }
+            
+            /* Gráficos */
+            canvas { max-height: 300px !important; width: 100% !important; }
+            
+            /* Textos */
+            .text-white { color: black !important; }
+            .dark\:text-white { color: black !important; }
+            * { text-shadow: none !important; }
         }
+        
         .animate-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Barra de Semana com Texto - DESIGN ATUALIZADO */
+        .week-separator td {
+            background-color: #e2e8f0; /* Slate 200 */
+            color: #475569; /* Slate 600 */
+            font-size: 0.70rem; /* 11px */
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: center;
+            padding: 6px 0;
+            border-top: 1px solid #cbd5e1;
+            border-bottom: 1px solid #cbd5e1;
+        }
+        body.dark .week-separator td {
+            background-color: #1e293b; /* Dark Slate */
+            color: #94a3b8;
+            border-top: 1px solid #334155;
+            border-bottom: 1px solid #334155;
+        }
     </style>
 </head>
 <body class="pb-12 transition-colors duration-300">
@@ -69,17 +132,17 @@
         <p class="text-sm animate-pulse">Iniciando...</p>
     </div>
 
-    <div id="note-modal" class="fixed inset-0 z-[60] hidden">
+    <div id="note-modal" class="fixed inset-0 z-[60] hidden no-print">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="closeNoteModal()"></div>
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-lg bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 transform transition-all">
             <div class="flex justify-between items-center mb-4">
                 <div>
                     <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2"><i data-lucide="file-edit" class="w-5 h-5 text-indigo-500"></i> Notas do Dia</h3>
-                    <p id="note-modal-date" class="text-xs text-slate-500 dark:text-slate-400 mt-1 capitalize">--</p>
+                    <p id="note-modal-date" class="text-xs text-slate-500 dark:text-slate-400 mt-1">--</p>
                 </div>
                 <button onclick="closeNoteModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <textarea id="note-modal-input" rows="8" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none resize-none mb-4 leading-relaxed" placeholder="Escreva aqui suas observações sobre o dia..."></textarea>
+            <textarea id="note-modal-input" rows="8" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none resize-none mb-4 leading-relaxed" placeholder="Escreva aqui suas observações sobre o dia (estratégia, erros, acertos)..."></textarea>
             <div class="flex justify-end gap-3">
                 <button onclick="closeNoteModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 text-sm font-medium transition">Cancelar</button>
                 <button onclick="saveNote()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/30 transition flex items-center gap-2"><i data-lucide="save" class="w-4 h-4"></i> Salvar Nota</button>
@@ -87,33 +150,6 @@
         </div>
     </div>
 
-    <div id="admin-logs-modal" class="fixed inset-0 z-[70] hidden">
-        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity" onclick="document.getElementById('admin-logs-modal').classList.add('hidden')"></div>
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] max-w-2xl bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 transform transition-all h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4 border-b border-slate-200 dark:border-slate-700 pb-4">
-                <div>
-                    <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2"><i data-lucide="shield-alert" class="w-5 h-5 text-red-500"></i> Logs Administrativos</h3>
-                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Histórico de contas excluídas (Segurança)</p>
-                </div>
-                <button onclick="document.getElementById('admin-logs-modal').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <div class="flex-1 overflow-y-auto">
-                <table class="w-full text-sm text-left">
-                    <thead class="bg-slate-50 dark:bg-slate-900 text-slate-500 font-bold uppercase text-xs sticky top-0">
-                        <tr>
-                            <th class="px-4 py-3">Data</th>
-                            <th class="px-4 py-3">Conta</th>
-                            <th class="px-4 py-3">Autor</th>
-                            <th class="px-4 py-3 text-right">Saldo Final</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-logs-body" class="divide-y divide-slate-100 dark:divide-slate-700 text-slate-700 dark:text-slate-300"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <div id="print-area" class="hidden"></div>
     <div id="sidebar-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden backdrop-blur-sm transition-opacity no-print"></div>
     
     <div id="sidebar" class="fixed inset-y-0 left-0 w-80 bg-slate-900 text-white z-50 sidebar-closed shadow-2xl flex flex-col no-print">
@@ -123,8 +159,8 @@
         </div>
         <div class="flex-1 overflow-y-auto p-4 space-y-2" id="account-list"></div>
         <div class="p-4 border-t border-slate-700 bg-slate-800 space-y-2">
+            <button onclick="showAdminLogs()" class="w-full py-2 bg-slate-700 hover:bg-slate-600 rounded-md text-xs font-bold flex items-center justify-center gap-2 transition text-slate-300"><i data-lucide="shield-alert" class="w-3 h-3"></i> Logs de Admin</button>
             <button onclick="createAccount()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 rounded-md text-sm font-bold flex items-center justify-center gap-2 transition"><i data-lucide="plus-circle" class="w-4 h-4"></i> Nova Conta</button>
-            <button onclick="openAdminLogs()" class="w-full py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-md text-xs font-bold flex items-center justify-center gap-2 transition"><i data-lucide="shield" class="w-3 h-3"></i> Logs Admin</button>
         </div>
     </div>
 
@@ -147,19 +183,19 @@
         </div>
     </div>
 
-    <div class="bg-white border-b border-slate-200 shadow-sm sticky top-10 z-30 no-print transition-colors">
+    <div class="bg-white border-b border-slate-200 shadow-sm sticky top-10 z-30 transition-colors dark:border-slate-700">
         <div class="container mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
-            <div><h1 id="active-account-name" class="font-bold text-lg leading-none text-slate-800">Carregando...</h1><p class="text-xs text-slate-500 flex items-center gap-1 mt-1"><span id="active-account-config">--</span></p></div>
-            <div class="flex gap-2 text-sm">
-                <select id="config-size" onchange="updateConfig()" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs outline-none"><option value="25k">25k</option><option value="50k">50k</option><option value="75k">75k</option><option value="100k">100k</option><option value="150k">150k</option><option value="250k">250k</option><option value="300k">300k</option></select>
-                <select id="config-month" onchange="updateConfig()" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs outline-none"><option value="1">Mês 1-3</option><option value="4">Mês 4+</option></select>
-                <button onclick="renameAccount()" class="p-1.5 bg-slate-100 hover:bg-indigo-100 text-slate-500 hover:text-indigo-600 rounded transition" title="Renomear"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
-                <button onclick="deleteAccount()" class="p-1.5 bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-600 rounded transition" title="Excluir Conta"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            <div><h1 id="active-account-name" class="font-bold text-lg leading-none text-slate-800 dark:text-white">Carregando...</h1><p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1"><span id="active-account-config">--</span></p></div>
+            <div class="flex gap-2 text-sm no-print">
+                <select id="config-size" onchange="updateConfig()" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200"><option value="25k">25k</option><option value="50k">50k</option><option value="75k">75k</option><option value="100k">100k</option><option value="150k">150k</option><option value="250k">250k</option><option value="300k">300k</option></select>
+                <select id="config-month" onchange="updateConfig()" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200"><option value="1">Mês 1-3</option><option value="4">Mês 4+</option></select>
+                <button onclick="renameAccount()" class="p-1.5 bg-slate-100 hover:bg-indigo-100 text-slate-500 hover:text-indigo-600 rounded transition dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700" title="Renomear"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                <button onclick="deleteAccount()" class="p-1.5 bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-600 rounded transition dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-red-900" title="Excluir Conta"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
         </div>
     </div>
 
-    <div class="container mx-auto px-4 py-6 space-y-6 no-print">
+    <div class="container mx-auto px-4 py-6 space-y-6">
         
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 dashboard-card p-6">
@@ -169,23 +205,23 @@
                 <div class="relative h-64 w-full"><canvas id="equityChart"></canvas></div>
             </div>
 
-            <div class="lg:col-span-1 dashboard-card p-6 bg-slate-50 border border-slate-200">
-                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="filter" class="w-4 h-4 text-indigo-600"></i> Análise por Período</h3>
-                <div class="flex gap-2 mb-4">
-                    <input type="date" id="filter-start" class="w-full text-xs p-2 border rounded bg-white">
-                    <input type="date" id="filter-end" class="w-full text-xs p-2 border rounded bg-white">
+            <div class="lg:col-span-1 dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2 dark:text-white"><i data-lucide="filter" class="w-4 h-4 text-indigo-600"></i> Análise por Período</h3>
+                <div class="flex gap-2 mb-4 no-print">
+                    <input type="date" id="filter-start" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600">
+                    <input type="date" id="filter-end" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600">
                     <button onclick="filterReport()" class="bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700"><i data-lucide="search" class="w-4 h-4"></i></button>
                 </div>
                 <div class="space-y-3 text-sm">
-                    <div class="flex justify-between border-b border-slate-200 pb-2"><span class="text-slate-500">Resultado Período</span><span id="custom-result" class="font-bold text-slate-800">--</span></div>
-                    <div class="flex justify-between border-b border-slate-200 pb-2"><span class="text-slate-500">Taxa de Acerto (Trades)</span><span id="custom-winrate" class="font-bold text-indigo-600">--</span></div>
-                    <div class="flex justify-between border-b border-slate-200 pb-2"><span class="text-slate-500">Melhor Dia</span><span id="custom-best" class="font-bold text-green-600">--</span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">Pior Dia</span><span id="custom-worst" class="font-bold text-red-600">--</span></div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2 dark:border-slate-700"><span class="text-slate-500 dark:text-slate-400">Resultado Período</span><span id="custom-result" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2 dark:border-slate-700"><span class="text-slate-500 dark:text-slate-400">Taxa de Acerto (Trades)</span><span id="custom-winrate" class="font-bold text-indigo-600">--</span></div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2 dark:border-slate-700"><span class="text-slate-500 dark:text-slate-400">Melhor Dia</span><span id="custom-best" class="font-bold text-green-600">--</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Pior Dia</span><span id="custom-worst" class="font-bold text-red-600">--</span></div>
                 </div>
-                <div class="grid grid-cols-3 gap-2 mt-4">
-                     <button onclick="shareReport()" class="col-span-1 py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded text-xs font-bold flex justify-center items-center gap-1" title="WhatsApp"><i data-lucide="share-2" class="w-3 h-3"></i> Zap</button>
-                     <button onclick="printReport()" class="col-span-1 py-2 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 flex justify-center items-center gap-1"><i data-lucide="printer" class="w-3 h-3"></i> PDF</button>
-                     <button onclick="exportCSV()" class="col-span-1 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-xs font-bold flex justify-center items-center gap-1"><i data-lucide="download" class="w-3 h-3"></i> CSV</button>
+                <div class="grid grid-cols-3 gap-2 mt-4 no-print">
+                     <button onclick="shareReport()" class="col-span-1 py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400" title="WhatsApp"><i data-lucide="share-2" class="w-3 h-3"></i> Zap</button>
+                     <button onclick="window.print()" class="col-span-1 py-2 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 flex justify-center items-center gap-1 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"><i data-lucide="printer" class="w-3 h-3"></i> PDF</button>
+                     <button onclick="exportCSV()" class="col-span-1 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400"><i data-lucide="download" class="w-3 h-3"></i> CSV</button>
                 </div>
             </div>
         </div>
@@ -193,54 +229,58 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="dashboard-card p-4 border-l-4 border-l-indigo-500">
                 <p class="text-xs font-bold text-gray-400 uppercase">Saldo Atual (Equity)</p>
-                <h2 id="current-equity" class="text-3xl font-extrabold text-slate-800 mt-1">$0.00</h2>
-                
+                <h2 id="current-equity" class="text-3xl font-extrabold text-slate-800 dark:text-white mt-1">$0.00</h2>
                 <div class="mt-3">
-                    <div class="flex justify-between text-[10px] uppercase font-bold text-slate-400 mb-1"><span>Início</span><span>Meta</span></div>
-                    <div class="progress-bar-bg w-full"><div id="equity-progress" class="progress-bar-fill w-0"></div></div>
+                    <div class="flex justify-between text-[10px] uppercase font-bold text-slate-400 mb-1">
+                        <span>Início</span>
+                        <span>Meta</span>
+                    </div>
+                    <div class="progress-bar-bg w-full">
+                        <div id="equity-progress" class="progress-bar-fill w-0"></div>
+                    </div>
                     <p id="equity-diff" class="text-xs font-medium mt-1 text-gray-500 text-right">--</p>
                 </div>
             </div>
+            
             <div class="dashboard-card p-4 border-l-4 border-l-green-500 relative overflow-hidden">
-                <div class="flex justify-between items-start"><div><p class="text-xs font-bold text-green-900 uppercase flex items-center gap-1"><i data-lucide="target" class="w-3 h-3"></i> Teto 30% (Hoje)</p><h2 id="gain-cap" class="text-2xl font-bold text-green-600 mt-1">$0.00</h2></div></div>
-                <p class="text-xs text-gray-500 mt-1">Limite sugerido p/ consistência.</p>
+                <div class="flex justify-between items-start"><div><p class="text-xs font-bold text-green-900 uppercase flex items-center gap-1 dark:text-green-400"><i data-lucide="target" class="w-3 h-3"></i> Teto 30% (Hoje)</p><h2 id="gain-cap" class="text-2xl font-bold text-green-600 mt-1">$0.00</h2></div></div>
+                <p class="text-xs text-gray-500 mt-1 dark:text-slate-400">Limite sugerido p/ consistência.</p>
             </div>
-            <div id="payout-manager-container" class="dashboard-card p-4 border-l-4 border-l-yellow-500 relative bg-white"></div>
+
+            <div id="payout-manager-container" class="dashboard-card p-4 border-l-4 border-l-yellow-500 relative bg-white dark:bg-slate-800"></div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 space-y-4">
                 <div class="flex justify-between items-center dashboard-card p-3">
-                    <button onclick="changeMonth(-1)" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"><i data-lucide="chevron-left"></i></button>
-                    <h2 id="calendar-title" class="text-xl font-bold text-slate-700">--</h2>
-                    <button onclick="changeMonth(1)" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"><i data-lucide="chevron-right"></i></button>
+                    <button onclick="changeMonth(-1)" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full no-print"><i data-lucide="chevron-left"></i></button>
+                    <h2 id="calendar-title" class="text-xl font-bold text-slate-700 dark:text-slate-200">--</h2>
+                    <button onclick="changeMonth(1)" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full no-print"><i data-lucide="chevron-right"></i></button>
                 </div>
                 <div class="dashboard-card overflow-hidden"><div class="overflow-x-auto">
                     <table class="w-full text-sm text-left">
-                        <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs">
+                        <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs dark:bg-slate-800 dark:text-slate-400">
                             <tr>
                                 <th class="px-4 py-3">Data</th>
-                                <th class="px-1 md:px-4 py-3 text-center w-40 md:w-48 whitespace-nowrap text-[10px] md:text-xs">
-                                    Trade 1 <span class="text-slate-300 mx-1">|</span> Trade 2
-                                </th>
+                                <th class="px-4 py-3 text-center w-48">Trade 1 <span class="text-slate-300 mx-1">|</span> Trade 2</th>
                                 <th class="px-4 py-3 text-right">Total</th>
                                 <th class="px-4 py-3 text-center w-16">Nota</th>
                                 <th class="px-4 py-3 text-center w-10"><i data-lucide="coffee" class="w-3 h-3 mx-auto"></i></th>
                             </tr>
                         </thead>
-                        <tbody id="calendar-body" class="divide-y divide-slate-100"></tbody>
+                        <tbody id="calendar-body" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
                     </table>
                 </div></div>
             </div>
 
             <div class="lg:col-span-1 space-y-4">
                 <div class="dashboard-card p-5">
-                    <h3 class="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2"><i data-lucide="calendar-check" class="w-4 h-4"></i> Performance (Ciclos Atuais)</h3>
+                    <h3 class="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2 dark:text-white"><i data-lucide="calendar-check" class="w-4 h-4"></i> Performance (Ciclos Atuais)</h3>
                     <div class="space-y-3 text-sm">
-                        <div class="flex justify-between items-center border-b border-slate-50 pb-1"><span class="text-slate-500 font-medium">Mensal (1 a 31)</span><span id="stats-month" class="font-bold text-slate-800">$0.00</span></div>
-                        <div class="flex justify-between items-center border-b border-slate-50 pb-1"><span class="text-slate-500">Ciclo 10 a 10</span><span id="stats-c10" class="font-bold text-slate-700">$0.00</span></div>
-                        <div class="flex justify-between items-center border-b border-slate-50 pb-1"><span class="text-slate-500">Ciclo 15 a 15</span><span id="stats-c15" class="font-bold text-slate-700">$0.00</span></div>
-                        <div class="flex justify-between items-center border-b border-slate-50 pb-1"><span class="text-slate-500">Ciclo 20 a 20</span><span id="stats-c20" class="font-bold text-slate-700">$0.00</span></div>
+                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><span class="text-slate-500 font-medium">Mensal (1 a 31)</span><span id="stats-month" class="font-bold text-slate-800 dark:text-slate-200">$0.00</span></div>
+                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><span class="text-slate-500">Ciclo 10 a 10</span><span id="stats-c10" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
+                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><span class="text-slate-500">Ciclo 15 a 15</span><span id="stats-c15" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
+                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><span class="text-slate-500">Ciclo 20 a 20</span><span id="stats-c20" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
                         
                         <div class="mt-4 pt-2 bg-indigo-50 dark:bg-slate-800 p-3 rounded-lg border border-indigo-100 dark:border-slate-700">
                             <h4 class="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase mb-2 text-center">Médias Diárias (Recentes)</h4>
@@ -255,9 +295,9 @@
                     <div id="weekly-list" class="mt-4 space-y-1 text-xs text-slate-500"></div>
                 </div>
                 <div class="dashboard-card p-5">
-                    <div class="flex justify-between items-center mb-2"><h3 class="font-bold text-slate-800 text-sm flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Histórico de Saques</h3></div>
+                    <div class="flex justify-between items-center mb-2"><h3 class="font-bold text-slate-800 text-sm flex items-center gap-2 dark:text-white"><i data-lucide="history" class="w-4 h-4"></i> Histórico de Saques</h3></div>
                     <div class="max-h-40 overflow-y-auto text-sm space-y-2" id="payout-history"><p class="text-xs text-slate-400 italic">Vazio.</p></div>
-                    <div class="pt-2 mt-2 border-t border-slate-100 flex justify-between text-xs font-bold"><span>Total Sacado:</span><span id="total-withdrawn" class="text-green-600">$0.00</span></div>
+                    <div class="pt-2 mt-2 border-t border-slate-100 flex justify-between text-xs font-bold dark:border-slate-700"><span>Total Sacado:</span><span id="total-withdrawn" class="text-green-600">$0.00</span></div>
                 </div>
             </div>
         </div>
@@ -289,10 +329,526 @@
             '300k': { start: 300000, drawdown: 7500, safetyThreshold: 307600 }
         };
 
-        let store = { activeId: null, date: new Date(), accounts: {}, deletedLogs: [] };
-        let isOffline = false; let currentNoteIso = null;
+        // SENHAS E SEGURANÇA
+        const SECURITY = { '1969': 'Dante', '1987': 'Felipe' };
 
-        // --- DEFINIR FUNÇÕES DE NUVEM ANTES ---
+        let store = { activeId: null, date: new Date(), accounts: {}, adminLogs: [] };
+        let isOffline = false;
+        let currentNoteIso = null;
+
+        // ELEMENTS
+        const els = { 
+            sidebar: document.getElementById('sidebar'), backdrop: document.getElementById('sidebar-backdrop'), accList: document.getElementById('account-list'), 
+            activeName: document.getElementById('active-account-name'), activeConfig: document.getElementById('active-account-config'), 
+            inpSize: document.getElementById('config-size'), inpMonth: document.getElementById('config-month'), 
+            equity: document.getElementById('current-equity'), equityDiff: document.getElementById('equity-diff'), equityProgress: document.getElementById('equity-progress'),
+            gainCap: document.getElementById('gain-cap'), 
+            statsMonth: document.getElementById('stats-month'), statsC10: document.getElementById('stats-c10'), statsC15: document.getElementById('stats-c15'), statsC20: document.getElementById('stats-c20'),
+            statsAvg5: document.getElementById('stats-avg-5'), statsAvg10: document.getElementById('stats-avg-10'), statsAvg15: document.getElementById('stats-avg-15'), statsAvg20: document.getElementById('stats-avg-20'),
+            weeklyList: document.getElementById('weekly-list'), 
+            calendarTitle: document.getElementById('calendar-title'), calendarBody: document.getElementById('calendar-body'), 
+            payoutHistory: document.getElementById('payout-history'), totalWithdrawn: document.getElementById('total-withdrawn'), 
+            customResult: document.getElementById('custom-result'), customWinrate: document.getElementById('custom-winrate'),
+            customBest: document.getElementById('custom-best'), customWorst: document.getElementById('custom-worst'),
+            filterStart: document.getElementById('filter-start'), filterEnd: document.getElementById('filter-end'),
+            themeIcon: document.getElementById('theme-icon')
+        };
+
+        // THEME HANDLING
+        window.toggleTheme = () => {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            localStorage.setItem('df_theme', isDark ? 'dark' : 'light');
+            els.themeIcon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
+            lucide.createIcons();
+            renderDashboard(); 
+        };
+        if (localStorage.getItem('df_theme') === 'dark') { 
+            document.body.classList.add('dark'); 
+            els.themeIcon.setAttribute('data-lucide', 'sun');
+        }
+
+        // EXPOSE FUNCTIONS TO WINDOW
+        window.toggleSidebar = () => { const isOpen=!els.sidebar.classList.contains('sidebar-closed'); if(isOpen){els.sidebar.classList.add('sidebar-closed');els.sidebar.classList.remove('sidebar-open');els.backdrop.classList.add('hidden');}else{els.sidebar.classList.remove('sidebar-closed');els.sidebar.classList.add('sidebar-open');els.backdrop.classList.remove('hidden');} };
+        window.formatCurrency = (v) => v.toLocaleString('en-US',{style:'currency',currency:'USD'});
+        window.createAccount = () => { const name = prompt("Nome:"); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [] }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); };
+        window.renameAccount = () => { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } };
+        
+        // DELEÇÃO COM SEGURANÇA
+        window.deleteAccount = () => {
+            const acc = getActive();
+            if(Object.keys(store.accounts).length <= 1) return alert("Você precisa manter pelo menos uma conta.");
+            
+            const pwd = prompt(`ATENÇÃO: Você está prestes a excluir "${acc.name}".\n\nDigite a senha de administrador para confirmar:`);
+            if(!pwd) return;
+
+            const user = SECURITY[pwd];
+            if (!user) {
+                alert("Senha incorreta. Acesso negado.");
+                return;
+            }
+
+            if(confirm(`Confirmado: Usuário ${user}.\nTem certeza ABSOLUTA? Os dados serão perdidos.`)) {
+                // Registrar LOG
+                if(!store.adminLogs) store.adminLogs = [];
+                store.adminLogs.push({
+                    date: new Date().toISOString(),
+                    user: user,
+                    action: `Excluiu conta: ${acc.name} (${acc.size})`
+                });
+
+                delete store.accounts[acc.id];
+                const nextId = Object.keys(store.accounts)[0];
+                store.activeId = nextId;
+                saveToCloud();
+                renderSidebar();
+                loadAccount(nextId);
+                alert(`Conta excluída por ${user}.`);
+            }
+        };
+
+        window.showAdminLogs = () => {
+            let logs = store.adminLogs || [];
+            if(logs.length === 0) return alert("Nenhum log registrado.");
+            let msg = "REGISTRO DE ATIVIDADES:\n\n";
+            logs.slice().reverse().forEach(l => {
+                msg += `[${new Date(l.date).toLocaleDateString()} ${new Date(l.date).toLocaleTimeString()}] ${l.user}: ${l.action}\n`;
+            });
+            alert(msg);
+        };
+
+        window.updateConfig = () => { const acc = getActive(); acc.size = els.inpSize.value; acc.monthType = parseInt(els.inpMonth.value); saveToCloud(); els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; renderDashboard(); };
+        window.changeMonth = (d) => { store.date.setMonth(store.date.getMonth()+d); syncDatesToView(); renderDashboard(); };
+        window.filterReport = () => filterReportInternal();
+        window.shareReport = () => shareReportInternal();
+
+        window.updateData = (iso, type, val) => { 
+            const acc = getActive(); 
+            if(!acc.data[iso]) acc.data[iso] = {}; 
+            
+            if (['val', 't1', 't2'].includes(type)) {
+                if(val === '' || val === null) val = 0;
+                else if(typeof val === 'string') {
+                    val = parseFloat(val.replace(',', '.')) || 0;
+                }
+            }
+            acc.data[iso][type] = val;
+            if (type === 't1' || type === 't2') {
+                const t1 = parseFloat(acc.data[iso].t1) || 0;
+                const t2 = parseFloat(acc.data[iso].t2) || 0;
+                acc.data[iso].val = t1 + t2;
+            }
+            renderDashboard(); 
+            saveToCloud(); 
+        };
+
+        window.togglePayoutForm = () => {
+            const form = document.getElementById('payout-form-area');
+            const btn = document.getElementById('payout-action-btn');
+            if (form.classList.contains('hidden')) { form.classList.remove('hidden'); btn.classList.add('hidden'); } 
+            else { form.classList.add('hidden'); btn.classList.remove('hidden'); }
+        };
+
+        window.submitPayout = (maxAvailable) => {
+            const input = document.getElementById('payout-input-amount');
+            const val = parseFloat(input.value);
+            if (!val || val <= 0) return alert("Digite um valor válido.");
+            if (val > maxAvailable) return alert(`Valor excede o disponível de ${formatCurrency(maxAvailable)}.`);
+            if (val % 500 !== 0) return alert("O valor deve ser múltiplo de $500.");
+            if (confirm(`Confirmar saque de ${formatCurrency(val)}?`)) {
+                const acc = getActive();
+                acc.payouts.push({ id: Date.now(), date: new Date().toISOString(), amount: val, note: 'Saque Aprovado', voided: false });
+                saveToCloud(); renderDashboard(); alert("Saque registrado com sucesso!");
+            }
+        };
+
+        window.voidPayout = (id) => {
+            const acc = getActive();
+            const idx = acc.payouts.findIndex(p => p.id === id);
+            if (idx === -1) return;
+            if (confirm(`Cancelar registro de saque? O valor retornará ao Saldo.`)) {
+                acc.payouts[idx].voided = true;
+                acc.payouts[idx].voidedAt = new Date().toISOString();
+                saveToCloud(); renderDashboard();
+            }
+        };
+
+        window.openNoteModal = (iso) => {
+            currentNoteIso = iso;
+            const acc = getActive();
+            const entry = acc.data[iso] || {};
+            const dateStr = new Date(iso).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            document.getElementById('note-modal-date').textContent = dateStr;
+            document.getElementById('note-modal-input').value = entry.note || '';
+            const modal = document.getElementById('note-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+               modal.querySelector('.transform').classList.remove('scale-95', 'opacity-0');
+               modal.querySelector('.transform').classList.add('scale-100', 'opacity-100');
+            }, 10);
+        };
+
+        window.closeNoteModal = () => {
+            const modal = document.getElementById('note-modal');
+            modal.querySelector('.transform').classList.remove('scale-100', 'opacity-100');
+            modal.querySelector('.transform').classList.add('scale-95', 'opacity-0');
+            setTimeout(() => { modal.classList.add('hidden'); }, 200);
+            currentNoteIso = null;
+        };
+
+        window.saveNote = () => {
+            if(!currentNoteIso) return;
+            const val = document.getElementById('note-modal-input').value;
+            window.updateData(currentNoteIso, 'note', val);
+            closeNoteModal();
+        };
+
+        window.exportCSV = () => {
+            const acc = getActive();
+            let csvContent = "data:text/csv;charset=utf-8,Data,Trade 1,Trade 2,Total Dia,Notas\n";
+            const dates = Object.keys(acc.data).sort();
+            dates.forEach(iso => {
+                const d = acc.data[iso];
+                const dateStr = new Date(iso).toLocaleDateString('pt-BR');
+                const t1 = (parseFloat(d.t1) || 0).toFixed(2);
+                const t2 = (parseFloat(d.t2) || 0).toFixed(2);
+                const val = (parseFloat(d.val) || 0).toFixed(2);
+                const note = (d.note || '').replace(/[\r\n]+/g, " ").replace(/,/g, ";");
+                if (parseFloat(val) !== 0 || note !== '') {
+                    csvContent += `${dateStr},${t1},${t2},${val},${note}\n`;
+                }
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Relatorio_${acc.name}_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        window.forceOfflineMode = () => {
+            isOffline = true;
+            const localBackup = localStorage.getItem('df_backup_local');
+            if (localBackup) { try { store = JSON.parse(localBackup); store.date = new Date(store.date || new Date()); } catch(e) { createNewStore(); } } else { createNewStore(); }
+            document.getElementById('status-text').textContent = "Modo Offline";
+            document.getElementById('status-text').className = "text-yellow-500 font-bold";
+            renderSidebar(); loadAccount(store.activeId); store.date = new Date(); syncDatesToView();
+            const loader = document.getElementById('app-loader'); if(loader) { loader.style.display='none'; }
+        };
+
+        window.hardReset = async () => {
+            const confirm1 = prompt("ATENÇÃO: Isso apagará seus dados locais e tentará criar uma nova conta.\n\nDigite 'DELETAR' para confirmar:");
+            if (confirm1 === 'DELETAR') {
+                createNewStore();
+                await saveToCloud();
+                alert("Dados resetados. O sistema tentará reconectar.");
+                location.reload();
+            }
+        };
+
+        function createNewStore() {
+            const defaultId = 'acc_' + Date.now();
+            store = { activeId: defaultId, date: new Date(), accounts: {}, adminLogs: [] };
+            store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] };
+        }
+
+        function getNextWindow() {
+            const d = new Date(); const day = d.getDate(); const m = d.getMonth(); const y = d.getFullYear();
+            let targetDay; let targetMonth = m; let targetYear = y;
+            if (day <= 10) targetDay = 10; else if (day <= 20) targetDay = 20; else if (day <= 30) targetDay = 30;
+            else { targetDay = 10; targetMonth = m + 1; }
+            if (targetMonth === 1 && targetDay === 30) targetDay = 28; 
+            const targetDate = new Date(targetYear, targetMonth, targetDay);
+            const diffTime = Math.abs(targetDate - d);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+            if (day === targetDay) return "HOJE";
+            return `${targetDay}/${targetMonth + 1} (${diffDays} dias)`;
+        }
+
+        function renderPayoutManager() {
+            const acc = getActive(); const rules = RULES[acc.size]; const stats = calculateStats(acc);
+            const currentEquity = stats.currentEquity; const threshold = rules.safetyThreshold;
+            const rawSurplus = Math.max(0, currentEquity - threshold);
+            const availablePayout = Math.floor(rawSurplus / 500) * 500;
+            const canRequest = availablePayout >= 500;
+            const btnClass = canRequest ? "bg-green-600 hover:bg-green-700 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-400 cursor-not-allowed";
+            const btnAction = canRequest ? "togglePayoutForm()" : "";
+
+            const html = `
+                <div class="flex justify-between items-start mb-2">
+                    <div><p class="text-xs font-bold text-yellow-700 dark:text-yellow-500 uppercase tracking-wider">Gestão de Saques</p><div class="flex items-baseline gap-1 mt-1"><span class="text-2xl font-extrabold text-slate-800 dark:text-white">${formatCurrency(availablePayout)}</span><span class="text-xs font-medium text-slate-500">Disponível</span></div></div>
+                    <div class="text-right"><p class="text-[10px] font-bold text-slate-400 uppercase">Próxima Janela</p><p class="text-sm font-bold text-indigo-600 dark:text-indigo-400">${getNextWindow()}</p></div>
+                </div>
+                <div class="bg-yellow-50 dark:bg-slate-800 rounded border border-yellow-100 dark:border-slate-700 p-2 mb-3">
+                    <div class="flex justify-between text-xs mb-1"><span class="text-slate-500">Saldo Atual:</span><span class="font-mono font-bold text-slate-700 dark:text-slate-300">${formatCurrency(currentEquity)}</span></div>
+                    <div class="flex justify-between text-xs mb-1"><span class="text-slate-500">Limite Segurança:</span><span class="font-mono font-bold text-slate-700 dark:text-slate-300">${formatCurrency(threshold)}</span></div>
+                    <div class="flex justify-between text-xs border-t border-yellow-200 dark:border-slate-600 pt-1 mt-1"><span class="text-yellow-700 dark:text-yellow-500 font-bold">Excedente Real:</span><span class="font-mono font-bold text-yellow-700 dark:text-yellow-500">${formatCurrency(rawSurplus)}</span></div>
+                </div>
+                <button id="payout-action-btn" onclick="${btnAction}" class="w-full py-2 rounded text-xs font-bold transition flex justify-center items-center gap-2 ${btnClass}"><i data-lucide="dollar-sign" class="w-3 h-3"></i> Solicitar Saque</button>
+                <div id="payout-form-area" class="hidden animate-in fade-in slide-in-from-top-2 duration-200"><div class="flex gap-2"><input type="number" id="payout-input-amount" step="500" min="500" max="${availablePayout}" placeholder="Múltiplo de 500" class="w-full text-xs p-2 border border-slate-300 rounded focus:border-indigo-500 outline-none font-bold text-slate-700"><button onclick="submitPayout(${availablePayout})" class="bg-green-600 text-white px-3 rounded hover:bg-green-700"><i data-lucide="check" class="w-4 h-4"></i></button><button onclick="togglePayoutForm()" class="bg-slate-200 text-slate-600 px-3 rounded hover:bg-slate-300"><i data-lucide="x" class="w-4 h-4"></i></button></div><p class="text-[10px] text-slate-400 mt-1 text-center">*Valor será deduzido do Equity.</p></div>
+            `;
+            const container = document.getElementById('payout-manager-container');
+            if(container) { container.innerHTML = html; lucide.createIcons(); }
+        }
+
+        function getActive(){return store.accounts[store.activeId];}
+
+        function calculateStats(acc) { 
+            const rules=RULES[acc.size]; let tp=0; let dt=0; let pe=rules.start; 
+            let md=-Infinity; let mDate=null; let wd=Infinity; let wDate=null; let wins=0; let losses=0;
+            const keys=Object.keys(acc.data).sort(); let re=rules.start; 
+            
+            keys.forEach(d=>{ 
+                const e=acc.data[d]; 
+                const val = parseFloat(e.val) || 0; 
+                if(val!==0 && !e.holiday){ 
+                    tp+=val; dt++; re+=val; 
+                    if(re>pe)pe=re; 
+                    if(val>md) { md=val; mDate=d; } if(val<wd) { wd=val; wDate=d; }
+                } 
+            }); 
+            const w = (acc.payouts||[]).reduce((s,p) => p.voided ? s : s + p.amount, 0); 
+            return {currentEquity:rules.start+tp-w, totalProfit:tp, daysTraded:dt, peakEquity:pe, maxDay:md===-Infinity?0:md, maxDate:mDate, minDay:wd===Infinity?0:wd, minDate:wDate}; 
+        }
+
+        function syncDatesToView() {
+            const y = store.date.getFullYear(); const m = store.date.getMonth();
+            const start = new Date(y, m, 1); const end = new Date(y, m + 1, 0);
+            const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            els.filterStart.value = fmt(start); els.filterEnd.value = fmt(end);
+        }
+
+        function filterReportInternal() {
+            const start = els.filterStart.value; const end = els.filterEnd.value;
+            if(!start || !end) return;
+            const acc = getActive(); let sum=0; let wins=0; let totalTrades=0; let best=-Infinity; let worst=Infinity; let chartLabels=[]; let chartData=[]; let cumSum=0;
+            
+            Object.keys(acc.data).sort().forEach(iso => {
+                if(iso >= start && iso <= end) {
+                    const e = acc.data[iso];
+                    const val = parseFloat(e.val) || 0;
+                    const t1 = parseFloat(e.t1);
+                    const t2 = parseFloat(e.t2);
+
+                    if(!e.holiday) {
+                        if (val !== 0) {
+                            sum += val;
+                            if(val > best) best = val; if(val < worst) worst = val;
+                            cumSum += val;
+                            
+                            // GRÁFICO CLÁSSICO: Só adiciona se operou
+                            chartLabels.push(new Date(iso).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}));
+                            chartData.push(cumSum);
+                        }
+                        if (!isNaN(t1) || !isNaN(t2)) {
+                            if (t1) { totalTrades++; if(t1 > 0) wins++; }
+                            if (t2) { totalTrades++; if(t2 > 0) wins++; }
+                        } else if (val !== 0) {
+                            totalTrades++; if(val > 0) wins++;
+                        }
+                    }
+                }
+            });
+
+            els.customResult.textContent = formatCurrency(sum); els.customResult.className = sum >= 0 ? "font-bold text-green-600" : "font-bold text-red-600";
+            const rate = totalTrades > 0 ? ((wins/totalTrades)*100).toFixed(0)+"%" : "0%";
+            els.customWinrate.textContent = `${rate} (${wins}/${totalTrades})`;
+            els.customBest.textContent = best > -Infinity ? formatCurrency(best) : "--"; els.customWorst.textContent = worst < Infinity ? formatCurrency(worst) : "--";
+            updateChart(chartLabels, chartData);
+        }
+
+        function updateChart(labels, data) {
+            const ctx = document.getElementById('equityChart').getContext('2d');
+            if(chartInstance) chartInstance.destroy();
+            const isDark = document.body.classList.contains('dark');
+            const gridColor = isDark ? '#334155' : '#f3f4f6';
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+            chartInstance = new Chart(ctx, {
+                type: 'line', 
+                data: { labels: labels, datasets: [{ label: 'Lucro Acumulado', data: data, borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 3, pointRadius: 4, fill: true, tension: 0.1 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: gridColor }, ticks: { color: textColor } }, x: { grid: { display: false }, ticks: { color: textColor } } } }
+            });
+        }
+        
+        function getTradedDays(acc) { const allDates = Object.keys(acc.data); return allDates.filter(iso => { const entry = acc.data[iso]; const val = parseFloat(entry.val) || 0; return val !== 0 && !entry.holiday; }).sort((a, b) => new Date(b) - new Date(a)); }
+        
+        function getAverage(acc, days) {
+            const tradedDays = getTradedDays(acc);
+            const subset = tradedDays.slice(0, days);
+            if (subset.length === 0) return 0;
+            let sum = 0; subset.forEach(iso => sum += (parseFloat(acc.data[iso].val) || 0));
+            return sum / subset.length;
+        }
+
+        function getMonthlyDataFixed(acc) { const y = store.date.getFullYear(); const m = store.date.getMonth(); const daysInMonth = new Date(y, m+1, 0).getDate(); let weeks = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; let total = 0; for(let d=1; d<=daysInMonth; d++) { const date = new Date(y, m, d); const iso = date.toISOString().split('T')[0]; const entry = acc.data[iso]; const weekIndex = Math.ceil(d / 7); if(entry && !entry.holiday) { const val = parseFloat(entry.val) || 0; weeks[weekIndex] += val; total += val; } } let html = ''; for(let i=1; i<=5; i++) { const startDay = (i - 1) * 7 + 1; if (startDay > daysInMonth) continue; const label = `Semana ${i} (${startDay < 10 ? '0'+startDay : startDay}/${m+1 < 10 ? '0'+(m+1) : m+1})`; const val = weeks[i]; html += `<div class="flex justify-between border-b border-slate-50 dark:border-slate-700 pb-1 last:border-0 text-xs"><span class="text-slate-500">${label}</span><span class="font-bold ${val >= 0 ? 'val-pos' : 'val-neg'}">${formatCurrency(val)}</span></div>`; } if(!html) html = '<span class="italic text-xs text-slate-400">Sem dados</span>'; return { total, html }; }
+        function calcCycle(acc, startDay) {
+            const today = new Date(); let startDate = new Date(today);
+            if (today.getDate() < startDay) { startDate.setMonth(startDate.getMonth() - 1); }
+            startDate.setDate(startDay); startDate.setHours(0,0,0,0);
+            let sum = 0; Object.keys(acc.data).forEach(iso => { const d = new Date(iso); d.setHours(0,0,0,0); if (d >= startDate) { const entry = acc.data[iso]; const val = parseFloat(entry.val) || 0; if(val !== 0 && !entry.holiday) sum += val; } });
+            return sum;
+        }
+
+        function renderPayoutHistory(acc){ 
+            els.payoutHistory.innerHTML=''; let t=0; 
+            if(!acc.payouts||!acc.payouts.length) { els.payoutHistory.innerHTML='<p class="text-xs text-slate-400 italic">Vazio.</p>'; } 
+            else { 
+                acc.payouts.slice().reverse().forEach(p => { 
+                    if(!p.id) p.id = Math.random(); 
+                    if(!p.voided) t += p.amount; 
+                    const div = document.createElement('div');
+                    const isVoid = p.voided;
+                    div.className = isVoid ? "border-b border-slate-50 dark:border-slate-700 pb-2 mb-2 last:border-0 opacity-50 bg-slate-50 dark:bg-slate-700 p-2 rounded" : "border-b border-slate-50 dark:border-slate-700 pb-2 mb-2 last:border-0 group";
+                    div.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <div class="flex flex-col">
+                                <span class="text-xs text-slate-500 ${isVoid?'line-through':''}">${new Date(p.date).toLocaleDateString()}</span>
+                                ${isVoid ? '<span class="text-[10px] text-red-400 font-bold uppercase">Cancelado</span>' : ''}
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="font-bold ${isVoid ? 'text-slate-400 line-through' : 'text-green-600'}">${formatCurrency(p.amount)}</span>
+                                ${!isVoid ? `<button onclick="voidPayout(${p.id})" class="text-slate-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100" title="Cancelar"><i data-lucide="trash-2" class="w-3 h-3"></i></button>` : ''}
+                            </div>
+                        </div>`;
+                    els.payoutHistory.appendChild(div); 
+                }); 
+            } 
+            els.totalWithdrawn.textContent = formatCurrency(t);
+            lucide.createIcons(); 
+        }
+
+        function renderCalendar(acc) { 
+            const y=store.date.getFullYear(); const m=store.date.getMonth(); 
+            els.calendarTitle.textContent=`${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m]} ${y}`; 
+            els.calendarBody.innerHTML=''; 
+            const daysInMonth=new Date(y,m+1,0).getDate(); 
+            
+            for(let d=1;d<=daysInMonth;d++){ 
+                const date=new Date(y,m,d); 
+                const iso=date.toISOString().split('T')[0]; 
+                const entry=acc.data[iso]||{val:0,note:'',holiday:false}; 
+                
+                // PULA FIM DE SEMANA
+                const dayOfWeek = date.getDay();
+                if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+
+                // BARRA DE NOVA SEMANA COM TEXTO (Segunda-feira, exceto dia 1)
+                if (dayOfWeek === 1 && d > 1) {
+                    const sepTr = document.createElement('tr');
+                    sepTr.className = "week-separator";
+                    
+                    const dayStr = String(d).padStart(2, '0');
+                    const monthStr = String(m + 1).padStart(2, '0');
+                    const weekNum = Math.ceil(d / 7);
+
+                    sepTr.innerHTML = `<td colspan="5">SEMANA ${weekNum} • INÍCIO (${dayStr}.${monthStr})</td>`;
+                    els.calendarBody.appendChild(sepTr);
+                }
+
+                const tr=document.createElement('tr'); 
+                tr.className="dark:border-slate-700";
+
+                const valNum = parseFloat(entry.val) || 0;
+                const t1Num = entry.t1 !== undefined ? entry.t1 : (entry.val || ''); 
+                const t2Num = entry.t2 !== undefined ? entry.t2 : '';
+
+                let colorClass = 'val-zero'; 
+                if(valNum > 0) colorClass = 'val-pos'; 
+                else if(valNum < 0) colorClass = 'val-neg';
+                
+                const inputsHtml = `
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="number" placeholder="T1" class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500" 
+                               value="${t1Num}" onblur="window.updateData('${iso}','t1',this.value)">
+                        <input type="number" placeholder="T2" class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500" 
+                               value="${t2Num}" onblur="window.updateData('${iso}','t2',this.value)">
+                    </div>
+                `;
+
+                const hasNote = entry.note && entry.note.trim().length > 0;
+                const noteIcon = hasNote ? 'message-circle' : 'message-square';
+                const noteBtnClass = hasNote 
+                    ? "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700" 
+                    : "text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800";
+
+                tr.innerHTML = `<td class="px-4 py-2 font-medium text-slate-600 dark:text-slate-400">${d}</td>
+                    <td class="px-4 py-2 w-48">${inputsHtml}</td>
+                    <td class="px-4 py-2 text-right"><span class="font-bold text-sm ${colorClass}">${valNum!==0 ? formatCurrency(valNum) : '--'}</span></td>
+                    <td class="px-4 py-2 text-center w-16">
+                        <button onclick="openNoteModal('${iso}')" class="p-1.5 rounded-lg border transition ${noteBtnClass}" title="Editar Nota">
+                            <i data-lucide="${noteIcon}" class="w-4 h-4"></i>
+                        </button>
+                    </td>
+                    <td class="px-4 py-2 text-center"><input type="checkbox" ${entry.holiday?'checked':''} onchange="window.updateData('${iso}','holiday',this.checked)" title="Feriado"></td>`;
+                els.calendarBody.appendChild(tr);
+            }
+        }
+
+        function renderDashboard() { 
+            const acc=getActive(); const rules=RULES[acc.size]; const stats=calculateStats(acc); 
+            els.equity.textContent=formatCurrency(stats.currentEquity); 
+            const diff=stats.currentEquity-rules.start; els.equityDiff.textContent=`Lucro: ${formatCurrency(diff)}`; els.equityDiff.className=diff>=0?"text-xs font-medium mt-1 text-green-600":"text-xs font-medium mt-1 text-red-500"; 
+            
+            const totalGoal = rules.safetyThreshold - rules.start;
+            const currentProgress = stats.currentEquity - rules.start;
+            let percent = 0;
+            if (currentProgress > 0) percent = (currentProgress / totalGoal) * 100;
+            if (percent > 100) percent = 100;
+            if (percent < 0) percent = 0;
+            els.equityProgress.style.width = `${percent}%`;
+            els.equityProgress.className = `progress-bar-fill ${percent >= 100 ? 'bg-green-500' : 'bg-indigo-500'}`;
+
+            let gainCap=(stats.totalProfit>0)?(stats.totalProfit*0.30)/0.70:0; els.gainCap.textContent=gainCap>0?formatCurrency(gainCap):"Fazer Gordura"; 
+            
+            renderCalendar(acc); 
+            
+            if(els.statsMonth) els.statsMonth.textContent = formatCurrency(getMonthlyDataFixed(acc).total); 
+            if(els.statsC10) els.statsC10.textContent = formatCurrency(calcCycle(acc, 10)); 
+            if(els.statsC15) els.statsC15.textContent = formatCurrency(calcCycle(acc, 15)); 
+            if(els.statsC20) els.statsC20.textContent = formatCurrency(calcCycle(acc, 20)); 
+
+            const updateAvg = (id, days) => {
+                const avg = getAverage(acc, days);
+                const el = document.getElementById(id);
+                if(el) {
+                    el.textContent = formatCurrency(avg);
+                    el.className = `font-bold text-sm ${avg >= 0 ? 'text-green-600' : 'text-red-600'}`;
+                }
+            };
+            updateAvg('stats-avg-5', 5);
+            updateAvg('stats-avg-10', 10);
+            updateAvg('stats-avg-15', 15);
+            updateAvg('stats-avg-20', 20);
+
+            if(!els.filterStart.value) { syncDatesToView(); } filterReportInternal();
+            
+            const mData=getMonthlyDataFixed(acc); 
+            if(els.weeklyList) els.weeklyList.innerHTML=mData.html; 
+            
+            renderPayoutManager(); 
+            renderPayoutHistory(acc); 
+            lucide.createIcons(); 
+        }
+
+        function renderSidebar() { els.accList.innerHTML=''; Object.values(store.accounts).forEach(acc=>{ const stats=calculateStats(acc); const div=document.createElement('div'); div.className=`account-item p-3 rounded-lg cursor-pointer transition-colors mb-2 ${acc.id===store.activeId?'active':'bg-slate-800'}`; div.onclick=()=>{loadAccount(acc.id);toggleSidebar();}; div.innerHTML=`<div class="flex justify-between items-center"><span class="font-bold text-sm text-slate-200">${acc.name}</span><span class="text-xs text-indigo-300 font-mono">${acc.size}</span></div><div class="flex justify-between items-center mt-1"><span class="text-xs text-slate-400">Saldo:</span><span class="text-xs font-bold ${stats.currentEquity>=RULES[acc.size].start?'text-green-400':'text-red-400'}">${formatCurrency(stats.currentEquity)}</span></div>`; els.accList.appendChild(div); }); }
+
+        function loadAccount(id) { if (!store.accounts[id]) id = Object.keys(store.accounts)[0]; store.activeId = id; const acc = store.accounts[id]; els.activeName.textContent = acc.name; els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; els.inpSize.value = acc.size; els.inpMonth.value = acc.monthType; renderSidebar(); renderDashboard(); }
+
+        function shareReportInternal() {
+            const acc = getActive(); 
+            const res = els.customResult.textContent;
+            const period = els.filterStart.value ? `(${new Date(els.filterStart.value).toLocaleDateString()} - ${new Date(els.filterEnd.value).toLocaleDateString()})` : "(Geral)";
+            const text = `*Performance Report - DF Strategic* 📊\n${period}\n\n` +
+                         `*Resultado:* ${res}\n` +
+                         `*Win Rate:* ${els.customWinrate.textContent}\n` +
+                         `*Melhor Dia:* ${els.customBest.textContent}`; 
+            
+            if (navigator.share) { navigator.share({ title: 'Performance Report', text: text }).catch(console.error); } 
+            else { navigator.clipboard.writeText(text).then(() => alert("Resumo copiado!")); }
+        }
+
+        // --- CLOUD ---
         async function loadFromCloud() {
             try {
                 const docSnap = await getDoc(doc(db, "users", "dante_data"));
@@ -311,7 +867,6 @@
                 document.getElementById('status-text').className = "text-yellow-500 font-bold";
                 return;
             }
-
             document.getElementById('status-text').textContent = "Salvando...";
             try {
                 await setDoc(doc(db, "users", "dante_data"), { store_json: JSON.stringify(store), last_update: new Date() });
@@ -325,246 +880,51 @@
             }
         }
 
-        // --- DEFINIR UI ANTES ---
-        const els = { 
-            sidebar: document.getElementById('sidebar'), backdrop: document.getElementById('sidebar-backdrop'), accList: document.getElementById('account-list'), 
-            activeName: document.getElementById('active-account-name'), activeConfig: document.getElementById('active-account-config'), 
-            inpSize: document.getElementById('config-size'), inpMonth: document.getElementById('config-month'), 
-            equity: document.getElementById('current-equity'), equityDiff: document.getElementById('equity-diff'), equityProgress: document.getElementById('equity-progress'),
-            gainCap: document.getElementById('gain-cap'), 
-            statsMonth: document.getElementById('stats-month'), statsC10: document.getElementById('stats-c10'), statsC15: document.getElementById('stats-c15'), statsC20: document.getElementById('stats-c20'),
-            statsAvg5: document.getElementById('stats-avg-5'), statsAvg10: document.getElementById('stats-avg-10'), statsAvg15: document.getElementById('stats-avg-15'), statsAvg20: document.getElementById('stats-avg-20'),
-            weeklyList: document.getElementById('weekly-list'), 
-            calendarTitle: document.getElementById('calendar-title'), calendarBody: document.getElementById('calendar-body'), 
-            payoutHistory: document.getElementById('payout-history'), totalWithdrawn: document.getElementById('total-withdrawn'), 
-            printArea: document.getElementById('print-area'), loader: document.getElementById('app-loader'), cloudStatus: document.getElementById('status-text'),
-            customResult: document.getElementById('custom-result'), customWinrate: document.getElementById('custom-winrate'),
-            customBest: document.getElementById('custom-best'), customWorst: document.getElementById('custom-worst'),
-            filterStart: document.getElementById('filter-start'), filterEnd: document.getElementById('filter-end'),
-            themeIcon: document.getElementById('theme-icon')
-        };
-
-        window.toggleTheme = () => { document.body.classList.toggle('dark'); const isDark=document.body.classList.contains('dark'); localStorage.setItem('df_theme',isDark?'dark':'light'); els.themeIcon.setAttribute('data-lucide',isDark?'sun':'moon'); lucide.createIcons(); renderDashboard(); };
-        if(localStorage.getItem('df_theme')==='dark'){document.body.classList.add('dark');els.themeIcon.setAttribute('data-lucide','sun');}
-
-        window.toggleSidebar = () => { const isOpen=!els.sidebar.classList.contains('sidebar-closed'); if(isOpen){els.sidebar.classList.add('sidebar-closed');els.sidebar.classList.remove('sidebar-open');els.backdrop.classList.add('hidden');}else{els.sidebar.classList.remove('sidebar-closed');els.sidebar.classList.add('sidebar-open');els.backdrop.classList.remove('hidden');} };
-        window.formatCurrency = (v) => v.toLocaleString('en-US',{style:'currency',currency:'USD'});
-        window.createAccount = () => { const name = prompt("Nome:"); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [] }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); };
-        window.renameAccount = () => { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } };
-        
-        window.deleteAccount = () => {
-            const acc = getActive(); if(Object.keys(store.accounts).length <= 1) return alert("Você precisa manter pelo menos uma conta.");
-            const code = prompt("SEGURANÇA: Digite o código para excluir esta conta:");
-            let author = ""; if(code === "1969") author = "Dante"; else if(code === "1987") author = "Felipe"; else return alert("Código incorreto. Ação cancelada.");
-            if(confirm(`ATENÇÃO:\nTem certeza que deseja EXCLUIR a conta "${acc.name}"?\n\nAutor da exclusão: ${author}`)) {
-                if(!store.deletedLogs) store.deletedLogs = []; const stats = calculateStats(acc);
-                const logEntry = { originalId: acc.id, name: acc.name, size: acc.size, finalEquity: stats.currentEquity, deletedBy: author, deletedAt: new Date().toISOString() };
-                store.deletedLogs.push(logEntry); delete store.accounts[acc.id];
-                const nextId = Object.keys(store.accounts)[0]; store.activeId = nextId;
-                saveToCloud(); renderSidebar(); loadAccount(nextId); alert(`Conta movida para Lixeira Administrativa por ${author}.`);
-            }
-        };
-
-        window.openAdminLogs = () => {
-            const modal = document.getElementById('admin-logs-modal'); const tbody = document.getElementById('admin-logs-body'); tbody.innerHTML = '';
-            if(!store.deletedLogs || store.deletedLogs.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-slate-400 italic">Nenhum registro de exclusão encontrado.</td></tr>'; } 
-            else { store.deletedLogs.slice().reverse().forEach(log => { const row = document.createElement('tr'); row.className = "border-b border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"; row.innerHTML = `<td class="px-4 py-3">${new Date(log.deletedAt).toLocaleDateString()} ${new Date(log.deletedAt).toLocaleTimeString()}</td><td class="px-4 py-3 font-medium">${log.name} <span class="text-xs text-slate-400">(${log.size})</span></td><td class="px-4 py-3"><span class="px-2 py-1 bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 rounded text-xs font-bold uppercase">${log.deletedBy}</span></td><td class="px-4 py-3 text-right font-mono font-bold">${formatCurrency(log.finalEquity)}</td>`; tbody.appendChild(row); }); }
-            modal.classList.remove('hidden'); toggleSidebar();
-        };
-
-        window.updateConfig = () => { const acc = getActive(); acc.size = els.inpSize.value; acc.monthType = parseInt(els.inpMonth.value); saveToCloud(); els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; renderDashboard(); };
-        window.changeMonth = (d) => { store.date.setMonth(store.date.getMonth()+d); syncDatesToView(); renderDashboard(); };
-        window.filterReport = () => filterReportInternal();
-        window.printReport = () => printReportInternal();
-        window.shareReport = () => shareReportInternal();
-
-        window.updateData = (iso, type, val) => { 
-            const acc = getActive(); if(!acc.data[iso]) acc.data[iso] = {}; 
-            if (['val', 't1', 't2'].includes(type)) { if(val === '' || val === null) val = 0; else if(typeof val === 'string') { val = parseFloat(val.replace(',', '.')) || 0; } }
-            acc.data[iso][type] = val;
-            if (type === 't1' || type === 't2') { const t1 = parseFloat(acc.data[iso].t1) || 0; const t2 = parseFloat(acc.data[iso].t2) || 0; acc.data[iso].val = t1 + t2; }
-            renderDashboard(); saveToCloud(); 
-        };
-
-        window.togglePayoutForm = () => { const form = document.getElementById('payout-form-area'); const btn = document.getElementById('payout-action-btn'); if (form.classList.contains('hidden')) { form.classList.remove('hidden'); btn.classList.add('hidden'); } else { form.classList.add('hidden'); btn.classList.remove('hidden'); } };
-        window.submitPayout = (maxAvailable) => { const input = document.getElementById('payout-input-amount'); const val = parseFloat(input.value); if (!val || val <= 0) return alert("Digite um valor válido."); if (val > maxAvailable) return alert(`Valor excede o disponível de ${formatCurrency(maxAvailable)}.`); if (val % 500 !== 0) return alert("O valor deve ser múltiplo de $500."); if (confirm(`Confirmar saque de ${formatCurrency(val)}?`)) { const acc = getActive(); acc.payouts.push({ id: Date.now(), date: new Date().toISOString(), amount: val, note: 'Saque Aprovado', voided: false }); saveToCloud(); renderDashboard(); alert("Saque registrado com sucesso!"); } };
-        window.voidPayout = (id) => { const acc = getActive(); const idx = acc.payouts.findIndex(p => p.id === id); if (idx === -1) return; if (confirm(`Cancelar registro de saque? O valor retornará ao Saldo.`)) { acc.payouts[idx].voided = true; acc.payouts[idx].voidedAt = new Date().toISOString(); saveToCloud(); renderDashboard(); } };
-
-        window.openNoteModal = (iso) => { currentNoteIso = iso; const acc = getActive(); const entry = acc.data[iso] || {}; const [y, m, d] = iso.split('-'); const dateObj = new Date(y, m - 1, d); const dateStr = dateObj.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); document.getElementById('note-modal-date').textContent = dateStr; document.getElementById('note-modal-input').value = entry.note || ''; const modal = document.getElementById('note-modal'); modal.classList.remove('hidden'); setTimeout(() => { modal.querySelector('.transform').classList.remove('scale-95', 'opacity-0'); modal.querySelector('.transform').classList.add('scale-100', 'opacity-100'); }, 10); };
-        window.closeNoteModal = () => { const modal = document.getElementById('note-modal'); modal.querySelector('.transform').classList.remove('scale-100', 'opacity-100'); modal.querySelector('.transform').classList.add('scale-95', 'opacity-0'); setTimeout(() => { modal.classList.add('hidden'); }, 200); currentNoteIso = null; };
-        window.saveNote = () => { if(!currentNoteIso) return; const val = document.getElementById('note-modal-input').value; window.updateData(currentNoteIso, 'note', val); closeNoteModal(); };
-
-        window.exportCSV = () => { const acc = getActive(); let csvContent = "data:text/csv;charset=utf-8,Data,Trade 1,Trade 2,Total Dia,Notas\n"; const dates = Object.keys(acc.data).sort(); dates.forEach(iso => { const d = acc.data[iso]; const dateStr = new Date(iso).toLocaleDateString('pt-BR'); const t1 = (parseFloat(d.t1) || 0).toFixed(2); const t2 = (parseFloat(d.t2) || 0).toFixed(2); const val = (parseFloat(d.val) || 0).toFixed(2); const note = (d.note || '').replace(/[\r\n]+/g, " ").replace(/,/g, ";"); if (parseFloat(val) !== 0 || note !== '') { csvContent += `${dateStr},${t1},${t2},${val},${note}\n`; } }); const encodedUri = encodeURI(csvContent); const link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", `Relatorio_${acc.name}_${new Date().toISOString().split('T')[0]}.csv`); document.body.appendChild(link); link.click(); document.body.removeChild(link); };
-
-        window.forceOfflineMode = () => { console.log("Entrando em modo offline..."); isOffline = true; const localBackup = localStorage.getItem('df_backup_local'); if (localBackup) { try { store = JSON.parse(localBackup); store.date = new Date(store.date || new Date()); } catch(e) { createNewStore(); } } else { createNewStore(); } document.getElementById('status-text').textContent = "Modo Offline"; document.getElementById('status-text').className = "text-yellow-500 font-bold"; renderSidebar(); loadAccount(store.activeId); store.date = new Date(); syncDatesToView(); const loader = document.getElementById('app-loader'); if(loader) { loader.style.display='none'; } };
-        window.hardReset = async () => { const confirm1 = prompt("ATENÇÃO: Isso apagará seus dados locais e tentará criar uma nova conta.\n\nDigite 'DELETAR' para confirmar:"); if (confirm1 === 'DELETAR') { createNewStore(); await saveToCloud(); alert("Dados resetados. O sistema tentará reconectar."); location.reload(); } };
-
-        function createNewStore() { const defaultId = 'acc_' + Date.now(); store = { activeId: defaultId, date: new Date(), accounts: {}, deletedLogs: [] }; store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] }; }
-        function getNextWindow() { const d = new Date(); const day = d.getDate(); const m = d.getMonth(); const y = d.getFullYear(); let targetDay; let targetMonth = m; let targetYear = y; if (day <= 10) targetDay = 10; else if (day <= 20) targetDay = 20; else if (day <= 30) targetDay = 30; else { targetDay = 10; targetMonth = m + 1; } if (targetMonth === 1 && targetDay === 30) targetDay = 28; const targetDate = new Date(targetYear, targetMonth, targetDay); const diffTime = Math.abs(targetDate - d); const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); if (day === targetDay) return "HOJE"; return `${targetDay}/${targetMonth + 1} (${diffDays} dias)`; }
-        function getActive(){return store.accounts[store.activeId];}
-        function calculateStats(acc) { const rules=RULES[acc.size]; let tp=0; let dt=0; let pe=rules.start; let md=-Infinity; let mDate=null; let wd=Infinity; let wDate=null; let wins=0; let losses=0; const keys=Object.keys(acc.data).sort(); let re=rules.start; keys.forEach(d=>{ const e=acc.data[d]; const val = parseFloat(e.val) || 0; const t1 = parseFloat(e.t1) || 0; const t2 = parseFloat(e.t2) || 0; if(val!==0 && !e.holiday){ tp+=val; dt++; re+=val; if(re>pe)pe=re; if(val>md) { md=val; mDate=d; } if(val<wd) { wd=val; wDate=d; } } }); const w = (acc.payouts||[]).reduce((s,p) => p.voided ? s : s + p.amount, 0); return {currentEquity:rules.start+tp-w, totalProfit:tp, daysTraded:dt, peakEquity:pe, maxDay:md===-Infinity?0:md, maxDate:mDate, minDay:wd===Infinity?0:wd, minDate:wDate}; }
-        function syncDatesToView() { const y = store.date.getFullYear(); const m = store.date.getMonth(); const start = new Date(y, m, 1); const end = new Date(y, m + 1, 0); const fmt = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; els.filterStart.value = fmt(start); els.filterEnd.value = fmt(end); }
-        function getAverage(acc, days) { const tradedDays = getTradedDays(acc); const subset = tradedDays.slice(0, days); if (subset.length === 0) return 0; let sum = 0; subset.forEach(iso => sum += (parseFloat(acc.data[iso].val) || 0)); return sum / subset.length; }
-        function getMonthlyDataFixed(acc) { const y = store.date.getFullYear(); const m = store.date.getMonth(); const daysInMonth = new Date(y, m+1, 0).getDate(); let weeks = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; let total = 0; for(let d=1; d<=daysInMonth; d++) { const date = new Date(y, m, d); const iso = date.toISOString().split('T')[0]; const entry = acc.data[iso]; const weekIndex = Math.ceil(d / 7); if(entry && !entry.holiday) { const val = parseFloat(entry.val) || 0; weeks[weekIndex] += val; total += val; } } let html = ''; for(let i=1; i<=5; i++) { const startDay = (i - 1) * 7 + 1; if (startDay > daysInMonth) continue; const label = `Semana ${i} (${startDay < 10 ? '0'+startDay : startDay}/${m+1 < 10 ? '0'+(m+1) : m+1})`; const val = weeks[i]; html += `<div class="flex justify-between border-b border-slate-50 dark:border-slate-700 pb-1 last:border-0 text-xs"><span class="text-slate-500">${label}</span><span class="font-bold ${val >= 0 ? 'val-pos' : 'val-neg'}">${formatCurrency(val)}</span></div>`; } if(!html) html = '<span class="italic text-xs text-slate-400">Sem dados</span>'; return { total, html }; }
-        function calcCycle(acc, startDay) { const today = new Date(); let startDate = new Date(today); if (today.getDate() < startDay) { startDate.setMonth(startDate.getMonth() - 1); } startDate.setDate(startDay); startDate.setHours(0,0,0,0); let sum = 0; Object.keys(acc.data).forEach(iso => { const d = new Date(iso); d.setHours(0,0,0,0); if (d >= startDate) { const entry = acc.data[iso]; const val = parseFloat(entry.val) || 0; if(val !== 0 && !entry.holiday) sum += val; } }); return sum; }
-        function getTradedDays(acc) { const allDates = Object.keys(acc.data); return allDates.filter(iso => { const entry = acc.data[iso]; const val = parseFloat(entry.val) || 0; return val !== 0 && !entry.holiday; }).sort((a, b) => new Date(b) - new Date(a)); }
-
-        // --- RENDER CALENDAR (SEMANAS E MOBILE FIX) ---
-        function renderCalendar(acc) { 
-            const y=store.date.getFullYear(); const m=store.date.getMonth(); 
-            els.calendarTitle.textContent=`${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m]} ${y}`; 
-            els.calendarBody.innerHTML=''; const daysInMonth=new Date(y,m+1,0).getDate(); 
-            
-            // Calculate week totals for headers
-            let weekData = []; let wSum = 0; let wStart = 1; let currentWeekNum = 0;
-            for(let d=1; d<=daysInMonth; d++) {
-                const date = new Date(y, m, d); const dayOfWeek = date.getDay(); const iso = date.toISOString().split('T')[0]; const val = parseFloat((acc.data[iso] || {}).val) || 0;
-                if (d === 1 || dayOfWeek === 1) { if (d > 1) weekData.push({ num: ++currentWeekNum, start: wStart, end: d-1, total: wSum }); wSum = 0; wStart = d; }
-                wSum += val;
-                if (d === daysInMonth) weekData.push({ num: ++currentWeekNum, start: wStart, end: d, total: wSum });
-            }
-
-            let currentWeekIndex = 0;
-            for(let d=1;d<=daysInMonth;d++){ 
-                const date=new Date(y,m,d); const dayOfWeek = date.getDay(); 
-                
-                // HEADER SEMANA
-                if (d === 1 || dayOfWeek === 1) {
-                    const w = weekData[currentWeekIndex];
-                    if (w) {
-                        const headerRow = document.createElement('tr');
-                        // BARRA MAIS LARGA E CINZA ESCURO NO DARK
-                        headerRow.className = "bg-slate-200 dark:bg-slate-700/80 border-y border-slate-300 dark:border-slate-600";
-                        headerRow.innerHTML = `<td colspan="5" class="px-4 py-3 text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide"><div class="flex justify-between items-center"><span>SEMANA ${w.num} <span class="text-slate-500 dark:text-slate-400 font-normal ml-1">(${w.start}/${m+1} - ${w.end}/${m+1})</span></span><span class="${w.total >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-600 dark:text-red-400'}">Parcial: ${formatCurrency(w.total)}</span></div></td>`;
-                        els.calendarBody.appendChild(headerRow); currentWeekIndex++;
-                    }
-                }
-
-                // OCULTA SÁBADO (6) E DOMINGO (0)
-                if (dayOfWeek === 0 || dayOfWeek === 6) continue; 
-
-                const iso=date.toISOString().split('T')[0]; const entry=acc.data[iso]||{val:0,note:'',holiday:false}; const tr=document.createElement('tr'); 
-                tr.className="dark:border-slate-700";
-
-                const valNum = parseFloat(entry.val) || 0; const t1Num = entry.t1 !== undefined ? entry.t1 : (entry.val || ''); const t2Num = entry.t2 !== undefined ? entry.t2 : '';
-                let colorClass = 'val-zero'; if(valNum > 0) colorClass = 'val-pos'; else if(valNum < 0) colorClass = 'val-neg';
-                
-                const noteIcon = (entry.note && entry.note.trim().length > 0) ? 'message-circle' : 'message-square';
-                const noteBtnClass = (entry.note && entry.note.trim().length > 0) ? "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700" : "text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800";
-
-                // WHITESPACE-NOWRAP CORREÇÃO MOBILE
-                tr.innerHTML = `<td class="px-4 py-2 font-medium text-slate-600 dark:text-slate-400">${d}</td><td class="px-1 md:px-4 py-2 w-40 md:w-48 whitespace-nowrap"><div class="grid grid-cols-2 gap-2"><input type="number" placeholder="T1" class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500" value="${t1Num}" onblur="window.updateData('${iso}','t1',this.value)"><input type="number" placeholder="T2" class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500" value="${t2Num}" onblur="window.updateData('${iso}','t2',this.value)"></div></td><td class="px-4 py-2 text-right"><span class="font-bold text-sm ${colorClass}">${valNum!==0 ? formatCurrency(valNum) : '--'}</span></td><td class="px-4 py-2 text-center w-16"><button onclick="openNoteModal('${iso}')" class="p-1.5 rounded-lg border transition ${noteBtnClass}" title="Editar Nota"><i data-lucide="${noteIcon}" class="w-4 h-4"></i></button></td><td class="px-4 py-2 text-center"><input type="checkbox" ${entry.holiday?'checked':''} onchange="window.updateData('${iso}','holiday',this.checked)" title="Feriado"></td>`;
-                els.calendarBody.appendChild(tr);
-            }
-        }
-
-        function filterReportInternal() {
-            const start = els.filterStart.value; const end = els.filterEnd.value;
-            if(!start || !end) return;
-            const acc = getActive(); let sum=0; let wins=0; let totalTrades=0; let best=-Infinity; let worst=Infinity; let chartLabels=[]; let chartData=[]; let cumSum=0;
-            
-            Object.keys(acc.data).sort().forEach(iso => {
-                if(iso >= start && iso <= end) {
-                    const e = acc.data[iso]; const val = parseFloat(e.val) || 0; const t1 = parseFloat(e.t1); const t2 = parseFloat(e.t2);
-                    if(!e.holiday) {
-                        if (val !== 0) {
-                            sum += val; if(val > best) best = val; if(val < worst) worst = val; cumSum += val;
-                            const [y, m, d] = iso.split('-'); chartLabels.push(`${d}/${m}`); chartData.push(cumSum);
-                        }
-                        if (!isNaN(t1) || !isNaN(t2)) { if (t1) { totalTrades++; if(t1 > 0) wins++; } if (t2) { totalTrades++; if(t2 > 0) wins++; } } else if (val !== 0) { totalTrades++; if(val > 0) wins++; }
-                    }
-                }
-            });
-
-            els.customResult.textContent = formatCurrency(sum); els.customResult.className = sum >= 0 ? "font-bold text-green-600" : "font-bold text-red-600";
-            const rate = totalTrades > 0 ? ((wins/totalTrades)*100).toFixed(0)+"%" : "0%"; els.customWinrate.textContent = `${rate} (${wins}/${totalTrades})`;
-            els.customBest.textContent = best > -Infinity ? formatCurrency(best) : "--"; 
-            els.customWorst.textContent = worst < Infinity ? formatCurrency(worst) : "--";
-            if (worst < Infinity) { els.customWorst.className = worst >= 0 ? "font-bold text-green-600" : "font-bold text-red-600"; } else { els.customWorst.className = "font-bold text-slate-500"; }
-            updateChart(chartLabels, chartData);
-        }
-
-        function updateChart(labels, data) {
-            const ctx = document.getElementById('equityChart').getContext('2d'); if(chartInstance) chartInstance.destroy();
-            const isDark = document.body.classList.contains('dark'); const gridColor = isDark ? '#334155' : '#f3f4f6'; const textColor = isDark ? '#94a3b8' : '#64748b';
-            chartInstance = new Chart(ctx, { type: 'line', data: { labels: labels, datasets: [{ label: 'Lucro Acumulado', data: data, borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 3, pointRadius: 2, fill: true, tension: 0.1 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: gridColor }, ticks: { color: textColor } }, x: { grid: { display: false }, ticks: { color: textColor } } } } });
-        }
-
-        function printReportInternal() { 
-            const acc = getActive(); 
-            const res = els.customResult.textContent;
-            let chartImg = ""; if(chartInstance) { chartImg = chartInstance.toBase64Image(); }
-            const mData = getMonthlyDataFixed(acc);
-            
-            let html = `
-            <div style="font-family:sans-serif;width:100%;padding:20px;box-sizing:border-box; color:#0f172a;">
-                <div style="text-align:center;margin-bottom:20px;">
-                    <h1 style="margin:0;font-size:24px; font-weight:800;">Performance Report</h1>
-                    <p style="color:#64748b;margin:5px 0 0;">DF Strategic | ${acc.name}</p>
-                </div>
-                <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
-                    <div><div style="border:1px solid #e2e8f0; border-radius:12px; padding:15px; margin-bottom:15px;">${chartImg ? `<img src="${chartImg}" style="width:100%; height:auto;">` : '<p>Gráfico não disponível</p>'}</div></div>
-                    <div style="display:flex; flex-direction:column; gap:15px;">
-                        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:15px;">
-                            <h3 style="font-size:12px; font-weight:bold; color:#64748b; text-transform:uppercase; margin-bottom:10px; border-bottom:1px solid #e2e8f0; padding-bottom:5px;">Análise do Período</h3>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:13px;"><span>Resultado:</span> <strong style="color:${res.includes('-')?'#dc2626':'#16a34a'}">${res}</strong></div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:13px;"><span>Win Rate:</span> <strong style="color:#4f46e5">${els.customWinrate.textContent}</strong></div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:13px;"><span>Melhor Dia:</span> <strong style="color:#16a34a">${els.customBest.textContent}</strong></div>
-                            <div style="display:flex; justify-content:space-between; font-size:13px;"><span>Pior Dia:</span> <strong style="color:${els.customWorst.textContent.includes('-')?'#dc2626':'#16a34a'}">${els.customWorst.textContent}</strong></div>
-                        </div>
-                        <div style="border:1px solid #e2e8f0; border-radius:12px; padding:15px;">
-                            <h3 style="font-size:12px; font-weight:bold; color:#64748b; text-transform:uppercase; margin-bottom:10px; border-bottom:1px solid #e2e8f0; padding-bottom:5px;">Ciclos & Semanas</h3>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:12px;"><span>Mensal (1-31):</span> <strong>${formatCurrency(mData.total)}</strong></div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:12px;"><span>Ciclo 10-10:</span> <strong>${formatCurrency(calcCycle(acc,10))}</strong></div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:5px; font-size:12px;"><span>Ciclo 15-15:</span> <strong>${formatCurrency(calcCycle(acc,15))}</strong></div>
-                            <div style="display:flex; justify-content:space-between; margin-bottom:15px; font-size:12px;"><span>Ciclo 20-20:</span> <strong>${formatCurrency(calcCycle(acc,20))}</strong></div>
-                            <div style="border-top:1px solid #e2e8f0; padding-top:10px;">${els.weeklyList.innerHTML.replace(/class=".*?"/g, 'style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px; color:#64748b;"')}</div>
-                        </div>
-                    </div>
-                </div>
-                <p style="font-size:10px;color:#94a3b8;text-align:center;margin-top:30px;">Gerado em ${new Date().toLocaleDateString()} | DF Strategic</p>
-            </div>`;
-            const win = window.open('', '_blank'); win.document.write(`<html><head><title>Relatório - ${acc.name}</title><style>@page { size: A4 landscape; margin: 10mm; } body { margin: 0; -webkit-print-color-adjust: exact; }</style></head><body>${html}</body></html>`); win.document.close(); setTimeout(() => win.print(), 800); 
-        }
-
-        // --- INIT ROBUSTO ---
         async function init() {
             lucide.createIcons();
-            const showFatalError = (title, msg) => { const loader = document.getElementById('app-loader'); if (loader) { loader.innerHTML = `<div class="text-center p-6 max-w-sm mx-auto"><div class="text-red-500 mb-4 flex justify-center"><i data-lucide="alert-triangle" class="w-12 h-12"></i></div><h3 class="text-lg font-bold text-white mb-2">${title}</h3><p class="text-xs text-slate-400 mb-6 bg-slate-800 p-2 rounded border border-slate-700 font-mono">${msg}</p><div class="space-y-3"><button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">Tentar Novamente</button><button onclick="window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2"><i data-lucide="wifi-off" class="w-4 h-4"></i> Usar em Modo Offline</button><button onclick="window.hardReset()" class="w-full bg-transparent hover:bg-red-900/30 text-red-400 border border-red-900/50 py-2 px-6 rounded-full text-xs transition">⚠️ Resetar Tudo</button></div></div>`; lucide.createIcons(); } };
+            const showFatalError = (title, msg) => {
+                 const loader = document.getElementById('app-loader');
+                 if (loader) {
+                    loader.innerHTML = `
+                        <div class="text-center p-6 max-w-sm mx-auto">
+                            <div class="text-red-500 mb-4 flex justify-center"><i data-lucide="alert-triangle" class="w-12 h-12"></i></div>
+                            <h3 class="text-lg font-bold text-white mb-2">${title}</h3>
+                            <p class="text-xs text-slate-400 mb-6 bg-slate-800 p-2 rounded border border-slate-700 font-mono">${msg}</p>
+                            <div class="space-y-3">
+                                <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">Tentar Novamente</button>
+                                <button onclick="window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2"><i data-lucide="wifi-off" class="w-4 h-4"></i> Usar em Modo Offline</button>
+                            </div>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                 }
+            };
+
+            try { await loadFromCloud(); } catch (e) { showFatalError("Erro de Conexão ou Permissão", e.message || "Falha ao baixar dados."); return; } 
             
-            // TIMEOUT DE 8 SEGUNDOS
-            const safetyTimeout = setTimeout(() => { showFatalError("Tempo Esgotado", "O sistema demorou para responder. Verifique sua conexão."); }, 8000);
+            if (!store.activeId) {
+                try {
+                    const docSnap = await getDoc(doc(db, "users", "dante_data"));
+                    if (docSnap.exists()) { showFatalError("Erro de Integridade", "Seus dados existem no servidor, mas não puderam ser lidos corretamente."); return; }
+                } catch(e) { showFatalError("Sem Conexão", "Não foi possível verificar se você já tem uma conta."); return; }
 
-            try { 
-                await loadFromCloud(); 
-                if (!store.activeId) { 
-                    try { 
-                        const docSnap = await getDoc(doc(db, "users", "dante_data")); 
-                        if (docSnap.exists()) { throw new Error("Dados existem mas não puderam ser lidos (Integridade)."); } 
-                    } catch(e) { if(e.message && e.message.includes("Integridade")) throw e; } 
-                    console.log("Criando nova conta..."); 
-                    const defaultId = 'acc_' + Date.now(); store.activeId = defaultId; store.accounts = {}; store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] }; 
-                    await saveToCloud(); 
-                }
-                
-                renderSidebar(); 
-                if (store.activeId) loadAccount(store.activeId); 
-                store.date = new Date(); 
-                syncDatesToView(); 
-                
-                clearTimeout(safetyTimeout); 
-                setTimeout(() => { const l = document.getElementById('app-loader'); if(l) { l.classList.add('opacity-0'); setTimeout(()=>l.style.display='none', 500); } }, 1000); 
-                document.getElementById('status-text').textContent = "Online";
-                
-                window.renderSidebar = renderSidebar; window.renderDashboard = renderDashboard; window.saveToCloud = saveToCloud;
+                console.log("Nenhum dado encontrado. Criando nova conta...");
+                const defaultId = 'acc_' + Date.now();
+                store.activeId = defaultId;
+                store.accounts = {};
+                store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] };
+                await saveToCloud(); 
+            }
 
-            } catch (e) { 
-                clearTimeout(safetyTimeout);
-                console.error("Erro Fatal no Init:", e); 
-                let msg = e.message || "Falha desconhecida."; 
-                if(msg.includes("Missing or insufficient permissions")) msg = "Permissão negada pelo Firebase (Regras Expiradas)."; 
-                showFatalError("Erro de Conexão", msg); 
-            } 
+            renderSidebar(); 
+            if (store.activeId) loadAccount(store.activeId); 
+            store.date = new Date(); 
+            syncDatesToView();
+            setTimeout(() => {
+                const l = document.getElementById('app-loader');
+                if(l) { l.classList.add('opacity-0'); setTimeout(()=>l.style.display='none', 500); }
+            }, 1000);
+            document.getElementById('status-text').textContent = "Online";
         }
 
         init();
