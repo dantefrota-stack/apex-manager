@@ -1193,6 +1193,9 @@ function renderCalendar(acc) {
     for (let cur = new Date(rangeStart); cur <= rangeEnd; cur.setDate(cur.getDate() + 1)) {
         const dayOfWeek = cur.getDay(); // 0=Dom ... 6=Sáb
 
+        // Mostrar somente dias úteis (Seg–Sex). Oculta Sábados e Domingos.
+        if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+
         // Barra de nova semana (Segunda-feira)
         if (dayOfWeek === 1) {
             weekNum++;
