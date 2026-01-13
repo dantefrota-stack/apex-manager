@@ -163,6 +163,119 @@
         </div>
     </div>
 
+        <!-- ADMIN MODAL -->
+    <div id="admin-modal" class="fixed inset-0 z-[60] hidden no-print">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="closeAdminPanel()"></div>
+
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-3xl bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 transform transition-all">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i data-lucide="shield" class="w-5 h-5 text-indigo-500"></i> Área Administrativa
+                    </h3>
+                    <p id="admin-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-1">Acesso restrito</p>
+                </div>
+                <button onclick="closeAdminPanel()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+
+            <!-- AUTH -->
+            <div id="admin-auth" class="space-y-3">
+                <p class="text-sm text-slate-600 dark:text-slate-300">Entre com seu usuário e senha de administrador.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Usuário</label>
+                        <input id="admin-username" type="text" placeholder="Dante ou Felipe" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Senha</label>
+                        <input id="admin-password" type="password" placeholder="••••" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    </div>
+                </div>
+                <div class="flex items-center justify-between gap-3 pt-2">
+                    <button onclick="adminLogin()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2">
+                        <i data-lucide="log-in" class="w-4 h-4"></i> Entrar
+                    </button>
+                    <p class="text-xs text-slate-400">Dica: credenciais são locais (GitHub Pages).</p>
+                </div>
+            </div>
+
+            <!-- CONTENT -->
+            <div id="admin-content" class="hidden">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="text-xs text-slate-500 dark:text-slate-400">
+                        Logado como <span id="admin-user" class="font-bold text-slate-700 dark:text-slate-200">--</span>
+                        <span id="admin-role" class="ml-2 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-[10px] font-bold uppercase">--</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="adminLogout()" class="px-3 py-1.5 rounded-md text-xs font-semibold bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                            <i data-lucide="log-out" class="w-3 h-3"></i> Sair
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 mb-4">
+                    <button id="admin-tab-payouts" onclick="setAdminTab('payouts')" class="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i data-lucide="wallet" class="w-4 h-4"></i> Saques
+                    </button>
+                    <button id="admin-tab-logs" onclick="setAdminTab('logs')" class="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-4 h-4"></i> Logs
+                    </button>
+                </div>
+
+                <!-- PANE: PAYOUTS -->
+                <div id="admin-pane-payouts" class="space-y-3">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                <i data-lucide="history" class="w-4 h-4 text-indigo-500"></i> Histórico de Saques
+                            </h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Mostra os registros da conta ativa.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="admin-clear-payouts-btn" onclick="clearPayoutHistory()" class="hidden px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-2">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i> Limpar Histórico
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="max-h-72 overflow-y-auto text-sm space-y-2 border border-slate-200 dark:border-slate-700 rounded-lg p-3 bg-slate-50 dark:bg-slate-900" id="payout-history">
+                        <p class="text-xs text-slate-400 italic">Vazio.</p>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between text-sm">
+                        <span class="text-slate-600 dark:text-slate-300">Total Sacado:</span>
+                        <span id="total-withdrawn" class="text-green-600 font-bold">$0.00</span>
+                    </div>
+
+                    <p class="text-[11px] text-slate-400">* “Cancelar” marca o saque como cancelado (não apaga). “Apagar”/“Limpar” só aparece para Super Admin.</p>
+                </div>
+
+                <!-- PANE: LOGS -->
+                <div id="admin-pane-logs" class="hidden space-y-3">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                <i data-lucide="shield-alert" class="w-4 h-4 text-indigo-500"></i> Logs de Admin
+                            </h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Registro de ações administrativas.</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="admin-clear-logs-btn" onclick="clearAdminLogs()" class="hidden px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-2">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i> Limpar Logs
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="admin-logs-list" class="max-h-72 overflow-y-auto text-xs space-y-2 border border-slate-200 dark:border-slate-700 rounded-lg p-3 bg-slate-50 dark:bg-slate-900">
+                        <p class="text-xs text-slate-400 italic">Vazio.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="sidebar-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden backdrop-blur-sm transition-opacity no-print"></div>
     
     <div id="sidebar" class="fixed inset-y-0 left-0 w-80 bg-slate-900 text-white z-50 sidebar-closed shadow-2xl flex flex-col no-print">
@@ -172,7 +285,7 @@
         </div>
         <div class="flex-1 overflow-y-auto p-4 space-y-2" id="account-list"></div>
         <div class="p-4 border-t border-slate-700 bg-slate-800 space-y-2">
-            <button onclick="showAdminLogs()" class="w-full py-2 bg-slate-700 hover:bg-slate-600 rounded-md text-xs font-bold flex items-center justify-center gap-2 transition text-slate-300"><i data-lucide="shield-alert" class="w-3 h-3"></i> Logs de Admin</button>
+            <button onclick="openAdminPanel('payouts')" class="w-full py-2 bg-slate-700 hover:bg-slate-600 rounded-md text-xs font-bold flex items-center justify-center gap-2 transition text-slate-300"><i data-lucide="shield" class="w-3 h-3"></i> Área Administrativa</button>
             <button onclick="createAccount()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 rounded-md text-sm font-bold flex items-center justify-center gap-2 transition"><i data-lucide="plus-circle" class="w-4 h-4"></i> Nova Conta</button>
         </div>
     </div>
@@ -307,11 +420,7 @@
                     </div>
                     <div id="weekly-list" class="mt-4 space-y-1 text-xs text-slate-500"></div>
                 </div>
-                <div id="payout-history-card" class="dashboard-card p-5">
-                    <div class="flex justify-between items-center mb-2"><h3 class="font-bold text-slate-800 text-sm flex items-center gap-2 dark:text-white"><i data-lucide="history" class="w-4 h-4"></i> Histórico de Saques</h3></div>
-                    <div class="max-h-40 overflow-y-auto text-sm space-y-2" id="payout-history"><p class="text-xs text-slate-400 italic">Vazio.</p></div>
-                    <div class="pt-2 mt-2 border-t border-slate-100 flex justify-between text-xs font-bold dark:border-slate-700"><span>Total Sacado:</span><span id="total-withdrawn" class="text-green-600">$0.00</span></div>
-                </div>
+                
             </div>
         </div>
     </div>
@@ -342,8 +451,50 @@
             '300k': { start: 300000, drawdown: 7500, safetyThreshold: 307600 }
         };
 
-        // SENHAS E SEGURANÇA
-        const SECURITY = { '1969': 'Dante', '1987': 'Felipe' };
+        // SENHAS E SEGURANÇA (uso local — para segurança real, use Firebase Auth)
+        const SECURITY = {
+            Dante:  { pass: '1996', role: 'super' },
+            Felipe: { pass: '1987', role: 'admin' }
+        };
+
+        let adminSession = null; // { username, role }
+
+        const _roleRank = (r) => (r === 'super' ? 2 : r === 'admin' ? 1 : 0);
+        const _findUserKey = (u) => {
+            const n = (u || '').trim().toLowerCase();
+            return Object.keys(SECURITY).find(k => k.toLowerCase() === n) || null;
+        };
+
+        function logAdminAction(user, action){
+            if(!store.adminLogs) store.adminLogs = [];
+            store.adminLogs.push({ date: new Date().toISOString(), user, action });
+        }
+
+        function promptAdminCredentials(contextMsg, minRole='admin'){
+            if(adminSession && _roleRank(adminSession.role) >= _roleRank(minRole)) return adminSession;
+
+            const uInput = prompt(`${contextMsg}
+
+Usuário administrador:`) || '';
+            if(!uInput.trim()) return null;
+
+            const pInput = prompt('Senha:') || '';
+            if(!pInput.trim()) return null;
+
+            const key = _findUserKey(uInput);
+            if(!key || SECURITY[key].pass !== pInput.trim()){
+                alert("Credenciais inválidas. Acesso negado.");
+                return null;
+            }
+
+            const session = { username: key, role: SECURITY[key].role };
+            if(_roleRank(session.role) < _roleRank(minRole)){
+                alert("Acesso negado: permissões insuficientes.");
+                return null;
+            }
+            adminSession = session;
+            return session;
+        }
 
         let store = { activeId: null, date: new Date(), accounts: {}, adminLogs: [] };
         let isOffline = false;
@@ -365,7 +516,22 @@
             customResult: document.getElementById('custom-result'), customWinrate: document.getElementById('custom-winrate'),
             customBest: document.getElementById('custom-best'), customWorst: document.getElementById('custom-worst'),
             filterStart: document.getElementById('filter-start'), filterEnd: document.getElementById('filter-end'),
-            themeIcon: document.getElementById('theme-icon')
+            themeIcon: document.getElementById('theme-icon'),
+            adminModal: document.getElementById('admin-modal'),
+            adminAuth: document.getElementById('admin-auth'),
+            adminContent: document.getElementById('admin-content'),
+            adminSubtitle: document.getElementById('admin-subtitle'),
+            adminUser: document.getElementById('admin-user'),
+            adminRole: document.getElementById('admin-role'),
+            adminUsername: document.getElementById('admin-username'),
+            adminPassword: document.getElementById('admin-password'),
+            adminTabPayouts: document.getElementById('admin-tab-payouts'),
+            adminTabLogs: document.getElementById('admin-tab-logs'),
+            adminPanePayouts: document.getElementById('admin-pane-payouts'),
+            adminPaneLogs: document.getElementById('admin-pane-logs'),
+            adminLogsList: document.getElementById('admin-logs-list'),
+            adminClearPayoutsBtn: document.getElementById('admin-clear-payouts-btn'),
+            adminClearLogsBtn: document.getElementById('admin-clear-logs-btn')
         };
 
         // THEME HANDLING
@@ -392,24 +558,18 @@
         window.deleteAccount = () => {
             const acc = getActive();
             if(Object.keys(store.accounts).length <= 1) return alert("Você precisa manter pelo menos uma conta.");
-            
-            const pwd = prompt(`ATENÇÃO: Você está prestes a excluir "${acc.name}".\n\nDigite a senha de administrador para confirmar:`);
-            if(!pwd) return;
 
-            const user = SECURITY[pwd];
-            if (!user) {
-                alert("Senha incorreta. Acesso negado.");
-                return;
-            }
+            const admin = promptAdminCredentials(
+                `ATENÇÃO: Você está prestes a excluir "${acc.name}".
 
-            if(confirm(`Confirmado: Usuário ${user}.\nTem certeza ABSOLUTA? Os dados serão perdidos.`)) {
-                // Registrar LOG
-                if(!store.adminLogs) store.adminLogs = [];
-                store.adminLogs.push({
-                    date: new Date().toISOString(),
-                    user: user,
-                    action: `Excluiu conta: ${acc.name} (${acc.size})`
-                });
+Essa ação é IRREVERSÍVEL.`,
+                'admin'
+            );
+            if(!admin) return;
+
+            if(confirm(`Confirmado: Usuário ${admin.username}.
+Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
+                logAdminAction(admin.username, `Excluiu conta: ${acc.name} (${acc.size})`);
 
                 delete store.accounts[acc.id];
                 const nextId = Object.keys(store.accounts)[0];
@@ -417,18 +577,183 @@
                 saveToCloud();
                 renderSidebar();
                 loadAccount(nextId);
-                alert(`Conta excluída por ${user}.`);
+                alert(`Conta excluída por ${admin.username}.`);
             }
         };
 
-        window.showAdminLogs = () => {
-            let logs = store.adminLogs || [];
-            if(logs.length === 0) return alert("Nenhum log registrado.");
-            let msg = "REGISTRO DE ATIVIDADES:\n\n";
-            logs.slice().reverse().forEach(l => {
-                msg += `[${new Date(l.date).toLocaleDateString()} ${new Date(l.date).toLocaleTimeString()}] ${l.user}: ${l.action}\n`;
-            });
-            alert(msg);
+        window.showAdminLogs = () => openAdminPanel('logs');
+
+        // ÁREA ADMINISTRATIVA (modal)
+        let _adminTab = 'payouts';
+
+        function renderAdminLogsList(){
+            if(!els.adminLogsList) return;
+            const logs = (store.adminLogs || []);
+            if(!logs.length){
+                els.adminLogsList.innerHTML = '<p class="text-xs text-slate-400 italic">Vazio.</p>';
+                return;
+            }
+            const rows = logs.slice().reverse().map(l => {
+                const dt = new Date(l.date);
+                const when = `${dt.toLocaleDateString()} ${dt.toLocaleTimeString()}`;
+                const user = l.user || '—';
+                const action = l.action || '';
+                return `<div class="border-b border-slate-100 dark:border-slate-700 pb-2 last:border-0">
+                            <div class="flex justify-between gap-3">
+                                <span class="text-slate-500">${when}</span>
+                                <span class="font-bold text-slate-700 dark:text-slate-200">${user}</span>
+                            </div>
+                            <div class="text-slate-600 dark:text-slate-300 mt-1">${action}</div>
+                        </div>`;
+            }).join('');
+            els.adminLogsList.innerHTML = rows;
+        }
+
+        function refreshAdminUI(){
+            if(!els.adminModal) return;
+
+            const logged = !!adminSession;
+
+            if(els.adminAuth) els.adminAuth.classList.toggle('hidden', logged);
+            if(els.adminContent) els.adminContent.classList.toggle('hidden', !logged);
+
+            if(!logged) {
+                if(els.adminSubtitle) els.adminSubtitle.textContent = 'Acesso restrito';
+                if(els.adminUsername) els.adminUsername.focus();
+                lucide.createIcons();
+                return;
+            }
+
+            if(els.adminUser) els.adminUser.textContent = adminSession.username;
+            if(els.adminRole) {
+                els.adminRole.textContent = adminSession.role === 'super' ? 'Super Admin' : 'Admin';
+                els.adminRole.className = 'ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ' + 
+                    (adminSession.role === 'super' ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-200' : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200');
+            }
+
+            if(els.adminClearPayoutsBtn) els.adminClearPayoutsBtn.classList.toggle('hidden', adminSession.role !== 'super');
+            if(els.adminClearLogsBtn) els.adminClearLogsBtn.classList.toggle('hidden', adminSession.role !== 'super');
+
+            // Atualiza conteúdo
+            try { renderPayoutHistory(getActive()); } catch(e) {}
+            renderAdminLogsList();
+
+            // Tab atual
+            setAdminTab(_adminTab);
+
+            if(els.adminSubtitle) els.adminSubtitle.textContent = `Conta ativa: ${getActive().name}`;
+            lucide.createIcons();
+        }
+
+        window.openAdminPanel = (tab = 'payouts') => {
+            _adminTab = tab;
+            if(els.adminModal) els.adminModal.classList.remove('hidden');
+            refreshAdminUI();
+        };
+
+        window.closeAdminPanel = () => {
+            if(els.adminModal) els.adminModal.classList.add('hidden');
+        };
+
+        window.setAdminTab = (tab) => {
+            _adminTab = tab;
+
+            if(els.adminPanePayouts) els.adminPanePayouts.classList.toggle('hidden', tab !== 'payouts');
+            if(els.adminPaneLogs) els.adminPaneLogs.classList.toggle('hidden', tab !== 'logs');
+
+            if(els.adminTabPayouts){
+                els.adminTabPayouts.className = "px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 " + 
+                    (tab === 'payouts' ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100");
+            }
+            if(els.adminTabLogs){
+                els.adminTabLogs.className = "px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 " + 
+                    (tab === 'logs' ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100");
+            }
+
+            lucide.createIcons();
+        };
+
+        window.adminLogin = () => {
+            const u = (els.adminUsername?.value || '').trim();
+            const p = (els.adminPassword?.value || '').trim();
+            const key = _findUserKey(u);
+
+            if(!key || SECURITY[key].pass !== p){
+                alert("Usuário ou senha incorretos.");
+                return;
+            }
+
+            adminSession = { username: key, role: SECURITY[key].role };
+            if(els.adminPassword) els.adminPassword.value = '';
+
+            logAdminAction(adminSession.username, "Login na área administrativa");
+            saveToCloud();
+
+            refreshAdminUI();
+        };
+
+        window.adminLogout = () => {
+            if(adminSession){
+                logAdminAction(adminSession.username, "Logout da área administrativa");
+                saveToCloud();
+            }
+            adminSession = null;
+            refreshAdminUI();
+        };
+
+        window.clearPayoutHistory = () => {
+            const admin = (adminSession && _roleRank(adminSession.role) >= _roleRank('super'))
+                ? adminSession
+                : promptAdminCredentials("Para LIMPAR o histórico de saques, confirme como SUPER ADMIN.", 'super');
+            if(!admin) return;
+
+            const acc = getActive();
+            if(!acc.payouts || !acc.payouts.length) return alert("Histórico já está vazio.");
+
+            if(confirm(`Tem certeza que deseja LIMPAR TODO o histórico de saques da conta "${acc.name}"?\n\nEssa ação apaga os registros (não pode desfazer).`)){
+                acc.payouts = [];
+                logAdminAction(admin.username, `Limpou histórico de saques: ${acc.name}`);
+                saveToCloud();
+                renderDashboard();
+                refreshAdminUI();
+            }
+        };
+
+        window.deletePayoutRecord = (id) => {
+            const admin = (adminSession && _roleRank(adminSession.role) >= _roleRank('super'))
+                ? adminSession
+                : promptAdminCredentials("Para APAGAR um saque, confirme como SUPER ADMIN.", 'super');
+            if(!admin) return;
+
+            const acc = getActive();
+            const idx = (acc.payouts || []).findIndex(p => p.id === id);
+            if(idx === -1) return;
+
+            const p = acc.payouts[idx];
+            if(confirm(`Apagar este registro de saque?\n\nData: ${new Date(p.date).toLocaleDateString()}\nValor: ${formatCurrency(p.amount)}\n\nEssa ação remove o registro (não pode desfazer).`)){
+                acc.payouts.splice(idx, 1);
+                logAdminAction(admin.username, `Apagou saque: ${formatCurrency(p.amount)} (${new Date(p.date).toLocaleDateString()}) em ${acc.name}`);
+                saveToCloud();
+                renderDashboard();
+                refreshAdminUI();
+            }
+        };
+
+        window.clearAdminLogs = () => {
+            const admin = (adminSession && _roleRank(adminSession.role) >= _roleRank('super'))
+                ? adminSession
+                : promptAdminCredentials("Para LIMPAR os logs, confirme como SUPER ADMIN.", 'super');
+            if(!admin) return;
+
+            if(!(store.adminLogs || []).length) return alert("Logs já estão vazios.");
+
+            if(confirm("Tem certeza que deseja LIMPAR TODOS os logs de admin?\n\nEssa ação remove o histórico de auditoria (não pode desfazer).")){
+                store.adminLogs = [];
+                logAdminAction(admin.username, "Limpou logs de admin"); // registra imediatamente (fica como único log)
+                saveToCloud();
+                renderAdminLogsList();
+                refreshAdminUI();
+            }
         };
 
         window.updateConfig = () => { const acc = getActive(); acc.size = els.inpSize.value; acc.monthType = parseInt(els.inpMonth.value); saveToCloud(); els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; renderDashboard(); };
@@ -480,10 +805,23 @@
             const acc = getActive();
             const idx = acc.payouts.findIndex(p => p.id === id);
             if (idx === -1) return;
+
+            const admin = adminSession && _roleRank(adminSession.role) >= _roleRank('admin')
+                ? adminSession
+                : promptAdminCredentials("Para cancelar um saque, confirme como administrador.", 'admin');
+            if(!admin) return;
+
             if (confirm(`Cancelar registro de saque? O valor retornará ao Saldo.`)) {
-                acc.payouts[idx].voided = true;
-                acc.payouts[idx].voidedAt = new Date().toISOString();
+                const p = acc.payouts[idx];
+                p.voided = true;
+                p.voidedAt = new Date().toISOString();
+                logAdminAction(admin.username, `Cancelou saque: ${formatCurrency(p.amount)} (${new Date(p.date).toLocaleDateString()})`);
                 saveToCloud(); renderDashboard();
+                // Se estiver na área admin, atualiza a lista
+                if(document.getElementById('admin-modal') && !document.getElementById('admin-modal').classList.contains('hidden')) {
+                    renderPayoutHistory(acc);
+                    renderAdminLogsList();
+                }
             }
         };
 
@@ -806,34 +1144,41 @@ function calcCycle(acc, startDay) {
         }
 
         function renderPayoutHistory(acc){ 
-            els.payoutHistory.innerHTML=''; let t=0; 
-            if(!acc.payouts||!acc.payouts.length) { els.payoutHistory.innerHTML='<p class="text-xs text-slate-400 italic">Vazio.</p>'; } 
-            else { 
-                acc.payouts.slice().reverse().forEach(p => { 
-                    if(!p.id) p.id = Math.random(); 
-                    if(!p.voided) t += p.amount; 
+            if(!els.payoutHistory || !els.totalWithdrawn) return;
+            els.payoutHistory.innerHTML = '';
+            let t = 0;
+            const canDelete = !!(adminSession && adminSession.role === 'super');
+
+            if(!acc.payouts || !acc.payouts.length){
+                els.payoutHistory.innerHTML = '<p class="text-xs text-slate-400 italic">Vazio.</p>';
+            } else {
+                acc.payouts.slice().reverse().forEach(p => {
+                    if(!p.id) p.id = Date.now() + Math.random();
+                    if(!p.voided) t += p.amount;
+
+                    const isVoid = !!p.voided;
                     const div = document.createElement('div');
-                    const isVoid = p.voided;
-                    div.className = isVoid ? "border-b border-slate-50 dark:border-slate-700 pb-2 mb-2 last:border-0 opacity-50 bg-slate-50 dark:bg-slate-700 p-2 rounded" : "border-b border-slate-50 dark:border-slate-700 pb-2 mb-2 last:border-0 group";
+                    div.className = "border-b border-slate-100 dark:border-slate-700 pb-2 mb-2 last:border-0" + (isVoid ? " opacity-70" : "");
+
                     div.innerHTML = `
                         <div class="flex justify-between items-center">
                             <div class="flex flex-col">
-                                <span class="text-xs text-slate-500 ${isVoid?'line-through':''}">${new Date(p.date).toLocaleDateString()}</span>
+                                <span class="text-xs text-slate-500 ${isVoid ? 'line-through' : ''}">${new Date(p.date).toLocaleDateString()}</span>
                                 ${isVoid ? '<span class="text-[10px] text-red-400 font-bold uppercase">Cancelado</span>' : ''}
                             </div>
-                            <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-2">
                                 <span class="font-bold ${isVoid ? 'text-slate-400 line-through' : 'text-green-600'}">${formatCurrency(p.amount)}</span>
-                                ${!isVoid ? `<button onclick="voidPayout(${p.id})" class="text-slate-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100" title="Cancelar"><i data-lucide="trash-2" class="w-3 h-3"></i></button>` : ''}
+                                ${!isVoid ? `<button onclick="voidPayout(${p.id})" class="text-slate-400 hover:text-red-500" title="Cancelar"><i data-lucide="x-circle" class="w-3 h-3"></i></button>` : ''}
+                                ${canDelete ? `<button onclick="deletePayoutRecord(${p.id})" class="text-slate-400 hover:text-red-600" title="Apagar"><i data-lucide="trash-2" class="w-3 h-3"></i></button>` : ''}
                             </div>
                         </div>`;
-                    els.payoutHistory.appendChild(div); 
-                }); 
-            } 
-            els.totalWithdrawn.textContent = formatCurrency(t);
-            lucide.createIcons(); 
-        }
+                    els.payoutHistory.appendChild(div);
+                });
+            }
 
-        
+            els.totalWithdrawn.textContent = formatCurrency(t);
+            lucide.createIcons();
+        }
 function renderCalendar(acc) { 
     const y = store.date.getFullYear(); 
     const m = store.date.getMonth(); 
