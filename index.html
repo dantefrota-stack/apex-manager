@@ -155,9 +155,10 @@
                 <button onclick="closeNoteModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <textarea id="note-modal-input" rows="8" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none resize-none mb-4 leading-relaxed" placeholder="Escreva aqui suas observações sobre o dia (estratégia, erros, acertos)..."></textarea>
-            <div class="flex justify-end gap-3">
+            <div class="flex items-center justify-end gap-3">
+                <p id="note-modal-readonly-msg" class="hidden mr-auto text-xs font-medium text-amber-600 dark:text-amber-400">Somente visualização (dia fora do mês)</p>
                 <button onclick="closeNoteModal()" class="px-4 py-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 text-sm font-medium transition">Cancelar</button>
-                <button onclick="saveNote()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/30 transition flex items-center gap-2"><i data-lucide="save" class="w-4 h-4"></i> Salvar Nota</button>
+                <button id="note-modal-save-btn" onclick="saveNote()" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-bold shadow-lg shadow-indigo-500/30 transition flex items-center gap-2"><i data-lucide="save" class="w-4 h-4"></i> Salvar Nota</button>
             </div>
         </div>
     </div>
@@ -347,6 +348,7 @@
         let store = { activeId: null, date: new Date(), accounts: {}, adminLogs: [] };
         let isOffline = false;
         let currentNoteIso = null;
+        let currentNoteReadOnly = false;
 
         // ELEMENTS
         const els = { 
@@ -485,13 +487,26 @@
             }
         };
 
-        window.openNoteModal = (iso) => {
+        window.openNoteModal = (iso, viewOnly = false) => {
+            currentNoteReadOnly = !!viewOnly;
             currentNoteIso = iso;
             const acc = getActive();
             const entry = acc.data[iso] || {};
             const dateStr = new Date(iso).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
             document.getElementById('note-modal-date').textContent = dateStr;
-            document.getElementById('note-modal-input').value = entry.note || '';
+            const noteInput = document.getElementById('note-modal-input');
+            noteInput.value = entry.note || '';
+            noteInput.readOnly = currentNoteReadOnly;
+            noteInput.classList.toggle('opacity-70', currentNoteReadOnly);
+            noteInput.classList.toggle('cursor-not-allowed', currentNoteReadOnly);
+            const saveBtn = document.getElementById('note-modal-save-btn');
+            if (saveBtn) {
+                saveBtn.disabled = currentNoteReadOnly;
+                saveBtn.classList.toggle('opacity-50', currentNoteReadOnly);
+                saveBtn.classList.toggle('cursor-not-allowed', currentNoteReadOnly);
+            }
+            const roMsg = document.getElementById('note-modal-readonly-msg');
+            if (roMsg) roMsg.classList.toggle('hidden', !currentNoteReadOnly);
             const modal = document.getElementById('note-modal');
             modal.classList.remove('hidden');
             setTimeout(() => {
@@ -502,6 +517,20 @@
 
         window.closeNoteModal = () => {
             const modal = document.getElementById('note-modal');
+            // Reset modal para modo editável
+            currentNoteReadOnly = false;
+            const noteInput = document.getElementById('note-modal-input');
+            if (noteInput) {
+                noteInput.readOnly = false;
+                noteInput.classList.remove('opacity-70', 'cursor-not-allowed');
+            }
+            const saveBtn = document.getElementById('note-modal-save-btn');
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            const roMsg = document.getElementById('note-modal-readonly-msg');
+            if (roMsg) roMsg.classList.add('hidden');
             modal.querySelector('.transform').classList.remove('scale-100', 'opacity-100');
             modal.querySelector('.transform').classList.add('scale-95', 'opacity-0');
             setTimeout(() => { modal.classList.add('hidden'); }, 200);
@@ -510,6 +539,7 @@
 
         window.saveNote = () => {
             if(!currentNoteIso) return;
+            if (currentNoteReadOnly) { closeNoteModal(); return; }
             const val = document.getElementById('note-modal-input').value;
             window.updateData(currentNoteIso, 'note', val);
             closeNoteModal();
@@ -847,12 +877,18 @@ function renderCalendar(acc) {
         if (valNum > 0) colorClass = 'val-pos'; 
         else if (valNum < 0) colorClass = 'val-neg';
 
+        const readOnlyDay = isOutsideMonth;
+        const inputDisabledAttr = readOnlyDay ? 'disabled' : '';
+        const inputExtraClass = readOnlyDay ? ' opacity-60 cursor-not-allowed' : '';
+        const t1Onblur = readOnlyDay ? '' : `onblur="window.updateData('${iso}','t1',this.value)"`;
+        const t2Onblur = readOnlyDay ? '' : `onblur="window.updateData('${iso}','t2',this.value)"`;
+
         const inputsHtml = `
             <div class="grid grid-cols-2 gap-2">
-                <input type="number" placeholder="T1" class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500" 
-                       value="${t1Num}" onblur="window.updateData('${iso}','t1',this.value)">
-                <input type="number" placeholder="T2" class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500" 
-                       value="${t2Num}" onblur="window.updateData('${iso}','t2',this.value)">
+                <input type="number" placeholder="T1" class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${'${inputExtraClass}'}" 
+                       ${'${inputDisabledAttr}'} value="${'${t1Num}'}" ${'${t1Onblur}'}>
+                <input type="number" placeholder="T2" class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${'${inputExtraClass}'}" 
+                       ${'${inputDisabledAttr}'} value="${'${t2Num}'}" ${'${t2Onblur}'}>
             </div>
         `;
 
@@ -872,7 +908,7 @@ function renderCalendar(acc) {
             <td class="px-4 py-2 w-48">${inputsHtml}</td>
             <td class="px-4 py-2 text-right"><span class="font-bold text-sm ${colorClass}">${valNum!==0 ? formatCurrency(valNum) : '--'}</span></td>
             <td class="px-4 py-2 text-center w-16">
-                <button onclick="openNoteModal('${iso}')" class="p-1.5 rounded-lg border transition ${noteBtnClass}" title="Editar Nota">
+                <button onclick="openNoteModal('${iso}', ${isOutsideMonth})" class="p-1.5 rounded-lg border transition ${noteBtnClass}" title="${isOutsideMonth ? 'Ver Nota' : 'Editar Nota'}">
                     <i data-lucide="${noteIcon}" class="w-4 h-4"></i>
                 </button>
             </td>
