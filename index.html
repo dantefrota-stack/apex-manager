@@ -1314,7 +1314,27 @@ function renderDashboard() {
 
         function renderSidebar() { els.accList.innerHTML=''; Object.values(store.accounts).forEach(acc=>{ const stats=calculateStats(acc); const div=document.createElement('div'); div.className=`account-item p-3 rounded-lg cursor-pointer transition-colors mb-2 ${acc.id===store.activeId?'active':'bg-slate-800'}`; div.onclick=()=>{loadAccount(acc.id);toggleSidebar();}; div.innerHTML=`<div class="flex justify-between items-center"><span class="font-bold text-sm text-slate-200">${acc.name}</span><span class="text-xs text-indigo-300 font-mono">${acc.size}</span></div><div class="flex justify-between items-center mt-1"><span class="text-xs text-slate-400">Saldo:</span><span class="text-xs font-bold ${stats.currentEquity>=RULES[acc.size].start?'text-green-400':'text-red-400'}">${formatCurrency(stats.currentEquity)}</span></div>`; els.accList.appendChild(div); }); }
 
-        function loadAccount(id) { if (!store.accounts[id]) id = Object.keys(store.accounts)[0]; store.activeId = id; const acc = store.accounts[id]; els.activeName.textContent = acc.name; els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; els.inpSize.value = acc.size; els.inpMonth.value = acc.monthType; renderSidebar(); renderDashboard(); }
+        function loadAccount(id) { 
+            if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
+
+            // Define conta ativa (última visualizada)
+            store.activeId = id;
+            try { localStorage.setItem('df_last_activeId', id); } catch (e) {}
+
+            const acc = store.accounts[id];
+            els.activeName.textContent = acc.name;
+            els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`;
+            els.inpSize.value = acc.size;
+            els.inpMonth.value = acc.monthType;
+
+            // Persiste a conta ativa para abrir sempre no último acesso
+            if (typeof saveToCloud === 'function') { 
+                try { saveToCloud().catch(() => {}); } catch (e) {} 
+            }
+
+            renderSidebar();
+            renderDashboard();
+        }
 
         function shareReportInternal() {
             const acc = getActive(); 
@@ -1397,7 +1417,13 @@ function renderDashboard() {
                 await saveToCloud(); 
             }
 
-            renderSidebar(); 
+            // Preferir a última conta visualizada neste navegador/dispositivo
+            const lastLocal = (() => { try { return localStorage.getItem('df_last_activeId'); } catch (e) { return null; } })();
+            if (lastLocal && store.accounts && store.accounts[lastLocal]) {
+                store.activeId = lastLocal;
+            }
+
+            renderSidebar();
             if (store.activeId) loadAccount(store.activeId); 
             store.date = new Date(); 
             syncDatesToView();
