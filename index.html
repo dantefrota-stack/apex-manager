@@ -693,8 +693,81 @@
             return sum / subset.length;
         }
 
-        function getMonthlyDataFixed(acc) { const y = store.date.getFullYear(); const m = store.date.getMonth(); const daysInMonth = new Date(y, m+1, 0).getDate(); let weeks = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }; let total = 0; for(let d=1; d<=daysInMonth; d++) { const date = new Date(y, m, d); const iso = date.toISOString().split('T')[0]; const entry = acc.data[iso]; const weekIndex = Math.ceil(d / 7); if(entry && !entry.holiday) { const val = parseFloat(entry.val) || 0; weeks[weekIndex] += val; total += val; } } let html = ''; for(let i=1; i<=5; i++) { const startDay = (i - 1) * 7 + 1; if (startDay > daysInMonth) continue; const label = `Semana ${i} (${startDay < 10 ? '0'+startDay : startDay}/${m+1 < 10 ? '0'+(m+1) : m+1})`; const val = weeks[i]; html += `<div class="flex justify-between border-b border-slate-50 dark:border-slate-700 pb-1 last:border-0 text-xs"><span class="text-slate-500">${label}</span><span class="font-bold ${val >= 0 ? 'val-pos' : 'val-neg'}">${formatCurrency(val)}</span></div>`; } if(!html) html = '<span class="italic text-xs text-slate-400">Sem dados</span>'; return { total, html }; }
-        function calcCycle(acc, startDay) {
+        
+// Helpers: semanas completas (Segunda -> Domingo) para a visualização do mês
+function startOfWeekMonday(date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    const jsDay = d.getDay(); // 0=Dom ... 6=Sáb
+    const diff = (jsDay + 6) % 7; // converte para: 0=Seg ... 6=Dom
+    d.setDate(d.getDate() - diff);
+    return d;
+}
+
+function endOfWeekSunday(date) {
+    const d = startOfWeekMonday(date);
+    d.setDate(d.getDate() + 6);
+    return d;
+}
+
+function getMonthWeekRange(y, m) {
+    const monthStart = new Date(y, m, 1);
+    const monthEnd = new Date(y, m + 1, 0);
+    const rangeStart = startOfWeekMonday(monthStart);
+    const rangeEnd = endOfWeekSunday(monthEnd);
+    return { monthStart, monthEnd, rangeStart, rangeEnd };
+}
+
+function getMonthlyDataFixed(acc) { 
+    const y = store.date.getFullYear(); 
+    const m = store.date.getMonth(); 
+    const { rangeStart, rangeEnd } = getMonthWeekRange(y, m);
+
+    // Total do mês (apenas dias dentro do mês), incluindo fins de semana, ignorando feriados marcados
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    let total = 0; 
+    for (let d = 1; d <= daysInMonth; d++) { 
+        const iso = new Date(y, m, d).toISOString().split('T')[0]; 
+        const entry = acc.data[iso]; 
+        if (entry && !entry.holiday) { 
+            total += (parseFloat(entry.val) || 0); 
+        } 
+    }
+
+    // Semanas completas (Seg -> Dom) do range visualizado
+    let html = ''; 
+    let weekNum = 0;
+
+    for (let wk = new Date(rangeStart); wk <= rangeEnd; wk.setDate(wk.getDate() + 7)) {
+        weekNum++;
+
+        let weekSum = 0;
+        for (let i = 0; i < 7; i++) {
+            const day = new Date(wk);
+            day.setDate(wk.getDate() + i);
+            const iso = day.toISOString().split('T')[0];
+            const entry = acc.data[iso];
+            if (entry && !entry.holiday) {
+                weekSum += (parseFloat(entry.val) || 0);
+            }
+        }
+
+        const ddS = String(wk.getDate()).padStart(2, '0');
+        const mmS = String(wk.getMonth() + 1).padStart(2, '0');
+        const wkEnd = new Date(wk);
+        wkEnd.setDate(wk.getDate() + 6);
+        const ddE = String(wkEnd.getDate()).padStart(2, '0');
+        const mmE = String(wkEnd.getMonth() + 1).padStart(2, '0');
+        const label = `Semana ${weekNum} (${ddS}/${mmS} - ${ddE}/${mmE})`;
+
+        html += `<div class="flex justify-between border-b border-slate-50 dark:border-slate-700 pb-1 last:border-0 text-xs"><span class="text-slate-500">${label}</span><span class="font-bold ${weekSum >= 0 ? 'val-pos' : 'val-neg'}">${formatCurrency(weekSum)}</span></div>`;
+    }
+
+    if(!html) html = '<span class="italic text-xs text-slate-400">Sem dados</span>'; 
+    return { total, html }; 
+}
+
+function calcCycle(acc, startDay) {
             const today = new Date(); let startDate = new Date(today);
             if (today.getDate() < startDay) { startDate.setMonth(startDate.getMonth() - 1); }
             startDate.setDate(startDay); startDate.setHours(0,0,0,0);
@@ -730,74 +803,86 @@
             lucide.createIcons(); 
         }
 
-        function renderCalendar(acc) { 
-            const y=store.date.getFullYear(); const m=store.date.getMonth(); 
-            els.calendarTitle.textContent=`${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m]} ${y}`; 
-            els.calendarBody.innerHTML=''; 
-            const daysInMonth=new Date(y,m+1,0).getDate(); 
-            
-            for(let d=1;d<=daysInMonth;d++){ 
-                const date=new Date(y,m,d); 
-                const iso=date.toISOString().split('T')[0]; 
-                const entry=acc.data[iso]||{val:0,note:'',holiday:false}; 
-                
-                // PULA FIM DE SEMANA
-                const dayOfWeek = date.getDay();
-                if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+        
+function renderCalendar(acc) { 
+    const y = store.date.getFullYear(); 
+    const m = store.date.getMonth(); 
 
-                // BARRA DE NOVA SEMANA COM TEXTO (Segunda-feira, exceto dia 1)
-                if (dayOfWeek === 1 && d > 1) {
-                    const sepTr = document.createElement('tr');
-                    sepTr.className = "week-separator";
-                    
-                    const dayStr = String(d).padStart(2, '0');
-                    const monthStr = String(m + 1).padStart(2, '0');
-                    const weekNum = Math.ceil(d / 7);
+    els.calendarTitle.textContent = `${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m]} ${y}`; 
+    els.calendarBody.innerHTML = ''; 
 
-                    sepTr.innerHTML = `<td colspan="5">SEMANA ${weekNum} • INÍCIO (${dayStr}.${monthStr})</td>`;
-                    els.calendarBody.appendChild(sepTr);
-                }
+    const { rangeStart, rangeEnd } = getMonthWeekRange(y, m);
 
-                const tr=document.createElement('tr'); 
-                tr.className="dark:border-slate-700";
+    let weekNum = 0;
 
-                const valNum = parseFloat(entry.val) || 0;
-                const t1Num = entry.t1 !== undefined ? entry.t1 : (entry.val || ''); 
-                const t2Num = entry.t2 !== undefined ? entry.t2 : '';
+    for (let cur = new Date(rangeStart); cur <= rangeEnd; cur.setDate(cur.getDate() + 1)) {
+        const dayOfWeek = cur.getDay(); // 0=Dom ... 6=Sáb
 
-                let colorClass = 'val-zero'; 
-                if(valNum > 0) colorClass = 'val-pos'; 
-                else if(valNum < 0) colorClass = 'val-neg';
-                
-                const inputsHtml = `
-                    <div class="grid grid-cols-2 gap-2">
-                        <input type="number" placeholder="T1" class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500" 
-                               value="${t1Num}" onblur="window.updateData('${iso}','t1',this.value)">
-                        <input type="number" placeholder="T2" class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500" 
-                               value="${t2Num}" onblur="window.updateData('${iso}','t2',this.value)">
-                    </div>
-                `;
+        // Barra de nova semana (Segunda-feira)
+        if (dayOfWeek === 1) {
+            weekNum++;
+            const sepTr = document.createElement('tr');
+            sepTr.className = "week-separator";
 
-                const hasNote = entry.note && entry.note.trim().length > 0;
-                const noteIcon = hasNote ? 'message-circle' : 'message-square';
-                const noteBtnClass = hasNote 
-                    ? "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700" 
-                    : "text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800";
-
-                tr.innerHTML = `<td class="px-4 py-2 font-medium text-slate-600 dark:text-slate-400">${d}</td>
-                    <td class="px-4 py-2 w-48">${inputsHtml}</td>
-                    <td class="px-4 py-2 text-right"><span class="font-bold text-sm ${colorClass}">${valNum!==0 ? formatCurrency(valNum) : '--'}</span></td>
-                    <td class="px-4 py-2 text-center w-16">
-                        <button onclick="openNoteModal('${iso}')" class="p-1.5 rounded-lg border transition ${noteBtnClass}" title="Editar Nota">
-                            <i data-lucide="${noteIcon}" class="w-4 h-4"></i>
-                        </button>
-                    </td>
-                    <td class="px-4 py-2 text-center"><input type="checkbox" ${entry.holiday?'checked':''} onchange="window.updateData('${iso}','holiday',this.checked)" title="Feriado"></td>`;
-                els.calendarBody.appendChild(tr);
-            }
+            const dayStr = String(cur.getDate()).padStart(2, '0');
+            const monthStr = String(cur.getMonth() + 1).padStart(2, '0');
+            sepTr.innerHTML = `<td colspan="5">SEMANA ${weekNum} • INÍCIO (${dayStr}.${monthStr})</td>`;
+            els.calendarBody.appendChild(sepTr);
         }
 
-        function renderDashboard() { 
+        const iso = cur.toISOString().split('T')[0]; 
+        const entry = acc.data[iso] || { val: 0, note: '', holiday: false }; 
+
+        const isOutsideMonth = cur.getMonth() !== m;
+        const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
+        const tr = document.createElement('tr'); 
+        tr.className = `dark:border-slate-700 ${isOutsideMonth ? 'opacity-60 bg-slate-50 dark:bg-slate-800/40' : ''} ${isWeekend ? 'bg-slate-50/60 dark:bg-slate-900/20' : ''}`;
+
+        const valNum = parseFloat(entry.val) || 0;
+        const t1Num = entry.t1 !== undefined ? entry.t1 : (entry.val || ''); 
+        const t2Num = entry.t2 !== undefined ? entry.t2 : '';
+
+        let colorClass = 'val-zero'; 
+        if (valNum > 0) colorClass = 'val-pos'; 
+        else if (valNum < 0) colorClass = 'val-neg';
+
+        const inputsHtml = `
+            <div class="grid grid-cols-2 gap-2">
+                <input type="number" placeholder="T1" class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500" 
+                       value="${t1Num}" onblur="window.updateData('${iso}','t1',this.value)">
+                <input type="number" placeholder="T2" class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500" 
+                       value="${t2Num}" onblur="window.updateData('${iso}','t2',this.value)">
+            </div>
+        `;
+
+        const hasNote = entry.note && entry.note.trim().length > 0;
+        const noteIcon = hasNote ? 'message-circle' : 'message-square';
+        const noteBtnClass = hasNote 
+            ? "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700" 
+            : "text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800";
+
+        const dayLabel = isOutsideMonth
+            ? `${String(cur.getDate()).padStart(2, '0')}/${String(cur.getMonth() + 1).padStart(2, '0')}`
+            : `${cur.getDate()}`;
+
+        const dayLabelClass = isOutsideMonth ? "text-slate-400" : "text-slate-600 dark:text-slate-400";
+
+        tr.innerHTML = `<td class="px-4 py-2 font-medium ${dayLabelClass}">${dayLabel}</td>
+            <td class="px-4 py-2 w-48">${inputsHtml}</td>
+            <td class="px-4 py-2 text-right"><span class="font-bold text-sm ${colorClass}">${valNum!==0 ? formatCurrency(valNum) : '--'}</span></td>
+            <td class="px-4 py-2 text-center w-16">
+                <button onclick="openNoteModal('${iso}')" class="p-1.5 rounded-lg border transition ${noteBtnClass}" title="Editar Nota">
+                    <i data-lucide="${noteIcon}" class="w-4 h-4"></i>
+                </button>
+            </td>
+            <td class="px-4 py-2 text-center"><input type="checkbox" ${entry.holiday?'checked':''} onchange="window.updateData('${iso}','holiday',this.checked)" title="Feriado"></td>`;
+
+        els.calendarBody.appendChild(tr);
+    }
+}
+
+function renderDashboard() { 
             const acc=getActive(); const rules=RULES[acc.size]; const stats=calculateStats(acc); 
             els.equity.textContent=formatCurrency(stats.currentEquity); 
             const diff=stats.currentEquity-rules.start; els.equityDiff.textContent=`Lucro: ${formatCurrency(diff)}`; els.equityDiff.className=diff>=0?"text-xs font-medium mt-1 text-green-600":"text-xs font-medium mt-1 text-red-500"; 
