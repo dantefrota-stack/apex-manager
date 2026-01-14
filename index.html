@@ -1135,11 +1135,39 @@ function getMonthlyDataFixed(acc) {
     return { total, html }; 
 }
 
-function calcCycle(acc, startDay) {
-            const today = new Date(); let startDate = new Date(today);
-            if (today.getDate() < startDay) { startDate.setMonth(startDate.getMonth() - 1); }
-            startDate.setDate(startDay); startDate.setHours(0,0,0,0);
-            let sum = 0; Object.keys(acc.data).forEach(iso => { const d = new Date(iso); d.setHours(0,0,0,0); if (d >= startDate) { const entry = acc.data[iso]; const val = parseFloat(entry.val) || 0; if(val !== 0 && !entry.holiday) sum += val; } });
+function calcCycle(acc, anchorDay) {
+            // CICLO FECHADO (mês anterior -> mês atual) baseado no mês em exibição (store.date).
+            // Ex.: ao ver Janeiro/2026 e anchorDay=10 => 10/12/2025 até 10/01/2026 (inclui o dia final).
+            const y = store.date.getFullYear();
+            const m = store.date.getMonth();
+
+            const end = new Date(y, m, anchorDay);
+            end.setHours(0,0,0,0);
+
+            const start = new Date(y, m - 1, anchorDay);
+            start.setHours(0,0,0,0);
+
+            // Para incluir o dia do fechamento (anchorDay), usamos end + 1 dia como limite exclusivo
+            const endExclusive = new Date(end);
+            endExclusive.setDate(endExclusive.getDate() + 1);
+            endExclusive.setHours(0,0,0,0);
+
+            let sum = 0;
+
+            Object.keys(acc.data).forEach(iso => {
+                // Parse ISO (YYYY-MM-DD) como data LOCAL (evita shift de timezone do new Date('YYYY-MM-DD'))
+                const parts = (iso || '').split('-');
+                if(parts.length !== 3) return;
+                const d = new Date(parseInt(parts[0],10), parseInt(parts[1],10)-1, parseInt(parts[2],10));
+                d.setHours(0,0,0,0);
+
+                if (d >= start && d < endExclusive) {
+                    const entry = acc.data[iso] || {};
+                    const val = parseFloat(entry.val) || 0;
+                    if(val !== 0 && !entry.holiday) sum += val;
+                }
+            });
+
             return sum;
         }
 
