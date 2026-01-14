@@ -404,9 +404,9 @@
                     <h3 class="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2 dark:text-white"><i data-lucide="calendar-check" class="w-4 h-4"></i> Performance (Ciclos Atuais)</h3>
                     <div class="space-y-3 text-sm">
                         <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><span class="text-slate-500 font-medium">Mensal (1 a 31)</span><span id="stats-month" class="font-bold text-slate-800 dark:text-slate-200">$0.00</span></div>
-                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><span class="text-slate-500">Ciclo 10 a 10</span><span id="stats-c10" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
-                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><span class="text-slate-500">Ciclo 15 a 15</span><span id="stats-c15" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
-                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><span class="text-slate-500">Ciclo 20 a 20</span><span id="stats-c20" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
+                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><span id="label-c10" class="text-slate-500">Ciclo 10 a 10</span><span id="stats-c10" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
+                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><span id="label-c15" class="text-slate-500">Ciclo 15 a 15</span><span id="stats-c15" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
+                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><span id="label-c20" class="text-slate-500">Ciclo 20 a 20</span><span id="stats-c20" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
                         
                         <div class="mt-4 pt-2 bg-indigo-50 dark:bg-slate-800 p-3 rounded-lg border border-indigo-100 dark:border-slate-700">
                             <h4 class="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase mb-2 text-center">Médias Diárias (Recentes)</h4>
@@ -509,6 +509,9 @@ Usuário administrador:`) || '';
             equity: document.getElementById('current-equity'), equityDiff: document.getElementById('equity-diff'), equityProgress: document.getElementById('equity-progress'),
             gainCap: document.getElementById('gain-cap'), 
             statsMonth: document.getElementById('stats-month'), statsC10: document.getElementById('stats-c10'), statsC15: document.getElementById('stats-c15'), statsC20: document.getElementById('stats-c20'),
+            labelC10: document.getElementById('label-c10'),
+            labelC15: document.getElementById('label-c15'),
+            labelC20: document.getElementById('label-c20'),
             statsAvg5: document.getElementById('stats-avg-5'), statsAvg10: document.getElementById('stats-avg-10'), statsAvg15: document.getElementById('stats-avg-15'), statsAvg20: document.getElementById('stats-avg-20'),
             weeklyList: document.getElementById('weekly-list'), 
             calendarTitle: document.getElementById('calendar-title'), calendarBody: document.getElementById('calendar-body'), 
@@ -1171,6 +1174,20 @@ function calcCycle(acc, anchorDay) {
             return sum;
         }
 
+
+        function cycleRangeLabel(anchorDay){
+            const y = store.date.getFullYear();
+            const m = store.date.getMonth();
+            const start = new Date(y, m - 1, anchorDay);
+            const end = new Date(y, m, anchorDay);
+            start.setHours(0,0,0,0);
+            end.setHours(0,0,0,0);
+
+            const pad2 = (n) => String(n).padStart(2,'0');
+            const fmt = (d) => `${pad2(d.getDate())}/${pad2(d.getMonth()+1)}`;
+            return `${fmt(start)}–${fmt(end)}`;
+        }
+
         function renderPayoutHistory(acc){ 
             if(!els.payoutHistory || !els.totalWithdrawn) return;
             els.payoutHistory.innerHTML = '';
@@ -1319,7 +1336,11 @@ function renderDashboard() {
             if(els.statsMonth) els.statsMonth.textContent = formatCurrency(getMonthlyDataFixed(acc).total); 
             if(els.statsC10) els.statsC10.textContent = formatCurrency(calcCycle(acc, 10)); 
             if(els.statsC15) els.statsC15.textContent = formatCurrency(calcCycle(acc, 15)); 
-            if(els.statsC20) els.statsC20.textContent = formatCurrency(calcCycle(acc, 20)); 
+            if(els.statsC20) els.statsC20.textContent = formatCurrency(calcCycle(acc, 20));
+
+            if(els.labelC10) els.labelC10.textContent = `Ciclo 10 a 10 (${cycleRangeLabel(10)})`;
+            if(els.labelC15) els.labelC15.textContent = `Ciclo 15 a 15 (${cycleRangeLabel(15)})`;
+            if(els.labelC20) els.labelC20.textContent = `Ciclo 20 a 20 (${cycleRangeLabel(20)})`; 
 
             const updateAvg = (id, days) => {
                 const avg = getAverage(acc, days);
