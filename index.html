@@ -2665,9 +2665,8 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             const pdfBtn = document.getElementById('period-modal-pdf');
             const modal = document.getElementById('period-modal');
 
-            const bindHoverClick = (el, getRangeFn) => {
+            const bindClickOnly = (el, getRangeFn) => {
                 if(!el) return;
-                let timer = null;
 
                 const open = () => {
                     const r = getRangeFn();
@@ -2675,20 +2674,11 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                 };
 
                 el.addEventListener('click', (e)=>{ e.preventDefault(); open(); });
-
-                el.addEventListener('mouseenter', ()=>{
-                    timer = setTimeout(()=>open(), 550);
-                });
-                el.addEventListener('mouseleave', ()=>{
-                    if(timer) clearTimeout(timer);
-                    timer = null;
-                });
             };
-
-            bindHoverClick(monthBtn, _monthRangeISO);
-            bindHoverClick(c10, ()=>_cycleRangeISO(10));
-            bindHoverClick(c15, ()=>_cycleRangeISO(15));
-            bindHoverClick(c20, ()=>_cycleRangeISO(20));
+            bindClickOnly(monthBtn, _monthRangeISO);
+            bindClickOnly(c10, ()=>_cycleRangeISO(10));
+            bindClickOnly(c15, ()=>_cycleRangeISO(15));
+            bindClickOnly(c20, ()=>_cycleRangeISO(20));
 
             // Weekly list items are created dynamically (buttons with data-start/data-end)
             const weeklyList = document.getElementById('weekly-list');
