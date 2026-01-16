@@ -373,6 +373,9 @@ body.dark .bg-white { background-color: #1e293b; }
                     <button id="admin-tab-logs" onclick="setAdminTab('logs')" class="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         <i data-lucide="file-text" class="w-4 h-4"></i> Logs
                     </button>
+                    <button id="admin-tab-ai" onclick="setAdminTab('ai')" class="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i> AI
+                    </button>
                 </div>
 
                 <!-- PANE: PAYOUTS -->
@@ -423,6 +426,53 @@ body.dark .bg-white { background-color: #1e293b; }
                         <p class="text-xs text-slate-400 italic">Vazio.</p>
                     </div>
                 </div>
+
+                <!-- PANE: AI -->
+                <div id="admin-pane-ai" class="hidden space-y-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                <i data-lucide="sparkles" class="w-4 h-4 text-indigo-500"></i> AI (Perguntas)
+                            </h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Sua chave fica salva apenas neste navegador (localStorage). Não vai para o GitHub.</p>
+                        </div>
+                        <div class="text-xs">
+                            <span id="ai-admin-status" class="px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 font-bold">Desativada</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">OpenAI API Key</label>
+                            <div class="flex gap-2">
+                                <input id="ai-api-key" type="password" autocomplete="off" placeholder="Cole sua chave aqui (fica oculta)" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100" />
+                                <button id="ai-save-key" type="button" class="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Salvar</button>
+                            </div>
+                            <p class="mt-1 text-[11px] text-slate-400">Dica: você só precisa colar uma vez. Se limpar cache, será preciso colar novamente.</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Modelo</label>
+                            <input id="ai-model" type="text" autocomplete="off" placeholder="ex: gpt-4.1" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100" />
+                            <div class="flex gap-2 mt-2">
+                                <button id="ai-test" type="button" class="flex-1 px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold">Testar</button>
+                                <button id="ai-remove" type="button" class="flex-1 px-3 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-xs font-bold">Remover</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="ai-admin-msg" class="hidden text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-3 text-slate-700 dark:text-slate-200"></div>
+
+                    <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                        <div class="font-bold mb-1">Escopo permitido:</div>
+                        <ul class="list-disc pl-5 space-y-1">
+                            <li>Somente perguntas sobre este app (números, relatórios, trades), regras da Apex, e conceitos gerais de mercado/índices.</li>
+                            <li>Sem perguntas de assuntos gerais (carro, viagens, etc.). Essas serão bloqueadas.</li>
+                            <li>Sem dados em tempo real (o modelo não navega). Para preço ao vivo, use sua corretora.</li>
+                        </ul>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -500,6 +550,30 @@ body.dark .bg-white { background-color: #1e293b; }
                      <button onclick="window.print()" class="col-span-1 py-2 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 flex justify-center items-center gap-1 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"><i data-lucide="printer" class="w-3 h-3"></i> PDF</button>
                      <button onclick="exportCSV()" class="col-span-1 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400"><i data-lucide="download" class="w-3 h-3"></i> CSV</button>
                 </div>
+                <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="sparkles" class="w-4 h-4 text-indigo-600"></i>
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase">AI (Perguntas)</span>
+                        </div>
+                        <button type="button" id="ai-open-admin" class="text-[11px] text-indigo-600 hover:text-indigo-700 font-bold no-print">Configurar</button>
+                    </div>
+
+                    <div id="ai-disabled-hint" class="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
+                        Para ativar, configure sua chave em <b>Área Administrativa &gt; AI</b>.
+                    </div>
+
+                    <textarea id="ai-question" rows="3" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100" placeholder="Pergunte sobre os números do painel, ciclos, médias, regras da Apex, ou conceitos de mercado/índices (sem dados ao vivo)."></textarea>
+
+                    <div class="flex gap-2 mt-2 no-print">
+                        <button id="ai-ask" type="button" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-bold flex items-center justify-center gap-2"><i data-lucide="send" class="w-3 h-3"></i> Perguntar</button>
+                        <button id="ai-clear" type="button" class="py-2 px-3 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200">Limpar</button>
+                    </div>
+
+                    <div id="ai-status" class="mt-2 text-[11px] text-slate-500 dark:text-slate-400"></div>
+                    <div id="ai-answer" class="mt-3 hidden text-xs whitespace-pre-wrap rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 text-slate-800 dark:text-slate-100"></div>
+                </div>
+
             </div>
         </div>
 
@@ -720,7 +794,7 @@ Usuário administrador:`) || '';
             labelC10: document.getElementById('label-c10'),
             labelC15: document.getElementById('label-c15'),
             labelC20: document.getElementById('label-c20'),
-            statsAvg5: document.getElementById('stats-avg-5'), statsAvg10: document.getElementById('stats-avg-10'), statsAvg15: document.getElementById('stats-avg-15'), statsAvg20: document.getElementById('stats-avg-20'),
+            statsAvg5: document.getElementById('stats-avg-5'), statsAvg10: document.getElementById('stats-avg-10'), statsAvg15: document.getElementById('stats-avg-15'), statsAvg20: document.getElementById('stats-avg-20'), statsAvg25: document.getElementById('stats-avg-25'), statsAvg30: document.getElementById('stats-avg-30'),
             weeklyList: document.getElementById('weekly-list'), 
             calendarTitle: document.getElementById('calendar-title'), calendarBody: document.getElementById('calendar-body'), 
             payoutHistory: document.getElementById('payout-history'), totalWithdrawn: document.getElementById('total-withdrawn'), 
@@ -738,12 +812,324 @@ Usuário administrador:`) || '';
             adminPassword: document.getElementById('admin-password'),
             adminTabPayouts: document.getElementById('admin-tab-payouts'),
             adminTabLogs: document.getElementById('admin-tab-logs'),
+            adminTabAI: document.getElementById('admin-tab-ai'),
             adminPanePayouts: document.getElementById('admin-pane-payouts'),
             adminPaneLogs: document.getElementById('admin-pane-logs'),
+            adminPaneAI: document.getElementById('admin-pane-ai'),
             adminLogsList: document.getElementById('admin-logs-list'),
             adminClearPayoutsBtn: document.getElementById('admin-clear-payouts-btn'),
-            adminClearLogsBtn: document.getElementById('admin-clear-logs-btn')
+            adminClearLogsBtn: document.getElementById('admin-clear-logs-btn'),
+            aiOpenAdmin: document.getElementById('ai-open-admin'),
+            aiQuestion: document.getElementById('ai-question'),
+            aiAsk: document.getElementById('ai-ask'),
+            aiClear: document.getElementById('ai-clear'),
+            aiAnswer: document.getElementById('ai-answer'),
+            aiStatus: document.getElementById('ai-status'),
+            aiDisabledHint: document.getElementById('ai-disabled-hint'),
+            adminAIStatus: document.getElementById('ai-admin-status'),
+            adminAIMsg: document.getElementById('ai-admin-msg'),
+            adminAIKey: document.getElementById('ai-api-key'),
+            adminAISave: document.getElementById('ai-save-key'),
+            adminAIModel: document.getElementById('ai-model'),
+            adminAITest: document.getElementById('ai-test'),
+            adminAIRemove: document.getElementById('ai-remove')
         };
+
+
+
+        // AI (OpenAI) - chave fica SOMENTE no navegador (localStorage)
+        const AI_STORAGE_KEY = 'df_ai_openai_key';
+        const AI_STORAGE_MODEL = 'df_ai_openai_model';
+        const DEFAULT_AI_MODEL = 'gpt-4.1';
+
+        function getAIKey(){ return (localStorage.getItem(AI_STORAGE_KEY) || '').trim(); }
+        function setAIKey(k){ localStorage.setItem(AI_STORAGE_KEY, (k||'').trim()); }
+        function clearAIKey(){ localStorage.removeItem(AI_STORAGE_KEY); }
+        function getAIModel(){ return (localStorage.getItem(AI_STORAGE_MODEL) || DEFAULT_AI_MODEL).trim(); }
+        function setAIModel(m){ localStorage.setItem(AI_STORAGE_MODEL, (m||DEFAULT_AI_MODEL).trim()); }
+
+        function aiSetMsg(el, msg, isError=false){
+            if(!el) return;
+            el.classList.remove('hidden');
+            el.style.borderColor = isError ? '#fecaca' : '';
+            el.style.background = isError ? 'rgba(239,68,68,0.08)' : '';
+            el.textContent = msg;
+        }
+
+        function refreshAIUI(){
+            const hasKey = !!getAIKey();
+
+            if (els.adminAIStatus) {
+                els.adminAIStatus.textContent = hasKey ? 'Ativa' : 'Desativada';
+                els.adminAIStatus.className = hasKey
+                    ? 'px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 font-bold'
+                    : 'px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 font-bold';
+            }
+
+            if (els.adminAIModel) {
+                if (!els.adminAIModel.value) els.adminAIModel.value = getAIModel();
+            }
+
+            if (els.adminAIKey) {
+                // nunca mostramos a chave salva; só permite colar uma nova
+                els.adminAIKey.value = '';
+            }
+
+            if (els.aiDisabledHint) {
+                els.aiDisabledHint.classList.toggle('hidden', hasKey);
+            }
+        }
+
+        function aiIsAllowedQuestion(q){
+            const s = (q||'').toLowerCase();
+
+            const banned = [
+                'carro','car','buy a car','comprar carro','viagem','voo','flight','hotel','airbnb','passagem','travel','vacation',
+                'restaurante','restaurant','receita','recipe','filme','movie','serie','série','netflix','jogo','game','politica','política','election'
+            ];
+            if (banned.some(w => s.includes(w))) {
+                return { ok:false, why:'Pergunta fora do escopo (apenas trading/Apex/mercado/este app).' };
+            }
+
+            const allowed = [
+                'apex','rule','regra','payout','saque','consistency','teto','drawdown','profit','loss','winrate','acerto','trade','trades',
+                'ciclo','mensal','seman','média','media','equity','saldo','resultado','periodo','período','mnq','nq','es','spy','qqq','dow','nasdaq','s&p','indice','índice','market','mercado','vwap','setup'
+            ];
+            if (allowed.some(w => s.includes(w))) {
+                return { ok:true };
+            }
+
+            if (/(numero|número|painel|relatorio|relatório)/.test(s)) {
+                return { ok:true };
+            }
+
+            return { ok:false, why:'Pergunta genérica demais. Faça uma pergunta sobre os números do app, Apex, ou conceitos de mercado/índices.' };
+        }
+
+        function buildAIContext(){
+            try{
+                const acc = getActive();
+                const stats = calculateStats(acc);
+                const monthStart = new Date(store.date.getFullYear(), store.date.getMonth(), 1);
+                const monthEnd = new Date(store.date.getFullYear(), store.date.getMonth()+1, 0);
+                const isoStart = toISODateLocal(monthStart);
+                const isoEnd = toISODateLocal(monthEnd);
+
+                // coletar entradas do mês (inclui dias com total/nota/feriado)
+                const days = [];
+                const cur = new Date(monthStart);
+                while (cur <= monthEnd) {
+                    const iso = toISODateLocal(cur);
+                    const e = (acc.data && acc.data[iso]) ? acc.data[iso] : {};
+                    const t1 = parseFloat(e.t1) || 0;
+                    const t2 = parseFloat(e.t2) || 0;
+                    const hasVal = !(e.val === undefined || e.val === null || e.val === '');
+                    const total = hasVal ? (parseFloat(e.val) || 0) : (t1 + t2);
+                    const note = (e.note || '').toString();
+                    const holiday = !!e.holiday;
+
+                    if (total !== 0 || note.trim() || holiday) {
+                        days.push({ date: iso, t1, t2, total, holiday, note: note.slice(0, 220) });
+                    }
+                    cur.setDate(cur.getDate() + 1);
+                }
+
+                const fs = (els.filterStart && els.filterStart.value) ? els.filterStart.value : '';
+                const fe = (els.filterEnd && els.filterEnd.value) ? els.filterEnd.value : '';
+
+                return {
+                    account: { id: acc.id, name: acc.name, size: acc.size, monthType: acc.monthType },
+                    currentMonth: { start: isoStart, end: isoEnd },
+                    stats: {
+                        currentEquity: stats.currentEquity,
+                        gainCap: stats.gainCap,
+                        nextPayout: stats.nextPayout,
+                        payoutThreshold: stats.payoutThreshold,
+                        monthly: stats.monthTotal,
+                        cycle10to10: stats.cycle10,
+                        cycle15to15: stats.cycle15,
+                        cycle20to20: stats.cycle20,
+                        avg5: stats.avg5, avg10: stats.avg10, avg15: stats.avg15, avg20: stats.avg20,
+                        avg25: stats.avg25, avg30: stats.avg30,
+                        weekly: stats.weekly
+                    },
+                    monthEntries: days,
+                    analysisFilter: { start: fs, end: fe }
+                };
+            } catch (err) {
+                return { error: String(err) };
+            }
+        }
+
+        function extractTextFromResponsesAPI(data){
+            if (data && typeof data.output_text === 'string' && data.output_text.trim()) {
+                return data.output_text.trim();
+            }
+            let text = '';
+            if (data && Array.isArray(data.output)) {
+                for (const item of data.output) {
+                    if (item && item.type === 'message' && Array.isArray(item.content)) {
+                        for (const c of item.content) {
+                            if (!c) continue;
+                            if ((c.type === 'output_text' || c.type === 'text') && typeof c.text === 'string') {
+                                text += c.text;
+                            }
+                        }
+                    }
+                }
+            }
+            return (text || '').trim();
+        }
+
+        async function callOpenAI(question){
+            const apiKey = getAIKey();
+            const model = getAIModel();
+            const context = buildAIContext();
+
+            const apexRulesLink = 'https://support.apextraderfunding.com/hc/en-us/articles/40463003786267-Performance-Account-PA-Trading-Rules';
+
+            const instructions = [
+                'Você é um assistente dentro de um aplicativo de performance (trading) baseado nas regras da Apex Trader Funding.',
+                'Responda no mesmo idioma da pergunta (português ou inglês).',
+                'Responda APENAS sobre: números do painel, trades/estatísticas, interpretação dos cálculos, regras/termos da Apex, e conceitos gerais de mercado/índices.',
+                'NÃO responda assuntos gerais (carros, viagens, etc.). Se pedirem, recuse educadamente e peça para reformular dentro do escopo.',
+                'NÃO invente dados. Use somente o contexto JSON fornecido; se faltar informação, diga o que falta.',
+                'NÃO tem acesso a preços ao vivo. Se pedirem cotação atual, explique essa limitação e sugira consultar a corretora.',
+                'Se citar regras da Apex, mencione o nome da regra e inclua o link oficial quando apropriado.',
+                `Link base das regras: ${apexRulesLink}`
+            ].join('\n');
+
+            const input = [
+                `Pergunta do usuário: ${question}`,
+                '',
+                'Contexto do app (JSON):',
+                JSON.stringify(context, null, 2),
+                '',
+                'Responda de forma objetiva. Quando fizer contas, mostre a fórmula e os números usados.'
+            ].join('\n');
+
+            const payload = {
+                model,
+                instructions,
+                input,
+                max_output_tokens: 800,
+                store: false
+            };
+
+            const resp = await fetch('https://api.openai.com/v1/responses', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (!resp.ok) {
+                const t = await resp.text().catch(()=> '');
+                throw new Error(`OpenAI API error ${resp.status}: ${t || resp.statusText}`);
+            }
+
+            const data = await resp.json();
+            const txt = extractTextFromResponsesAPI(data);
+            if (!txt) return 'Sem resposta (vazia).';
+            return txt;
+        }
+
+        function initAI(){
+            refreshAIUI();
+
+            if (els.aiOpenAdmin) {
+                els.aiOpenAdmin.addEventListener('click', () => window.openAdminPanel('ai'));
+            }
+
+            if (els.adminAISave) {
+                els.adminAISave.addEventListener('click', async () => {
+                    const key = (els.adminAIKey?.value || '').trim();
+                    const model = (els.adminAIModel?.value || DEFAULT_AI_MODEL).trim();
+
+                    if (!key) {
+                        aiSetMsg(els.adminAIMsg, 'Cole sua chave para salvar.', true);
+                        return;
+                    }
+                    setAIKey(key);
+                    setAIModel(model);
+                    refreshAIUI();
+                    aiSetMsg(els.adminAIMsg, 'Chave salva neste navegador. (Não vai para o GitHub)', false);
+                });
+            }
+
+            if (els.adminAIRemove) {
+                els.adminAIRemove.addEventListener('click', () => {
+                    clearAIKey();
+                    refreshAIUI();
+                    aiSetMsg(els.adminAIMsg, 'Chave removida deste navegador.', false);
+                });
+            }
+
+            if (els.adminAITest) {
+                els.adminAITest.addEventListener('click', async () => {
+                    const key = getAIKey();
+                    if (!key) {
+                        aiSetMsg(els.adminAIMsg, 'Nenhuma chave salva. Cole e clique em Salvar.', true);
+                        return;
+                    }
+                    try {
+                        aiSetMsg(els.adminAIMsg, 'Testando conexão...', false);
+                        const res = await callOpenAI('Responda apenas com: OK');
+                        aiSetMsg(els.adminAIMsg, `Conectado! Resposta: ${res}`, false);
+                    } catch (e) {
+                        aiSetMsg(els.adminAIMsg, `Falha ao testar: ${e.message || e}`, true);
+                    }
+                });
+            }
+
+            if (els.aiAsk) {
+                els.aiAsk.addEventListener('click', async () => {
+                    const q = (els.aiQuestion?.value || '').trim();
+                    els.aiAnswer?.classList.add('hidden');
+                    if (els.aiAnswer) els.aiAnswer.textContent = '';
+
+                    if (!q) {
+                        if (els.aiStatus) els.aiStatus.textContent = 'Digite uma pergunta.';
+                        return;
+                    }
+
+                    const check = aiIsAllowedQuestion(q);
+                    if (!check.ok) {
+                        if (els.aiStatus) els.aiStatus.textContent = check.why;
+                        return;
+                    }
+
+                    if (!getAIKey()) {
+                        if (els.aiStatus) els.aiStatus.textContent = 'AI desativada. Clique em Configurar (Admin) e cole sua chave.';
+                        return;
+                    }
+
+                    if (els.aiStatus) els.aiStatus.textContent = 'Analisando...';
+
+                    try {
+                        const ans = await callOpenAI(q);
+                        if (els.aiAnswer) {
+                            els.aiAnswer.textContent = ans;
+                            els.aiAnswer.classList.remove('hidden');
+                        }
+                        if (els.aiStatus) els.aiStatus.textContent = '';
+                    } catch (e) {
+                        if (els.aiStatus) els.aiStatus.textContent = `Erro: ${e.message || e}`;
+                    }
+                });
+            }
+
+            if (els.aiClear) {
+                els.aiClear.addEventListener('click', () => {
+                    if (els.aiQuestion) els.aiQuestion.value = '';
+                    if (els.aiAnswer) { els.aiAnswer.textContent = ''; els.aiAnswer.classList.add('hidden'); }
+                    if (els.aiStatus) els.aiStatus.textContent = '';
+                });
+            }
+        }
+
 
         // THEME HANDLING
         window.toggleTheme = () => {
@@ -858,6 +1244,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             // Atualiza conteúdo
             try { renderPayoutHistory(getActive()); } catch(e) {}
             renderAdminLogsList();
+            try { refreshAIUI(); } catch(e) {}
 
             // Tab atual
             setAdminTab(_adminTab);
@@ -881,6 +1268,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
             if(els.adminPanePayouts) els.adminPanePayouts.classList.toggle('hidden', tab !== 'payouts');
             if(els.adminPaneLogs) els.adminPaneLogs.classList.toggle('hidden', tab !== 'logs');
+            if(els.adminPaneAI) els.adminPaneAI.classList.toggle('hidden', tab !== 'ai');
 
             if(els.adminTabPayouts){
                 els.adminTabPayouts.className = "px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 " + 
@@ -889,6 +1277,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(els.adminTabLogs){
                 els.adminTabLogs.className = "px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 " + 
                     (tab === 'logs' ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100");
+            }
+            if(els.adminTabAI){
+                els.adminTabAI.className = "px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 " + 
+                    (tab === 'ai' ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100");
             }
 
             lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions();
@@ -2337,11 +2729,24 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             }
         }
 
-
-        init();
-        bindHelpPopover();
-        ensureInfoIcons();
-        bindPeriodInteractions();
+        // Safe boot (prevents one error from breaking the whole app)
+        window.addEventListener('load', () => {
+            try { initAI(); } catch (e) { console.error('initAI failed:', e); }
+            try { init(); } catch (e) {
+                console.error('init failed:', e);
+                const loader = document.getElementById('app-loader');
+                if (loader) {
+                    loader.innerHTML = '<div class="text-center p-6 max-w-sm mx-auto">' +
+                        '<div class="text-red-500 mb-4">Falha ao iniciar</div>' +
+                        '<div class="text-xs text-slate-400">Abra o Console para ver detalhes, ou tente recarregar.</div>' +
+                        '<button onclick="location.reload()" class="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">Recarregar</button>' +
+                    '</div>';
+                }
+            }
+            try { bindHelpPopover(); } catch (e) { console.error('bindHelpPopover failed:', e); }
+            try { ensureInfoIcons(); } catch (e) { console.error('ensureInfoIcons failed:', e); }
+            try { bindPeriodInteractions(); } catch (e) { console.error('bindPeriodInteractions failed:', e); }
+        });
     </script>
 </body>
 </html>
