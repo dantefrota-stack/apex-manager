@@ -28,7 +28,16 @@
         /* Dark Mode Overrides */
         body.dark { background-color: #0f172a; color: #f1f5f9; }
         body.dark .dashboard-card { background-color: #1e293b; border-color: #334155; color: #f1f5f9; }
-        body.dark .bg-white { background-color: #1e293b; }
+        
+        /* Card Typography Normalization (mantém visual consistente entre cards) */
+        .dashboard-card { font-size: 14px; line-height: 1.35; }
+        .dashboard-card h3 { font-size: 14px; line-height: 1.25; }
+        .dashboard-card h4 { line-height: 1.25; }
+        .dashboard-card .text-sm { font-size: 14px !important; }
+        .dashboard-card .text-xs { font-size: 12px !important; }
+        .dashboard-card [class*='text-[10px]'] { font-size: 12px !important; }
+        .dashboard-card .period-link { font-size: 14px; }
+body.dark .bg-white { background-color: #1e293b; }
         body.dark .text-slate-800 { color: #f1f5f9; }
         body.dark .text-slate-700 { color: #e2e8f0; }
         body.dark .text-slate-600 { color: #cbd5e1; }
@@ -135,6 +144,148 @@
             border-top: 1px solid #334155;
             border-bottom: 1px solid #334155;
         }
+    
+        /* --- Help (i) / Popover --- */
+        .info-i{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            width:18px;height:18px;
+            border-radius:999px;
+            border:1px solid rgba(148,163,184,.9);
+            color:#64748b;
+            font-size:12px;
+            font-weight:800;
+            margin-left:8px;
+            cursor:pointer;
+            user-select:none;
+            background:rgba(255,255,255,.6);
+        }
+        body.dark .info-i{ border-color:#475569; color:#cbd5e1; background:rgba(30,41,59,.6); }
+        .info-i:hover{ transform: translateY(-1px); }
+
+        #help-popover{
+            position:fixed;
+            z-index:9999;
+            max-width:380px;
+            width:min(380px, calc(100vw - 24px));
+            border:1px solid rgba(148,163,184,.35);
+            border-radius:14px;
+            background:white;
+            box-shadow:0 18px 50px rgba(2,6,23,.20);
+            padding:12px 12px 10px;
+        }
+        body.dark #help-popover{ background:#0b1220; border-color:#334155; box-shadow:0 18px 50px rgba(0,0,0,.45); }
+        #help-popover.hidden{ display:none; }
+        #help-popover .hp-title{ font-weight:800; font-size:13px; color:#0f172a; }
+        body.dark #help-popover .hp-title{ color:#e2e8f0; }
+        #help-popover .hp-close{
+            border:none;background:transparent;cursor:pointer;
+            font-size:20px; line-height:18px; padding:0 6px; color:#64748b;
+        }
+        body.dark #help-popover .hp-close{ color:#94a3b8; }
+        #help-popover .hp-body{ margin-top:8px; font-size:12px; color:#334155; line-height:1.35; }
+        body.dark #help-popover .hp-body{ color:#cbd5e1; }
+        #help-popover .hp-link{
+            display:inline-flex; align-items:center; gap:6px;
+            margin-top:10px; font-size:12px; font-weight:700;
+            color:#4f46e5; text-decoration:none;
+        }
+        #help-popover .hp-link:hover{ text-decoration:underline; }
+
+        /* --- Period details modal --- */
+        .period-link{
+            background:none; border:none; padding:0; margin:0;
+            cursor:pointer; text-align:left;
+        }
+        .period-link:hover{ text-decoration:underline; }
+        .period-row{ width:100%; }
+
+        #period-modal.hidden{ display:none; }
+        #period-modal{
+            position:fixed; inset:0; z-index:9998;
+            display:flex; align-items:center; justify-content:center;
+        }
+        #period-modal .pm-backdrop{
+            position:absolute; inset:0; background:rgba(2,6,23,.55);
+        }
+        #period-modal .pm-panel{
+            position:relative;
+            width:min(960px, calc(100vw - 24px));
+            max-height:calc(100vh - 24px);
+            background:white;
+            border-radius:18px;
+            overflow:hidden;
+            border:1px solid rgba(148,163,184,.35);
+            box-shadow:0 20px 60px rgba(2,6,23,.35);
+        }
+        body.dark #period-modal .pm-panel{ background:#0b1220; border-color:#334155; }
+        #period-modal .pm-header{
+            display:flex; align-items:flex-start; justify-content:space-between;
+            padding:14px 16px;
+            border-bottom:1px solid rgba(148,163,184,.25);
+        }
+        body.dark #period-modal .pm-header{ border-bottom-color:#334155; }
+        #period-modal .pm-title{ font-weight:900; font-size:14px; color:#0f172a; }
+        body.dark #period-modal .pm-title{ color:#e2e8f0; }
+        #period-modal .pm-sub{ font-size:12px; color:#64748b; margin-top:2px; }
+        body.dark #period-modal .pm-sub{ color:#94a3b8; }
+        #period-modal .pm-close{
+            border:none;background:transparent;cursor:pointer;
+            font-size:22px; line-height:18px; padding:0 6px; color:#94a3b8;
+        }
+        #period-modal .pm-body{ padding:12px 16px 0; overflow:auto; max-height:calc(100vh - 170px); }
+        #period-modal .pm-summary{
+            display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;
+            padding:10px 12px;
+            border-radius:14px;
+            background:rgba(99,102,241,.08);
+            border:1px solid rgba(99,102,241,.20);
+            margin-bottom:12px;
+        }
+        body.dark #period-modal .pm-summary{ background:rgba(99,102,241,.12); border-color:rgba(99,102,241,.25); }
+        #period-modal .pm-summary .pm-sum{ font-weight:900; }
+
+        #period-modal table{ width:100%; border-collapse:collapse; }
+        #period-modal th, #period-modal td{
+            padding:8px 10px;
+            border-bottom:1px solid rgba(148,163,184,.18);
+            font-size:12px;
+        }
+        body.dark #period-modal th, body.dark #period-modal td{ border-bottom-color:#334155; }
+        #period-modal th{ text-transform:uppercase; font-size:10px; letter-spacing:.06em; color:#64748b; text-align:left; }
+        body.dark #period-modal th{ color:#94a3b8; }
+
+        #period-modal .pm-footer{
+            display:flex; gap:10px; justify-content:flex-end;
+            padding:12px 16px;
+            border-top:1px solid rgba(148,163,184,.25);
+        }
+        body.dark #period-modal .pm-footer{ border-top-color:#334155; }
+        .btn-lite{
+            border:1px solid rgba(148,163,184,.35);
+            background:white; color:#0f172a;
+            border-radius:12px; padding:10px 12px;
+            font-weight:800; font-size:12px;
+            cursor:pointer;
+        }
+        body.dark .btn-lite{ background:#0f172a; color:#e2e8f0; border-color:#334155; }
+        .btn-primary{
+            border:none; background:#4f46e5; color:white;
+            border-radius:12px; padding:10px 12px;
+            font-weight:900; font-size:12px;
+            cursor:pointer;
+        }
+        .btn-primary:hover{ filter:brightness(.95); }
+
+        /* Print only the PDF area */
+        #print-area{ display:none; }
+        @media print{
+            body *{ visibility:hidden !important; }
+            #print-area, #print-area *{ visibility:visible !important; }
+            #print-area{ display:block; position:absolute; inset:0; padding:18px; }
+        }
+
     </style>
 </head>
 <body class="pb-12 transition-colors duration-300">
@@ -403,27 +554,84 @@
                 <div class="dashboard-card p-5">
                     <h3 class="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2 dark:text-white"><i data-lucide="calendar-check" class="w-4 h-4"></i> Performance (Ciclos Atuais)</h3>
                     <div class="space-y-3 text-sm">
-                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><span class="text-slate-500 font-medium">Mensal (1 a 31)</span><span id="stats-month" class="font-bold text-slate-800 dark:text-slate-200">$0.00</span></div>
-                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><span id="label-c10" class="text-slate-500">Ciclo 10 a 10</span><span id="stats-c10" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
-                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><span id="label-c15" class="text-slate-500">Ciclo 15 a 15</span><span id="stats-c15" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
-                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><span id="label-c20" class="text-slate-500">Ciclo 20 a 20</span><span id="stats-c20" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
+                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button type="button" id="label-month" class="period-link text-slate-500 font-medium" title="Ver detalhes do período">Mensal (1 a 31)</button><span id="stats-month" class="font-bold text-slate-800 dark:text-slate-200">$0.00</span></div>
+                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button type="button" id="label-c10" class="period-link text-slate-500" title="Ver detalhes do período">Ciclo 10 a 10</button><span id="stats-c10" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
+                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button type="button" id="label-c15" class="period-link text-slate-500" title="Ver detalhes do período">Ciclo 15 a 15</button><span id="stats-c15" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
+                        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button type="button" id="label-c20" class="period-link text-slate-500" title="Ver detalhes do período">Ciclo 20 a 20</button><span id="stats-c20" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
                         
                         <div class="mt-4 pt-2 bg-indigo-50 dark:bg-slate-800 p-3 rounded-lg border border-indigo-100 dark:border-slate-700">
                             <h4 class="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase mb-2 text-center">Médias Diárias (Recentes)</h4>
-                            <div class="grid grid-cols-2 gap-2 text-center">
+                            <div class="grid grid-cols-3 gap-2 text-center">
                                 <div><span class="text-[10px] text-slate-500 block">5 Dias</span><span id="stats-avg-5" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
                                 <div><span class="text-[10px] text-slate-500 block">10 Dias</span><span id="stats-avg-10" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
                                 <div><span class="text-[10px] text-slate-500 block">15 Dias</span><span id="stats-avg-15" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
                                 <div><span class="text-[10px] text-slate-500 block">20 Dias</span><span id="stats-avg-20" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
+                                <div><span class="text-[10px] text-slate-500 block">25 Dias</span><span id="stats-avg-25" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
+                                <div><span class="text-[10px] text-slate-500 block">30 Dias</span><span id="stats-avg-30" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
                             </div>
                         </div>
                     </div>
-                    <div id="weekly-list" class="mt-4 space-y-1 text-xs text-slate-500"></div>
+                    <!-- Weekly breakdown (keep typography/spacing consistent with the lines above) -->
+                    <div id="weekly-list" class="mt-4 space-y-3 text-sm text-slate-500"></div>
                 </div>
                 
             </div>
         </div>
     </div>
+
+    
+    <!-- Help Popover -->
+    <div id="help-popover" class="hidden" role="dialog" aria-modal="false">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+            <div class="hp-title" id="help-title">Ajuda</div>
+            <button type="button" class="hp-close" id="help-close" aria-label="Fechar">×</button>
+        </div>
+        <div class="hp-body" id="help-body"></div>
+        <a class="hp-link" id="help-link" href="#" target="_blank" rel="noopener">Ver regra na Apex</a>
+    </div>
+
+    <!-- Period Details Modal -->
+    <div id="period-modal" class="hidden" role="dialog" aria-modal="true">
+        <div class="pm-backdrop"></div>
+        <div class="pm-panel">
+            <div class="pm-header">
+                <div>
+                    <div class="pm-title" id="period-modal-title">Detalhes</div>
+                    <div class="pm-sub" id="period-modal-range">--</div>
+                </div>
+                <button type="button" class="pm-close" id="period-modal-close" aria-label="Fechar">×</button>
+            </div>
+            <div class="pm-body">
+                <div class="pm-summary">
+                    <div id="period-modal-summary">--</div>
+                    <div class="pm-sum" id="period-modal-total">--</div>
+                </div>
+                <div style="overflow:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Trade 1</th>
+                                <th>Trade 2</th>
+                                <th>Total</th>
+                                <th>Nota</th>
+                            </tr>
+                        </thead>
+                        <tbody id="period-modal-tbody"></tbody>
+                    </table>
+                </div>
+                <div style="height:12px;"></div>
+            </div>
+            <div class="pm-footer">
+                <button type="button" class="btn-lite" id="period-modal-close2">Fechar</button>
+                <button type="button" class="btn-primary" id="period-modal-pdf">PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Area (PDF) -->
+    <div id="print-area"></div>
+
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -543,7 +751,7 @@ Usuário administrador:`) || '';
             const isDark = document.body.classList.contains('dark');
             localStorage.setItem('df_theme', isDark ? 'dark' : 'light');
             els.themeIcon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
-            lucide.createIcons();
+            lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions();
             renderDashboard(); 
         };
         if (localStorage.getItem('df_theme') === 'dark') { 
@@ -554,6 +762,16 @@ Usuário administrador:`) || '';
         // EXPOSE FUNCTIONS TO WINDOW
         window.toggleSidebar = () => { const isOpen=!els.sidebar.classList.contains('sidebar-closed'); if(isOpen){els.sidebar.classList.add('sidebar-closed');els.sidebar.classList.remove('sidebar-open');els.backdrop.classList.add('hidden');}else{els.sidebar.classList.remove('sidebar-closed');els.sidebar.classList.add('sidebar-open');els.backdrop.classList.remove('hidden');} };
         window.formatCurrency = (v) => v.toLocaleString('en-US',{style:'currency',currency:'USD'});
+        const toISODateLocal = (d) => {
+            const y=d.getFullYear();
+            const m=String(d.getMonth()+1).padStart(2,'0');
+            const day=String(d.getDate()).padStart(2,'0');
+            return `${y}-${m}-${day}`;
+        };
+        const parseISODateLocal = (iso) => {
+            const [y,m,d] = iso.split('-').map(n=>parseInt(n,10));
+            return new Date(y, m-1, d);
+        };
         window.createAccount = () => { const name = prompt("Nome:"); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [] }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); };
         window.renameAccount = () => { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } };
         
@@ -623,7 +841,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(!logged) {
                 if(els.adminSubtitle) els.adminSubtitle.textContent = 'Acesso restrito';
                 if(els.adminUsername) els.adminUsername.focus();
-                lucide.createIcons();
+                lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions();
                 return;
             }
 
@@ -645,7 +863,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             setAdminTab(_adminTab);
 
             if(els.adminSubtitle) els.adminSubtitle.textContent = `Conta ativa: ${getActive().name}`;
-            lucide.createIcons();
+            lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions();
         }
 
         window.openAdminPanel = (tab = 'payouts') => {
@@ -673,7 +891,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                     (tab === 'logs' ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100");
             }
 
-            lucide.createIcons();
+            lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions();
         };
 
         window.adminLogin = () => {
@@ -972,7 +1190,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 <div id="payout-form-area" class="hidden animate-in fade-in slide-in-from-top-2 duration-200"><div class="flex gap-2"><input type="number" id="payout-input-amount" step="500" min="500" max="${availablePayout}" placeholder="Múltiplo de 500" class="w-full text-xs p-2 border border-slate-300 rounded focus:border-indigo-500 outline-none font-bold text-slate-700"><button onclick="submitPayout(${availablePayout})" class="bg-green-600 text-white px-3 rounded hover:bg-green-700"><i data-lucide="check" class="w-4 h-4"></i></button><button onclick="togglePayoutForm()" class="bg-slate-200 text-slate-600 px-3 rounded hover:bg-slate-300"><i data-lucide="x" class="w-4 h-4"></i></button></div><p class="text-[10px] text-slate-400 mt-1 text-center">*Valor será deduzido do Equity.</p></div>
             `;
             const container = document.getElementById('payout-manager-container');
-            if(container) { container.innerHTML = html; lucide.createIcons(); }
+            if(container) { container.innerHTML = html; lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions(); }
         }
 
         function getActive(){return store.accounts[store.activeId];}
@@ -1130,8 +1348,10 @@ function getMonthlyDataFixed(acc) {
         const ddE = String(wkEnd.getDate()).padStart(2, '0');
         const mmE = String(wkEnd.getMonth() + 1).padStart(2, '0');
         const label = `Semana ${weekNum} (${ddS}/${mmS} - ${ddE}/${mmE})`;
+        const isoS = toISODateLocal(wk);
+        const isoE = toISODateLocal(wkEnd);
 
-        html += `<div class="flex justify-between border-b border-slate-50 dark:border-slate-700 pb-1 last:border-0 text-xs"><span class="text-slate-500">${label}</span><span class="font-bold ${weekSum >= 0 ? 'val-pos' : 'val-neg'}">${formatCurrency(weekSum)}</span></div>`;
+        html += `<button type="button" class="period-row period-link flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700 w-full" data-period="week" data-start="${isoS}" data-end="${isoE}" data-label="${label}"><span class="text-slate-500">${label}</span><span class="font-bold ${weekSum>=0?'val-pos' : 'val-neg'}">${formatCurrency(weekSum)}</span></button>`;
     }
 
     if(!html) html = '<span class="italic text-xs text-slate-400">Sem dados</span>'; 
@@ -1222,7 +1442,7 @@ function calcCycle(acc, anchorDay) {
             }
 
             els.totalWithdrawn.textContent = formatCurrency(t);
-            lucide.createIcons();
+            lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions();
         }
 function renderCalendar(acc) { 
     const y = store.date.getFullYear(); 
@@ -1354,6 +1574,8 @@ function renderDashboard() {
             updateAvg('stats-avg-10', 10);
             updateAvg('stats-avg-15', 15);
             updateAvg('stats-avg-20', 20);
+            updateAvg('stats-avg-25', 25);
+            updateAvg('stats-avg-30', 30);
 
             if(!els.filterStart.value) { syncDatesToView(); } filterReportInternal();
             
@@ -1362,7 +1584,7 @@ function renderDashboard() {
             
             renderPayoutManager(); 
             renderPayoutHistory(acc); 
-            lucide.createIcons(); 
+            lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions(); 
         }
 
         function renderSidebar() { els.accList.innerHTML=''; Object.values(store.accounts).forEach(acc=>{ const stats=calculateStats(acc); const div=document.createElement('div'); div.className=`account-item p-3 rounded-lg cursor-pointer transition-colors mb-2 ${acc.id===store.activeId?'active':'bg-slate-800'}`; div.onclick=()=>{loadAccount(acc.id);toggleSidebar();}; div.innerHTML=`<div class="flex justify-between items-center"><span class="font-bold text-sm text-slate-200">${acc.name}</span><span class="text-xs text-indigo-300 font-mono">${acc.size}</span></div><div class="flex justify-between items-center mt-1"><span class="text-xs text-slate-400">Saldo:</span><span class="text-xs font-bold ${stats.currentEquity>=RULES[acc.size].start?'text-green-400':'text-red-400'}">${formatCurrency(stats.currentEquity)}</span></div>`; els.accList.appendChild(div); }); }
@@ -1435,7 +1657,7 @@ function renderDashboard() {
         }
 
         async function init() {
-            lucide.createIcons();
+            lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions();
             const showFatalError = (title, msg) => {
                  const loader = document.getElementById('app-loader');
                  if (loader) {
@@ -1450,7 +1672,7 @@ function renderDashboard() {
                             </div>
                         </div>
                     `;
-                    lucide.createIcons();
+                    lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions();
                  }
             };
 
@@ -1487,7 +1709,639 @@ function renderDashboard() {
             document.getElementById('status-text').textContent = "Online";
         }
 
+        
+        /* =========================
+           Help popover (i)
+        ========================= */
+        function _normalizeText(s){
+            return (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+        }
+        function _helpForTitle(rawTitle){
+            const t=_normalizeText(rawTitle);
+            // Official Apex links (kept as plain URLs inside code)
+            const LINKS = {
+                paRules: "https://support.apextraderfunding.com/hc/en-us/articles/40463003786267-Performance-Account-PA-Trading-Rules",
+                windfall30: "https://support.apextraderfunding.com/hc/en-us/articles/40463260337819-30-Consistency-Rule-Windfall",
+                payoutParams: "https://support.apextraderfunding.com/hc/en-us/articles/40507212951451-PA-Payout-Parameters",
+                safetyNet: "https://support.apextraderfunding.com/hc/en-us/articles/40463578114715-Safety-Net-Requirement-Rule",
+                trailing: "https://support.apextraderfunding.com/hc/en-us/articles/40463582041371-Trailing-Drawdown-Rule"
+            };
+
+            // Defaults (métricas internas)
+            const generic = {
+                title: rawTitle || "Ajuda",
+                body: "Este card é um resumo calculado a partir do seu registro diário (Trade 1 + Trade 2). Ele ajuda a acompanhar sua evolução e reduzir erros antes de solicitar payout.",
+                link: LINKS.paRules
+            };
+
+            if(t.includes("teto 30")){
+                return {
+                    title: "Teto 30% (Consistency / Windfall)",
+                    body: "Regra da Apex no payout: o seu MAIOR dia de lucro não pode representar mais de 30% do lucro total acumulado naquele momento. Aqui mostramos quanto ainda ‘cabe’ hoje: (lucro_total × 0,30) − maior_dia. Se ficar negativo, você precisa diluir com mais dias positivos antes do payout.",
+                    link: LINKS.windfall30
+                };
+            }
+
+            if(t.includes("saldo atual") || t.includes("equity")){
+                return {
+                    title: "Saldo Atual (Equity)",
+                    body: "Mostra seu saldo atual baseado nos trades registrados. O progresso considera o ponto em que o drawdown/trailing tende a parar (start + drawdown + $100), que a Apex chama de ‘threshold stop/safety net’.",
+                    link: LINKS.trailing
+                };
+            }
+
+            if(t.includes("gestao de saques") || t.includes("payout") || t.includes("saque")){
+                return {
+                    title: "Gestão de Saques (Payout)",
+                    body: "Ajuda a acompanhar requisitos típicos de payout da Apex (ex.: mínimo de dias operados, dias com lucro mínimo e respeito ao safety net). As regras podem mudar — confira o link oficial antes de enviar o pedido.",
+                    link: LINKS.payoutParams
+                };
+            }
+
+            if(t.includes("performance") || t.includes("ciclos")){
+                return {
+                    title: "Performance (Ciclos / Semana / Mensal)",
+                    body: "Cálculos feitos somando Trade 1 + Trade 2 por dia (dias úteis). ‘Mensal’ soma o mês. ‘Ciclo 10/15/20 a …’ soma do dia N do mês anterior até dia N do mês atual. As semanas seguem a divisão Seg–Dom usada no resumo.",
+                    link: LINKS.paRules
+                };
+            }
+
+            if(t.includes("media") || t.includes("médias")){
+                return {
+                    title: "Médias",
+                    body: "Média dos seus resultados diários (Trade 1 + Trade 2) nos últimos X dias operados. É uma métrica interna para consistência — não substitui a checagem de regras de payout/consistência da Apex.",
+                    link: LINKS.paRules
+                };
+            }
+
+            if(t.includes("calend")){
+                return {
+                    title: "Calendário / Relatório",
+                    body: "Registro diário do seu resultado. O app usa esses dados para calcular mês, semanas e ciclos. Dias marcados como ‘feriado’ são ignorados em alguns totais (ex.: total do mês).",
+                    link: LINKS.paRules
+                };
+            }
+
+            return generic;
+        }
+
+        function ensureInfoIcons(){
+            const cards = document.querySelectorAll('.dashboard-card');
+            cards.forEach(card=>{
+                if(card.querySelector('.info-i')) return;
+                // Try to find a title element inside the card
+                const titleEl =
+                    card.querySelector('p.text-xs.font-bold') ||
+                    card.querySelector('h3.font-bold') ||
+                    card.querySelector('h3') ||
+                    card.querySelector('p.font-bold') ||
+                    card.querySelector('p');
+                if(!titleEl) return;
+
+                const rawTitle = (titleEl.textContent || '').trim();
+                if(!rawTitle) return;
+
+                const btn = document.createElement('span');
+                btn.className = 'info-i';
+                btn.textContent = 'i';
+                btn.setAttribute('tabindex','0');
+                btn.setAttribute('role','button');
+                btn.setAttribute('aria-label', `Ajuda: ${rawTitle}`);
+                btn.dataset.helpTitle = rawTitle;
+
+                titleEl.appendChild(btn);
+            });
+        }
+
+        function bindHelpPopover(){
+            if(window.__helpPopoverBound) return;
+            window.__helpPopoverBound = true;
+            const pop = document.getElementById('help-popover');
+            const titleEl = document.getElementById('help-title');
+            const bodyEl = document.getElementById('help-body');
+            const linkEl = document.getElementById('help-link');
+            const closeBtn = document.getElementById('help-close');
+            if(!pop || !titleEl || !bodyEl || !linkEl || !closeBtn) return;
+
+            let hideTimer = null;
+
+            function placePopover(anchor){
+                const rect = anchor.getBoundingClientRect();
+                const pad = 10;
+                const desiredTop = rect.bottom + 10;
+                const maxLeft = window.innerWidth - pop.offsetWidth - pad;
+                const left = Math.max(pad, Math.min(rect.left, maxLeft));
+                let top = desiredTop;
+                // if overflowing bottom, place above
+                if(top + pop.offsetHeight + pad > window.innerHeight){
+                    top = Math.max(pad, rect.top - pop.offsetHeight - 10);
+                }
+                pop.style.left = `${left}px`;
+                pop.style.top = `${top}px`;
+            }
+
+            function show(anchor){
+                const rawTitle = anchor.dataset.helpTitle || 'Ajuda';
+                const h = _helpForTitle(rawTitle);
+                titleEl.textContent = h.title || rawTitle;
+                bodyEl.textContent = h.body || '';
+                if(h.link){
+                    linkEl.href = h.link;
+                    linkEl.style.display = 'inline-flex';
+                }else{
+                    linkEl.style.display = 'none';
+                }
+                pop.classList.remove('hidden');
+                // Need layout to compute size
+                requestAnimationFrame(()=>placePopover(anchor));
+            }
+
+            function hide(){
+                pop.classList.add('hidden');
+            }
+
+            closeBtn.addEventListener('click', hide);
+            document.addEventListener('click', (e)=>{
+                const isInfo = e.target && e.target.classList && e.target.classList.contains('info-i');
+                if(isInfo){
+                    // toggle
+                    if(!pop.classList.contains('hidden')) hide();
+                    else show(e.target);
+                    return;
+                }
+                if(pop.contains(e.target)) return;
+                hide();
+            });
+
+            document.addEventListener('mouseover', (e)=>{
+                const tgt = e.target;
+                if(tgt && tgt.classList && tgt.classList.contains('info-i')){
+                    clearTimeout(hideTimer);
+                    show(tgt);
+                }
+            });
+
+            document.addEventListener('mouseout', (e)=>{
+                const tgt = e.target;
+                if(tgt && tgt.classList && tgt.classList.contains('info-i')){
+                    clearTimeout(hideTimer);
+                    hideTimer = setTimeout(()=>hide(), 500);
+                }
+            });
+
+            
+            // Keep the popover visible when moving from the (i) icon to the popover
+            pop.addEventListener('mouseenter', ()=>{ clearTimeout(hideTimer); });
+            pop.addEventListener('mouseleave', ()=>{
+                clearTimeout(hideTimer);
+                hideTimer = setTimeout(()=>hide(), 500);
+            });
+            // If user clicks/taps inside the popover (e.g., the Apex link), don't auto-hide
+            pop.addEventListener('pointerdown', ()=>{ clearTimeout(hideTimer); });
+
+window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hide(); }, { passive:true });
+            window.addEventListener('resize', ()=>{ if(!pop.classList.contains('hidden')) hide(); }, { passive:true });
+        }
+
+        /* =========================
+           Period Details + PDF
+        ========================= */
+        function _formatDM(iso){
+            const d = parseISODateLocal(iso);
+            const dd = String(d.getDate()).padStart(2,'0');
+            const mm = String(d.getMonth()+1).padStart(2,'0');
+            return `${dd}/${mm}`;
+        }
+
+        function _monthRangeISO(){
+            const y = store.date.getFullYear();
+            const m = store.date.getMonth();
+            const start = new Date(y, m, 1);
+            const end = new Date(y, m + 1, 0);
+            return { start: toISODateLocal(start), end: toISODateLocal(end) };
+        }
+
+        function _cycleRangeISO(dayN){
+            const y = store.date.getFullYear();
+            const m = store.date.getMonth();
+            const start = new Date(y, m - 1, dayN);
+            const end = new Date(y, m, dayN);
+            return { start: toISODateLocal(start), end: toISODateLocal(end) };
+        }
+
+        function _buildPeriodRows(acc, startISO, endISO){
+            const start = parseISODateLocal(startISO);
+            const end = parseISODateLocal(endISO);
+
+            let total = 0;
+            let tradedDays = 0;
+            let holidayDays = 0;
+            let rows = [];
+
+            for(let d = new Date(start); d <= end; d.setDate(d.getDate()+1)){
+                const dow = d.getDay(); // 0 dom, 6 sab
+                if(dow === 0 || dow === 6) continue; // manter alinhado com o app (dias úteis)
+
+                const iso = toISODateLocal(d);
+                const e = (acc.data && acc.data[iso]) ? acc.data[iso] : {};
+                const t1 = Number(e.t1 || 0);
+                const t2 = Number(e.t2 || 0);
+                const val = (e.val !== undefined && e.val !== null) ? Number(e.val || 0) : (t1 + t2);
+                const note = (e.note || '').toString();
+
+                const isHoliday = !!e.holiday;
+                if(isHoliday) holidayDays += 1;
+
+                if(!isHoliday) total += val;
+                if((t1 !== 0) || (t2 !== 0) || (val !== 0)) tradedDays += 1;
+
+                rows.push({
+                    iso,
+                    t1, t2, val,
+                    note: isHoliday ? (note ? `Feriado • ${note}` : "Feriado") : note
+                });
+            }
+
+            return { rows, total, tradedDays, holidayDays };
+        }
+
+        function openPeriodModal(opts){
+            const { title, startISO, endISO } = opts;
+            const acc = getActive();
+
+            const modal = document.getElementById('period-modal');
+            const ttl = document.getElementById('period-modal-title');
+            const rng = document.getElementById('period-modal-range');
+            const sum = document.getElementById('period-modal-summary');
+            const tot = document.getElementById('period-modal-total');
+            const tbody = document.getElementById('period-modal-tbody');
+
+            if(!modal || !ttl || !rng || !sum || !tot || !tbody) return;
+
+            const res = _buildPeriodRows(acc, startISO, endISO);
+
+            ttl.textContent = title || "Detalhes do período";
+            rng.textContent = `${_formatDM(startISO)} – ${_formatDM(endISO)} • ${acc.name || 'Conta'}`;
+            sum.textContent = `Dias com trade: ${res.tradedDays} • Feriados ignorados no total: ${res.holidayDays}`;
+            tot.textContent = `Total: ${formatCurrency(res.total)}`;
+
+            tbody.innerHTML = '';
+            res.rows.forEach(r=>{
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${_formatDM(r.iso)} (${r.iso})</td>
+                    <td>${formatCurrency(r.t1)}</td>
+                    <td>${formatCurrency(r.t2)}</td>
+                    <td><span class="${r.val>=0?'val-pos':'val-neg'}">${formatCurrency(r.val)}</span></td>
+                    <td>${(r.note || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // store print payload
+            modal.dataset.printTitle = ttl.textContent;
+            modal.dataset.printRange = rng.textContent;
+            modal.dataset.printStart = startISO;
+            modal.dataset.printEnd = endISO;
+
+            modal.classList.remove('hidden');
+        }
+
+        function closePeriodModal(){
+            const modal = document.getElementById('period-modal');
+            if(modal) modal.classList.add('hidden');
+        }
+
+        function printPeriodModal(){
+            const modal = document.getElementById('period-modal');
+            const printArea = document.getElementById('print-area');
+            if(!modal) return;
+
+            const title = modal.dataset.printTitle || "Detalhes do período";
+            const range = modal.dataset.printRange || "";
+            const acc = getActive();
+            const startISO = modal.dataset.printStart;
+            const endISO = modal.dataset.printEnd;
+            const res = _buildPeriodRows(acc, startISO, endISO);
+
+            // Preferir PDF real (jsPDF) para funcionar no Android (evita preview em branco do window.print)
+            const ensureJsPDF = () => new Promise((resolve, reject)=>{
+                try{
+                    if(window.jspdf && window.jspdf.jsPDF) return resolve(window.jspdf.jsPDF);
+                    const existing = document.querySelector('script[data-jspdf]');
+                    if(existing){
+                        existing.addEventListener('load', ()=> resolve(window.jspdf?.jsPDF));
+                        existing.addEventListener('error', ()=> reject(new Error('Falha ao carregar jsPDF')));
+                        return;
+                    }
+                    const s = document.createElement('script');
+                    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                    s.async = true;
+                    s.defer = true;
+                    s.setAttribute('data-jspdf','1');
+                    s.onload = ()=> resolve(window.jspdf?.jsPDF);
+                    s.onerror = ()=> reject(new Error('Falha ao carregar jsPDF'));
+                    document.head.appendChild(s);
+                }catch(err){ reject(err); }
+            });
+
+            const buildFileName = () => {
+                const safe = (s)=> (s||'').toString().replace(/[^a-z0-9\-_]+/gi,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
+                const a = safe(acc?.name || acc?.id || 'conta');
+                const t = safe(title);
+                const r = safe(range);
+                return `${a}_${t}_${r}`.slice(0,120) + '.pdf';
+            };
+
+            // Tenta jsPDF. Se falhar (offline / bloqueio), cai no print HTML antigo.
+            ensureJsPDF().then((JsPDF)=>{
+                try{
+                    if(!JsPDF) throw new Error('jsPDF indisponível');
+                    const doc = new JsPDF({ unit:'pt', format:'letter' });
+                    let y = 48;
+
+                    doc.setFont('helvetica','bold');
+                    doc.setFontSize(16);
+                    doc.text(String(title||''), 40, y);
+                    y += 18;
+
+                    doc.setFont('helvetica','normal');
+                    doc.setFontSize(10);
+                    doc.text(String(range||''), 40, y);
+                    y += 14;
+
+                    const totalTxt = `Total do período: ${formatCurrency(res.total)}`;
+                    doc.setFont('helvetica','bold');
+                    doc.setFontSize(11);
+                    doc.text(totalTxt, 40, y);
+                    y += 16;
+
+                    // Header + layout profissional (nota em bloco abaixo da linha)
+                    const pageW = 612; // letter width in pt
+                    const marginL = 40;
+                    const marginR = 40;
+                    const topY0 = 48;
+                    const bottomLimit = 740;
+                    const contentW = pageW - marginL - marginR;
+
+                    // Colunas numéricas (Nota vai em bloco abaixo)
+                    const colDate = marginL;
+                    const colT1   = marginL + 170;
+                    const colT2   = marginL + 270;
+                    const colTot  = marginL + 370;
+
+                    const drawTableHeader = ()=>{
+                        doc.setFont('helvetica','bold');
+                        doc.setFontSize(10);
+                        doc.text('Data', colDate, y);
+                        doc.text('Trade 1', colT1, y, { align:'right' });
+                        doc.text('Trade 2', colT2, y, { align:'right' });
+                        doc.text('Total',  colTot, y, { align:'right' });
+                        y += 10;
+                        doc.setLineWidth(0.5);
+                        doc.line(marginL, y, marginL + contentW, y);
+                        y += 14;
+                        doc.setFont('helvetica','normal');
+                        doc.setFontSize(9);
+                    };
+
+                    const addPage = ()=>{
+                        doc.addPage();
+                        y = topY0;
+                        // Cabeçalho compacto
+                        doc.setFont('helvetica','bold');
+                        doc.setFontSize(12);
+                        doc.text(String(title||''), marginL, y);
+                        y += 14;
+                        doc.setFont('helvetica','normal');
+                        doc.setFontSize(9);
+                        doc.text(String(range||''), marginL, y);
+                        y += 16;
+                        drawTableHeader();
+                    };
+
+                    drawTableHeader();
+
+                    const ensureSpace = (needed)=>{
+                        if(y + needed > bottomLimit) addPage();
+                    };
+
+                    for(const r of res.rows){
+                        const day = _formatDM(r.iso); // dd/mm
+                        const t1 = formatCurrency(r.t1);
+                        const t2 = formatCurrency(r.t2);
+                        const tt = formatCurrency(r.val);
+                        const note = (r.note||'').toString().trim();
+
+                        // Nota em bloco (largura total) para não truncar
+                        let noteLines = []
+                        if(note){
+                            const notePrefix = 'Nota: ';
+                            const noteW = contentW - 20; // leve recuo
+                            // splitTextToSize não inclui o prefixo bem em todos os browsers, então juntamos já
+                            noteLines = doc.splitTextToSize(notePrefix + note, noteW);
+                        }
+
+                        const rowLineH = 14;
+                        const noteLineH = 10;
+                        const needed = rowLineH + (noteLines.length ? noteLines.length * noteLineH : 0) + 14;
+                        ensureSpace(needed);
+
+                        // Linha principal
+                        doc.setFont('helvetica','normal');
+                        doc.setFontSize(9);
+                        doc.text(day, colDate, y);
+                        doc.text(t1, colT1, y, { align:'right' });
+                        doc.text(t2, colT2, y, { align:'right' });
+                        doc.setFont('helvetica','bold');
+                        doc.text(tt, colTot, y, { align:'right' });
+                        doc.setFont('helvetica','normal');
+                        y += rowLineH;
+
+                        // Nota (sem limite de linhas) com quebra de página se precisar
+                        if(noteLines.length){
+                            doc.setFontSize(8.5);
+                            const indentX = marginL + 12;
+                            for(let i=0;i<noteLines.length;i++){
+                                ensureSpace(noteLineH + 4);
+                                doc.text(String(noteLines[i]), indentX, y);
+                                y += noteLineH;
+                            }
+                            doc.setFontSize(9);
+                        }
+
+                        // Linha separadora entre dias
+                        doc.setDrawColor(200);
+                        doc.setLineWidth(0.35);
+                        doc.line(marginL, y + 2, marginL + contentW, y + 2);
+                        doc.setDrawColor(0);
+                        y += 12;
+                    }
+
+                    doc.save(buildFileName());
+                    return;
+                }catch(err){
+                    console.warn('PDF via jsPDF falhou, usando impressão HTML:', err);
+                    fallbackPrint();
+                }
+            }).catch((err)=>{
+                console.warn('Não foi possível carregar jsPDF, usando impressão HTML:', err);
+                fallbackPrint();
+            });
+
+            function fallbackPrint(){
+
+            const modal = document.getElementById('period-modal');
+            const printArea = document.getElementById('print-area');
+            if(!modal || !printArea) return;
+
+            const title = modal.dataset.printTitle || "Detalhes do período";
+            const range = modal.dataset.printRange || "";
+            const acc = getActive();
+
+            const startISO = modal.dataset.printStart;
+            const endISO = modal.dataset.printEnd;
+            const res = _buildPeriodRows(acc, startISO, endISO);
+
+            // Build lightweight printable HTML
+            let rowsHtml = res.rows.map(r=>`
+                <tr>
+                    <td>${_formatDM(r.iso)} (${r.iso})</td>
+                    <td style="text-align:right;">${formatCurrency(r.t1)}</td>
+                    <td style="text-align:right;">${formatCurrency(r.t2)}</td>
+                    <td style="text-align:right;">${formatCurrency(r.val)}</td>
+                    <td>${(r.note || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+                </tr>
+            `).join('');
+
+            printArea.innerHTML = `
+                <div style="font-family: Arial, sans-serif;">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:10px;">
+                        <div>
+                            <div style="font-size:18px;font-weight:800;">${title}</div>
+                            <div style="margin-top:4px;color:#555;font-size:12px;">${range}</div>
+                        </div>
+                        <div style="text-align:right;color:#555;font-size:12px;">
+                            <div>${acc.size || ''} • ${acc.monthType ? ('Mês ' + acc.monthType) : ''}</div>
+                            <div>Gerado em: ${new Date().toLocaleString()}</div>
+                        </div>
+                    </div>
+                    <div style="margin-top:10px;padding:10px;border:1px solid #ddd;border-radius:10px;">
+                        <div style="font-size:12px;color:#333;"><b>Total:</b> ${formatCurrency(res.total)} &nbsp; | &nbsp; <b>Dias com trade:</b> ${res.tradedDays} &nbsp; | &nbsp; <b>Feriados (ignorados):</b> ${res.holidayDays}</div>
+                    </div>
+
+                    <table style="width:100%;border-collapse:collapse;margin-top:12px;font-size:11px;">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left;border-bottom:1px solid #ccc;padding:6px;">Data</th>
+                                <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">Trade 1</th>
+                                <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">Trade 2</th>
+                                <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">Total</th>
+                                <th style="text-align:left;border-bottom:1px solid #ccc;padding:6px;">Nota</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+
+                    <div style="margin-top:10px;font-size:10px;color:#666;">
+                        Obs.: este relatório mostra apenas dias úteis (Seg–Sex), alinhado com o painel principal do app.
+                    </div>
+                </div>
+            `;
+
+            window.print();
+
+            // optional: clear
+            setTimeout(()=>{ printArea.innerHTML=''; }, 250);
+            }
+        }
+
+        let _periodBound = false;
+        function bindPeriodInteractions(){
+            if(_periodBound) return;
+            _periodBound = true;
+
+            const monthBtn = document.getElementById('label-month');
+            const c10 = document.getElementById('label-c10');
+            const c15 = document.getElementById('label-c15');
+            const c20 = document.getElementById('label-c20');
+
+            const close1 = document.getElementById('period-modal-close');
+            const close2 = document.getElementById('period-modal-close2');
+            const pdfBtn = document.getElementById('period-modal-pdf');
+            const modal = document.getElementById('period-modal');
+
+            const bindHoverClick = (el, getRangeFn) => {
+                if(!el) return;
+                let timer = null;
+
+                const open = () => {
+                    const r = getRangeFn();
+                    openPeriodModal({ title: el.textContent.trim(), startISO: r.start, endISO: r.end });
+                };
+
+                el.addEventListener('click', (e)=>{ e.preventDefault(); open(); });
+
+                el.addEventListener('mouseenter', ()=>{
+                    timer = setTimeout(()=>open(), 550);
+                });
+                el.addEventListener('mouseleave', ()=>{
+                    if(timer) clearTimeout(timer);
+                    timer = null;
+                });
+            };
+
+            bindHoverClick(monthBtn, _monthRangeISO);
+            bindHoverClick(c10, ()=>_cycleRangeISO(10));
+            bindHoverClick(c15, ()=>_cycleRangeISO(15));
+            bindHoverClick(c20, ()=>_cycleRangeISO(20));
+
+            // Weekly list items are created dynamically (buttons with data-start/data-end)
+            const weeklyList = document.getElementById('weekly-list');
+            if(weeklyList){
+                weeklyList.addEventListener('click', (e)=>{
+                    const btn = e.target.closest('button[data-period="week"]');
+                    if(!btn) return;
+                    e.preventDefault();
+                    const startISO = btn.dataset.start;
+                    const endISO = btn.dataset.end;
+                    const label = btn.dataset.label || btn.textContent.trim();
+                    openPeriodModal({ title: label, startISO, endISO });
+                });
+
+                weeklyList.addEventListener('mouseenter', (e)=>{
+                    const btn = e.target.closest('button[data-period="week"]');
+                    if(btn) btn.classList.add('opacity-90');
+                }, true);
+                weeklyList.addEventListener('mouseleave', (e)=>{
+                    const btn = e.target.closest('button[data-period="week"]');
+                    if(btn) btn.classList.remove('opacity-90');
+                }, true);
+            }
+
+            if(close1) close1.addEventListener('click', closePeriodModal);
+            if(close2) close2.addEventListener('click', closePeriodModal);
+            if(pdfBtn) pdfBtn.addEventListener('click', printPeriodModal);
+
+            if(modal){
+                modal.addEventListener('click', (e)=>{
+                    if(e.target && e.target.classList && e.target.classList.contains('pm-backdrop')){
+                        closePeriodModal();
+                    }
+                });
+                document.addEventListener('keydown', (e)=>{
+                    if(e.key === 'Escape' && !modal.classList.contains('hidden')) closePeriodModal();
+                });
+            }
+        }
+
+
         init();
+        bindHelpPopover();
+        ensureInfoIcons();
+        bindPeriodInteractions();
     </script>
 </body>
 </html>
