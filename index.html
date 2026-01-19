@@ -1600,7 +1600,13 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         window.forceOfflineMode = () => {
             isOffline = true;
             const localBackup = localStorage.getItem('df_backup_local');
-            if (localBackup) { try { store = JSON.parse(localBackup); store.date = new Date(store.date || new Date()); } catch(e) { createNewStore(); } } else { createNewStore(); }
+            if (localBackup) { try { store = JSON.parse(localBackup);
+                    // UI state: sempre iniciar com detalhes fechados
+                    delete store.dayDetailsOpen;
+                    delete store.tradeDetailsOpen; store.date = new Date(store.date || new Date());
+                    // UI state: sempre iniciar com detalhes fechados
+                    delete store.dayDetailsOpen;
+                    delete store.tradeDetailsOpen; } catch(e) { createNewStore(); } } else { createNewStore(); }
             document.getElementById('status-text').textContent = "Modo Offline";
             document.getElementById('status-text').className = "text-yellow-500 font-bold";
             renderSidebar(); loadAccount(store.activeId); store.date = new Date(); syncDatesToView();
@@ -2319,7 +2325,11 @@ function renderDashboard() {
         }
 
         function loadAccount(id) { 
-            if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
+            
+            // UI state: ao trocar/abrir conta, iniciar com detalhes fechados
+            if(store.dayDetailsOpen && store.dayDetailsOpen[id]) delete store.dayDetailsOpen[id];
+            if(store.tradeDetailsOpen && store.tradeDetailsOpen[id]) delete store.tradeDetailsOpen[id];
+if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
 
             // Define conta ativa (última visualizada)
             store.activeId = id;
@@ -2361,25 +2371,40 @@ function renderDashboard() {
                     const data = docSnap.data();
                     store = JSON.parse(data.store_json);
                     store.date = new Date(store.date || new Date());
+                    // UI state: sempre iniciar com detalhes fechados
+                    delete store.dayDetailsOpen;
+                    delete store.tradeDetailsOpen;
                 }
             } catch (e) { throw e; }
         }
-        
+
+        // Remove estado de UI (linhas abertas/fechadas) antes de salvar/backup
+        function getPersistableStore(){
+            try{
+                const s = JSON.parse(JSON.stringify(store));
+                delete s.dayDetailsOpen;
+                delete s.tradeDetailsOpen;
+                return s;
+            }catch(e){
+                return store;
+            }
+        }
+
         async function saveToCloud() {
             if (isOffline) {
-                localStorage.setItem('df_backup_local', JSON.stringify(store));
+                localStorage.setItem('df_backup_local', JSON.stringify(getPersistableStore()));
                 document.getElementById('status-text').textContent = "Salvo (Local)";
                 document.getElementById('status-text').className = "text-yellow-500 font-bold";
                 return;
             }
             document.getElementById('status-text').textContent = "Salvando...";
             try {
-                await setDoc(doc(db, "users", "dante_data"), { store_json: JSON.stringify(store), last_update: new Date() });
+                await setDoc(doc(db, "users", "dante_data"), { store_json: JSON.stringify(getPersistableStore()), last_update: new Date() });
                 document.getElementById('status-text').textContent = "Online";
                 document.getElementById('status-text').className = "status-saved";
             } catch (e) { 
                 console.warn("Erro ao salvar na nuvem:", e);
-                localStorage.setItem('df_backup_local', JSON.stringify(store));
+                localStorage.setItem('df_backup_local', JSON.stringify(getPersistableStore()));
                 document.getElementById('status-text').textContent = "Erro (Salvo Local)";
                 document.getElementById('status-text').className = "text-orange-500 font-bold";
             }
