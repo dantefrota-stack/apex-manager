@@ -1395,12 +1395,29 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         window.changeMonth = (d) => { store.date.setMonth(store.date.getMonth()+d); syncDatesToView(); renderDashboard(); };
         window.filterReport = () => filterReportInternal();
         window.shareReport = () => shareReportInternal();
-
         window.updateData = (iso, type, val) => { 
             const acc = getActive(); 
             if(!acc.data[iso]) acc.data[iso] = {}; 
+
+            // Campos por trade (t1meta / t2meta)
+            if (type && (type.startsWith('t1m_') || type.startsWith('t2m_'))) {
+                const isT1 = type.startsWith('t1m_');
+                const metaKey = isT1 ? 't1meta' : 't2meta';
+                const field = type.replace(isT1 ? 't1m_' : 't2m_', '');
+
+                if (!acc.data[iso][metaKey]) acc.data[iso][metaKey] = { add:false, targetPts:0, riskPts:0, viability:'' };
+
+                if (['targetPts','riskPts'].includes(field)) {
+                    if(val === '' || val === null) val = 0;
+                    else if(typeof val === 'string') val = parseFloat(val.replace(',', '.')) || 0;
+                }
+                acc.data[iso][metaKey][field] = val;
+                renderDashboard(); 
+                saveToCloud(); 
+                return;
+            }
             
-            if (['val', 't1', 't2', 'stopPts', 'stopCount'].includes(type)) {
+            if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes(type)) {
                 if(val === '' || val === null) val = 0;
                 else if(typeof val === 'string') {
                     val = parseFloat(val.replace(',', '.')) || 0;
@@ -1434,6 +1451,24 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
             const btn = document.getElementById(`details-btn-${iso}`);
             if (btn) btn.setAttribute('aria-expanded', (!isOpen).toString());
+        };
+
+
+        // Abrir/fechar detalhes do Trade 1/Trade 2 (por dia) — somente no clique
+        window.toggleTradeDetails = (iso, which) => {
+            const acc = getActive();
+            if (!store.tradeDetailsOpen) store.tradeDetailsOpen = {};
+            if (!store.tradeDetailsOpen[acc.id]) store.tradeDetailsOpen[acc.id] = {};
+            if (!store.tradeDetailsOpen[acc.id][iso]) store.tradeDetailsOpen[acc.id][iso] = { t1:false, t2:false };
+
+            const state = store.tradeDetailsOpen[acc.id][iso];
+            state[which] = !state[which];
+
+            const row = document.getElementById(`${which}-details-${iso}`);
+            if (row) row.classList.toggle('hidden', !state[which]);
+
+            const caret = document.getElementById(`${which}-caret-${iso}`);
+            if (caret) caret.classList.toggle('open', !!state[which]);
         };
 
         window.togglePayoutForm = () => {
@@ -1893,6 +1928,9 @@ function renderCalendar(acc) {
     if (!store.dayDetailsOpen) store.dayDetailsOpen = {};
     if (!store.dayDetailsOpen[acc.id]) store.dayDetailsOpen[acc.id] = {};
 
+    if (!store.tradeDetailsOpen) store.tradeDetailsOpen = {};
+    if (!store.tradeDetailsOpen[acc.id]) store.tradeDetailsOpen[acc.id] = {};
+
     for (let cur = new Date(rangeStart); cur <= rangeEnd; cur.setDate(cur.getDate() + 1)) {
         const dayOfWeek = cur.getDay(); // 0=Dom ... 6=Sáb
 
@@ -1912,7 +1950,11 @@ function renderCalendar(acc) {
         }
 
         const iso = cur.toISOString().split('T')[0]; 
-        const entry = acc.data[iso] || { val: 0, t1: 0, t2: 0, note: '', holiday: false, add: false, stopPts: '', stopCount: 0, quality: '' }; 
+        const entry = acc.data[iso] || { val: 0, t1: 0, t2: 0, note: '', holiday: false, add: false, targetPts: '', riskPts: '', viability: '' };
+
+        // Garantir estrutura de meta por trade
+        if (!entry.t1meta) entry.t1meta = { add:false, targetPts:0, riskPts:0, viability:'' };
+        if (!entry.t2meta) entry.t2meta = { add:false, targetPts:0, riskPts:0, viability:'' }; 
 
         const isOutsideMonth = cur.getMonth() !== m;
         const tr = document.createElement('tr'); 
@@ -1984,35 +2026,116 @@ function renderCalendar(acc) {
         detailsTr.id = `details-${iso}`;
         detailsTr.className = `day-details-row ${isOpen ? '' : 'hidden'} ${isOutsideMonth ? 'opacity-60' : ''}`;
 
-        const addChecked = entry.add ? 'checked' : '';
-        const q = entry.quality || '';
+        // Estado UI: detalhes por trade (Trade 1 / Trade 2)
+        const t1Open = !!(store.tradeDetailsOpen[acc.id] && store.tradeDetailsOpen[acc.id][iso] && store.tradeDetailsOpen[acc.id][iso].t1);
+        const t2Open = !!(store.tradeDetailsOpen[acc.id] && store.tradeDetailsOpen[acc.id][iso] && store.tradeDetailsOpen[acc.id][iso].t2);
 
-        detailsTr.innerHTML = `
+        const t1m = entry.t1meta || { add:false, targetPts:0, riskPts:0, viability:'' };
+        const t2m = entry.t2meta || { add:false, targetPts:0, riskPts:0, viability:'' };
+
+
+        const addChecked = entry.add ? 'checked' : '';
+        const v = entry.viability || '';
+
+                detailsTr.innerHTML = `
             <td colspan="5" class="px-4 py-3">
+
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                     <label class="flex items-center gap-2">
-                        <input type="checkbox" ${addChecked} ${readOnlyDay ? 'disabled' : ''} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','add',this.checked)\"`}>
+                        <input type="checkbox" ${addChecked} ${readOnlyDay ? 'disabled' : ''} ${readOnlyDay ? '' : `onchange="window.updateData('${iso}','add',this.checked)"`}>
                         <span class="text-slate-600 dark:text-slate-300">Adição</span>
                     </label>
 
                     <label class="flex items-center gap-2">
-                        <span class="text-slate-500 whitespace-nowrap">Stop (pts)</span>
-                        <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${entry.stopPts ?? ''}" ${readOnlyDay ? '' : `onblur=\"window.updateData('${iso}','stopPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                        <span class="text-slate-500 whitespace-nowrap">Target (pts)</span>
+                        <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${entry.targetPts ?? ''}" ${readOnlyDay ? '' : `onblur="window.updateData('${iso}','targetPts',this.value)"`} onkeydown="if(event.key==='Enter'){this.blur();}">
                     </label>
 
                     <label class="flex items-center gap-2">
-                        <span class="text-slate-500 whitespace-nowrap"># Stops</span>
-                        <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${entry.stopCount ?? 0}" ${readOnlyDay ? '' : `onblur=\"window.updateData('${iso}','stopCount',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                        <span class="text-slate-500 whitespace-nowrap">Risco (pts)</span>
+                        <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${entry.riskPts ?? ''}" ${readOnlyDay ? '' : `onblur="window.updateData('${iso}','riskPts',this.value)"`} onkeydown="if(event.key==='Enter'){this.blur();}">
                     </label>
 
                     <label class="flex items-center gap-2">
-                        <span class="text-slate-500 whitespace-nowrap">Qualidade</span>
-                        <select class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','quality',this.value)\"`}>
-                            <option value="" ${(!q) ? 'selected' : ''}>-</option>
-                            <option value="good" ${(q==='good') ? 'selected' : ''}>Bom</option>
-                            <option value="bad" ${(q==='bad') ? 'selected' : ''}>Ruim</option>
+                        <span class="text-slate-500 whitespace-nowrap">Viável?</span>
+                        <select class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} ${readOnlyDay ? '' : `onchange="window.updateData('${iso}','viability',this.value)"`}>
+                            <option value="" ${(!v) ? 'selected' : ''}>-</option>
+                            <option value="viable" ${(v==='viable') ? 'selected' : ''}>Viável</option>
+                            <option value="inviable" ${(v==='inviable') ? 'selected' : ''}>Inviável</option>
                         </select>
                     </label>
+                </div>
+
+
+                <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center gap-5 text-xs">
+                        <button type="button" class="no-print flex items-center gap-2 text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-white font-medium" onclick="window.toggleTradeDetails('${iso}','t1')" aria-label="Detalhes Trade 1" aria-expanded="${t1Open ? 'true' : 'false'}">
+                            <span id="t1-caret-${iso}" class="details-caret ${t1Open ? 'open' : ''}">▾</span>
+                            <span>Trade 1</span>
+                        </button>
+                        <button type="button" class="no-print flex items-center gap-2 text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-white font-medium" onclick="window.toggleTradeDetails('${iso}','t2')" aria-label="Detalhes Trade 2" aria-expanded="${t2Open ? 'true' : 'false'}">
+                            <span id="t2-caret-${iso}" class="details-caret ${t2Open ? 'open' : ''}">▾</span>
+                            <span>Trade 2</span>
+                        </button>
+                    </div>
+
+                    <div id="t1-details-${iso}" class="${t1Open ? '' : 'hidden'} mt-2">
+                        
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" ${t1m.add ? 'checked' : ''} ${readOnlyDay ? 'disabled' : ''} ${readOnlyDay ? '' : `onchange="window.updateData('${iso}','t1m_add',this.checked)"`}>
+                                <span class="text-slate-600 dark:text-slate-300">Adição</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <span class="text-slate-500 whitespace-nowrap">Target (pts)</span>
+                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t1m.targetPts ?? ''}" ${readOnlyDay ? '' : `onblur="window.updateData('${iso}','t1m_targetPts',this.value)"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <span class="text-slate-500 whitespace-nowrap">Risco (pts)</span>
+                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t1m.riskPts ?? ''}" ${readOnlyDay ? '' : `onblur="window.updateData('${iso}','t1m_riskPts',this.value)"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <span class="text-slate-500 whitespace-nowrap">Viável?</span>
+                                <select class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} ${readOnlyDay ? '' : `onchange="window.updateData('${iso}','t1m_viability',this.value)"`}>
+                                    <option value="" ${(!t1m.viability) ? 'selected' : ''}>-</option>
+                                    <option value="viable" ${(t1m.viability==='viable') ? 'selected' : ''}>Viável</option>
+                                    <option value="inviable" ${(t1m.viability==='inviable') ? 'selected' : ''}>Inviável</option>
+                                </select>
+                            </label>
+                        </div>
+
+
+                    </div>
+
+                    <div id="t2-details-${iso}" class="${t2Open ? '' : 'hidden'} mt-2">
+                        
+                        
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                            <label class="flex items-center gap-2">
+                                <input type="checkbox" ${t2m.add ? 'checked' : ''} ${readOnlyDay ? 'disabled' : ''} ${readOnlyDay ? '' : `onchange="window.updateData('${iso}','t2m_add',this.checked)"`}>
+                                <span class="text-slate-600 dark:text-slate-300">Adição</span>
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <span class="text-slate-500 whitespace-nowrap">Target (pts)</span>
+                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t2m.targetPts ?? ''}" ${readOnlyDay ? '' : `onblur="window.updateData('${iso}','t2m_targetPts',this.value)"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <span class="text-slate-500 whitespace-nowrap">Risco (pts)</span>
+                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t2m.riskPts ?? ''}" ${readOnlyDay ? '' : `onblur="window.updateData('${iso}','t2m_riskPts',this.value)"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                            </label>
+                            <label class="flex items-center gap-2">
+                                <span class="text-slate-500 whitespace-nowrap">Viável?</span>
+                                <select class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} ${readOnlyDay ? '' : `onchange="window.updateData('${iso}','t2m_viability',this.value)"`}>
+                                    <option value="" ${(!t2m.viability) ? 'selected' : ''}>-</option>
+                                    <option value="viable" ${(t2m.viability==='viable') ? 'selected' : ''}>Viável</option>
+                                    <option value="inviable" ${(t2m.viability==='inviable') ? 'selected' : ''}>Inviável</option>
+                                </select>
+                            </label>
+                        </div>
+
+
+                    </div>
                 </div>
             </td>
         `;
