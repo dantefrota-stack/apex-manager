@@ -286,7 +286,14 @@ body.dark .bg-white { background-color: #1e293b; }
             #print-area{ display:block; position:absolute; inset:0; padding:18px; }
         }
 
-    </style>
+    
+/* Detalhes do dia (expansível) */
+.details-caret{display:inline-block;transition:transform .15s ease;}
+.details-caret.open{transform:rotate(180deg);}
+.day-details-row td{background:rgba(99,102,241,0.04);border-top:1px dashed rgba(148,163,184,0.6);}
+.dark .day-details-row td{background:rgba(99,102,241,0.08);border-top:1px dashed rgba(71,85,105,0.8);}
+
+</style>
 </head>
 <body class="pb-12 transition-colors duration-300">
 
@@ -484,6 +491,18 @@ body.dark .bg-white { background-color: #1e293b; }
             <div><h2 class="font-bold text-xl">Contas</h2><p class="text-xs text-slate-400">Gerenciamento</p></div>
             <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
         </div>
+        <div class="p-4 pt-3 pb-0">
+            <div class="relative">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input id="account-search" type="text" placeholder="Buscar conta..." class="w-full pl-9 pr-9 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-100 text-sm placeholder-slate-500 outline-none focus:ring-2 focus:ring-indigo-500/40" />
+                <button id="account-search-clear" type="button" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs hidden" title="Limpar">x</button>
+            </div>
+            <div class="mt-2 text-[11px] text-slate-500 flex justify-between items-center">
+                <span id="accounts-summary">—</span>
+                <span class="text-slate-600">Grupo: tamanho</span>
+            </div>
+        </div>
+        
         <div class="flex-1 overflow-y-auto p-4 space-y-2" id="account-list"></div>
         <div class="p-4 border-t border-slate-700 bg-slate-800 space-y-2">
             <button onclick="openAdminPanel('payouts')" class="w-full py-2 bg-slate-700 hover:bg-slate-600 rounded-md text-xs font-bold flex items-center justify-center gap-2 transition text-slate-300"><i data-lucide="shield" class="w-3 h-3"></i> Área Administrativa</button>
@@ -785,7 +804,10 @@ Usuário administrador:`) || '';
 
         // ELEMENTS
         const els = { 
-            sidebar: document.getElementById('sidebar'), backdrop: document.getElementById('sidebar-backdrop'), accList: document.getElementById('account-list'), 
+            sidebar: document.getElementById('sidebar'), backdrop: document.getElementById('sidebar-backdrop'), accList: document.getElementById('account-list'),
+            accountSearch: document.getElementById('account-search'),
+            accountSearchClear: document.getElementById('account-search-clear'),
+            accountsSummary: document.getElementById('accounts-summary'), 
             activeName: document.getElementById('active-account-name'), activeConfig: document.getElementById('active-account-config'), 
             inpSize: document.getElementById('config-size'), inpMonth: document.getElementById('config-month'), 
             equity: document.getElementById('current-equity'), equityDiff: document.getElementById('equity-diff'), equityProgress: document.getElementById('equity-progress'),
@@ -1158,7 +1180,7 @@ Usuário administrador:`) || '';
             const [y,m,d] = iso.split('-').map(n=>parseInt(n,10));
             return new Date(y, m-1, d);
         };
-        window.createAccount = () => { const name = prompt("Nome:"); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [] }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); };
+        window.createAccount = () => { const name = prompt("Nome:"); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [], favorite: false }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); };
         window.renameAccount = () => { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } };
         
         // DELEÇÃO COM SEGURANÇA
@@ -1378,13 +1400,14 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const acc = getActive(); 
             if(!acc.data[iso]) acc.data[iso] = {}; 
             
-            if (['val', 't1', 't2'].includes(type)) {
+            if (['val', 't1', 't2', 'stopPts', 'stopCount'].includes(type)) {
                 if(val === '' || val === null) val = 0;
                 else if(typeof val === 'string') {
                     val = parseFloat(val.replace(',', '.')) || 0;
                 }
             }
             acc.data[iso][type] = val;
+            if (type === 'stopCount') { acc.data[iso].stopCount = parseInt(acc.data[iso].stopCount || 0, 10) || 0; }
             if (type === 't1' || type === 't2') {
                 const t1 = parseFloat(acc.data[iso].t1) || 0;
                 const t2 = parseFloat(acc.data[iso].t2) || 0;
@@ -1392,6 +1415,25 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             }
             renderDashboard(); 
             saveToCloud(); 
+        };
+
+        // Abrir/fechar detalhes do dia (Adição/Stops/Qualidade) — somente no clique
+        window.toggleDayDetails = (iso) => {
+            const acc = getActive();
+            if (!store.dayDetailsOpen) store.dayDetailsOpen = {};
+            if (!store.dayDetailsOpen[acc.id]) store.dayDetailsOpen[acc.id] = {};
+
+            const isOpen = !!store.dayDetailsOpen[acc.id][iso];
+            store.dayDetailsOpen[acc.id][iso] = !isOpen;
+
+            const row = document.getElementById(`details-${iso}`);
+            if (row) row.classList.toggle('hidden', isOpen);
+
+            const caret = document.getElementById(`details-caret-${iso}`);
+            if (caret) caret.classList.toggle('open', !isOpen);
+
+            const btn = document.getElementById(`details-btn-${iso}`);
+            if (btn) btn.setAttribute('aria-expanded', (!isOpen).toString());
         };
 
         window.togglePayoutForm = () => {
@@ -1543,7 +1585,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         function createNewStore() {
             const defaultId = 'acc_' + Date.now();
             store = { activeId: defaultId, date: new Date(), accounts: {}, adminLogs: [] };
-            store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] };
+            store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [], favorite: false };
         }
 
         function getNextWindow() {
@@ -1847,6 +1889,10 @@ function renderCalendar(acc) {
 
     let weekNum = 0;
 
+    // Estado UI: manter linhas "detalhes" abertas mesmo após salvar
+    if (!store.dayDetailsOpen) store.dayDetailsOpen = {};
+    if (!store.dayDetailsOpen[acc.id]) store.dayDetailsOpen[acc.id] = {};
+
     for (let cur = new Date(rangeStart); cur <= rangeEnd; cur.setDate(cur.getDate() + 1)) {
         const dayOfWeek = cur.getDay(); // 0=Dom ... 6=Sáb
 
@@ -1866,13 +1912,11 @@ function renderCalendar(acc) {
         }
 
         const iso = cur.toISOString().split('T')[0]; 
-        const entry = acc.data[iso] || { val: 0, note: '', holiday: false }; 
+        const entry = acc.data[iso] || { val: 0, t1: 0, t2: 0, note: '', holiday: false, add: false, stopPts: '', stopCount: 0, quality: '' }; 
 
         const isOutsideMonth = cur.getMonth() !== m;
-        const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
-
         const tr = document.createElement('tr'); 
-        tr.className = `dark:border-slate-700 ${isOutsideMonth ? 'opacity-60 bg-slate-50 dark:bg-slate-800/40' : ''} ${isWeekend ? 'bg-slate-50/60 dark:bg-slate-900/20' : ''}`;
+        tr.className = `dark:border-slate-700 ${isOutsideMonth ? 'opacity-60 bg-slate-50 dark:bg-slate-800/40' : ''}`;
 
         const valNum = parseFloat(entry.val) || 0;
         const t1Num = entry.t1 !== undefined ? entry.t1 : (entry.val || ''); 
@@ -1910,10 +1954,19 @@ function renderCalendar(acc) {
         const dayLabel = isOutsideMonth
             ? `${String(cur.getDate()).padStart(2, '0')}/${String(cur.getMonth() + 1).padStart(2, '0')}`
             : `${cur.getDate()}`;
-
         const dayLabelClass = isOutsideMonth ? "text-slate-400" : "text-slate-600 dark:text-slate-400";
 
-        tr.innerHTML = `<td class="px-4 py-2 font-medium ${dayLabelClass}">${dayLabel}</td>
+        const isOpen = !!(store.dayDetailsOpen[acc.id] && store.dayDetailsOpen[acc.id][iso]);
+
+        tr.innerHTML = `
+            <td class="px-4 py-2 font-medium ${dayLabelClass}">
+                <div class="flex items-center gap-2">
+                    <span>${dayLabel}</span>
+                    <button type="button" class="no-print text-slate-400 hover:text-slate-700 dark:hover:text-slate-200" id="details-btn-${iso}" onclick="window.toggleDayDetails('${iso}')" title="Detalhes do dia" aria-label="Detalhes do dia" aria-expanded="${isOpen ? 'true' : 'false'}">
+                        <span id="details-caret-${iso}" class="details-caret ${isOpen ? 'open' : ''}">▾</span>
+                    </button>
+                </div>
+            </td>
             <td class="px-4 py-2 w-48">${inputsHtml}</td>
             <td class="px-4 py-2 text-right"><span class="font-bold text-sm ${colorClass}">${valNum!==0 ? formatCurrency(valNum) : '--'}</span></td>
             <td class="px-4 py-2 text-center w-16">
@@ -1921,9 +1974,50 @@ function renderCalendar(acc) {
                     <i data-lucide="${noteIcon}" class="w-4 h-4"></i>
                 </button>
             </td>
-            <td class="px-4 py-2 text-center"><input type="checkbox" ${entry.holiday?'checked':''} onchange="window.updateData('${iso}','holiday',this.checked)" title="Feriado"></td>`;
+            <td class="px-4 py-2 text-center"><input type="checkbox" ${entry.holiday?'checked':''} onchange="window.updateData('${iso}','holiday',this.checked)" title="Feriado"></td>
+        `;
 
         els.calendarBody.appendChild(tr);
+
+        // Linha de detalhes (menos poluída — abre apenas no clique)
+        const detailsTr = document.createElement('tr');
+        detailsTr.id = `details-${iso}`;
+        detailsTr.className = `day-details-row ${isOpen ? '' : 'hidden'} ${isOutsideMonth ? 'opacity-60' : ''}`;
+
+        const addChecked = entry.add ? 'checked' : '';
+        const q = entry.quality || '';
+
+        detailsTr.innerHTML = `
+            <td colspan="5" class="px-4 py-3">
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" ${addChecked} ${readOnlyDay ? 'disabled' : ''} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','add',this.checked)\"`}>
+                        <span class="text-slate-600 dark:text-slate-300">Adição</span>
+                    </label>
+
+                    <label class="flex items-center gap-2">
+                        <span class="text-slate-500 whitespace-nowrap">Stop (pts)</span>
+                        <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${entry.stopPts ?? ''}" ${readOnlyDay ? '' : `onblur=\"window.updateData('${iso}','stopPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                    </label>
+
+                    <label class="flex items-center gap-2">
+                        <span class="text-slate-500 whitespace-nowrap"># Stops</span>
+                        <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${entry.stopCount ?? 0}" ${readOnlyDay ? '' : `onblur=\"window.updateData('${iso}','stopCount',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                    </label>
+
+                    <label class="flex items-center gap-2">
+                        <span class="text-slate-500 whitespace-nowrap">Qualidade</span>
+                        <select class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','quality',this.value)\"`}>
+                            <option value="" ${(!q) ? 'selected' : ''}>-</option>
+                            <option value="good" ${(q==='good') ? 'selected' : ''}>Bom</option>
+                            <option value="bad" ${(q==='bad') ? 'selected' : ''}>Ruim</option>
+                        </select>
+                    </label>
+                </div>
+            </td>
+        `;
+
+        els.calendarBody.appendChild(detailsTr);
     }
 }
 
@@ -1979,11 +2073,127 @@ function renderDashboard() {
             lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions(); 
         }
 
+        window.toggleFavorite = (id) => {
+            const acc = store.accounts[id];
+            if (!acc) return;
+            acc.favorite = !acc.favorite;
+            saveToCloud();
+            renderSidebar();
+        };
+
+        function _normText(s){
+            return (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+        }
+        function _sizeNum(s){
+            const m = (s||'').toString().match(/(\d+)/);
+            return m ? parseInt(m[1], 10) : 0;
+        }
+
         function renderSidebar() {
-  els.accList.innerHTML='';
-  const accounts = Object.values(store.accounts)
-    .sort((a,b)=> (a.name||'').localeCompare((b.name||''), 'pt-BR', { numeric: true, sensitivity: 'base' }));
-  accounts.forEach(acc=>{ const stats=calculateStats(acc); const div=document.createElement('div'); div.className=`account-item p-3 rounded-lg cursor-pointer transition-colors mb-2 ${acc.id===store.activeId?'active':'bg-slate-800'}`; div.onclick=()=>{loadAccount(acc.id);toggleSidebar();}; div.innerHTML=`<div class="flex justify-between items-center"><span class="font-bold text-sm text-slate-200">${acc.name}</span><span class="text-xs text-indigo-300 font-mono">${acc.size}</span></div><div class="flex justify-between items-center mt-1"><span class="text-xs text-slate-400">Saldo:</span><span class="text-xs font-bold ${stats.currentEquity>=RULES[acc.size].start?'text-green-400':'text-red-400'}">${formatCurrency(stats.currentEquity)}</span></div>`; els.accList.appendChild(div); }); }
+            // Wire search UI once
+            if (els.accountSearch && !els.accountSearch.__wired) {
+                els.accountSearch.__wired = true;
+                els.accountSearch.addEventListener('input', () => {
+                    if (els.accountSearchClear) {
+                        els.accountSearchClear.classList.toggle('hidden', !(els.accountSearch.value||'').trim());
+                    }
+                    renderSidebar();
+                });
+            }
+            if (els.accountSearchClear && !els.accountSearchClear.__wired) {
+                els.accountSearchClear.__wired = true;
+                els.accountSearchClear.addEventListener('click', () => {
+                    if (els.accountSearch) els.accountSearch.value = '';
+                    els.accountSearchClear.classList.add('hidden');
+                    renderSidebar();
+                });
+            }
+
+            const q = _normText(els.accountSearch ? els.accountSearch.value : '');
+
+            els.accList.innerHTML = '';
+
+            const all = Object.values(store.accounts || {});
+            let filtered = all;
+            if (q) {
+                filtered = all.filter(a => {
+                    const name = _normText(a.name);
+                    const size = _normText(a.size);
+                    return name.includes(q) || size.includes(q);
+                });
+            }
+
+            // Sort accounts inside sections
+            const byName = (a,b) => (a.name||'').localeCompare((b.name||''), 'pt-BR', { numeric:true, sensitivity:'base' });
+
+            const favorites = filtered.filter(a => !!a.favorite).sort(byName);
+            const nonfav = filtered.filter(a => !a.favorite);
+
+            // Sizes for grouping (exclude favorites so they don't duplicate)
+            const sizes = Array.from(new Set(nonfav.map(a => a.size || ''))).sort((a,b) => _sizeNum(a) - _sizeNum(b));
+
+            const totalCount = filtered.length;
+            const favCount = favorites.length;
+            if (els.accountsSummary) {
+                els.accountsSummary.textContent = favCount ? `${totalCount} contas (\u2605 ${favCount})` : `${totalCount} contas`;
+            }
+
+            const renderAccountCard = (acc) => {
+                const stats = calculateStats(acc);
+                const isActive = acc.id === store.activeId;
+
+                const div = document.createElement('div');
+                div.className = `account-item p-3 rounded-lg cursor-pointer transition-colors mb-2 ${isActive ? 'active' : 'bg-slate-800'}`;
+                div.onclick = () => { loadAccount(acc.id); toggleSidebar(); };
+
+                const starChar = acc.favorite ? '\u2605' : '\u2606'; // filled/empty star
+                const starClass = acc.favorite ? 'text-yellow-400' : 'text-slate-500';
+
+                div.innerHTML = `
+                    <div class="flex justify-between items-center gap-2">
+                        <div class="flex items-center gap-2 min-w-0">
+                            <button type="button" class="text-base leading-none ${starClass} hover:text-yellow-300" title="Favoritar" onclick="event.stopPropagation(); window.toggleFavorite('${acc.id}')">${starChar}</button>
+                            <span class="font-bold text-sm text-slate-200 truncate">${acc.name}</span>
+                        </div>
+                        <span class="text-xs text-indigo-300 font-mono">${acc.size || ''}</span>
+                    </div>
+                    <div class="flex justify-between items-center mt-1">
+                        <span class="text-xs text-slate-400">Saldo:</span>
+                        <span class="text-xs font-bold ${stats.currentEquity >= RULES[acc.size].start ? 'text-green-400' : 'text-red-400'}">${formatCurrency(stats.currentEquity)}</span>
+                    </div>
+                `;
+                els.accList.appendChild(div);
+            };
+
+            const renderSection = (title) => {
+                const h = document.createElement('div');
+                h.className = 'mt-3 mb-2 text-[11px] uppercase tracking-wider text-slate-400 font-bold';
+                h.textContent = title;
+                els.accList.appendChild(h);
+            };
+
+            if (favorites.length) {
+                renderSection('Favoritas');
+                favorites.forEach(renderAccountCard);
+            }
+
+            sizes.forEach(sz => {
+                const group = nonfav.filter(a => (a.size || '') === sz).sort(byName);
+                if (!group.length) return;
+                renderSection(sz || 'Outras');
+                group.forEach(renderAccountCard);
+            });
+
+            // If search yields nothing
+            if (!filtered.length) {
+                const empty = document.createElement('div');
+                empty.className = 'text-xs text-slate-500 p-3 rounded bg-slate-800 border border-slate-700';
+                empty.textContent = 'Nenhuma conta encontrada.';
+                els.accList.appendChild(empty);
+            }
+
+            lucide.createIcons();
+        }
 
         function loadAccount(id) { 
             if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
@@ -2084,7 +2294,7 @@ function renderDashboard() {
                 const defaultId = 'acc_' + Date.now();
                 store.activeId = defaultId;
                 store.accounts = {};
-                store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [] };
+                store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, favorite: false, data: {}, payouts: [] };
                 await saveToCloud(); 
             }
 
