@@ -2569,55 +2569,96 @@ ${period}
                 return `${a}_Analise_${r}`.slice(0,110) + '.pdf';
             };
 
-            // Captura o gráfico após o Chart.js renderizar (evita PNG em branco)
+            // Gráfico no PDF: gera imagem OFFSCREEN usando o MESMO intervalo (evita discrepâncias)
             let chartDataUrl = null;
-            let chartPxW = 800;
-            let chartPxH = 300;
-            const captureChartDataUrl = () => {
-                const canvas = document.getElementById('equityChart');
-                if(!canvas) return Promise.resolve(null);
+            let chartPxW = 1200;
+            let chartPxH = 420;
 
-                try{ chartPxW = canvas.width || 800; chartPxH = canvas.height || 300; }catch(e){}
+            const buildChartImageForRange = async () => {
+                try {
+                    if (!window.Chart) return null;
+                    const acc = getActive();
+                    let chartLabels = [];
+                    let chartData = [];
+                    let cumSum = 0;
 
-                const tryCapture = async () => {
-                    // Força render imediato do Chart.js (evita capturar canvas "em branco")
-                    try{
-                        if(window.chartInstance){
-                            window.chartInstance.options = window.chartInstance.options || {};
-                            // Desliga animação apenas para export (não impacta o uso normal)
-                            window.chartInstance.options.animation = false;
-                            window.chartInstance.update();
-                        } else if (typeof chartInstance !== 'undefined' && chartInstance){
-                            chartInstance.options = chartInstance.options || {};
-                            chartInstance.options.animation = false;
-                            chartInstance.update();
+                    Object.keys(acc.data).sort().forEach(iso => {
+                        if (iso >= start && iso <= end) {
+                            const e = acc.data[iso];
+                            const val = parseFloat(e.val) || 0;
+                            if (!e.holiday && val !== 0) {
+                                cumSum += val;
+                                chartLabels.push(new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
+                                chartData.push(cumSum);
+                            }
                         }
-                    }catch(e){}
+                    });
 
-                    for(let i=0;i<10;i++){
-                        // aguarda render/paint
-                        await new Promise(r=>setTimeout(r, i===0 ? 0 : 180));
-                        await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
-                        try{
-                            const url = canvas.toDataURL('image/png', 1.0);
-                            // Aceita qualquer PNG válido (tamanho mínimo bem baixo)
-                            if(url && url.startsWith('data:image/png') && url.length > 1500) return url;
-                        }catch(e){}
-                    }
-                    // Última tentativa sem limite de tamanho
-                    try{
-                        const url = canvas.toDataURL('image/png', 1.0);
-                        if(url && url.startsWith('data:image/png')) return url;
-                    }catch(e){}
+                    if (!chartLabels.length) return null;
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = chartPxW;
+                    canvas.height = chartPxH;
+                    const ctx = canvas.getContext('2d');
+
+                    const isDark = document.body.classList.contains('dark');
+                    const gridColor = isDark ? '#334155' : '#e5e7eb';
+                    const textColor = isDark ? '#94a3b8' : '#64748b';
+
+                    const tmpChart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: chartLabels,
+                            datasets: [{
+                                label: 'Lucro Acumulado',
+                                data: chartData,
+                                borderColor: '#4f46e5',
+                                backgroundColor: 'rgba(79, 70, 229, 0.10)',
+                                borderWidth: 3,
+                                pointRadius: 4,
+                                fill: true,
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            responsive: false,
+                            animation: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                y: { grid: { color: gridColor }, ticks: { color: textColor } },
+                                x: { grid: { display: false }, ticks: { color: textColor } }
+                            }
+                        }
+                    });
+
+                    tmpChart.update();
+                    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+                    const url = canvas.toDataURL('image/png', 1.0);
+                    tmpChart.destroy();
+                    return (url && url.startsWith('data:image/png')) ? url : null;
+                } catch (e) {
                     return null;
-                };
+                }
+            };
 
-                return tryCapture();
+            // Fallback: captura do canvas visível (se necessário)
+            const captureVisibleChartDataUrl = async () => {
+                try {
+                    const canvas = document.getElementById('equityChart');
+                    if (!canvas) return null;
+
+                    // garante um "frame" antes de capturar
+                    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+                    const url = canvas.toDataURL('image/png', 1.0);
+                    return (url && url.startsWith('data:image/png')) ? url : null;
+                } catch (e) { return null; }
             };
 
             ensureJsPDF().then(async (JsPDF)=>{
                 if(!JsPDF) throw new Error('jsPDF indisponivel');
-                chartDataUrl = await captureChartDataUrl();
+                chartDataUrl = await buildChartImageForRange();
+                if(!chartDataUrl) chartDataUrl = await captureVisibleChartDataUrl();
                 const doc = new JsPDF({ unit:'pt', format:'letter' });
                 const pageW = 612;
                 const pageH = 792;
