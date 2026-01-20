@@ -1073,10 +1073,127 @@ Usuário administrador:`) || '';
             return (text || '').trim();
         }
 
-        async function callOpenAI(question){
+        
+        function parseDateRangeFromQuestion(q){
+            // Supports formats like:
+            // 12/01 a 20/01, 12.01 à 01.20, 2026-01-12 to 2026-01-20, 01/12/2026 - 01/20/2026
+            // Heuristic: if the user uses "." or "à"/"até" we assume day-month (pt-BR style) when ambiguous.
+            try{
+                const txt = (q||'').trim();
+                if(!txt) return null;
+
+                // ISO explicit
+                const iso = txt.match(/(\d{4}-\d{2}-\d{2})\s*(?:a|à|até|to|-|–|—)\s*(\d{4}-\d{2}-\d{2})/i);
+                if(iso) return { startISO: iso[1], endISO: iso[2] };
+
+                // With year in slashed form
+                const withYear = txt.match(/(\d{1,2})[\/\.](\d{1,2})[\/\.](\d{2,4})\s*(?:a|à|até|to|-|–|—)\s*(\d{1,2})[\/\.](\d{1,2})[\/\.](\d{2,4})/i);
+                if(withYear){
+                    const d1=+withYear[1], m1=+withYear[2], y1=+(withYear[3].length===2?('20'+withYear[3]):withYear[3]);
+                    const d2=+withYear[4], m2=+withYear[5], y2=+(withYear[6].length===2?('20'+withYear[6]):withYear[6]);
+                    const s = new Date(y1, m1-1, d1);
+                    const e = new Date(y2, m2-1, d2);
+                    if(!isNaN(s) && !isNaN(e)) return { startISO: toISODateLocal(s), endISO: toISODateLocal(e) };
+                }
+
+                // Two-part dates without year (dd/mm or mm/dd)
+                const twoPart = txt.match(/(\d{1,2})[\/\.](\d{1,2})\s*(?:a|à|até|to|-|–|—)\s*(\d{1,2})[\/\.](\d{1,2})/i);
+                if(twoPart){
+                    const a1=+twoPart[1], b1=+twoPart[2], a2=+twoPart[3], b2=+twoPart[4];
+                    const hasDot = txt.includes('.') || /à|até/i.test(txt);
+                    // Decide day/month order
+                    let d1,m1,d2,m2;
+                    if(hasDot){
+                        // pt-BR style: dd.mm or dd/mm in text with "à"
+                        d1=a1; m1=b1; d2=a2; m2=b2;
+                    }else{
+                        // default to UI style (mm/dd) but if impossible, fall back to dd/mm
+                        // If first > 12 => it's day
+                        if(a1>12 || a2>12){ d1=a1; m1=b1; d2=a2; m2=b2; }
+                        else { m1=a1; d1=b1; m2=a2; d2=b2; }
+                    }
+
+                    const baseYear = (store && store.date) ? store.date.getFullYear() : (new Date()).getFullYear();
+                    // If range crosses year boundary (e.g., 12/20 to 01/10)
+                    let y1=baseYear, y2=baseYear;
+                    if(m1 > m2) { y1 = baseYear-1; y2 = baseYear; }
+
+                    const s = new Date(y1, m1-1, d1);
+                    const e = new Date(y2, m2-1, d2);
+                    if(!isNaN(s) && !isNaN(e)) return { startISO: toISODateLocal(s), endISO: toISODateLocal(e) };
+                }
+
+                return null;
+            }catch(e){
+                return null;
+            }
+        }
+
+        function computeRangeFromAccount(acc, startISO, endISO){
+            try{
+                const out = [];
+                const s = new Date(startISO + 'T00:00:00');
+                const e = new Date(endISO + 'T00:00:00');
+                if(isNaN(s) || isNaN(e) || s>e) return { entries: [], summary: null };
+                // Safety cap
+                const MAX = 400;
+                let count=0;
+                let sum=0, wins=0, losses=0;
+                let best={date:null,total:-Infinity}, worst={date:null,total:Infinity};
+                const d = new Date(s);
+                while(d<=e && count<MAX){
+                    const iso = toISODateLocal(d);
+                    const raw = (acc && acc.data && acc.data[iso]) ? acc.data[iso] : {};
+                    const t1 = Number(raw.t1)||0;
+                    const t2 = Number(raw.t2)||0;
+                    const total = round2(t1+t2);
+                    out.push({ date: iso, t1, t2, total, holiday: !!raw.holiday, note: (raw.note||'').toString().slice(0,800) });
+                    sum += total;
+                    if(total>0) wins++; else if(total<0) losses++;
+                    if(total>best.total){ best={date:iso,total}; }
+                    if(total<worst.total){ worst={date:iso,total}; }
+                    d.setDate(d.getDate()+1);
+                    count++;
+                }
+                const summary = {
+                    start: startISO,
+                    end: endISO,
+                    days: out.length,
+                    total: round2(sum),
+                    winDays: wins,
+                    lossDays: losses,
+                    bestDay: best.date ? { date: best.date, total: round2(best.total) } : null,
+                    worstDay: worst.date ? { date: worst.date, total: round2(worst.total) } : null,
+                    truncatedTo: (count>=MAX ? MAX : out.length)
+                };
+                return { entries: out, summary };
+            }catch(e){
+                return { entries: [], summary: null };
+            }
+        }
+
+        function augmentAIContextForQuestion(baseContext, question){
+            try{
+                const acc = getActive();
+                const parsed = parseDateRangeFromQuestion(question);
+                if(!parsed) return baseContext;
+                const { startISO, endISO } = parsed;
+                const { entries, summary } = computeRangeFromAccount(acc, startISO, endISO);
+                return Object.assign({}, baseContext, {
+                    questionRange: { start: startISO, end: endISO },
+                    questionRangeEntries: entries,
+                    questionRangeSummary: summary
+                });
+            }catch(e){
+                return baseContext;
+            }
+        }
+
+async function callOpenAI(question){
             const apiKey = getAIKey();
             const model = getAIModel();
-            const context = buildAIContext();
+            const baseContext = buildAIContext();
+            const context = augmentAIContextForQuestion(baseContext, question);
 
             const apexRulesLink = 'https://support.apextraderfunding.com/hc/en-us/articles/40463003786267-Performance-Account-PA-Trading-Rules';
 
@@ -1084,8 +1201,8 @@ Usuário administrador:`) || '';
                 'Você é um assistente dentro de um aplicativo de performance (trading) baseado em regras da Apex Trader Funding.',
                 'Responda no mesmo idioma da pergunta (português ou inglês).',
                 'Você deve ajudar o usuário a entender e analisar os números e informações armazenadas no aplicativo (trades, ciclos, médias, filtros, relatórios, campos de Trade 1/Trade 2, etc.).',
-                'Use SOMENTE o contexto JSON fornecido (monthEntries, recentEntries, analysisRangeEntries, stats). Não invente dados.',
-                'Se o usuário pedir um relatório por período, priorize o intervalo informado em analysisFilter/start-end e/ou analysisRangeSummary.',
+                'Use SOMENTE o contexto JSON fornecido (monthEntries, recentEntries, analysisRangeEntries, stats, questionRangeEntries). Não invente dados.',
+                'Se o usuário pedir um relatório por período, priorize o intervalo informado em analysisFilter/start-end e/ou analysisRangeSummary. Se o usuário mencionar um intervalo na pergunta, use questionRangeSummary/questionRangeEntries.',
                 'Você não tem acesso a preços ao vivo. Se pedirem cotação atual, explique essa limitação e sugira consultar a corretora.',
                 'Quando citar regras da Apex, mencione o nome da regra e inclua o link oficial quando apropriado.',
                 `Link base das regras: ${apexRulesLink}`
@@ -1234,6 +1351,7 @@ Usuário administrador:`) || '';
         // EXPOSE FUNCTIONS TO WINDOW
         window.toggleSidebar = () => { const isOpen=!els.sidebar.classList.contains('sidebar-closed'); if(isOpen){els.sidebar.classList.add('sidebar-closed');els.sidebar.classList.remove('sidebar-open');els.backdrop.classList.add('hidden');}else{els.sidebar.classList.remove('sidebar-closed');els.sidebar.classList.add('sidebar-open');els.backdrop.classList.remove('hidden');} };
         window.formatCurrency = (v) => v.toLocaleString('en-US',{style:'currency',currency:'USD'});
+        const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
         const toISODateLocal = (d) => {
             const y=d.getFullYear();
             const m=String(d.getMonth()+1).padStart(2,'0');
@@ -1823,6 +1941,7 @@ if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes
                 data: { labels: labels, datasets: [{ label: 'Lucro Acumulado', data: data, borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 3, pointRadius: 4, fill: true, tension: 0.1 }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: gridColor }, ticks: { color: textColor } }, x: { grid: { display: false }, ticks: { color: textColor } } } }
             });
+            window.chartInstance = chartInstance;
         }
         
         function getTradedDays(acc) { const allDates = Object.keys(acc.data); return allDates.filter(iso => { const entry = acc.data[iso]; const val = parseFloat(entry.val) || 0; return val !== 0 && !entry.holiday; }).sort((a, b) => new Date(b) - new Date(a)); }
@@ -2450,13 +2569,55 @@ ${period}
                 return `${a}_Analise_${r}`.slice(0,110) + '.pdf';
             };
 
-            const canvas = document.getElementById('equityChart');
-            const chartDataUrl = (()=>{
-                try{ return canvas ? canvas.toDataURL('image/png', 1.0) : null; }catch(e){ return null; }
-            })();
+            // Captura o gráfico após o Chart.js renderizar (evita PNG em branco)
+            let chartDataUrl = null;
+            let chartPxW = 800;
+            let chartPxH = 300;
+            const captureChartDataUrl = () => {
+                const canvas = document.getElementById('equityChart');
+                if(!canvas) return Promise.resolve(null);
 
-            ensureJsPDF().then((JsPDF)=>{
+                try{ chartPxW = canvas.width || 800; chartPxH = canvas.height || 300; }catch(e){}
+
+                const tryCapture = async () => {
+                    // Força render imediato do Chart.js (evita capturar canvas "em branco")
+                    try{
+                        if(window.chartInstance){
+                            window.chartInstance.options = window.chartInstance.options || {};
+                            // Desliga animação apenas para export (não impacta o uso normal)
+                            window.chartInstance.options.animation = false;
+                            window.chartInstance.update();
+                        } else if (typeof chartInstance !== 'undefined' && chartInstance){
+                            chartInstance.options = chartInstance.options || {};
+                            chartInstance.options.animation = false;
+                            chartInstance.update();
+                        }
+                    }catch(e){}
+
+                    for(let i=0;i<10;i++){
+                        // aguarda render/paint
+                        await new Promise(r=>setTimeout(r, i===0 ? 0 : 180));
+                        await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+                        try{
+                            const url = canvas.toDataURL('image/png', 1.0);
+                            // Aceita qualquer PNG válido (tamanho mínimo bem baixo)
+                            if(url && url.startsWith('data:image/png') && url.length > 1500) return url;
+                        }catch(e){}
+                    }
+                    // Última tentativa sem limite de tamanho
+                    try{
+                        const url = canvas.toDataURL('image/png', 1.0);
+                        if(url && url.startsWith('data:image/png')) return url;
+                    }catch(e){}
+                    return null;
+                };
+
+                return tryCapture();
+            };
+
+            ensureJsPDF().then(async (JsPDF)=>{
                 if(!JsPDF) throw new Error('jsPDF indisponivel');
+                chartDataUrl = await captureChartDataUrl();
                 const doc = new JsPDF({ unit:'pt', format:'letter' });
                 const pageW = 612;
                 const pageH = 792;
@@ -2479,8 +2640,8 @@ ${period}
                 if(chartDataUrl){
                     try{
                         // calcula proporcao
-                        const pxW = canvas.width || 800;
-                        const pxH = canvas.height || 300;
+                        const pxW = chartPxW || 800;
+                        const pxH = chartPxH || 300;
                         let imgW = contentW;
                         let imgH = imgW * (pxH/pxW);
                         const maxH = 260;
