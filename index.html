@@ -566,7 +566,7 @@ body.dark .bg-white { background-color: #1e293b; }
                 </div>
                 <div class="grid grid-cols-3 gap-2 mt-4 no-print">
                      <button onclick="shareReport()" class="col-span-1 py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400" title="WhatsApp"><i data-lucide="share-2" class="w-3 h-3"></i> Zap</button>
-                     <button onclick="window.print()" class="col-span-1 py-2 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 flex justify-center items-center gap-1 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"><i data-lucide="printer" class="w-3 h-3"></i> PDF</button>
+                     <button onclick="pdfFilteredReport()" class="col-span-1 py-2 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 flex justify-center items-center gap-1 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"><i data-lucide="printer" class="w-3 h-3"></i> PDF</button>
                      <button onclick="exportCSV()" class="col-span-1 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400"><i data-lucide="download" class="w-3 h-3"></i> CSV</button>
                 </div>
                 <div class="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
@@ -903,61 +903,128 @@ Usuário administrador:`) || '';
         }
 
         function aiIsAllowedQuestion(q){
-            const s = (q||'').toLowerCase();
-
-            const banned = [
-                'carro','car','buy a car','comprar carro','viagem','voo','flight','hotel','airbnb','passagem','travel','vacation',
-                'restaurante','restaurant','receita','recipe','filme','movie','serie','série','netflix','jogo','game','politica','política','election'
-            ];
-            if (banned.some(w => s.includes(w))) {
-                return { ok:false, why:'Pergunta fora do escopo (apenas trading/Apex/mercado/este app).' };
-            }
-
-            const allowed = [
-                'apex','rule','regra','payout','saque','consistency','teto','drawdown','profit','loss','winrate','acerto','trade','trades',
-                'ciclo','mensal','seman','média','media','equity','saldo','resultado','periodo','período','mnq','nq','es','spy','qqq','dow','nasdaq','s&p','indice','índice','market','mercado','vwap','setup'
-            ];
-            if (allowed.some(w => s.includes(w))) {
-                return { ok:true };
-            }
-
-            if (/(numero|número|painel|relatorio|relatório)/.test(s)) {
-                return { ok:true };
-            }
-
-            return { ok:false, why:'Pergunta genérica demais. Faça uma pergunta sobre os números do app, Apex, ou conceitos de mercado/índices.' };
+            return { ok:true };
         }
 
         function buildAIContext(){
             try{
                 const acc = getActive();
                 const stats = calculateStats(acc);
+
                 const monthStart = new Date(store.date.getFullYear(), store.date.getMonth(), 1);
                 const monthEnd = new Date(store.date.getFullYear(), store.date.getMonth()+1, 0);
                 const isoStart = toISODateLocal(monthStart);
                 const isoEnd = toISODateLocal(monthEnd);
 
-                // coletar entradas do mês (inclui dias com total/nota/feriado)
-                const days = [];
-                const cur = new Date(monthStart);
-                while (cur <= monthEnd) {
-                    const iso = toISODateLocal(cur);
+                const fs = (els.filterStart && els.filterStart.value) ? els.filterStart.value : '';
+                const fe = (els.filterEnd && els.filterEnd.value) ? els.filterEnd.value : '';
+
+                function normalizeEntry(iso){
                     const e = (acc.data && acc.data[iso]) ? acc.data[iso] : {};
-                    const t1 = parseFloat(e.t1) || 0;
-                    const t2 = parseFloat(e.t2) || 0;
+                    const t1 = (e.t1 === '' || e.t1 === null || e.t1 === undefined) ? 0 : (parseFloat(e.t1) || 0);
+                    const t2 = (e.t2 === '' || e.t2 === null || e.t2 === undefined) ? 0 : (parseFloat(e.t2) || 0);
                     const hasVal = !(e.val === undefined || e.val === null || e.val === '');
                     const total = hasVal ? (parseFloat(e.val) || 0) : (t1 + t2);
                     const note = (e.note || '').toString();
                     const holiday = !!e.holiday;
+                    const t1meta = e.t1meta || { add:false, targetPts:0, riskPts:0, viability:'' };
+                    const t2meta = e.t2meta || { add:false, targetPts:0, riskPts:0, viability:'' };
 
-                    if (total !== 0 || note.trim() || holiday) {
-                        days.push({ date: iso, t1, t2, total, holiday, note: note.slice(0, 220) });
-                    }
+                    const hasMeta =
+                        !!(t1meta && (t1meta.add || Number(t1meta.targetPts) || Number(t1meta.riskPts) || (t1meta.viability||'').trim())) ||
+                        !!(t2meta && (t2meta.add || Number(t2meta.targetPts) || Number(t2meta.riskPts) || (t2meta.viability||'').trim()));
+
+                    const hasActivity = (t1 !== 0 || t2 !== 0 || total !== 0 || note.trim() || holiday || hasMeta);
+
+                    return {
+                        date: iso,
+                        t1,
+                        t2,
+                        total,
+                        holiday,
+                        note: note.slice(0, 800),
+                        t1meta: {
+                            add: !!t1meta.add,
+                            targetPts: Number(t1meta.targetPts) || 0,
+                            riskPts: Number(t1meta.riskPts) || 0,
+                            viability: (t1meta.viability || '').toString()
+                        },
+                        t2meta: {
+                            add: !!t2meta.add,
+                            targetPts: Number(t2meta.targetPts) || 0,
+                            riskPts: Number(t2meta.riskPts) || 0,
+                            viability: (t2meta.viability || '').toString()
+                        },
+                        hasActivity
+                    };
+                }
+
+                // 1) Entradas do mês atual (para contexto rápido)
+                const monthEntries = [];
+                const cur = new Date(monthStart);
+                while (cur <= monthEnd) {
+                    const iso = toISODateLocal(cur);
+                    const e = normalizeEntry(iso);
+                    if (e.hasActivity) monthEntries.push(e);
                     cur.setDate(cur.getDate() + 1);
                 }
 
-                const fs = (els.filterStart && els.filterStart.value) ? els.filterStart.value : '';
-                const fe = (els.filterEnd && els.filterEnd.value) ? els.filterEnd.value : '';
+                // 2) Entradas recentes (histórico compactado) - últimos 120 dias com atividade
+                const allKeys = Object.keys(acc.data || {}).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).sort();
+                const recent = [];
+                for (const k of allKeys) {
+                    const e = normalizeEntry(k);
+                    if (e.hasActivity) recent.push(e);
+                }
+                const recentEntries = recent.slice(-120);
+
+                // 3) Entradas do período do filtro (se selecionado)
+                let analysisRangeEntries = [];
+                let analysisRangeSummary = null;
+                if (fs && fe) {
+                    const start = new Date(fs + 'T00:00:00');
+                    const end = new Date(fe + 'T00:00:00');
+                    if (!isNaN(start) && !isNaN(end) && start <= end) {
+                        const tmp = [];
+                        const d = new Date(start);
+                        while (d <= end) {
+                            const iso = toISODateLocal(d);
+                            const e = normalizeEntry(iso);
+                            // Aqui incluímos TODOS os dias do range para permitir relatórios completos.
+                            tmp.push(e);
+                            d.setDate(d.getDate() + 1);
+                        }
+                        // Safety: evita contextos gigantes
+                        const MAX_DAYS = 100;
+                        analysisRangeEntries = tmp.length > MAX_DAYS ? tmp.slice(0, MAX_DAYS) : tmp;
+
+                        // Sumário do range (usa todos os dias, mesmo que tenha sido truncado no payload)
+                        let sum = 0;
+                        let wins = 0;
+                        let losses = 0;
+                        let best = { date:null, total:-Infinity };
+                        let worst = { date:null, total:Infinity };
+                        for (const e of tmp) {
+                            const t = Number(e.total) || 0;
+                            sum += t;
+                            if (t > 0) wins++;
+                            if (t < 0) losses++;
+                            if (t > best.total) best = { date:e.date, total:t };
+                            if (t < worst.total) worst = { date:e.date, total:t };
+                        }
+                        analysisRangeSummary = {
+                            start: fs,
+                            end: fe,
+                            days: tmp.length,
+                            total: round2(sum),
+                            winDays: wins,
+                            lossDays: losses,
+                            bestDay: best.date ? { date: best.date, total: round2(best.total) } : null,
+                            worstDay: worst.date ? { date: worst.date, total: round2(worst.total) } : null,
+                            truncatedTo: (tmp.length > MAX_DAYS ? MAX_DAYS : tmp.length)
+                        };
+                    }
+                }
 
                 return {
                     account: { id: acc.id, name: acc.name, size: acc.size, monthType: acc.monthType },
@@ -975,8 +1042,11 @@ Usuário administrador:`) || '';
                         avg25: stats.avg25, avg30: stats.avg30,
                         weekly: stats.weekly
                     },
-                    monthEntries: days,
-                    analysisFilter: { start: fs, end: fe }
+                    monthEntries,
+                    recentEntries,
+                    analysisFilter: { start: fs, end: fe },
+                    analysisRangeEntries,
+                    analysisRangeSummary
                 };
             } catch (err) {
                 return { error: String(err) };
@@ -1011,13 +1081,13 @@ Usuário administrador:`) || '';
             const apexRulesLink = 'https://support.apextraderfunding.com/hc/en-us/articles/40463003786267-Performance-Account-PA-Trading-Rules';
 
             const instructions = [
-                'Você é um assistente dentro de um aplicativo de performance (trading) baseado nas regras da Apex Trader Funding.',
+                'Você é um assistente dentro de um aplicativo de performance (trading) baseado em regras da Apex Trader Funding.',
                 'Responda no mesmo idioma da pergunta (português ou inglês).',
-                'Responda APENAS sobre: números do painel, trades/estatísticas, interpretação dos cálculos, regras/termos da Apex, e conceitos gerais de mercado/índices.',
-                'NÃO responda assuntos gerais (carros, viagens, etc.). Se pedirem, recuse educadamente e peça para reformular dentro do escopo.',
-                'NÃO invente dados. Use somente o contexto JSON fornecido; se faltar informação, diga o que falta.',
-                'NÃO tem acesso a preços ao vivo. Se pedirem cotação atual, explique essa limitação e sugira consultar a corretora.',
-                'Se citar regras da Apex, mencione o nome da regra e inclua o link oficial quando apropriado.',
+                'Você deve ajudar o usuário a entender e analisar os números e informações armazenadas no aplicativo (trades, ciclos, médias, filtros, relatórios, campos de Trade 1/Trade 2, etc.).',
+                'Use SOMENTE o contexto JSON fornecido (monthEntries, recentEntries, analysisRangeEntries, stats). Não invente dados.',
+                'Se o usuário pedir um relatório por período, priorize o intervalo informado em analysisFilter/start-end e/ou analysisRangeSummary.',
+                'Você não tem acesso a preços ao vivo. Se pedirem cotação atual, explique essa limitação e sugira consultar a corretora.',
+                'Quando citar regras da Apex, mencione o nome da regra e inclua o link oficial quando apropriado.',
                 `Link base das regras: ${apexRulesLink}`
             ].join('\n');
 
@@ -1114,12 +1184,6 @@ Usuário administrador:`) || '';
 
                     if (!q) {
                         if (els.aiStatus) els.aiStatus.textContent = 'Digite uma pergunta.';
-                        return;
-                    }
-
-                    const check = aiIsAllowedQuestion(q);
-                    if (!check.ok) {
-                        if (els.aiStatus) els.aiStatus.textContent = check.why;
                         return;
                     }
 
@@ -1394,6 +1458,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         window.updateConfig = () => { const acc = getActive(); acc.size = els.inpSize.value; acc.monthType = parseInt(els.inpMonth.value); saveToCloud(); els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; renderDashboard(); };
         window.changeMonth = (d) => { store.date.setMonth(store.date.getMonth()+d); syncDatesToView(); renderDashboard(); };
         window.filterReport = () => filterReportInternal();
+        window.pdfFilteredReport = () => pdfFilteredReportInternal();
         window.shareReport = () => shareReportInternal();
         window.updateData = (iso, type, val) => { 
             const acc = getActive(); 
@@ -1417,7 +1482,20 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 return;
             }
             
-            if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes(type)) {
+                        // Para T1/T2: se o campo ficar vazio, mantenha vazio (nao virar 0)
+            if (type === 't1' || type === 't2') {
+                if (val === '' || val === null || val === undefined) {
+                    acc.data[iso][type] = '';
+                    const t1 = parseFloat(acc.data[iso].t1) || 0;
+                    const t2 = parseFloat(acc.data[iso].t2) || 0;
+                    acc.data[iso].val = t1 + t2;
+                    renderDashboard();
+                    saveToCloud();
+                    return;
+                }
+            }
+
+if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes(type)) {
                 if(val === '' || val === null) val = 0;
                 else if(typeof val === 'string') {
                     val = parseFloat(val.replace(',', '.')) || 0;
@@ -1956,7 +2034,7 @@ function renderCalendar(acc) {
         }
 
         const iso = cur.toISOString().split('T')[0]; 
-        const entry = acc.data[iso] || { val: 0, t1: 0, t2: 0, note: '', holiday: false, add: false, targetPts: '', riskPts: '', viability: '' };
+        const entry = acc.data[iso] || { val: 0, t1: '', t2: '', note: '', holiday: false, add: false, targetPts: '', riskPts: '', viability: '' };
 
         // Garantir estrutura de meta por trade
         if (!entry.t1meta) entry.t1meta = { add:false, targetPts:0, riskPts:0, viability:'' };
@@ -1965,10 +2043,9 @@ function renderCalendar(acc) {
         const isOutsideMonth = cur.getMonth() !== m;
         const tr = document.createElement('tr'); 
         tr.className = `dark:border-slate-700 ${isOutsideMonth ? 'opacity-60 bg-slate-50 dark:bg-slate-800/40' : ''}`;
-
         const valNum = parseFloat(entry.val) || 0;
-        const t1Num = entry.t1 !== undefined ? entry.t1 : (entry.val || ''); 
-        const t2Num = entry.t2 !== undefined ? entry.t2 : '';
+        const t1Num = (entry.t1 === undefined || entry.t1 === null || entry.t1 === '') ? '' : entry.t1;
+        const t2Num = (entry.t2 === undefined || entry.t2 === null || entry.t2 === '') ? '' : entry.t2;
 
         let colorClass = 'val-zero'; 
         if (valNum > 0) colorClass = 'val-pos'; 
@@ -2309,14 +2386,198 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             const acc = getActive(); 
             const res = els.customResult.textContent;
             const period = els.filterStart.value ? `(${new Date(els.filterStart.value).toLocaleDateString()} - ${new Date(els.filterEnd.value).toLocaleDateString()})` : "(Geral)";
-            const text = `*Performance Report - DF Strategic* 📊\n${period}\n\n` +
-                         `*Resultado:* ${res}\n` +
-                         `*Win Rate:* ${els.customWinrate.textContent}\n` +
+            const text = `*Performance Report - DF Strategic* 📊
+${period}
+
+` +
+                         `*Resultado:* ${res}
+` +
+                         `*Win Rate:* ${els.customWinrate.textContent}
+` +
                          `*Melhor Dia:* ${els.customBest.textContent}`; 
             
             if (navigator.share) { navigator.share({ title: 'Performance Report', text: text }).catch(console.error); } 
             else { navigator.clipboard.writeText(text).then(() => alert("Resumo copiado!")); }
         }
+
+        function pdfFilteredReportInternal() {
+            const start = els.filterStart.value;
+            const end = els.filterEnd.value;
+            if(!start || !end) {
+                alert('Selecione a data inicial e final para gerar o PDF.');
+                return;
+            }
+            if(end < start){
+                alert('A data final deve ser maior ou igual a data inicial.');
+                return;
+            }
+
+            // Recalcula para garantir que grafico/metricas estejam atualizados
+            try { filterReport(); } catch(e) {}
+
+            const acc = getActive();
+            const title = 'Analise por Periodo';
+            const rangeText = `${new Date(start).toLocaleDateString('pt-BR')} - ${new Date(end).toLocaleDateString('pt-BR')} • ${acc?.name || 'Conta'}`;
+            const metricResult = (els.customResult?.textContent || '--').trim();
+            const metricWin = (els.customWinrate?.textContent || '--').trim();
+            const metricBest = (els.customBest?.textContent || '--').trim();
+            const metricWorst = (els.customWorst?.textContent || '--').trim();
+
+            const ensureJsPDF = () => new Promise((resolve, reject)=>{
+                try{
+                    if(window.jspdf && window.jspdf.jsPDF) return resolve(window.jspdf.jsPDF);
+                    const existing = document.querySelector('script[data-jspdf]');
+                    if(existing){
+                        existing.addEventListener('load', ()=> resolve(window.jspdf && window.jspdf.jsPDF));
+                        existing.addEventListener('error', ()=> reject(new Error('Falha ao carregar jsPDF')));
+                        return;
+                    }
+                    const s = document.createElement('script');
+                    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                    s.async = true;
+                    s.defer = true;
+                    s.setAttribute('data-jspdf','1');
+                    s.onload = ()=> resolve(window.jspdf && window.jspdf.jsPDF);
+                    s.onerror = ()=> reject(new Error('Falha ao carregar jsPDF'));
+                    document.head.appendChild(s);
+                }catch(err){ reject(err); }
+            });
+
+            const buildFileName = ()=>{
+                const safe = (s)=> (s||'').toString().replace(/[^a-z0-9\-_]+/gi,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
+                const a = safe(acc?.name || acc?.id || 'conta');
+                const r = safe(`${start}_${end}`);
+                return `${a}_Analise_${r}`.slice(0,110) + '.pdf';
+            };
+
+            const canvas = document.getElementById('equityChart');
+            const chartDataUrl = (()=>{
+                try{ return canvas ? canvas.toDataURL('image/png', 1.0) : null; }catch(e){ return null; }
+            })();
+
+            ensureJsPDF().then((JsPDF)=>{
+                if(!JsPDF) throw new Error('jsPDF indisponivel');
+                const doc = new JsPDF({ unit:'pt', format:'letter' });
+                const pageW = 612;
+                const pageH = 792;
+                const margin = 40;
+                const contentW = pageW - margin*2;
+                let y = 54;
+
+                // Header
+                doc.setFont('helvetica','bold');
+                doc.setFontSize(16);
+                doc.text('Analise por Periodo', margin, y);
+                y += 18;
+
+                doc.setFont('helvetica','normal');
+                doc.setFontSize(10);
+                doc.text(rangeText, margin, y);
+                y += 18;
+
+                // Chart
+                if(chartDataUrl){
+                    try{
+                        // calcula proporcao
+                        const pxW = canvas.width || 800;
+                        const pxH = canvas.height || 300;
+                        let imgW = contentW;
+                        let imgH = imgW * (pxH/pxW);
+                        const maxH = 260;
+                        if(imgH > maxH){
+                            imgH = maxH;
+                            imgW = imgH * (pxW/pxH);
+                        }
+                        const x = margin + (contentW - imgW)/2;
+                        doc.addImage(chartDataUrl, 'PNG', x, y, imgW, imgH);
+                        y += imgH + 18;
+                    }catch(e){
+                        // ignora se nao conseguir inserir
+                        y += 10;
+                    }
+                } else {
+                    doc.setFont('helvetica','italic');
+                    doc.setFontSize(9);
+                    doc.text('Grafico indisponivel para exportacao (tente novamente).', margin, y);
+                    y += 18;
+                }
+
+                // Metrics box
+                const boxX = margin;
+                const boxW = contentW;
+                const boxH = 130;
+                if(y + boxH > pageH - margin) y = pageH - margin - boxH;
+
+                doc.setDrawColor(210);
+                doc.setFillColor(248, 250, 252);
+                doc.roundedRect(boxX, y, boxW, boxH, 8, 8, 'FD');
+
+                const leftX = boxX + 16;
+                const rightX = boxX + boxW/2 + 8;
+                let yy = y + 28;
+
+                const label = (txt, x, yPos)=>{
+                    doc.setFont('helvetica','normal');
+                    doc.setFontSize(10);
+                    doc.setTextColor(100);
+                    doc.text(txt, x, yPos);
+                };
+                const value = (txt, x, yPos)=>{
+                    doc.setFont('helvetica','bold');
+                    doc.setFontSize(12);
+                    doc.setTextColor(20);
+                    doc.text(txt, x, yPos);
+                };
+
+                label('Resultado do Periodo', leftX, yy);
+                value(metricResult, leftX, yy + 16);
+
+                label('Taxa de Acerto (Trades)', rightX, yy);
+                value(metricWin, rightX, yy + 16);
+
+                yy += 52;
+
+                label('Melhor Dia', leftX, yy);
+                value(metricBest, leftX, yy + 16);
+
+                label('Pior Dia', rightX, yy);
+                value(metricWorst, rightX, yy + 16);
+
+                // Footer
+                doc.setFont('helvetica','normal');
+                doc.setFontSize(8);
+                doc.setTextColor(140);
+                doc.text('Resumo gerado pelo DF Strategic • Sem dados ao vivo • Apenas valores do app', margin, pageH - 28);
+
+                doc.save(buildFileName());
+            }).catch((err)=>{
+                console.warn('Falha ao gerar PDF resumo:', err);
+                // Fallback: abrir pagina simples para imprimir (pode depender do browser)
+                try{
+                    const w = window.open('', '_blank');
+                    if(!w) throw new Error('Popup bloqueado');
+                    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Analise por Periodo</title>
+                    <style>body{font-family:Arial,Helvetica,sans-serif;padding:24px}h1{margin:0 0 6px}p{margin:0 0 14px;color:#555}img{max-width:100%;height:auto;border:1px solid #ddd;border-radius:10px}table{margin-top:14px;width:100%;border-collapse:collapse}td{padding:8px;border-top:1px solid #eee}td:first-child{color:#666}</style></head>
+                    <body><h1>Analise por Periodo</h1><p>${rangeText}</p>
+                    ${chartDataUrl ? ("<img src=\""+chartDataUrl+"\"/>") : ""}
+                    <table>
+                      <tr><td><b>Resultado do Periodo</b></td><td>${metricResult}</td></tr>
+                      <tr><td><b>Taxa de Acerto</b></td><td>${metricWin}</td></tr>
+                      <tr><td><b>Melhor Dia</b></td><td>${metricBest}</td></tr>
+                      <tr><td><b>Pior Dia</b></td><td>${metricWorst}</td></tr>
+                    </table>
+
+                    </body></html>`;
+                    w.document.open();
+                    w.document.write(html);
+                    w.document.close();
+                    try{ setTimeout(()=>{ try{ w.focus(); w.print(); }catch(_){} }, 350); }catch(_){}
+                }catch(e2){
+                    alert('Nao foi possivel gerar o PDF (verifique conexao/billing).');
+                }
+            });
+        }
+
 
         // --- CLOUD ---
         async function loadFromCloud() {
