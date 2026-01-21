@@ -1716,7 +1716,7 @@ if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes
             currentNoteIso = iso;
             const acc = getActive();
             const entry = acc.data[iso] || {};
-            const dateStr = new Date(iso).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            const dateStr = parseISODateLocal(iso).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
             document.getElementById('note-modal-date').textContent = dateStr;
             const noteInput = document.getElementById('note-modal-input');
             noteInput.value = entry.note || '';
@@ -1775,7 +1775,7 @@ if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes
             const dates = Object.keys(acc.data).sort();
             dates.forEach(iso => {
                 const d = acc.data[iso];
-                const dateStr = new Date(iso).toLocaleDateString('pt-BR');
+                const dateStr = parseISODateLocal(iso).toLocaleDateString('pt-BR');
                 const t1 = (parseFloat(d.t1) || 0).toFixed(2);
                 const t2 = (parseFloat(d.t2) || 0).toFixed(2);
                 const val = (parseFloat(d.val) || 0).toFixed(2);
@@ -1910,7 +1910,7 @@ if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes
                             cumSum += val;
                             
                             // GRÁFICO CLÁSSICO: Só adiciona se operou
-                            chartLabels.push(new Date(iso).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}));
+                            chartLabels.push(parseISODateLocal(iso).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}));
                             chartData.push(cumSum);
                         }
                         if (!isNaN(t1) || !isNaN(t2)) {
@@ -2536,7 +2536,7 @@ ${period}
 
             const acc = getActive();
             const title = 'Analise por Periodo';
-            const rangeText = `${new Date(start).toLocaleDateString('pt-BR')} - ${new Date(end).toLocaleDateString('pt-BR')} • ${acc?.name || 'Conta'}`;
+            const rangeText = `${parseISODateLocal(start).toLocaleDateString('pt-BR')} - ${parseISODateLocal(end).toLocaleDateString('pt-BR')} • ${acc?.name || 'Conta'}`;
             const metricResult = (els.customResult?.textContent || '--').trim();
             const metricWin = (els.customWinrate?.textContent || '--').trim();
             const metricBest = (els.customBest?.textContent || '--').trim();
@@ -2588,7 +2588,7 @@ ${period}
                             const val = parseFloat(e.val) || 0;
                             if (!e.holiday && val !== 0) {
                                 cumSum += val;
-                                chartLabels.push(new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
+                                chartLabels.push(parseISODateLocal(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
                                 chartData.push(cumSum);
                             }
                         }
