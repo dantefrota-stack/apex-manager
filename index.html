@@ -23,6 +23,11 @@
     </script>
 
     <style>
+/* Today row highlight (subtle, distinct from week separators) */
+tr.today-row td{background: rgba(16,185,129,0.10)!important;}
+.dark tr.today-row td{background: rgba(16,185,129,0.12)!important;}
+tr.today-row td:first-child{box-shadow: inset 4px 0 0 rgba(16,185,129,0.55);}
+
         body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; -webkit-font-smoothing: antialiased; }
         
         /* Dark Mode Overrides */
@@ -506,9 +511,82 @@ body.dark .bg-white { background-color: #1e293b; }
         <div class="flex-1 overflow-y-auto p-4 space-y-2" id="account-list"></div>
         <div class="p-4 border-t border-slate-700 bg-slate-800 space-y-2">
             <button onclick="openAdminPanel('payouts')" class="w-full py-2 bg-slate-700 hover:bg-slate-600 rounded-md text-xs font-bold flex items-center justify-center gap-2 transition text-slate-300"><i data-lucide="shield" class="w-3 h-3"></i> Área Administrativa</button>
+            <button id="btn-accounts-overview" type="button" onclick="openAccountsOverview()" class="w-full flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-md transition">
+                <i data-lucide="layout-list" class="w-4 h-4"></i> Resumo das Contas
+            </button>
             <button onclick="createAccount()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 rounded-md text-sm font-bold flex items-center justify-center gap-2 transition"><i data-lucide="plus-circle" class="w-4 h-4"></i> Nova Conta</button>
         </div>
     </div>
+
+    <!-- ACCOUNTS OVERVIEW MODAL -->
+    <div id="accounts-overview-modal" class="fixed inset-0 z-[65] hidden no-print">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeAccountsOverview()"></div>
+
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-5xl max-h-[90vh] overflow-hidden bg-white dark:bg-slate-800 rounded-xl shadow-2xl transform transition-all">
+            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+                <div class="flex items-center gap-3">
+                    <div class="bg-indigo-500/10 text-indigo-600 dark:text-indigo-300 dark:bg-indigo-500/20 p-2 rounded-lg">
+                        <i data-lucide="layout-list" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-slate-800 dark:text-white">Resumo das Contas</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Visão geral em uma página (saldo, progresso e dias operados)</p>
+                    </div>
+                </div>
+                <button onclick="closeAccountsOverview()" class="p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div id="accounts-overview-body" class="p-5 space-y-4 overflow-y-auto max-h-[calc(90vh-70px)]">
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <div class="text-xs text-slate-500 dark:text-slate-400">
+                        <span class="font-semibold text-slate-700 dark:text-slate-200">Dica:</span> valores usam a mesma lógica do app (equity atual e safety threshold por tamanho).
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="accounts-overview-toggle-chart" onclick="toggleAccountsOverviewChart()" class="px-3 py-2 text-xs font-semibold rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
+                            <i data-lucide="bar-chart-3" class="w-4 h-4 inline-block mr-1"></i> Mostrar/Esconder Gráfico
+                        </button>
+                    </div>
+                </div>
+
+                <div id="accounts-overview-chart-wrap" class="hidden bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">Progresso para Safety Threshold (%)</p>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">0% = no start • 100% = atingiu safety</p>
+                    </div>
+                    <div id="accounts-overview-chart-scroll" class="overflow-x-auto">
+                        <canvas id="accounts-overview-chart" width="900" height="320"></canvas>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                    <div id="accounts-overview-table-scroll" class="overflow-x-auto">
+                        <table class="min-w-[900px] w-full text-sm">
+                            <thead class="bg-slate-50 dark:bg-slate-900/40 text-slate-600 dark:text-slate-300">
+                                <tr class="text-left">
+                                    <th class="px-4 py-3 font-semibold">Conta</th>
+                                    <th class="px-4 py-3 font-semibold">Size</th>
+                                    <th class="px-4 py-3 font-semibold">Equity Atual</th>
+                                    <th class="px-4 py-3 font-semibold">Meta (Safety)</th>
+                                    <th class="px-4 py-3 font-semibold">Falta p/ Saque</th>
+                                    <th class="px-4 py-3 font-semibold">Dias Operados</th>
+                                    <th class="px-4 py-3 font-semibold">Idade</th>
+                                </tr>
+                            </thead>
+                            <tbody id="accounts-overview-table" class="divide-y divide-slate-200 dark:divide-slate-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="text-[11px] text-slate-500 dark:text-slate-400">
+                    * “Dias Operados” = dias úteis com algum registro (Trade 1 ou Trade 2 ou Total), desconsiderando feriados marcados no app.
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
 
     <div id="header-main" class="bg-slate-900 text-white py-2 px-4 shadow-md sticky top-0 z-40 flex justify-between items-center no-print transition-colors">
         <div class="flex items-center gap-3">
@@ -1350,7 +1428,170 @@ async function callOpenAI(question){
 
         // EXPOSE FUNCTIONS TO WINDOW
         window.toggleSidebar = () => { const isOpen=!els.sidebar.classList.contains('sidebar-closed'); if(isOpen){els.sidebar.classList.add('sidebar-closed');els.sidebar.classList.remove('sidebar-open');els.backdrop.classList.add('hidden');}else{els.sidebar.classList.remove('sidebar-closed');els.sidebar.classList.add('sidebar-open');els.backdrop.classList.remove('hidden');} };
+        // ACCOUNTS OVERVIEW (Resumo das Contas)
+        let accountsOverviewChart = null;
+
+        function getAccountOperationalDays(acc){
+            const dates = Object.keys(acc.data || {});
+            let count = 0;
+            for(const iso of dates){
+                const entry = acc.data[iso] || {};
+                if(entry && entry.holiday) continue;
+                const d = parseISODateLocal(iso);
+                const day = d.getDay();
+                if(day === 0 || day === 6) continue;
+                const hasTrade = (String(entry.t1 ?? '').trim() !== '') || (String(entry.t2 ?? '').trim() !== '') || (Math.abs(Number(entry.val || 0)) > 0);
+                if(hasTrade) count++;
+            }
+            return count;
+        }
+
+        function getAccountAgeDays(acc){
+            const dates = Object.keys(acc.data || {}).sort();
+            let base;
+            if(acc.createdAt){
+                base = new Date(acc.createdAt);
+            } else if(dates.length){
+                base = parseISODateLocal(dates[0]);
+            } else {
+                base = new Date();
+            }
+            base.setHours(0,0,0,0);
+            const now = new Date(); now.setHours(0,0,0,0);
+            const diff = Math.round((now - base) / (1000*60*60*24));
+            return Math.max(0, diff);
+        }
+
+        function toggleAccountsOverviewChart(){
+            const wrap = document.getElementById('accounts-overview-chart-wrap');
+            if(!wrap) return;
+            wrap.classList.toggle('hidden');
+            if(!wrap.classList.contains('hidden')) renderAccountsOverview();
+        }
+
+        function openAccountsOverview(){
+            const modal = document.getElementById('accounts-overview-modal');
+            if(!modal) return;
+            modal.classList.remove('hidden');
+            // reset scroll positions so table never opens “cortada”
+            const body = document.getElementById('accounts-overview-body');
+            if(body) body.scrollTop = 0;
+            const tscroll = document.getElementById('accounts-overview-table-scroll');
+            if(tscroll) tscroll.scrollLeft = 0;
+            const cscroll = document.getElementById('accounts-overview-chart-scroll');
+            if(cscroll) cscroll.scrollLeft = 0;
+            renderAccountsOverview();
+            try { lucide.createIcons(); } catch(e){}
+        }
+
+        function closeAccountsOverview(){
+            const modal = document.getElementById('accounts-overview-modal');
+            if(!modal) return;
+            modal.classList.add('hidden');
+        }
+
+        // Expose to global scope for inline onclick handlers (GitHub Pages safe)
+        window.openAccountsOverview = openAccountsOverview;
+        window.closeAccountsOverview = closeAccountsOverview;
+        window.toggleAccountsOverviewChart = toggleAccountsOverviewChart;
+        // Also bind via addEventListener (safety when inline handlers are blocked)
+        try {
+            const _btn = document.getElementById('btn-accounts-overview');
+            if(_btn) _btn.addEventListener('click', (e)=>{ e.preventDefault(); openAccountsOverview(); });
+        } catch(e){}
+
+        // Ensure the Accounts Overview overlay is attached to <body> to avoid being clipped by transformed parents (sidebar).
+        try {
+            const _m = document.getElementById('accounts-overview-modal');
+            if(_m && _m.parentElement !== document.body) {
+                document.body.appendChild(_m);
+            }
+        } catch(e){}
+
+
+        function renderAccountsOverview(){
+            const tbody = document.getElementById('accounts-overview-table');
+            const canvas = document.getElementById('accounts-overview-chart');
+            if(!tbody) return;
+
+            const accounts = Object.values(store.accounts || {}).slice().sort((a,b)=> (a.name||'').localeCompare((b.name||''), undefined, {numeric:true, sensitivity:'base'}));
+
+            const rows = [];
+            const labels = [];
+            const progress = [];
+
+            for(const acc of accounts){
+                if(!acc.createdAt){
+                    const first = Object.keys(acc.data||{}).sort()[0];
+                    acc.createdAt = first ? parseISODateLocal(first).toISOString() : new Date().toISOString();
+                }
+
+                const rules = RULES[acc.size] || RULES['50k'];
+                const stats = calculateStats(acc);
+                const equity = Number(stats.currentEquity || 0);
+                const threshold = Number(rules.safetyThreshold || 0);
+                const remaining = Math.max(0, threshold - equity);
+
+                const opDays = getAccountOperationalDays(acc);
+                const ageDays = getAccountAgeDays(acc);
+
+                const profit = equity - Number(rules.start || 0);
+                const targetProfit = threshold - Number(rules.start || 0);
+                const pct = targetProfit > 0 ? Math.max(0, Math.min(100, (profit / targetProfit) * 100)) : 0;
+
+                labels.push(acc.name || acc.id);
+                progress.push(Number(pct.toFixed(1)));
+
+                const remClass = remaining <= 0 ? 'text-emerald-600' : 'text-slate-700 dark:text-slate-200';
+                const remLabel = remaining <= 0 ? 'OK' : formatCurrency(remaining);
+
+                rows.push(`
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                        <td class="px-4 py-3 font-semibold text-slate-800 dark:text-white">${escapeHtml(acc.name || 'Sem nome')}</td>
+                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${escapeHtml(acc.size || '--')}</td>
+                        <td class="px-4 py-3 font-semibold text-slate-800 dark:text-white">${formatCurrency(equity)}</td>
+                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${formatCurrency(threshold)}</td>
+                        <td class="px-4 py-3 font-bold ${remClass}">${remLabel}</td>
+                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${opDays}</td>
+                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${ageDays} d</td>
+                    </tr>
+                `);
+            }
+
+            tbody.innerHTML = rows.join('');
+
+            const wrap = document.getElementById('accounts-overview-chart-wrap');
+            if(!canvas || !wrap || wrap.classList.contains('hidden')) return;
+
+            try {
+                if(accountsOverviewChart) { accountsOverviewChart.destroy(); accountsOverviewChart = null; }
+                const ctx = canvas.getContext('2d');
+                const isDark = document.documentElement.classList.contains('dark');
+                const gridColor = isDark ? '#334155' : '#e2e8f0';
+                const textColor = isDark ? '#cbd5e1' : '#334155';
+
+                accountsOverviewChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels, datasets: [{ label: 'Progresso (%)', data: progress, borderWidth: 1 }] },
+                    options: {
+                        responsive: false,
+                        animation: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: (ctx)=> `${ctx.raw}%` } }
+                        },
+                        scales: {
+                            y: { min: 0, max: 100, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> v + '%' } },
+                            x: { grid: { display: false }, ticks: { color: textColor } }
+                        }
+                    }
+                });
+            } catch(e){}
+        }
+
+
         window.formatCurrency = (v) => v.toLocaleString('en-US',{style:'currency',currency:'USD'});
+        window.escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         const round2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
         const toISODateLocal = (d) => {
             const y=d.getFullYear();
@@ -1362,7 +1603,15 @@ async function callOpenAI(question){
             const [y,m,d] = iso.split('-').map(n=>parseInt(n,10));
             return new Date(y, m-1, d);
         };
-        window.createAccount = () => { const name = prompt("Nome:"); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [], favorite: false }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); };
+        function getTodayISO(){
+            const d = new Date();
+            const y = d.getFullYear();
+            const m = String(d.getMonth()+1).padStart(2,'0');
+            const day = String(d.getDate()).padStart(2,'0');
+            return `${y}-${m}-${day}`;
+        }
+
+        window.createAccount = () => { const name = prompt("Nome:"); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [], createdAt: new Date().toISOString(), favorite: false }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); };
         window.renameAccount = () => { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } };
         
         // DELEÇÃO COM SEGURANÇA
@@ -1822,7 +2071,7 @@ if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes
         function createNewStore() {
             const defaultId = 'acc_' + Date.now();
             store = { activeId: defaultId, date: new Date(), accounts: {}, adminLogs: [] };
-            store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [], favorite: false };
+            store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [], createdAt: new Date().toISOString(), favorite: false };
         }
 
         function getNextWindow() {
@@ -1938,7 +2187,8 @@ if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes
             const textColor = isDark ? '#94a3b8' : '#64748b';
             chartInstance = new Chart(ctx, {
                 type: 'line', 
-                data: { labels: labels, datasets: [{ label: 'Lucro Acumulado', data: data, borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 3, pointRadius: 4, fill: true, tension: 0.1 }] },
+                data: { labels: labels, datasets: [{ label: 'Lucro Acumulado', data: data, borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 3, pointRadius: 4, fill: true, tension: 0.35,
+                                cubicInterpolationMode: 'monotone' }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: gridColor }, ticks: { color: textColor } }, x: { grid: { display: false }, ticks: { color: textColor } } } }
             });
             window.chartInstance = chartInstance;
@@ -2161,7 +2411,8 @@ function renderCalendar(acc) {
 
         const isOutsideMonth = cur.getMonth() !== m;
         const tr = document.createElement('tr'); 
-        tr.className = `dark:border-slate-700 ${isOutsideMonth ? 'opacity-60 bg-slate-50 dark:bg-slate-800/40' : ''}`;
+        const isToday = (iso === getTodayISO());
+        tr.className = `dark:border-slate-700 ${isOutsideMonth ? 'opacity-60 bg-slate-50 dark:bg-slate-800/40' : ''} ${isToday ? 'today-row' : ''}`;
         const valNum = parseFloat(entry.val) || 0;
         const t1Num = (entry.t1 === undefined || entry.t1 === null || entry.t1 === '') ? '' : entry.t1;
         const t2Num = (entry.t2 === undefined || entry.t2 === null || entry.t2 === '') ? '' : entry.t2;
@@ -2617,7 +2868,8 @@ ${period}
                                 borderWidth: 3,
                                 pointRadius: 4,
                                 fill: true,
-                                tension: 0.1
+                                tension: 0.35,
+                                cubicInterpolationMode: 'monotone'
                             }]
                         },
                         options: {
