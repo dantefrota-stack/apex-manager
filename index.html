@@ -299,6 +299,9 @@ body.dark .bg-white { background-color: #1e293b; }
 .dark .day-details-row td{background:rgba(99,102,241,0.08);border-top:1px dashed rgba(71,85,105,0.8);}
 
 </style>
+
+<!-- jsPDF preloaded (avoids async load that can break click-gesture downloads/print popups) -->
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" referrerpolicy="no-referrer"></script>
 </head>
 <body class="pb-12 transition-colors duration-300">
 
@@ -543,11 +546,60 @@ body.dark .bg-white { background-color: #1e293b; }
                     <div class="text-xs text-slate-500 dark:text-slate-400">
                         <span class="font-semibold text-slate-700 dark:text-slate-200">Dica:</span> valores usam a mesma lógica do app (equity atual e safety threshold por tamanho).
                     </div>
-                    <div class="flex items-center gap-2">
-                        <button id="accounts-overview-toggle-chart" onclick="toggleAccountsOverviewChart()" class="px-3 py-2 text-xs font-semibold rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
-                            <i data-lucide="bar-chart-3" class="w-4 h-4 inline-block mr-1"></i> Mostrar/Esconder Gráfico
-                        </button>
-                    </div>
+                    <div class="flex items-center gap-2 flex-wrap justify-end">
+    <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 select-none">
+        <input id="accounts-overview-include-chart" type="checkbox" class="rounded border-slate-300 dark:border-slate-600" checked>
+        Incluir gráfico no PDF/Print
+    </label>
+
+    <button onclick="exportAccountsOverviewPDF()" class="px-3 py-2 text-xs font-semibold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2">
+        <i data-lucide="file-text" class="w-4 h-4"></i> PDF
+    </button>
+
+    <button onclick="printAccountsOverview()" class="px-3 py-2 text-xs font-semibold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2">
+        <i data-lucide="printer" class="w-4 h-4"></i> Print
+    </button>
+
+    <div class="relative">
+        <button id="accounts-overview-share-btn" onclick="toggleAccountsOverviewShareMenu(event)" class="px-3 py-2 text-xs font-semibold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2">
+            <i data-lucide="share-2" class="w-4 h-4"></i> Share
+        </button>
+        <div id="accounts-overview-share-menu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg p-2 z-50">
+            <button onclick="shareAccountsOverviewText('whatsapp')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-sm flex items-center gap-2">
+                <span class="inline-flex w-7 h-7 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-900/30"><i data-lucide="message-circle" class="w-4 h-4 text-emerald-600"></i></span>
+                WhatsApp (texto)
+            </button>
+            <button onclick="shareAccountsOverviewText('sms')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-sm flex items-center gap-2">
+                <span class="inline-flex w-7 h-7 items-center justify-center rounded-lg bg-sky-50 dark:bg-sky-900/30"><i data-lucide="send" class="w-4 h-4 text-sky-600"></i></span>
+                Text/SMS (texto)
+            </button>
+            <button onclick="shareAccountsOverviewPDF()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-sm flex items-center gap-2">
+                <span class="inline-flex w-7 h-7 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-900/30"><i data-lucide="file" class="w-4 h-4 text-indigo-600"></i></span>
+                Compartilhar PDF
+            </button>
+            <button onclick="copyAccountsOverviewText()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-sm flex items-center gap-2">
+                <span class="inline-flex w-7 h-7 items-center justify-center rounded-lg bg-slate-50 dark:bg-slate-800"><i data-lucide="copy" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i></span>
+                Copiar resumo
+            </button>
+        </div>
+
+    <input type="file" id="backup-import-file" accept="application/json,.json" class="hidden" onchange="handleBackupImportFile(event)">
+
+    <button onclick="downloadFullBackup()" class="px-3 py-2 text-xs font-semibold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2" title="Exportar backup (JSON) do seu banco de dados local/atual">
+        <i data-lucide="download" class="w-4 h-4"></i> Backup
+    </button>
+
+    <button onclick="triggerBackupImport()" class="px-3 py-2 text-xs font-semibold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2" title="Importar backup (JSON) e restaurar os dados">
+        <i data-lucide="upload" class="w-4 h-4"></i> Import
+    </button>
+
+
+    </div>
+
+    <button id="accounts-overview-toggle-chart" onclick="toggleAccountsOverviewChart()" class="px-3 py-2 text-xs font-semibold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2">
+        <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Mostrar/Esconder Gráfico
+    </button>
+</div>
                 </div>
 
                 <div id="accounts-overview-chart-wrap" class="hidden bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
@@ -804,9 +856,98 @@ body.dark .bg-white { background-color: #1e293b; }
     <div id="print-area"></div>
 
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <script>
+        // -----------------------------
+        // UI helpers
+        // -----------------------------
+        // Some features call `toast(...)`. If missing, buttons may appear to do nothing.
+        // This lightweight implementation works on desktop and mobile.
+        function toast(message, type = 'info', durationMs = 2500) {
+            try {
+                const id = 'dfAppToast';
+                let el = document.getElementById(id);
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = id;
+                    el.setAttribute('aria-live', 'polite');
+                    el.style.position = 'fixed';
+                    el.style.right = '16px';
+                    el.style.bottom = '16px';
+                    el.style.zIndex = '99999';
+                    el.style.maxWidth = 'calc(100vw - 32px)';
+                    el.style.padding = '10px 12px';
+                    el.style.borderRadius = '12px';
+                    el.style.boxShadow = '0 12px 30px rgba(0,0,0,.18)';
+                    el.style.background = '#111827';
+                    el.style.color = 'white';
+                    el.style.fontSize = '14px';
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateY(6px)';
+                    el.style.transition = 'opacity .18s ease, transform .18s ease';
+                    document.body.appendChild(el);
+                }
+                // Color accents by type (subtle)
+                if (type === 'error') el.style.background = '#991b1b';
+                else if (type === 'success') el.style.background = '#065f46';
+                else el.style.background = '#111827';
+
+                el.textContent = String(message ?? '');
+                el.style.opacity = '1';
+                el.style.transform = 'translateY(0)';
+
+                clearTimeout(el._hideTimer);
+                el._hideTimer = setTimeout(() => {
+                    el.style.opacity = '0';
+                    el.style.transform = 'translateY(6px)';
+                }, Math.max(1200, durationMs));
+            } catch (err) {
+                // Last-resort fallback
+                console.log('[toast]', message);
+            }
+        }
+
+
+        // Load an external script only once (safe for GitHub Pages + local file:// testing)
+        const __dfLoadedScripts = new Map();
+        function loadScriptOnce(src) {
+            if (__dfLoadedScripts.has(src)) return __dfLoadedScripts.get(src);
+            const p = new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = src;
+                s.async = true;
+                s.onload = () => resolve(true);
+                s.onerror = () => reject(new Error('Failed to load script: ' + src));
+                document.head.appendChild(s);
+            });
+            __dfLoadedScripts.set(src, p);
+            return p;
+        }
+
+        // Ensure jsPDF is available (some builds call ensureJsPDF but it must exist)
+        async function ensureJsPDF() {
+            try {
+                if (window.jspdf && window.jspdf.jsPDF) return true;
+                // Try common globals
+                if (window.jsPDF) {
+                    window.jspdf = { jsPDF: window.jsPDF };
+                    return true;
+                }
+                // Load from CDN (UMD build)
+                await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+                // After load, jsPDF should be at window.jspdf.jsPDF
+                if (window.jspdf && window.jspdf.jsPDF) return true;
+                // Some environments expose window.jsPDF instead
+                if (window.jsPDF) {
+                    window.jspdf = { jsPDF: window.jsPDF };
+                    return true;
+                }
+                throw new Error('jsPDF not available after loading.');
+            } catch (e) {
+                console.error('[ensureJsPDF]', e);
+                toast('PDF engine failed to load. Check internet access / blockers and try again.', 'error', 4500);
+                return false;
+            }
+        }
 
         const firebaseConfig = {
             apiKey: "AIzaSyCu5pQrMnrpSj45lto_GXKx9xIWq2kyDjg",
@@ -1588,6 +1729,352 @@ async function callOpenAI(question){
                 });
             } catch(e){}
         }
+
+        // ---- ACCOUNTS OVERVIEW: PDF / PRINT / SHARE helpers ----
+        function getAccountsOverviewIncludeChart(){
+            const cb = document.getElementById('accounts-overview-include-chart');
+            return cb ? !!cb.checked : true;
+        }
+
+        function computeAccountsOverviewData(){
+            const accounts = (state && Array.isArray(state.accounts)) ? state.accounts : [];
+            const out = [];
+            for(const acc of accounts){
+                const name = acc.name || acc.id || 'Conta';
+                const size = acc.size || state.defaultAccountSize || '50k';
+                const equity = Number(acc.equity || 0);
+                const safety = getSafetyThresholdForSize(size);
+                const remaining = Math.max(0, safety - equity);
+
+                const daysOperated = getAccountOperationalDays(acc);
+                const createdAt = acc.createdAt ? new Date(acc.createdAt) : null;
+                const ageDays = createdAt ? Math.max(0, Math.floor((Date.now() - createdAt.getTime())/(1000*60*60*24))) : null;
+
+                out.push({
+                    name, size, equity, safety, remaining,
+                    daysOperated,
+                    ageDays
+                });
+            }
+            // alphabetical, as requested (asc)
+            out.sort((a,b)=> String(a.name).localeCompare(String(b.name), undefined, {numeric:true, sensitivity:'base'}));
+            return out;
+        }
+
+        function buildAccountsOverviewSummaryText(){
+            const rows = computeAccountsOverviewData();
+            const now = new Date();
+            const header = `Resumo das Contas (${now.toLocaleString()})`;
+            const lines = [header, ''];
+            for(const r of rows){
+                const ageTxt = (r.ageDays==null) ? '-' : `${r.ageDays}d`;
+                lines.push(`${r.name} (${r.size}) • Equity: ${formatCurrency(r.equity)} • Meta(safety): ${formatCurrency(r.safety)} • Falta p/ Saque: ${formatCurrency(r.remaining)} • Dias operados: ${r.daysOperated} • Idade: ${ageTxt}`);
+            }
+            return lines.join('\n');
+        }
+
+        function toggleAccountsOverviewShareMenu(evt){
+            if(evt){ evt.preventDefault(); evt.stopPropagation(); }
+            const menu = document.getElementById('accounts-overview-share-menu');
+            if(!menu) return;
+            menu.classList.toggle('hidden');
+            try { lucide.createIcons(); } catch(e){}
+        }
+
+        function closeAccountsOverviewShareMenu(){
+            const menu = document.getElementById('accounts-overview-share-menu');
+            if(menu && !menu.classList.contains('hidden')) menu.classList.add('hidden');
+        }
+
+        document.addEventListener('click', (e)=>{
+            const menu = document.getElementById('accounts-overview-share-menu');
+            const btn = document.getElementById('accounts-overview-share-btn');
+            if(!menu || !btn) return;
+            if(menu.classList.contains('hidden')) return;
+            // click outside
+            if(!menu.contains(e.target) && !btn.contains(e.target)) closeAccountsOverviewShareMenu();
+        });
+
+        async function copyAccountsOverviewText(){
+
+  try {
+    const state = getAccountsOverviewState();
+    const text = buildAccountsOverviewShareText(state);
+
+    // Prefer modern clipboard in HTTPS contexts
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      showToast('Resumo copiado para a área de transferência.', 'success');
+      return;
+    }
+
+    // Fallback for file:// or older browsers
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '-9999px';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+
+    if (ok) showToast('Resumo copiado para a área de transferência.', 'success');
+    else prompt('Copie o texto abaixo:', text);
+  } catch (e) {
+    console.error('copyAccountsOverviewText failed:', e);
+    showToast('Não foi possível copiar automaticamente.', 'error');
+  }
+}
+
+        function fallbackCopyText(txt){
+            const ta = document.createElement('textarea');
+            ta.value = txt;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.select();
+            try { document.execCommand('copy'); toast('Resumo copiado.'); } catch(e){ alert(txt); }
+            document.body.removeChild(ta);
+        }
+
+        function shareAccountsOverviewText(kind){
+            const txt = buildAccountsOverviewSummaryText();
+            closeAccountsOverviewShareMenu();
+
+            // Prefer native share when available (mobile)
+            if(navigator.share){
+                navigator.share({ title: 'Resumo das Contas', text: txt }).catch(()=>{});
+                return;
+            }
+
+            const encoded = encodeURIComponent(txt);
+            if(kind === 'whatsapp'){
+                window.open(`https://wa.me/?text=${encoded}`, '_blank');
+                return;
+            }
+            if(kind === 'sms'){
+                const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+                const sep = isIOS ? '&' : '?';
+                window.location.href = `sms:${sep}body=${encoded}`;
+                return;
+            }
+            // default: copy
+            copyAccountsOverviewText();
+        }
+
+        // Build the accounts overview bar chart image for PDF/Print.
+        // IMPORTANT: Keep this synchronous so downloads/popups remain tied to the click gesture
+        // (some browsers block PDF downloads or window.open after an `await`).
+        function buildAccountsOverviewBarChartImage(){
+            const rows = computeAccountsOverviewData();
+            const labels = rows.map(r => r.name);
+            const data = rows.map(r => {
+                const safety = (r.safety || 1);
+                const pct = Math.max(0, Math.min(100, (r.equity / safety) * 100));
+                return Math.round(pct*10)/10;
+            });
+
+            // If chart exists and is visible, use it
+            try{
+                if(accountsOverviewChart && accountsOverviewChart.canvas && accountsOverviewChart.canvas.width){
+                    return accountsOverviewChart.toBase64Image();
+                }
+            }catch(e){}
+
+            // Otherwise, render offscreen for a stable image
+            const tmpWrap = document.createElement('div');
+            tmpWrap.style.position = 'fixed';
+            tmpWrap.style.left = '-9999px';
+            tmpWrap.style.top = '0';
+            tmpWrap.style.width = '1200px';
+            tmpWrap.style.height = '420px';
+            tmpWrap.style.background = '#ffffff';
+            const canvas = document.createElement('canvas');
+            canvas.width = 1200;
+            canvas.height = 420;
+            tmpWrap.appendChild(canvas);
+            document.body.appendChild(tmpWrap);
+
+            let tmpChart = null;
+            try{
+                tmpChart = new Chart(canvas.getContext('2d'), {
+                    type: 'bar',
+                    data: { labels, datasets: [{ label: '% da Meta (Safety)', data }] },
+                    options: {
+                        responsive: false,
+                        animation: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, suggestedMax: 100, ticks: { callback: (v)=> v + '%' } }
+                        }
+                    }
+                });
+                // no await here: Chart.js draws immediately with animation:false
+                const url = canvas.toDataURL('image/png', 1.0);
+                tmpChart.destroy();
+                document.body.removeChild(tmpWrap);
+                return url;
+            } catch(e){
+                try{ if(tmpChart) tmpChart.destroy(); }catch(_){}
+                try{ document.body.removeChild(tmpWrap); }catch(_){}
+                return null;
+            }
+        }
+
+        function buildAccountsOverviewReportHTML(includeChart, chartDataUrl){
+            const rows = computeAccountsOverviewData();
+            const now = new Date();
+            const gen = now.toLocaleString();
+
+            const safe = (s)=> String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+            const tableRows = rows.map(r=>{
+                const ageTxt = (r.ageDays==null) ? '-' : `${r.ageDays}d`;
+                return `
+                <tr>
+                    <td class="c1">${safe(r.name)}</td>
+                    <td class="c2">${safe(r.size)}</td>
+                    <td class="num">${safe(formatCurrency(r.equity))}</td>
+                    <td class="num">${safe(formatCurrency(r.safety))}</td>
+                    <td class="num">${safe(formatCurrency(r.remaining))}</td>
+                    <td class="num">${safe(r.daysOperated)}</td>
+                    <td class="num">${safe(ageTxt)}</td>
+                </tr>`;
+            }).join('');
+
+            return `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Resumo das Contas</title>
+<style>
+    :root { color-scheme: light; }
+    body{ font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 28px; }
+    h1{ margin:0 0 6px 0; font-size: 26px; }
+    .sub{ color:#64748b; margin:0 0 18px 0; font-size: 13px; }
+    .chart{ width:100%; max-width: 1100px; margin: 0 0 18px 0; }
+    .chart img{ width:100%; height:auto; border: 1px solid #e2e8f0; border-radius: 12px; }
+    table{ width:100%; border-collapse: collapse; font-size: 12px; }
+    thead th{ text-align:left; padding: 10px 10px; border-bottom: 2px solid #0f172a; background:#f8fafc; }
+    tbody td{ padding: 10px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    tbody tr:nth-child(even){ background:#fcfcfd; }
+    td.num, th.num { text-align:right; }
+    .c1{ width: 28%; }
+    .c2{ width: 8%; }
+    @media print{
+        body{ padding: 16px; }
+        .noprint{ display:none !important; }
+    }
+</style>
+</head>
+<body>
+    <h1>Resumo das Contas</h1>
+    <p class="sub">Gerado em ${safe(gen)}</p>
+    ${includeChart && chartDataUrl ? `<div class="chart"><img src="${chartDataUrl}" alt="Gráfico de barras" /></div>` : ''}
+    <table>
+        <thead>
+            <tr>
+                <th class="c1">Conta</th>
+                <th class="c2">Tamanho</th>
+                <th class="num">Saldo atual</th>
+                <th class="num">Meta (Safety)</th>
+                <th class="num">Falta p/ Saque</th>
+                <th class="num">Dias operados</th>
+                <th class="num">Idade</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${tableRows}
+        </tbody>
+    </table>
+</body>
+</html>`;
+        }
+
+        
+// Prints a standalone report in the **same tab** (reliable user-gesture) and restores the app after printing.
+// This makes "PDF" (Save as PDF) and "Print" work even when popups/iframes are blocked.
+function printHTMLInPlace(reportHTML, opts = {}) {
+  // Safer print/PDF: render into a hidden iframe (no DOM swapping, works reliably on desktop/mobile)
+  const title = opts.title || document.title || 'Relatório';
+
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[c]);
+
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  iframe.style.visibility = 'hidden';
+  iframe.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(iframe);
+
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+
+  const html = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${esc(title)}</title>
+  <style>
+    html, body { margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    a { color: inherit; text-decoration: none; }
+  </style>
+</head>
+<body>${reportHTML}</body>
+</html>`;
+
+  doc.open();
+  doc.write(html);
+  doc.close();
+
+  const cleanup = () => { try { iframe.remove(); } catch (_) {} };
+
+  const win = iframe.contentWindow;
+  setTimeout(() => {
+    try { win.focus(); win.print(); } catch (e) { console.error('Print failed', e); }
+    finally { setTimeout(cleanup, 500); }
+  }, 120);
+}
+
+
+function exportAccountsOverviewPDF(){
+
+  // Use the native print dialog and let the user pick "Save as PDF".
+  const state = getAccountsOverviewState();
+  const includeChart = !!document.getElementById('accounts-overview-include-chart')?.checked;
+  const reportHTML = buildAccountsOverviewReportHTML(state, { includeChart });
+  printHTMLInPlace(reportHTML, { title: 'Resumo das Contas' });
+}
+
+        async function printAccountsOverview(){
+
+  const state = getAccountsOverviewState();
+  const includeChart = !!document.getElementById('accounts-overview-include-chart')?.checked;
+  const reportHTML = buildAccountsOverviewReportHTML(state, { includeChart });
+  printHTMLInPlace(reportHTML, { title: 'Resumo das Contas' });
+}
+
+        async function shareAccountsOverviewPDF(){
+
+  // "Compartilhar PDF": on most desktops there's no native PDF file share without a backend.
+  // We open the Print dialog so you can "Save as PDF" and then share the file manually.
+  exportAccountsOverviewPDF();
+  showToast('Abrindo impressão para salvar como PDF (depois você pode anexar no WhatsApp/SMS).', 'info');
+}
+        // ---- /ACCOUNTS OVERVIEW helpers ----
+
+
 
 
         window.formatCurrency = (v) => v.toLocaleString('en-US',{style:'currency',currency:'USD'});
@@ -3100,7 +3587,7 @@ ${period}
                  }
             };
 
-            try { await loadFromCloud(); } catch (e) { showFatalError("Erro de Conexão ou Permissão", e.message || "Falha ao baixar dados."); return; } 
+            try { await loadFromCloud(); } catch (e) { console.warn(e); if (window.forceOfflineMode) { window.forceOfflineMode(); } return; } 
             
             if (!store.activeId) {
                 try {
@@ -3769,6 +4256,92 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             try { ensureInfoIcons(); } catch (e) { console.error('ensureInfoIcons failed:', e); }
             try { bindPeriodInteractions(); } catch (e) { console.error('bindPeriodInteractions failed:', e); }
         });
-    </script>
+    
+// --- Expose Accounts Overview actions to inline onclick handlers (GitHub Pages safe) ---
+try {
+  window.exportAccountsOverviewPDF = exportAccountsOverviewPDF;
+  window.printAccountsOverview = printAccountsOverview;
+  window.toggleAccountsOverviewShareMenu = toggleAccountsOverviewShareMenu;
+  window.shareAccountsOverviewText = shareAccountsOverviewText;
+  window.shareAccountsOverviewPDF = shareAccountsOverviewPDF;
+  window.copyAccountsOverviewText = copyAccountsOverviewText;
+  window.toggleAccountsOverviewChart = toggleAccountsOverviewChart;
+} catch (e) {
+  console.warn("Accounts Overview global bindings failed:", e);
+}
+
+
+/* -------------------------------
+   Backup (export/import JSON)
+-------------------------------- */
+function downloadFullBackup(){
+    try{
+        const data = (typeof getPersistableStore === 'function') ? getPersistableStore() : (window.store || {});
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        const dt = new Date();
+        const stamp = dt.toISOString().slice(0,10);
+        a.href = URL.createObjectURL(blob);
+        a.download = `df_backup_${stamp}.json`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 250);
+        toast('Backup exportado (JSON).', 'success');
+    }catch(e){
+        console.error(e);
+        alert('Não foi possível exportar o backup.');
+    }
+}
+
+function triggerBackupImport(){
+    const input = document.getElementById('backup-import-file');
+    if(input) input.click();
+}
+
+async function handleBackupImportFile(ev){
+    try{
+        const file = ev?.target?.files?.[0];
+        if(!file) return;
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+
+        // aplicar backup (mesma higiene usada no modo offline)
+        if(!parsed || typeof parsed !== 'object'){
+            alert('Backup inválido.');
+            return;
+        }
+        // sobrescreve store
+        window.store = parsed;
+
+        // limpar estados voláteis que não devem persistir
+        try{
+            delete window.store?.dayExpanded;
+            delete window.store?.dayExpandedMeta;
+            delete window.store?.periodModal;
+            delete window.store?.ui;
+            delete window.store?.accountsOverviewModalOpen;
+        }catch(_){}
+
+        // salvar imediatamente no localStorage também (para testes offline)
+        try{
+            localStorage.setItem('df_backup_local', JSON.stringify(window.store));
+        }catch(_){}
+
+        // re-render / re-hidratar
+        if(typeof postLoadNormalizeStore === 'function') postLoadNormalizeStore();
+        if(typeof render === 'function') render();
+        if(typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
+
+        toast('Backup importado com sucesso.', 'success');
+    }catch(e){
+        console.error(e);
+        alert('Não foi possível importar o backup. Verifique se o arquivo é um JSON válido.');
+    }finally{
+        // reset input para permitir reimport do mesmo arquivo
+        try{ ev.target.value = ''; }catch(_){}
+    }
+}
+
+</script>
 </body>
 </html>
