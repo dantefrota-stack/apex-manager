@@ -299,9 +299,6 @@ body.dark .bg-white { background-color: #1e293b; }
 .dark .day-details-row td{background:rgba(99,102,241,0.08);border-top:1px dashed rgba(71,85,105,0.8);}
 
 </style>
-
-<!-- jsPDF preloaded (avoids async load that can break click-gesture downloads/print popups) -->
-<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" referrerpolicy="no-referrer"></script>
 </head>
 <body class="pb-12 transition-colors duration-300">
 
@@ -419,6 +416,8 @@ body.dark .bg-white { background-color: #1e293b; }
                     </div>
 
                     <p class="text-[11px] text-slate-400">* “Cancelar” marca o saque como cancelado (não apaga). “Apagar”/“Limpar” só aparece para Super Admin.</p>
+                    
+
                 </div>
 
                 <!-- PANE: LOGS -->
@@ -487,6 +486,69 @@ body.dark .bg-white { background-color: #1e293b; }
                         </ul>
                     </div>
                 </div>
+                    <!-- NINJATRADER QUICK IMPORT -->
+                    <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-4 bg-white/60 dark:bg-slate-900/40">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                    <i data-lucide="clipboard-paste" class="w-4 h-4 text-indigo-500"></i> Import NinjaTrader (colar relatório)
+                                </h4>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                    Copie a tabela <b>Account Summary</b> do NinjaTrader (com cabeçalho) e cole abaixo. O app preenche automaticamente as operações (PnL do dia) e atualiza o saldo (Cash Value) de cada conta.
+                                </p>
+                            </div>
+                            <div class="text-xs">
+                                <span id="nt-import-detected" class="px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 font-bold">—</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Empresa / Prefixo</label>
+                                <input id="nt-import-company" type="text" maxlength="6" placeholder="ex: DF ou VA" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100" />
+                                <p class="mt-1 text-[11px] text-slate-400">O app mapeia o final do número (ex.: ...32 → <b>DF 32</b>).</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Data do lançamento</label>
+                                <input id="nt-import-date" type="date" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100" />
+                                <p class="mt-1 text-[11px] text-slate-400">Usado para registrar a operação no dia.</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Coluna para lançar</label>
+                                <select id="nt-import-field" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100">
+                                    <option value="total">Total PnL (recomendado)</option>
+                                    <option value="realized">Realized PnL</option>
+                                </select>
+                                <p class="mt-1 text-[11px] text-slate-400">Você pode trocar se desejar.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap gap-4 mt-3 text-xs text-slate-700 dark:text-slate-200">
+                            <label class="inline-flex items-center gap-2">
+                                <input id="nt-import-update-equity" type="checkbox" class="rounded border-slate-300 dark:border-slate-600" checked />
+                                Atualizar saldo atual (Cash Value / Net Liq)
+                            </label>
+                            <label class="inline-flex items-center gap-2">
+                                <input id="nt-import-overwrite" type="checkbox" class="rounded border-slate-300 dark:border-slate-600" checked />
+                                Sobrescrever valor do dia (se já existir)
+                            </label>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Cole o relatório aqui</label>
+                            <textarea id="nt-import-text" rows="7" placeholder="Dica: copie a tabela do NinjaTrader (Ctrl+C) e cole aqui (Ctrl+V)." class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"></textarea>
+                            <p class="mt-1 text-[11px] text-slate-400">Suporta colagem tabulada (Ctrl+C da tabela) ou CSV exportado.</p>
+                        </div>
+
+                        <div class="flex items-center gap-2 mt-3">
+                            <button id="nt-import-btn-preview" type="button" onclick="previewNinjaImport()" class="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-bold">Pré-visualizar</button>
+                            <button id="nt-import-btn-apply" type="button" onclick="applyNinjaImportFromAdmin()" class="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Importar e Salvar</button>
+                            <span id="nt-import-status" class="text-xs text-slate-500 dark:text-slate-400"></span>
+                        </div>
+
+                        <div id="nt-import-preview" class="hidden mt-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 whitespace-pre-wrap"></div>
+                    </div>
+
 
             </div>
         </div>
@@ -536,7 +598,23 @@ body.dark .bg-white { background-color: #1e293b; }
                         <p class="text-xs text-slate-500 dark:text-slate-400">Visão geral em uma página (saldo, progresso e dias operados)</p>
                     </div>
                 </div>
-                <button onclick="closeAccountsOverview()" class="p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300">
+                
+                <div class="flex items-center gap-2 flex-wrap">
+                    <label class="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 select-none">
+                        <input id="accounts-overview-export-chart" type="checkbox" class="accent-indigo-600" checked>
+                        Incluir gráfico
+                    </label>
+                    <button id="btn-accounts-overview-pdf" type="button" class="px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1">
+                        <i data-lucide="file-text" class="w-4 h-4"></i> PDF
+                    </button>
+                    <button id="btn-accounts-overview-print" type="button" class="px-3 py-1.5 rounded-md bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold flex items-center gap-1">
+                        <i data-lucide="printer" class="w-4 h-4"></i> Print
+                    </button>
+                    <button id="btn-accounts-overview-share" type="button" class="px-3 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1">
+                        <i data-lucide="share-2" class="w-4 h-4"></i> Share
+                    </button>
+                </div>
+<button onclick="closeAccountsOverview()" class="p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
@@ -546,66 +624,50 @@ body.dark .bg-white { background-color: #1e293b; }
                     <div class="text-xs text-slate-500 dark:text-slate-400">
                         <span class="font-semibold text-slate-700 dark:text-slate-200">Dica:</span> valores usam a mesma lógica do app (equity atual e safety threshold por tamanho).
                     </div>
-                    <div class="flex items-center gap-2 flex-wrap justify-end">
-    <label class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300 select-none">
-        <input id="accounts-overview-include-chart" type="checkbox" class="rounded border-slate-300 dark:border-slate-600" checked>
-        Incluir gráfico no PDF/Print
-    </label>
 
-    <button onclick="exportAccountsOverviewPDF()" class="px-3 py-2 text-xs font-semibold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2">
-        <i data-lucide="file-text" class="w-4 h-4"></i> PDF
-    </button>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Ordenar:</span>
+                            <select id="accounts-overview-sort" onchange="onAccountsOverviewControlsChange()" class="px-2 py-2 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+                                <option value="closest" selected>Mais próximas do saque</option>
+                                <option value="name">Nome (A→Z)</option>
+                                <option value="equityDesc">Equity (maior→menor)</option>
+                                <option value="progressDesc">Progresso (maior→menor)</option>
+                            </select>
+                        </div>
 
-    <button onclick="printAccountsOverview()" class="px-3 py-2 text-xs font-semibold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2">
-        <i data-lucide="printer" class="w-4 h-4"></i> Print
-    </button>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Filtro:</span>
+                            <select id="accounts-overview-size" onchange="onAccountsOverviewControlsChange()" class="px-2 py-2 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+                                <option value="all" selected>Todas</option>
+                                <option value="25k">25k</option>
+                                <option value="50k">50k</option>
+                                <option value="75k">75k</option>
+                                <option value="100k">100k</option>
+                                <option value="150k">150k</option>
+                                <option value="250k">250k</option>
+                                <option value="300k">300k</option>
+                            </select>
+                        </div>
 
-    <div class="relative">
-        <button id="accounts-overview-share-btn" onclick="toggleAccountsOverviewShareMenu(event)" class="px-3 py-2 text-xs font-semibold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2">
-            <i data-lucide="share-2" class="w-4 h-4"></i> Share
-        </button>
-        <div id="accounts-overview-share-menu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg p-2 z-50">
-            <button onclick="shareAccountsOverviewText('whatsapp')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-sm flex items-center gap-2">
-                <span class="inline-flex w-7 h-7 items-center justify-center rounded-lg bg-emerald-50 dark:bg-emerald-900/30"><i data-lucide="message-circle" class="w-4 h-4 text-emerald-600"></i></span>
-                WhatsApp (texto)
-            </button>
-            <button onclick="shareAccountsOverviewText('sms')" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-sm flex items-center gap-2">
-                <span class="inline-flex w-7 h-7 items-center justify-center rounded-lg bg-sky-50 dark:bg-sky-900/30"><i data-lucide="send" class="w-4 h-4 text-sky-600"></i></span>
-                Text/SMS (texto)
-            </button>
-            <button onclick="shareAccountsOverviewPDF()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-sm flex items-center gap-2">
-                <span class="inline-flex w-7 h-7 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-900/30"><i data-lucide="file" class="w-4 h-4 text-indigo-600"></i></span>
-                Compartilhar PDF
-            </button>
-            <button onclick="copyAccountsOverviewText()" class="w-full text-left px-3 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-sm flex items-center gap-2">
-                <span class="inline-flex w-7 h-7 items-center justify-center rounded-lg bg-slate-50 dark:bg-slate-800"><i data-lucide="copy" class="w-4 h-4 text-slate-600 dark:text-slate-300"></i></span>
-                Copiar resumo
-            </button>
-        </div>
-
-    <input type="file" id="backup-import-file" accept="application/json,.json" class="hidden" onchange="handleBackupImportFile(event)">
-
-    <button onclick="downloadFullBackup()" class="px-3 py-2 text-xs font-semibold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2" title="Exportar backup (JSON) do seu banco de dados local/atual">
-        <i data-lucide="download" class="w-4 h-4"></i> Backup
-    </button>
-
-    <button onclick="triggerBackupImport()" class="px-3 py-2 text-xs font-semibold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2" title="Importar backup (JSON) e restaurar os dados">
-        <i data-lucide="upload" class="w-4 h-4"></i> Import
-    </button>
-
-
-    </div>
-
-    <button id="accounts-overview-toggle-chart" onclick="toggleAccountsOverviewChart()" class="px-3 py-2 text-xs font-semibold rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-2">
-        <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Mostrar/Esconder Gráfico
-    </button>
-</div>
+                        <button id="accounts-overview-toggle-chart" type="button" onclick="toggleAccountsOverviewChart()" class="px-3 py-2 text-xs font-semibold rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200">
+                            <i data-lucide="bar-chart-3" class="w-4 h-4 inline-block mr-1"></i> Mostrar/Esconder Gráfico
+                        </button>
+                    </div>
                 </div>
 
                 <div id="accounts-overview-chart-wrap" class="hidden bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
-                    <div class="flex items-center justify-between mb-2">
-                        <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">Progresso para Safety Threshold (%)</p>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400">0% = no start • 100% = atingiu safety</p>
+                    <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                        <div class="flex items-center gap-2">
+                            <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">Gráfico:</p>
+                            <select id="accounts-overview-chart-metric" onchange="onAccountsOverviewControlsChange()" class="px-2 py-1.5 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+                                <option value="progress" selected>Progresso até Safety (%)</option>
+                                <option value="available">Disponível p/ saque ($)</option>
+                                <option value="missing">Falta p/ $500 ($)</option>
+                                <option value="equity">Equity líquido ($)</option>
+                            </select>
+                        </div>
+                        <p id="accounts-overview-chart-hint" class="text-[11px] text-slate-500 dark:text-slate-400">0% = no start • 100% = atingiu safety</p>
                     </div>
                     <div id="accounts-overview-chart-scroll" class="overflow-x-auto">
                         <canvas id="accounts-overview-chart" width="900" height="320"></canvas>
@@ -621,7 +683,8 @@ body.dark .bg-white { background-color: #1e293b; }
                                     <th class="px-4 py-3 font-semibold">Size</th>
                                     <th class="px-4 py-3 font-semibold">Equity Atual</th>
                                     <th class="px-4 py-3 font-semibold">Meta (Safety)</th>
-                                    <th class="px-4 py-3 font-semibold">Falta p/ Saque</th>
+                                    <th class="px-4 py-3 font-semibold">Disponível</th>
+                                    <th class="px-4 py-3 font-semibold">Falta p/ $500</th>
                                     <th class="px-4 py-3 font-semibold">Dias Operados</th>
                                     <th class="px-4 py-3 font-semibold">Idade</th>
                                 </tr>
@@ -655,6 +718,14 @@ body.dark .bg-white { background-color: #1e293b; }
             </button>
             <div id="cloud-status" class="text-xs flex items-center gap-1 text-slate-400 font-medium">
                 <i data-lucide="cloud" class="w-3 h-3"></i> <span id="status-text">Conectando...</span>
+            </div>
+            <div class="flex items-center gap-2 ml-1" id="lang-toggle">
+                <button type="button" id="lang-pt" onclick="window.setLanguage && window.setLanguage('pt')" class="w-7 h-5 rounded overflow-hidden border border-slate-600/40 hover:border-indigo-400 transition" title="Português">
+                    <img src="https://flagcdn.com/24x18/br.png" class="w-full h-full object-cover" alt="PT">
+                </button>
+                <button type="button" id="lang-en" onclick="window.setLanguage && window.setLanguage('en')" class="w-7 h-5 rounded overflow-hidden border border-slate-600/40 hover:border-indigo-400 transition" title="English">
+                    <img src="https://flagcdn.com/24x18/us.png" class="w-full h-full object-cover" alt="EN">
+                </button>
             </div>
         </div>
     </div>
@@ -856,98 +927,42 @@ body.dark .bg-white { background-color: #1e293b; }
     <div id="print-area"></div>
 
 
-    <script>
-        // -----------------------------
-        // UI helpers
-        // -----------------------------
-        // Some features call `toast(...)`. If missing, buttons may appear to do nothing.
-        // This lightweight implementation works on desktop and mobile.
-        function toast(message, type = 'info', durationMs = 2500) {
-            try {
-                const id = 'dfAppToast';
-                let el = document.getElementById(id);
-                if (!el) {
-                    el = document.createElement('div');
-                    el.id = id;
-                    el.setAttribute('aria-live', 'polite');
-                    el.style.position = 'fixed';
-                    el.style.right = '16px';
-                    el.style.bottom = '16px';
-                    el.style.zIndex = '99999';
-                    el.style.maxWidth = 'calc(100vw - 32px)';
-                    el.style.padding = '10px 12px';
-                    el.style.borderRadius = '12px';
-                    el.style.boxShadow = '0 12px 30px rgba(0,0,0,.18)';
-                    el.style.background = '#111827';
-                    el.style.color = 'white';
-                    el.style.fontSize = '14px';
-                    el.style.opacity = '0';
-                    el.style.transform = 'translateY(6px)';
-                    el.style.transition = 'opacity .18s ease, transform .18s ease';
-                    document.body.appendChild(el);
-                }
-                // Color accents by type (subtle)
-                if (type === 'error') el.style.background = '#991b1b';
-                else if (type === 'success') el.style.background = '#065f46';
-                else el.style.background = '#111827';
+    <script type="module">
+                // Firebase dynamic loader (prevents "stuck on Iniciando..." when module imports hang or are blocked)
+        let initializeApp, getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc;
+        async function __loadFirebaseModules(timeoutMs = 12000){
+            const appUrl = "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+            const fsUrl  = "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+            const timed = new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout loading Firebase modules.")), timeoutMs));
+            const loader = (async () => {
+                const appMod = await import(appUrl);
+                const fsMod  = await import(fsUrl);
+                return { appMod, fsMod };
+            })();
+            const { appMod, fsMod } = await Promise.race([loader, timed]);
 
-                el.textContent = String(message ?? '');
-                el.style.opacity = '1';
-                el.style.transform = 'translateY(0)';
-
-                clearTimeout(el._hideTimer);
-                el._hideTimer = setTimeout(() => {
-                    el.style.opacity = '0';
-                    el.style.transform = 'translateY(6px)';
-                }, Math.max(1200, durationMs));
-            } catch (err) {
-                // Last-resort fallback
-                console.log('[toast]', message);
-            }
+            initializeApp = appMod.initializeApp;
+            getFirestore  = fsMod.getFirestore;
+            doc           = fsMod.doc;
+            getDoc        = fsMod.getDoc;
+            setDoc        = fsMod.setDoc;
+            onSnapshot    = fsMod.onSnapshot;
+            updateDoc     = fsMod.updateDoc;
+            return true;
         }
 
-
-        // Load an external script only once (safe for GitHub Pages + local file:// testing)
-        const __dfLoadedScripts = new Map();
-        function loadScriptOnce(src) {
-            if (__dfLoadedScripts.has(src)) return __dfLoadedScripts.get(src);
-            const p = new Promise((resolve, reject) => {
-                const s = document.createElement('script');
-                s.src = src;
-                s.async = true;
-                s.onload = () => resolve(true);
-                s.onerror = () => reject(new Error('Failed to load script: ' + src));
-                document.head.appendChild(s);
-            });
-            __dfLoadedScripts.set(src, p);
-            return p;
-        }
-
-        // Ensure jsPDF is available (some builds call ensureJsPDF but it must exist)
-        async function ensureJsPDF() {
-            try {
-                if (window.jspdf && window.jspdf.jsPDF) return true;
-                // Try common globals
-                if (window.jsPDF) {
-                    window.jspdf = { jsPDF: window.jsPDF };
-                    return true;
-                }
-                // Load from CDN (UMD build)
-                await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-                // After load, jsPDF should be at window.jspdf.jsPDF
-                if (window.jspdf && window.jspdf.jsPDF) return true;
-                // Some environments expose window.jsPDF instead
-                if (window.jsPDF) {
-                    window.jspdf = { jsPDF: window.jsPDF };
-                    return true;
-                }
-                throw new Error('jsPDF not available after loading.');
-            } catch (e) {
-                console.error('[ensureJsPDF]', e);
-                toast('PDF engine failed to load. Check internet access / blockers and try again.', 'error', 4500);
+        async function __initFirebaseIfPossible(){
+            try{
+                if (window.__dfFirebaseReady && initializeApp && getFirestore) return true;
+                await __loadFirebaseModules(12000);
+                window.__dfFirebaseReady = true;
+                return true;
+            }catch(e){
+                console.error("Firebase import failed:", e);
                 return false;
             }
         }
+    
 
         const firebaseConfig = {
             apiKey: "AIzaSyCu5pQrMnrpSj45lto_GXKx9xIWq2kyDjg",
@@ -959,7 +974,20 @@ body.dark .bg-white { background-color: #1e293b; }
         };
 
         let db; let chartInstance = null; 
-        try { const app = initializeApp(firebaseConfig); db = getFirestore(app); } catch (e) { console.error(e); }
+        let __firebaseApp = null;
+        async function __ensureFirebaseApp(){
+            try{
+                if(db) return true;
+                const ok = await __initFirebaseIfPossible();
+                if(!ok) return false;
+                __firebaseApp = initializeApp(firebaseConfig);
+                db = getFirestore(__firebaseApp);
+                return true;
+            }catch(e){
+                console.error("Firebase init failed:", e);
+                return false;
+            }
+        }
 
         const RULES = {
             '25k': { start: 25000, drawdown: 1500, safetyThreshold: 26600 },
@@ -998,18 +1026,18 @@ body.dark .bg-white { background-color: #1e293b; }
 Usuário administrador:`) || '';
             if(!uInput.trim()) return null;
 
-            const pInput = prompt('Senha:') || '';
+            const pInput = prompt(translateString('Senha:')) || '';
             if(!pInput.trim()) return null;
 
             const key = _findUserKey(uInput);
             if(!key || SECURITY[key].pass !== pInput.trim()){
-                alert("Credenciais inválidas. Acesso negado.");
+                alert(translateString("Credenciais inválidas. Acesso negado."));
                 return null;
             }
 
             const session = { username: key, role: SECURITY[key].role };
             if(_roleRank(session.role) < _roleRank(minRole)){
-                alert("Acesso negado: permissões insuficientes.");
+                alert(translateString("Acesso negado: permissões insuficientes."));
                 return null;
             }
             adminSession = session;
@@ -1073,8 +1101,7 @@ Usuário administrador:`) || '';
             adminAISave: document.getElementById('ai-save-key'),
             adminAIModel: document.getElementById('ai-model'),
             adminAITest: document.getElementById('ai-test'),
-            adminAIRemove: document.getElementById('ai-remove')
-        };
+            adminAIRemove: document.getElementById('ai-remove'),};
 
 
 
@@ -1560,6 +1587,7 @@ async function callOpenAI(question){
             localStorage.setItem('df_theme', isDark ? 'dark' : 'light');
             els.themeIcon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
             lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions();
+            try { initLanguageToggle(); } catch(e) {}
             renderDashboard(); 
         };
         if (localStorage.getItem('df_theme') === 'dark') { 
@@ -1610,6 +1638,30 @@ async function callOpenAI(question){
             if(!wrap.classList.contains('hidden')) renderAccountsOverview();
         }
 
+        function onAccountsOverviewControlsChange(){
+            window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'closest', size: 'all', chartMetric: 'progress' };
+            const prefs = window.accountsOverviewPrefs;
+
+            const sortSel = document.getElementById('accounts-overview-sort');
+            const sizeSel = document.getElementById('accounts-overview-size');
+            const metricSel = document.getElementById('accounts-overview-chart-metric');
+
+            if(sortSel) prefs.sort = sortSel.value || prefs.sort;
+            if(sizeSel) prefs.size = sizeSel.value || prefs.size;
+            if(metricSel) prefs.chartMetric = metricSel.value || prefs.chartMetric;
+
+            // reset horizontal scroll so the first columns are always visible after sorting/filtering
+            const tscroll = document.getElementById('accounts-overview-table-scroll');
+            if(tscroll) tscroll.scrollLeft = 0;
+            const cscroll = document.getElementById('accounts-overview-chart-scroll');
+            if(cscroll) cscroll.scrollLeft = 0;
+
+            renderAccountsOverview();
+            try { bindAccountsOverviewExportButtons(); } catch(e){}
+            try { lucide.createIcons(); } catch(e){}
+        }
+
+
         function openAccountsOverview(){
             const modal = document.getElementById('accounts-overview-modal');
             if(!modal) return;
@@ -1621,7 +1673,17 @@ async function callOpenAI(question){
             if(tscroll) tscroll.scrollLeft = 0;
             const cscroll = document.getElementById('accounts-overview-chart-scroll');
             if(cscroll) cscroll.scrollLeft = 0;
+            // apply last used prefs (in-memory) before render
+            window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'closest', size: 'all', chartMetric: 'progress' };
+            const prefs = window.accountsOverviewPrefs;
+            const sortSel = document.getElementById('accounts-overview-sort');
+            const sizeSel = document.getElementById('accounts-overview-size');
+            const metricSel = document.getElementById('accounts-overview-chart-metric');
+            if(sortSel) sortSel.value = prefs.sort || 'closest';
+            if(sizeSel) sizeSel.value = prefs.size || 'all';
+            if(metricSel) metricSel.value = prefs.chartMetric || 'progress';
             renderAccountsOverview();
+            try { bindAccountsOverviewExportButtons(); } catch(e){}
             try { lucide.createIcons(); } catch(e){}
         }
 
@@ -1631,10 +1693,216 @@ async function callOpenAI(question){
             modal.classList.add('hidden');
         }
 
+        
+        // --- Accounts Overview: PDF / Print / Share (robust, GitHub Pages safe) ---
+        function showToast(msg){
+            try{
+                let el=document.getElementById('df-toast');
+                if(!el){
+                    el=document.createElement('div');
+                    el.id='df-toast';
+                    el.style.position='fixed';
+                    el.style.left='50%';
+                    el.style.bottom='18px';
+                    el.style.transform='translateX(-50%)';
+                    el.style.zIndex='99999';
+                    el.style.maxWidth='90vw';
+                    el.style.padding='10px 12px';
+                    el.style.borderRadius='12px';
+                    el.style.background='rgba(15,23,42,.92)';
+                    el.style.color='#fff';
+                    el.style.fontSize='12px';
+                    el.style.boxShadow='0 10px 30px rgba(0,0,0,.25)';
+                    el.style.opacity='0';
+                    el.style.transition='opacity .15s ease';
+                    document.body.appendChild(el);
+                }
+                el.textContent = msg || '';
+                el.style.opacity='1';
+                clearTimeout(el._t);
+                el._t=setTimeout(()=>{ try{ el.style.opacity='0'; }catch(e){} }, 1800);
+            }catch(e){}
+        }
+
+        function _accountsOverviewBuildTextSummary(list){
+            const lines = [];
+            lines.push('ACCOUNTS OVERVIEW');
+            lines.push('Generated: ' + new Date().toLocaleString());
+            lines.push('---');
+            for(const r of list){
+                const name = (r.name || r.id || 'Account').trim();
+                const eq = formatCurrency(r.equity || 0);
+                const avail = formatCurrency(r.available || 0);
+                const miss = (r.missingTo500 <= 0) ? 'OK' : formatCurrency(r.missingTo500 || 0);
+                lines.push(`${name} (${r.size || '--'}) | Equity ${eq} | Avail ${avail} | Missing $500: ${miss} | Days ${r.daysOperated||0}`);
+            }
+            return lines.join('\n');
+        }
+
+        function _accountsOverviewBuildPrintableHTML({ includeChart } = {}){
+            const list = (window._accountsOverviewComputed || []).slice();
+            const prefs = window.accountsOverviewPrefs || {};
+            const metricLabelMap = {
+                progress: 'Progress to Safety (%)',
+                available: 'Available for Payout ($)',
+                missing: 'Missing to $500 ($)',
+                equity: 'Current Equity ($)',
+            };
+            const metricLabel = metricLabelMap[prefs.chartMetric] || 'Progress';
+            const include = includeChart !== false;
+
+            // Try capture chart image from the onscreen canvas
+            let chartDataUrl = '';
+            if(include){
+                const canvas = document.getElementById('accounts-overview-chart');
+                if(canvas){
+                    try { chartDataUrl = canvas.toDataURL('image/png', 1.0); } catch(e){}
+                }
+            }
+
+            const rowsHtml = list.map(r => {
+                const miss = (r.missingTo500 <= 0) ? 'OK' : formatCurrency(r.missingTo500 || 0);
+                const avail = formatCurrency(r.available || 0);
+                return `
+                  <tr>
+                    <td class="name">${escapeHtml(r.name || r.id || '')}</td>
+                    <td>${escapeHtml(r.size || '--')}</td>
+                    <td class="num">${formatCurrency(r.equity || 0)}</td>
+                    <td class="num">${formatCurrency(r.safety || 0)}</td>
+                    <td class="num">${avail}</td>
+                    <td class="num ${r.missingTo500<=0?'ok':''}">${miss}</td>
+                    <td class="num">${r.daysOperated || 0}</td>
+                    <td class="num">${r.ageDays || 0}</td>
+                  </tr>
+                `;
+            }).join('');
+
+            const title = 'Resumo das Contas';
+            const subtitle = `Ordenação: ${(prefs.sort||'closest')}  |  Filtro: ${(prefs.size||'all')}`;
+            return `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${title}</title>
+<style>
+  :root { color-scheme: light; }
+  body { font-family: Arial, Helvetica, sans-serif; margin: 24px; color: #111827; }
+  h1 { margin: 0 0 4px 0; font-size: 18px; }
+  .meta { font-size: 12px; color: #6b7280; margin-bottom: 14px; }
+  .box { border:1px solid #e5e7eb; border-radius:12px; padding:16px; }
+  .chartWrap { margin: 12px 0 16px; }
+  .chartTitle { font-size:12px; color:#6b7280; margin:0 0 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th, td { border-bottom: 1px solid #e5e7eb; padding: 8px 10px; vertical-align: top; }
+  th { text-align: left; font-size: 11px; color: #6b7280; letter-spacing: .02em; text-transform: uppercase; }
+  td.num { text-align: right; white-space: nowrap; }
+  td.name { font-weight: 700; }
+  .ok { font-weight:700; color:#059669; }
+  @media print { body { margin: 0; } .box { border:none; } }
+</style>
+</head>
+<body>
+  <h1>${title}</h1>
+  <div class="meta">${subtitle}<br>Gerado em: ${new Date().toLocaleString()}</div>
+  <div class="box">
+    ${include && chartDataUrl ? `<div class="chartWrap">
+        <div class="chartTitle">${escapeHtml(metricLabel)}</div>
+        <img src="${chartDataUrl}" style="width:100%;max-height:360px;object-fit:contain;border:1px solid #e5e7eb;border-radius:10px;" />
+      </div>` : ``}
+    <table>
+      <thead>
+        <tr>
+          <th>Conta</th><th>Size</th><th>Equity</th><th>Safety</th><th>Disponível</th><th>Falta p/$500</th><th>Dias</th><th>Idade</th>
+        </tr>
+      </thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+  </div>
+</body>
+</html>`;
+        }
+
+        function _openPrintWindow(htmlStr){
+            // Try popup window first
+            let w = null;
+            try { w = window.open('', '_blank'); } catch(e){ w = null; }
+            if(w && w.document){
+                try {
+                    w.document.open();
+                    w.document.write(htmlStr);
+                    w.document.close();
+                    w.focus();
+                    // Give it a tick to render
+                    setTimeout(()=>{ try{ w.print(); } catch(e){} }, 250);
+                    return true;
+                } catch(e){}
+            }
+            // Fallback: hidden iframe print (popup-blocker safe)
+            try {
+                const iframe = document.createElement('iframe');
+                iframe.style.position = 'fixed';
+                iframe.style.right = '0';
+                iframe.style.bottom = '0';
+                iframe.style.width = '0';
+                iframe.style.height = '0';
+                iframe.style.border = '0';
+                document.body.appendChild(iframe);
+                const doc = iframe.contentWindow.document;
+                doc.open(); doc.write(htmlStr); doc.close();
+                setTimeout(()=>{ 
+                    try { iframe.contentWindow.focus(); iframe.contentWindow.print(); } catch(e){}
+                    setTimeout(()=>{ try{ iframe.remove(); } catch(e){} }, 1500);
+                }, 250);
+                return true;
+            } catch(e){}
+            return false;
+        }
+
+        function accountsOverviewPrint(){
+            const include = !!document.getElementById('accounts-overview-export-chart')?.checked;
+            const htmlStr = _accountsOverviewBuildPrintableHTML({ includeChart: include });
+            _openPrintWindow(htmlStr);
+        }
+        function accountsOverviewPDF(){
+            // Reliable: uses browser “Save as PDF” destination
+            accountsOverviewPrint();
+        }
+        async function accountsOverviewShare(){
+            const list = (window._accountsOverviewComputed || []).slice();
+            const text = _accountsOverviewBuildTextSummary(list);
+            // copy
+            let copied = false;
+            try { await navigator.clipboard.writeText(text); copied = true; } catch(e){
+                try {
+                    const ta=document.createElement('textarea');
+                    ta.value=text; ta.style.position='fixed'; ta.style.left='-9999px';
+                    document.body.appendChild(ta); ta.select();
+                    copied=document.execCommand('copy');
+                    ta.remove();
+                } catch(e2){}
+            }
+            if(copied) showToast('Resumo copiado. Abrindo WhatsApp…');
+            const url = 'https://wa.me/?text=' + encodeURIComponent(text);
+            try { window.open(url, '_blank'); } catch(e){ window.location.href = url; }
+        }
+
+        function bindAccountsOverviewExportButtons(){
+            const pdfBtn = document.getElementById('btn-accounts-overview-pdf');
+            const prnBtn = document.getElementById('btn-accounts-overview-print');
+            const shBtn  = document.getElementById('btn-accounts-overview-share');
+            if(pdfBtn && !pdfBtn.dataset.bound){ pdfBtn.dataset.bound='1'; pdfBtn.addEventListener('click', (e)=>{ e.preventDefault(); accountsOverviewPDF(); }); }
+            if(prnBtn && !prnBtn.dataset.bound){ prnBtn.dataset.bound='1'; prnBtn.addEventListener('click', (e)=>{ e.preventDefault(); accountsOverviewPrint(); }); }
+            if(shBtn  && !shBtn.dataset.bound){ shBtn.dataset.bound='1';  shBtn.addEventListener('click', (e)=>{ e.preventDefault(); accountsOverviewShare(); }); }
+        }
+
         // Expose to global scope for inline onclick handlers (GitHub Pages safe)
         window.openAccountsOverview = openAccountsOverview;
         window.closeAccountsOverview = closeAccountsOverview;
         window.toggleAccountsOverviewChart = toggleAccountsOverviewChart;
+        window.accountsOverviewPrint = accountsOverviewPrint;
+        window.accountsOverviewPDF = accountsOverviewPDF;
+        window.accountsOverviewShare = accountsOverviewShare;
         // Also bind via addEventListener (safety when inline handlers are blocked)
         try {
             const _btn = document.getElementById('btn-accounts-overview');
@@ -1655,12 +1923,26 @@ async function callOpenAI(question){
             const canvas = document.getElementById('accounts-overview-chart');
             if(!tbody) return;
 
-            const accounts = Object.values(store.accounts || {}).slice().sort((a,b)=> (a.name||'').localeCompare((b.name||''), undefined, {numeric:true, sensitivity:'base'}));
+            // prefs
+            window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'closest', size: 'all', chartMetric: 'progress' };
+            const prefs = window.accountsOverviewPrefs;
 
-            const rows = [];
-            const labels = [];
-            const progress = [];
+            const sortSel = document.getElementById('accounts-overview-sort');
+            const sizeSel = document.getElementById('accounts-overview-size');
+            const metricSel = document.getElementById('accounts-overview-chart-metric');
+            if(sortSel) prefs.sort = sortSel.value || prefs.sort;
+            if(sizeSel) prefs.size = sizeSel.value || prefs.size;
+            if(metricSel) prefs.chartMetric = metricSel.value || prefs.chartMetric;
 
+            let accounts = Object.values(store.accounts || {}).slice();
+
+            // filter by size
+            if(prefs.size && prefs.size !== 'all'){
+                accounts = accounts.filter(a => (a.size || '') === prefs.size);
+            }
+
+            // compute row data first
+            const computed = [];
             for(const acc of accounts){
                 if(!acc.createdAt){
                     const first = Object.keys(acc.data||{}).sort()[0];
@@ -1669,9 +1951,12 @@ async function callOpenAI(question){
 
                 const rules = RULES[acc.size] || RULES['50k'];
                 const stats = calculateStats(acc);
+
                 const equity = Number(stats.currentEquity || 0);
                 const threshold = Number(rules.safetyThreshold || 0);
-                const remaining = Math.max(0, threshold - equity);
+                const rawSurplus = Math.max(0, equity - threshold);
+                const availablePayout = Math.floor(rawSurplus / 500) * 500; // $500 increments
+                const missingTo500 = rawSurplus >= 500 ? 0 : (500 - rawSurplus);
 
                 const opDays = getAccountOperationalDays(acc);
                 const ageDays = getAccountAgeDays(acc);
@@ -1680,28 +1965,103 @@ async function callOpenAI(question){
                 const targetProfit = threshold - Number(rules.start || 0);
                 const pct = targetProfit > 0 ? Math.max(0, Math.min(100, (profit / targetProfit) * 100)) : 0;
 
-                labels.push(acc.name || acc.id);
-                progress.push(Number(pct.toFixed(1)));
+                computed.push({
+                    acc,
+                    equity,
+                    threshold,
+                    availablePayout,
+                    missingTo500,
+                    opDays,
+                    ageDays,
+                    pct: Number(pct.toFixed(1))
+                });
+            }
 
-                const remClass = remaining <= 0 ? 'text-emerald-600' : 'text-slate-700 dark:text-slate-200';
-                const remLabel = remaining <= 0 ? 'OK' : formatCurrency(remaining);
+            // sorting
+            const nameKey = (o)=> (o.acc.name||'').toLowerCase();
+            if(prefs.sort === 'closest'){
+                computed.sort((a,b)=>{
+                    // First: who is closer to having at least $500 available
+                    if(a.missingTo500 !== b.missingTo500) return a.missingTo500 - b.missingTo500;
+                    // If both eligible, higher available payout first
+                    if(a.availablePayout !== b.availablePayout) return b.availablePayout - a.availablePayout;
+                    return nameKey(a).localeCompare(nameKey(b), undefined, {numeric:true, sensitivity:'base'});
+                });
+            } else if(prefs.sort === 'equityDesc'){
+                computed.sort((a,b)=> (b.equity - a.equity) || nameKey(a).localeCompare(nameKey(b), undefined, {numeric:true, sensitivity:'base'}));
+            } else if(prefs.sort === 'progressDesc'){
+                computed.sort((a,b)=> (b.pct - a.pct) || nameKey(a).localeCompare(nameKey(b), undefined, {numeric:true, sensitivity:'base'}));
+            } else {
+                computed.sort((a,b)=> nameKey(a).localeCompare(nameKey(b), undefined, {numeric:true, sensitivity:'base'}));
+            }
+
+            
+            // snapshot for exports (PDF/Print/Share)
+            try {
+                window._accountsOverviewComputed = computed.map(r => ({
+                    id: r.acc.id || '',
+                    name: r.acc.name || '',
+                    size: r.acc.size || '',
+                    equity: Number(r.equity || 0),              // equity (saldo atual)
+                    safety: Number(r.threshold || 0),
+                    available: Number(r.availablePayout || 0),
+                    missingTo500: Number(r.missingTo500 || 0),
+                    daysOperated: Number(r.opDays || 0),
+                    ageDays: Number(r.ageDays || 0),
+                    progressPct: Number(r.pct || 0),
+                }));                window._accountsOverviewComputedAt = Date.now();
+            } catch(e){}
+// build table rows + chart arrays
+            const rows = [];
+            const labels = [];
+            const series = [];
+
+            for(const row of computed){
+                const acc = row.acc;
+
+                labels.push(acc.name || acc.id);
+
+                // chart metric value
+                let v = 0;
+                if(prefs.chartMetric === 'available') v = row.availablePayout;
+                else if(prefs.chartMetric === 'missing') v = row.missingTo500;
+                else if(prefs.chartMetric === 'equity') v = row.equity;
+                else v = row.pct;
+                series.push(Number((typeof v === 'number' ? v : 0)));
+
+                const availClass = row.availablePayout >= 500 ? 'text-emerald-600' : 'text-slate-600 dark:text-slate-300';
+                const availLabel = row.availablePayout >= 500 ? formatCurrency(row.availablePayout) : '—';
+
+                const missClass = row.missingTo500 <= 0 ? 'text-emerald-600' : 'text-slate-800 dark:text-white';
+                const missLabel = row.missingTo500 <= 0 ? 'OK' : formatCurrency(row.missingTo500);
 
                 rows.push(`
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
                         <td class="px-4 py-3 font-semibold text-slate-800 dark:text-white">${escapeHtml(acc.name || 'Sem nome')}</td>
                         <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${escapeHtml(acc.size || '--')}</td>
-                        <td class="px-4 py-3 font-semibold text-slate-800 dark:text-white">${formatCurrency(equity)}</td>
-                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${formatCurrency(threshold)}</td>
-                        <td class="px-4 py-3 font-bold ${remClass}">${remLabel}</td>
-                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${opDays}</td>
-                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${ageDays} d</td>
+                        <td class="px-4 py-3 font-semibold text-slate-800 dark:text-white">${formatCurrency(row.equity)}</td>
+                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${formatCurrency(row.threshold)}</td>
+                        <td class="px-4 py-3 font-bold ${availClass}">${availLabel}</td>
+                        <td class="px-4 py-3 font-bold ${missClass}">${missLabel}</td>
+                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${row.opDays}</td>
+                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${row.ageDays} d</td>
                     </tr>
                 `);
             }
 
             tbody.innerHTML = rows.join('');
 
+            // chart
             const wrap = document.getElementById('accounts-overview-chart-wrap');
+            const hint = document.getElementById('accounts-overview-chart-hint');
+
+            if(hint){
+                if(prefs.chartMetric === 'available') hint.textContent = 'Mostra quanto já está disponível em saque (incrementos de $500), calculado com base no equity líquido.';
+                else if(prefs.chartMetric === 'missing') hint.textContent = 'Mostra quanto falta para atingir o primeiro $500 disponível, com base no equity líquido.';
+                else if(prefs.chartMetric === 'equity') hint.textContent = 'Mostra o equity (saldo atual) de cada conta.';
+                else hint.textContent = '0% = no start • 100% = atingiu safety';
+            }
+
             if(!canvas || !wrap || wrap.classList.contains('hidden')) return;
 
             try {
@@ -1711,370 +2071,52 @@ async function callOpenAI(question){
                 const gridColor = isDark ? '#334155' : '#e2e8f0';
                 const textColor = isDark ? '#cbd5e1' : '#334155';
 
+                // dynamic height for horizontal bars
+                const h = Math.max(280, labels.length * 26 + 80);
+                canvas.height = h;
+                canvas.width = 980;
+                canvas.style.width = '100%';
+
+                let xScale = {};
+                let datasetLabel = '';
+                let tooltipFmt = (v)=> `${v}`;
+                if(prefs.chartMetric === 'progress'){
+                    datasetLabel = 'Progresso (%)';
+                    xScale = { min: 0, max: 100, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> v + '%' } };
+                    tooltipFmt = (v)=> `${v}%`;
+                } else if(prefs.chartMetric === 'available'){
+                    datasetLabel = 'Disponível p/ saque ($)';
+                    xScale = { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> '$' + Number(v).toLocaleString() } };
+                    tooltipFmt = (v)=> formatCurrency(v);
+                } else if(prefs.chartMetric === 'missing'){
+                    datasetLabel = 'Falta p/ $500 ($)';
+                    xScale = { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> '$' + Number(v).toLocaleString() } };
+                    tooltipFmt = (v)=> formatCurrency(v);
+                } else {
+                    datasetLabel = 'Equity líquido ($)';
+                    xScale = { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> '$' + Number(v).toLocaleString() } };
+                    tooltipFmt = (v)=> formatCurrency(v);
+                }
+
                 accountsOverviewChart = new Chart(ctx, {
                     type: 'bar',
-                    data: { labels, datasets: [{ label: 'Progresso (%)', data: progress, borderWidth: 1 }] },
+                    data: { labels, datasets: [{ label: datasetLabel, data: series, borderWidth: 0, borderRadius: 8 }] },
                     options: {
                         responsive: false,
                         animation: false,
+                        indexAxis: 'y',
                         plugins: {
                             legend: { display: false },
-                            tooltip: { callbacks: { label: (ctx)=> `${ctx.raw}%` } }
+                            tooltip: { callbacks: { label: (c)=> tooltipFmt(c.raw) } }
                         },
                         scales: {
-                            y: { min: 0, max: 100, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> v + '%' } },
-                            x: { grid: { display: false }, ticks: { color: textColor } }
+                            x: xScale,
+                            y: { grid: { display: false }, ticks: { color: textColor } }
                         }
                     }
                 });
             } catch(e){}
         }
-
-        // ---- ACCOUNTS OVERVIEW: PDF / PRINT / SHARE helpers ----
-        function getAccountsOverviewIncludeChart(){
-            const cb = document.getElementById('accounts-overview-include-chart');
-            return cb ? !!cb.checked : true;
-        }
-
-        function computeAccountsOverviewData(){
-            const accounts = (state && Array.isArray(state.accounts)) ? state.accounts : [];
-            const out = [];
-            for(const acc of accounts){
-                const name = acc.name || acc.id || 'Conta';
-                const size = acc.size || state.defaultAccountSize || '50k';
-                const equity = Number(acc.equity || 0);
-                const safety = getSafetyThresholdForSize(size);
-                const remaining = Math.max(0, safety - equity);
-
-                const daysOperated = getAccountOperationalDays(acc);
-                const createdAt = acc.createdAt ? new Date(acc.createdAt) : null;
-                const ageDays = createdAt ? Math.max(0, Math.floor((Date.now() - createdAt.getTime())/(1000*60*60*24))) : null;
-
-                out.push({
-                    name, size, equity, safety, remaining,
-                    daysOperated,
-                    ageDays
-                });
-            }
-            // alphabetical, as requested (asc)
-            out.sort((a,b)=> String(a.name).localeCompare(String(b.name), undefined, {numeric:true, sensitivity:'base'}));
-            return out;
-        }
-
-        function buildAccountsOverviewSummaryText(){
-            const rows = computeAccountsOverviewData();
-            const now = new Date();
-            const header = `Resumo das Contas (${now.toLocaleString()})`;
-            const lines = [header, ''];
-            for(const r of rows){
-                const ageTxt = (r.ageDays==null) ? '-' : `${r.ageDays}d`;
-                lines.push(`${r.name} (${r.size}) • Equity: ${formatCurrency(r.equity)} • Meta(safety): ${formatCurrency(r.safety)} • Falta p/ Saque: ${formatCurrency(r.remaining)} • Dias operados: ${r.daysOperated} • Idade: ${ageTxt}`);
-            }
-            return lines.join('\n');
-        }
-
-        function toggleAccountsOverviewShareMenu(evt){
-            if(evt){ evt.preventDefault(); evt.stopPropagation(); }
-            const menu = document.getElementById('accounts-overview-share-menu');
-            if(!menu) return;
-            menu.classList.toggle('hidden');
-            try { lucide.createIcons(); } catch(e){}
-        }
-
-        function closeAccountsOverviewShareMenu(){
-            const menu = document.getElementById('accounts-overview-share-menu');
-            if(menu && !menu.classList.contains('hidden')) menu.classList.add('hidden');
-        }
-
-        document.addEventListener('click', (e)=>{
-            const menu = document.getElementById('accounts-overview-share-menu');
-            const btn = document.getElementById('accounts-overview-share-btn');
-            if(!menu || !btn) return;
-            if(menu.classList.contains('hidden')) return;
-            // click outside
-            if(!menu.contains(e.target) && !btn.contains(e.target)) closeAccountsOverviewShareMenu();
-        });
-
-        async function copyAccountsOverviewText(){
-
-  try {
-    const state = getAccountsOverviewState();
-    const text = buildAccountsOverviewShareText(state);
-
-    // Prefer modern clipboard in HTTPS contexts
-    if (navigator.clipboard && window.isSecureContext) {
-      await navigator.clipboard.writeText(text);
-      showToast('Resumo copiado para a área de transferência.', 'success');
-      return;
-    }
-
-    // Fallback for file:// or older browsers
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.setAttribute('readonly', '');
-    ta.style.position = 'fixed';
-    ta.style.top = '-9999px';
-    ta.style.left = '-9999px';
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    ta.setSelectionRange(0, ta.value.length);
-    const ok = document.execCommand('copy');
-    document.body.removeChild(ta);
-
-    if (ok) showToast('Resumo copiado para a área de transferência.', 'success');
-    else prompt('Copie o texto abaixo:', text);
-  } catch (e) {
-    console.error('copyAccountsOverviewText failed:', e);
-    showToast('Não foi possível copiar automaticamente.', 'error');
-  }
-}
-
-        function fallbackCopyText(txt){
-            const ta = document.createElement('textarea');
-            ta.value = txt;
-            ta.style.position = 'fixed';
-            ta.style.left = '-9999px';
-            document.body.appendChild(ta);
-            ta.select();
-            try { document.execCommand('copy'); toast('Resumo copiado.'); } catch(e){ alert(txt); }
-            document.body.removeChild(ta);
-        }
-
-        function shareAccountsOverviewText(kind){
-            const txt = buildAccountsOverviewSummaryText();
-            closeAccountsOverviewShareMenu();
-
-            // Prefer native share when available (mobile)
-            if(navigator.share){
-                navigator.share({ title: 'Resumo das Contas', text: txt }).catch(()=>{});
-                return;
-            }
-
-            const encoded = encodeURIComponent(txt);
-            if(kind === 'whatsapp'){
-                window.open(`https://wa.me/?text=${encoded}`, '_blank');
-                return;
-            }
-            if(kind === 'sms'){
-                const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-                const sep = isIOS ? '&' : '?';
-                window.location.href = `sms:${sep}body=${encoded}`;
-                return;
-            }
-            // default: copy
-            copyAccountsOverviewText();
-        }
-
-        // Build the accounts overview bar chart image for PDF/Print.
-        // IMPORTANT: Keep this synchronous so downloads/popups remain tied to the click gesture
-        // (some browsers block PDF downloads or window.open after an `await`).
-        function buildAccountsOverviewBarChartImage(){
-            const rows = computeAccountsOverviewData();
-            const labels = rows.map(r => r.name);
-            const data = rows.map(r => {
-                const safety = (r.safety || 1);
-                const pct = Math.max(0, Math.min(100, (r.equity / safety) * 100));
-                return Math.round(pct*10)/10;
-            });
-
-            // If chart exists and is visible, use it
-            try{
-                if(accountsOverviewChart && accountsOverviewChart.canvas && accountsOverviewChart.canvas.width){
-                    return accountsOverviewChart.toBase64Image();
-                }
-            }catch(e){}
-
-            // Otherwise, render offscreen for a stable image
-            const tmpWrap = document.createElement('div');
-            tmpWrap.style.position = 'fixed';
-            tmpWrap.style.left = '-9999px';
-            tmpWrap.style.top = '0';
-            tmpWrap.style.width = '1200px';
-            tmpWrap.style.height = '420px';
-            tmpWrap.style.background = '#ffffff';
-            const canvas = document.createElement('canvas');
-            canvas.width = 1200;
-            canvas.height = 420;
-            tmpWrap.appendChild(canvas);
-            document.body.appendChild(tmpWrap);
-
-            let tmpChart = null;
-            try{
-                tmpChart = new Chart(canvas.getContext('2d'), {
-                    type: 'bar',
-                    data: { labels, datasets: [{ label: '% da Meta (Safety)', data }] },
-                    options: {
-                        responsive: false,
-                        animation: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { beginAtZero: true, suggestedMax: 100, ticks: { callback: (v)=> v + '%' } }
-                        }
-                    }
-                });
-                // no await here: Chart.js draws immediately with animation:false
-                const url = canvas.toDataURL('image/png', 1.0);
-                tmpChart.destroy();
-                document.body.removeChild(tmpWrap);
-                return url;
-            } catch(e){
-                try{ if(tmpChart) tmpChart.destroy(); }catch(_){}
-                try{ document.body.removeChild(tmpWrap); }catch(_){}
-                return null;
-            }
-        }
-
-        function buildAccountsOverviewReportHTML(includeChart, chartDataUrl){
-            const rows = computeAccountsOverviewData();
-            const now = new Date();
-            const gen = now.toLocaleString();
-
-            const safe = (s)=> String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-            const tableRows = rows.map(r=>{
-                const ageTxt = (r.ageDays==null) ? '-' : `${r.ageDays}d`;
-                return `
-                <tr>
-                    <td class="c1">${safe(r.name)}</td>
-                    <td class="c2">${safe(r.size)}</td>
-                    <td class="num">${safe(formatCurrency(r.equity))}</td>
-                    <td class="num">${safe(formatCurrency(r.safety))}</td>
-                    <td class="num">${safe(formatCurrency(r.remaining))}</td>
-                    <td class="num">${safe(r.daysOperated)}</td>
-                    <td class="num">${safe(ageTxt)}</td>
-                </tr>`;
-            }).join('');
-
-            return `<!doctype html>
-<html>
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Resumo das Contas</title>
-<style>
-    :root { color-scheme: light; }
-    body{ font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; padding: 28px; }
-    h1{ margin:0 0 6px 0; font-size: 26px; }
-    .sub{ color:#64748b; margin:0 0 18px 0; font-size: 13px; }
-    .chart{ width:100%; max-width: 1100px; margin: 0 0 18px 0; }
-    .chart img{ width:100%; height:auto; border: 1px solid #e2e8f0; border-radius: 12px; }
-    table{ width:100%; border-collapse: collapse; font-size: 12px; }
-    thead th{ text-align:left; padding: 10px 10px; border-bottom: 2px solid #0f172a; background:#f8fafc; }
-    tbody td{ padding: 10px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
-    tbody tr:nth-child(even){ background:#fcfcfd; }
-    td.num, th.num { text-align:right; }
-    .c1{ width: 28%; }
-    .c2{ width: 8%; }
-    @media print{
-        body{ padding: 16px; }
-        .noprint{ display:none !important; }
-    }
-</style>
-</head>
-<body>
-    <h1>Resumo das Contas</h1>
-    <p class="sub">Gerado em ${safe(gen)}</p>
-    ${includeChart && chartDataUrl ? `<div class="chart"><img src="${chartDataUrl}" alt="Gráfico de barras" /></div>` : ''}
-    <table>
-        <thead>
-            <tr>
-                <th class="c1">Conta</th>
-                <th class="c2">Tamanho</th>
-                <th class="num">Saldo atual</th>
-                <th class="num">Meta (Safety)</th>
-                <th class="num">Falta p/ Saque</th>
-                <th class="num">Dias operados</th>
-                <th class="num">Idade</th>
-            </tr>
-        </thead>
-        <tbody>
-            ${tableRows}
-        </tbody>
-    </table>
-</body>
-</html>`;
-        }
-
-        
-// Prints a standalone report in the **same tab** (reliable user-gesture) and restores the app after printing.
-// This makes "PDF" (Save as PDF) and "Print" work even when popups/iframes are blocked.
-function printHTMLInPlace(reportHTML, opts = {}) {
-  // Safer print/PDF: render into a hidden iframe (no DOM swapping, works reliably on desktop/mobile)
-  const title = opts.title || document.title || 'Relatório';
-
-  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
-    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
-  })[c]);
-
-  const iframe = document.createElement('iframe');
-  iframe.style.position = 'fixed';
-  iframe.style.right = '0';
-  iframe.style.bottom = '0';
-  iframe.style.width = '0';
-  iframe.style.height = '0';
-  iframe.style.border = '0';
-  iframe.style.visibility = 'hidden';
-  iframe.setAttribute('aria-hidden', 'true');
-  document.body.appendChild(iframe);
-
-  const doc = iframe.contentDocument || iframe.contentWindow.document;
-
-  const html = `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>${esc(title)}</title>
-  <style>
-    html, body { margin: 0; padding: 0; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-    a { color: inherit; text-decoration: none; }
-  </style>
-</head>
-<body>${reportHTML}</body>
-</html>`;
-
-  doc.open();
-  doc.write(html);
-  doc.close();
-
-  const cleanup = () => { try { iframe.remove(); } catch (_) {} };
-
-  const win = iframe.contentWindow;
-  setTimeout(() => {
-    try { win.focus(); win.print(); } catch (e) { console.error('Print failed', e); }
-    finally { setTimeout(cleanup, 500); }
-  }, 120);
-}
-
-
-function exportAccountsOverviewPDF(){
-
-  // Use the native print dialog and let the user pick "Save as PDF".
-  const state = getAccountsOverviewState();
-  const includeChart = !!document.getElementById('accounts-overview-include-chart')?.checked;
-  const reportHTML = buildAccountsOverviewReportHTML(state, { includeChart });
-  printHTMLInPlace(reportHTML, { title: 'Resumo das Contas' });
-}
-
-        async function printAccountsOverview(){
-
-  const state = getAccountsOverviewState();
-  const includeChart = !!document.getElementById('accounts-overview-include-chart')?.checked;
-  const reportHTML = buildAccountsOverviewReportHTML(state, { includeChart });
-  printHTMLInPlace(reportHTML, { title: 'Resumo das Contas' });
-}
-
-        async function shareAccountsOverviewPDF(){
-
-  // "Compartilhar PDF": on most desktops there's no native PDF file share without a backend.
-  // We open the Print dialog so you can "Save as PDF" and then share the file manually.
-  exportAccountsOverviewPDF();
-  showToast('Abrindo impressão para salvar como PDF (depois você pode anexar no WhatsApp/SMS).', 'info');
-}
-        // ---- /ACCOUNTS OVERVIEW helpers ----
-
-
 
 
         window.formatCurrency = (v) => v.toLocaleString('en-US',{style:'currency',currency:'USD'});
@@ -2090,6 +2132,44 @@ function exportAccountsOverviewPDF(){
             const [y,m,d] = iso.split('-').map(n=>parseInt(n,10));
             return new Date(y, m-1, d);
         };
+
+        // Locale-aware date/time formatting (2-digit, professional & consistent)
+        function getLocale(){
+            return (CURRENT_LANG === 'en') ? 'en-US' : 'pt-BR';
+        }
+        function formatDateShort(d){
+            try{
+                return new Intl.DateTimeFormat(getLocale(), { year:'numeric', month:'2-digit', day:'2-digit' }).format(d);
+            }catch(e){
+                // fallback
+                const y=d.getFullYear();
+                const m=String(d.getMonth()+1).padStart(2,'0');
+                const day=String(d.getDate()).padStart(2,'0');
+                return (CURRENT_LANG==='en') ? `${m}/${day}/${y}` : `${day}/${m}/${y}`;
+            }
+        }
+        function formatMDShort(d){
+            try{
+                return new Intl.DateTimeFormat(getLocale(), { month:'2-digit', day:'2-digit' }).format(d);
+            }catch(e){
+                const m=String(d.getMonth()+1).padStart(2,'0');
+                const day=String(d.getDate()).padStart(2,'0');
+                return (CURRENT_LANG==='en') ? `${m}/${day}` : `${day}/${m}`;
+            }
+        }
+        function formatTimeShort(d){
+            try{
+                // EN: 12-hour with AM/PM; PT: 24-hour
+                return new Intl.DateTimeFormat(getLocale(), { hour:'2-digit', minute:'2-digit', hour12: (CURRENT_LANG==='en') }).format(d);
+            }catch(e){
+                const hh=String(d.getHours()).padStart(2,'0');
+                const mm=String(d.getMinutes()).padStart(2,'0');
+                return `${hh}:${mm}`;
+            }
+        }
+        function formatDateTimeShort(d){
+            return `${formatDateShort(d)} ${formatTimeShort(d)}`;
+        }
         function getTodayISO(){
             const d = new Date();
             const y = d.getFullYear();
@@ -2098,13 +2178,13 @@ function exportAccountsOverviewPDF(){
             return `${y}-${m}-${day}`;
         }
 
-        window.createAccount = () => { const name = prompt("Nome:"); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [], createdAt: new Date().toISOString(), favorite: false }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); };
+        window.createAccount = () => { const name = prompt(translateString("Nome:")); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [], createdAt: new Date().toISOString(), favorite: false }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); };
         window.renameAccount = () => { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } };
         
         // DELEÇÃO COM SEGURANÇA
         window.deleteAccount = () => {
             const acc = getActive();
-            if(Object.keys(store.accounts).length <= 1) return alert("Você precisa manter pelo menos uma conta.");
+            if(Object.keys(store.accounts).length <= 1) return alert(translateString("Você precisa manter pelo menos uma conta."));
 
             const admin = promptAdminCredentials(
                 `ATENÇÃO: Você está prestes a excluir "${acc.name}".
@@ -2142,7 +2222,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             }
             const rows = logs.slice().reverse().map(l => {
                 const dt = new Date(l.date);
-                const when = `${dt.toLocaleDateString()} ${dt.toLocaleTimeString()}`;
+                const when = `${formatDateShort(dt)} ${formatTimeShort(dt)}`;
                 const user = l.user || '—';
                 const action = l.action || '';
                 return `<div class="border-b border-slate-100 dark:border-slate-700 pb-2 last:border-0">
@@ -2185,8 +2265,8 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             try { renderPayoutHistory(getActive()); } catch(e) {}
             renderAdminLogsList();
             try { refreshAIUI(); } catch(e) {}
-
-            // Tab atual
+            try { ntImportInitDefaults(); } catch(e) {}
+// Tab atual
             setAdminTab(_adminTab);
 
             if(els.adminSubtitle) els.adminSubtitle.textContent = `Conta ativa: ${getActive().name}`;
@@ -2232,7 +2312,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const key = _findUserKey(u);
 
             if(!key || SECURITY[key].pass !== p){
-                alert("Usuário ou senha incorretos.");
+                alert(translateString("Usuário ou senha incorretos."));
                 return;
             }
 
@@ -2261,7 +2341,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(!admin) return;
 
             const acc = getActive();
-            if(!acc.payouts || !acc.payouts.length) return alert("Histórico já está vazio.");
+            if(!acc.payouts || !acc.payouts.length) return alert(translateString("Histórico já está vazio."));
 
             if(confirm(`Tem certeza que deseja LIMPAR TODO o histórico de saques da conta "${acc.name}"?\n\nEssa ação apaga os registros (não pode desfazer).`)){
                 acc.payouts = [];
@@ -2283,9 +2363,9 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(idx === -1) return;
 
             const p = acc.payouts[idx];
-            if(confirm(`Apagar este registro de saque?\n\nData: ${new Date(p.date).toLocaleDateString()}\nValor: ${formatCurrency(p.amount)}\n\nEssa ação remove o registro (não pode desfazer).`)){
+            if(confirm(`Apagar este registro de saque?\n\nData: ${new Date(p.formatDateShort(date))}\nValor: ${formatCurrency(p.amount)}\n\nEssa ação remove o registro (não pode desfazer).`)){
                 acc.payouts.splice(idx, 1);
-                logAdminAction(admin.username, `Apagou saque: ${formatCurrency(p.amount)} (${new Date(p.date).toLocaleDateString()}) em ${acc.name}`);
+                logAdminAction(admin.username, `Apagou saque: ${formatCurrency(p.amount)} (${new Date(p.formatDateShort(date))}) em ${acc.name}`);
                 saveToCloud();
                 renderDashboard();
                 refreshAdminUI();
@@ -2298,9 +2378,9 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 : promptAdminCredentials("Para LIMPAR os logs, confirme como SUPER ADMIN.", 'super');
             if(!admin) return;
 
-            if(!(store.adminLogs || []).length) return alert("Logs já estão vazios.");
+            if(!(store.adminLogs || []).length) return alert(translateString("Logs já estão vazios."));
 
-            if(confirm("Tem certeza que deseja LIMPAR TODOS os logs de admin?\n\nEssa ação remove o histórico de auditoria (não pode desfazer).")){
+            if(confirm(translateString("Tem certeza que deseja LIMPAR TODOS os logs de admin?\n\nEssa ação remove o histórico de auditoria (não pode desfazer)."))){
                 store.adminLogs = [];
                 logAdminAction(admin.username, "Limpou logs de admin"); // registra imediatamente (fica como único log)
                 saveToCloud();
@@ -2309,7 +2389,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             }
         };
 
-        window.updateConfig = () => { const acc = getActive(); acc.size = els.inpSize.value; acc.monthType = parseInt(els.inpMonth.value); saveToCloud(); els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`; renderDashboard(); };
+        window.updateConfig = () => { const acc = getActive(); acc.size = els.inpSize.value; acc.monthType = parseInt(els.inpMonth.value); saveToCloud(); els.activeConfig.textContent = `${acc.size} • ${(CURRENT_LANG==='en'?'Month':'Mês')} ${acc.monthType}`; renderDashboard(); };
         window.changeMonth = (d) => { store.date.setMonth(store.date.getMonth()+d); syncDatesToView(); renderDashboard(); };
         window.filterReport = () => filterReportInternal();
         window.pdfFilteredReport = () => pdfFilteredReportInternal();
@@ -2413,13 +2493,13 @@ if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes
         window.submitPayout = (maxAvailable) => {
             const input = document.getElementById('payout-input-amount');
             const val = parseFloat(input.value);
-            if (!val || val <= 0) return alert("Digite um valor válido.");
+            if (!val || val <= 0) return alert(translateString("Digite um valor válido."));
             if (val > maxAvailable) return alert(`Valor excede o disponível de ${formatCurrency(maxAvailable)}.`);
-            if (val % 500 !== 0) return alert("O valor deve ser múltiplo de $500.");
+            if (val % 500 !== 0) return alert(translateString("O valor deve ser múltiplo de $500."));
             if (confirm(`Confirmar saque de ${formatCurrency(val)}?`)) {
                 const acc = getActive();
                 acc.payouts.push({ id: Date.now(), date: new Date().toISOString(), amount: val, note: 'Saque Aprovado', voided: false });
-                saveToCloud(); renderDashboard(); alert("Saque registrado com sucesso!");
+                saveToCloud(); renderDashboard(); alert(translateString("Saque registrado com sucesso!"));
             }
         };
 
@@ -2437,7 +2517,7 @@ if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes
                 const p = acc.payouts[idx];
                 p.voided = true;
                 p.voidedAt = new Date().toISOString();
-                logAdminAction(admin.username, `Cancelou saque: ${formatCurrency(p.amount)} (${new Date(p.date).toLocaleDateString()})`);
+                logAdminAction(admin.username, `Cancelou saque: ${formatCurrency(p.amount)} (${new Date(p.formatDateShort(date))})`);
                 saveToCloud(); renderDashboard();
                 // Se estiver na área admin, atualiza a lista
                 if(document.getElementById('admin-modal') && !document.getElementById('admin-modal').classList.contains('hidden')) {
@@ -2452,7 +2532,7 @@ if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes
             currentNoteIso = iso;
             const acc = getActive();
             const entry = acc.data[iso] || {};
-            const dateStr = parseISODateLocal(iso).toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            const dateStr = formatDateShort(parseISODateLocal(iso));
             document.getElementById('note-modal-date').textContent = dateStr;
             const noteInput = document.getElementById('note-modal-input');
             noteInput.value = entry.note || '';
@@ -2511,7 +2591,7 @@ if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes
             const dates = Object.keys(acc.data).sort();
             dates.forEach(iso => {
                 const d = acc.data[iso];
-                const dateStr = parseISODateLocal(iso).toLocaleDateString('pt-BR');
+                const dateStr = formatDateShort(parseISODateLocal(iso));
                 const t1 = (parseFloat(d.t1) || 0).toFixed(2);
                 const t2 = (parseFloat(d.t2) || 0).toFixed(2);
                 const val = (parseFloat(d.val) || 0).toFixed(2);
@@ -2536,21 +2616,22 @@ if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes
                     // UI state: sempre iniciar com detalhes fechados
                     delete store.dayDetailsOpen;
                     delete store.tradeDetailsOpen; store.date = new Date(store.date || new Date());
+                    try { delete store.apex_fee_rate; } catch(e) {}
                     // UI state: sempre iniciar com detalhes fechados
                     delete store.dayDetailsOpen;
                     delete store.tradeDetailsOpen; } catch(e) { createNewStore(); } } else { createNewStore(); }
-            document.getElementById('status-text').textContent = "Modo Offline";
+            document.getElementById('status-text').textContent = (CURRENT_LANG==='en' ? "Offline Mode" : "Modo Offline");
             document.getElementById('status-text').className = "text-yellow-500 font-bold";
             renderSidebar(); loadAccount(store.activeId); store.date = new Date(); syncDatesToView();
-            const loader = document.getElementById('app-loader'); if(loader) { loader.style.display='none'; }
+            try { hideAppLoader(); } catch(e) { const loader=document.getElementById('app-loader'); if(loader) loader.style.display='none'; }
         };
 
         window.hardReset = async () => {
-            const confirm1 = prompt("ATENÇÃO: Isso apagará seus dados locais e tentará criar uma nova conta.\n\nDigite 'DELETAR' para confirmar:");
+            const confirm1 = prompt(translateString("ATENÇÃO: Isso apagará seus dados locais e tentará criar uma nova conta.\n\nDigite 'DELETAR' para confirmar:"));
             if (confirm1 === 'DELETAR') {
                 createNewStore();
                 await saveToCloud();
-                alert("Dados resetados. O sistema tentará reconectar.");
+                alert(translateString("Dados resetados. O sistema tentará reconectar."));
                 location.reload();
             }
         };
@@ -2603,21 +2684,52 @@ if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes
         function getActive(){return store.accounts[store.activeId];}
 
         function calculateStats(acc) { 
-            const rules=RULES[acc.size]; let tp=0; let dt=0; let pe=rules.start; 
-            let md=-Infinity; let mDate=null; let wd=Infinity; let wDate=null; let wins=0; let losses=0;
-            const keys=Object.keys(acc.data).sort(); let re=rules.start; 
-            
-            keys.forEach(d=>{ 
-                const e=acc.data[d]; 
+            const rules = RULES[acc.size];
+            let tp = 0; 
+            let dt = 0; 
+            let pe = rules.start; 
+            let md = -Infinity; 
+            let mDate = null; 
+            let wd = Infinity; 
+            let wDate = null;
+
+            const keys = Object.keys(acc.data).sort(); 
+            let re = rules.start; 
+
+            keys.forEach(d => { 
+                const e = acc.data[d]; 
                 const val = parseFloat(e.val) || 0; 
-                if(val!==0 && !e.holiday){ 
-                    tp+=val; dt++; re+=val; 
-                    if(re>pe)pe=re; 
-                    if(val>md) { md=val; mDate=d; } if(val<wd) { wd=val; wDate=d; }
+                if(val !== 0 && !e.holiday){ 
+                    tp += val; 
+                    dt++; 
+                    re += val; 
+                    if(re > pe) pe = re; 
+                    if(val > md) { md = val; mDate = d; } 
+                    if(val < wd) { wd = val; wDate = d; }
                 } 
             }); 
-            const w = (acc.payouts||[]).reduce((s,p) => p.voided ? s : s + p.amount, 0); 
-            return {currentEquity:rules.start+tp-w, totalProfit:tp, daysTraded:dt, peakEquity:pe, maxDay:md===-Infinity?0:md, maxDate:mDate, minDay:wd===Infinity?0:wd, minDate:wDate}; 
+
+            const w = (acc.payouts || []).reduce((s,p) => p.voided ? s : s + p.amount, 0); 
+            let grossEquity = (Number(rules.start || 0) + tp - w);
+            // Se existir snapshot importado do NinjaTrader, usar como fonte do saldo bruto (Cash Value)
+            try{
+                if(acc && acc.nt && typeof acc.nt.cashValueCents === 'number' && isFinite(acc.nt.cashValueCents)){
+                    grossEquity = acc.nt.cashValueCents / 100;
+                }
+            }catch(e){}
+            // Equity uses the broker cash value / net liquidation (no extra fee adjustments).
+            const peakGross = pe;
+
+            return {
+                currentEquity: grossEquity,
+                totalProfit: tp,
+                daysTraded: dt,
+                peakEquity: peakGross,
+                maxDay: md === -Infinity ? 0 : md,
+                maxDate: mDate,
+                minDay: wd === Infinity ? 0 : wd,
+                minDate: wDate
+            }; 
         }
 
         function syncDatesToView() {
@@ -2646,7 +2758,7 @@ if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes
                             cumSum += val;
                             
                             // GRÁFICO CLÁSSICO: Só adiciona se operou
-                            chartLabels.push(parseISODateLocal(iso).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'}));
+                            chartLabels.push(formatDateShort(parseISODateLocal(iso)));
                             chartData.push(cumSum);
                         }
                         if (!isNaN(t1) || !isNaN(t2)) {
@@ -2674,8 +2786,8 @@ if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes
             const textColor = isDark ? '#94a3b8' : '#64748b';
             chartInstance = new Chart(ctx, {
                 type: 'line', 
-                data: { labels: labels, datasets: [{ label: 'Lucro Acumulado', data: data, borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 3, pointRadius: 4, fill: true, tension: 0.35,
-                                cubicInterpolationMode: 'monotone' }] },
+                data: { labels: labels, datasets: [{ label: (CURRENT_LANG==='en' ? 'Cumulative Profit' : 'Lucro Acumulado'), data: data, borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 10, fill: true, tension: 0.45,
+                                cubicInterpolationMode: 'monotone', borderJoinStyle: 'round', borderCapStyle: 'round', spanGaps: true }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: gridColor }, ticks: { color: textColor } }, x: { grid: { display: false }, ticks: { color: textColor } } } }
             });
             window.chartInstance = chartInstance;
@@ -2837,7 +2949,7 @@ function calcCycle(acc, anchorDay) {
                     div.innerHTML = `
                         <div class="flex justify-between items-center">
                             <div class="flex flex-col">
-                                <span class="text-xs text-slate-500 ${isVoid ? 'line-through' : ''}">${new Date(p.date).toLocaleDateString()}</span>
+                                <span class="text-xs text-slate-500 ${isVoid ? 'line-through' : ''}">${new Date(p.formatDateShort(date))}</span>
                                 ${isVoid ? '<span class="text-[10px] text-red-400 font-bold uppercase">Cancelado</span>' : ''}
                             </div>
                             <div class="flex items-center gap-2">
@@ -2857,7 +2969,10 @@ function renderCalendar(acc) {
     const y = store.date.getFullYear(); 
     const m = store.date.getMonth(); 
 
-    els.calendarTitle.textContent = `${['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][m]} ${y}`; 
+    const monthsPt = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const monthsEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const months = (CURRENT_LANG === 'en') ? monthsEn : monthsPt;
+    els.calendarTitle.textContent = `${months[m]} ${y}`; 
     els.calendarBody.innerHTML = ''; 
 
     const { rangeStart, rangeEnd } = getMonthWeekRange(y, m);
@@ -2885,7 +3000,7 @@ function renderCalendar(acc) {
 
             const dayStr = String(cur.getDate()).padStart(2, '0');
             const monthStr = String(cur.getMonth() + 1).padStart(2, '0');
-            sepTr.innerHTML = `<td colspan="5">SEMANA ${weekNum} • INÍCIO (${dayStr}.${monthStr})</td>`;
+            sepTr.innerHTML = `<td colspan=\"5\">${(CURRENT_LANG==='en'?'WEEK':'SEMANA')} ${weekNum} • ${(CURRENT_LANG==='en'?'START':'INÍCIO')} (${dayStr}.${monthStr})</td>`;
             els.calendarBody.appendChild(sepTr);
         }
 
@@ -3042,7 +3157,7 @@ function renderCalendar(acc) {
 function renderDashboard() { 
             const acc=getActive(); const rules=RULES[acc.size]; const stats=calculateStats(acc); 
             els.equity.textContent=formatCurrency(stats.currentEquity); 
-            const diff=stats.currentEquity-rules.start; els.equityDiff.textContent=`Lucro: ${formatCurrency(diff)}`; els.equityDiff.className=diff>=0?"text-xs font-medium mt-1 text-green-600":"text-xs font-medium mt-1 text-red-500"; 
+            const diff=stats.currentEquity-rules.start; els.equityDiff.textContent=`${(CURRENT_LANG==='en'?'Profit:':'Lucro:')} ${formatCurrency(diff)}`; els.equityDiff.className=diff>=0?"text-xs font-medium mt-1 text-green-600":"text-xs font-medium mt-1 text-red-500"; 
             
             const totalGoal = rules.safetyThreshold - rules.start;
             const currentProgress = stats.currentEquity - rules.start;
@@ -3053,7 +3168,7 @@ function renderDashboard() {
             els.equityProgress.style.width = `${percent}%`;
             els.equityProgress.className = `progress-bar-fill ${percent >= 100 ? 'bg-green-500' : 'bg-indigo-500'}`;
 
-            let gainCap=(stats.totalProfit>0)?(stats.totalProfit*0.30)/0.70:0; els.gainCap.textContent=gainCap>0?formatCurrency(gainCap):"Fazer Gordura"; 
+            let gainCap=(stats.totalProfit>0)?(stats.totalProfit*0.30)/0.70:0; els.gainCap.textContent=gainCap>0?formatCurrency(gainCap): (CURRENT_LANG==='en'?'Build Cushion':'Fazer Gordura'); 
             
             renderCalendar(acc); 
             
@@ -3062,9 +3177,9 @@ function renderDashboard() {
             if(els.statsC15) els.statsC15.textContent = formatCurrency(calcCycle(acc, 15)); 
             if(els.statsC20) els.statsC20.textContent = formatCurrency(calcCycle(acc, 20));
 
-            if(els.labelC10) els.labelC10.textContent = `Ciclo 10 a 10 (${cycleRangeLabel(10)})`;
-            if(els.labelC15) els.labelC15.textContent = `Ciclo 15 a 15 (${cycleRangeLabel(15)})`;
-            if(els.labelC20) els.labelC20.textContent = `Ciclo 20 a 20 (${cycleRangeLabel(20)})`; 
+            if(els.labelC10) els.labelC10.textContent = `${(CURRENT_LANG==='en'?'Cycle 10 to 10':'Ciclo 10 a 10')} (${cycleRangeLabel(10)})`;
+            if(els.labelC15) els.labelC15.textContent = `${(CURRENT_LANG==='en'?'Cycle 15 to 15':'Ciclo 15 a 15')} (${cycleRangeLabel(15)})`;
+            if(els.labelC20) els.labelC20.textContent = `${(CURRENT_LANG==='en'?'Cycle 20 to 20':'Ciclo 20 a 20')} (${cycleRangeLabel(20)})`; 
 
             const updateAvg = (id, days) => {
                 const avg = getAverage(acc, days);
@@ -3160,7 +3275,11 @@ function renderDashboard() {
                 const stats = calculateStats(acc);
                 const isActive = acc.id === store.activeId;
 
-                const div = document.createElement('div');
+                
+                // Saldo (equity) baseado no Cash Value/Net Liq importado (com centavos)
+                const equity = Number(stats.currentEquity || 0);
+
+const div = document.createElement('div');
                 div.className = `account-item p-3 rounded-lg cursor-pointer transition-colors mb-2 ${isActive ? 'active' : 'bg-slate-800'}`;
                 div.onclick = () => { loadAccount(acc.id); toggleSidebar(); };
 
@@ -3177,7 +3296,7 @@ function renderDashboard() {
                     </div>
                     <div class="flex justify-between items-center mt-1">
                         <span class="text-xs text-slate-400">Saldo:</span>
-                        <span class="text-xs font-bold ${stats.currentEquity >= RULES[acc.size].start ? 'text-green-400' : 'text-red-400'}">${formatCurrency(stats.currentEquity)}</span>
+                        <span class="text-xs font-bold ${equity >= RULES[acc.size].start ? 'text-green-400' : 'text-red-400'}">${formatCurrency(equity)}</span>
                     </div>
                 `;
                 els.accList.appendChild(div);
@@ -3226,7 +3345,7 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
 
             const acc = store.accounts[id];
             els.activeName.textContent = acc.name;
-            els.activeConfig.textContent = `${acc.size} • Mês ${acc.monthType}`;
+            els.activeConfig.textContent = `${acc.size} • ${(CURRENT_LANG==='en'?'Month':'Mês')} ${acc.monthType}`;
             els.inpSize.value = acc.size;
             els.inpMonth.value = acc.monthType;
 
@@ -3242,7 +3361,7 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
         function shareReportInternal() {
             const acc = getActive(); 
             const res = els.customResult.textContent;
-            const period = els.filterStart.value ? `(${new Date(els.filterStart.value).toLocaleDateString()} - ${new Date(els.filterEnd.value).toLocaleDateString()})` : "(Geral)";
+            const period = els.filterStart.value ? `(${new Date(els.filterStart.formatDateShort(value))} - ${new Date(els.filterEnd.formatDateShort(value))})` : "(Geral)";
             const text = `*Performance Report - DF Strategic* 📊
 ${period}
 
@@ -3254,18 +3373,18 @@ ${period}
                          `*Melhor Dia:* ${els.customBest.textContent}`; 
             
             if (navigator.share) { navigator.share({ title: 'Performance Report', text: text }).catch(console.error); } 
-            else { navigator.clipboard.writeText(text).then(() => alert("Resumo copiado!")); }
+            else { navigator.clipboard.writeText(text).then(() => alert(translateString("Resumo copiado!"))); }
         }
 
         function pdfFilteredReportInternal() {
             const start = els.filterStart.value;
             const end = els.filterEnd.value;
             if(!start || !end) {
-                alert('Selecione a data inicial e final para gerar o PDF.');
+                alert(translateString('Selecione a data inicial e final para gerar o PDF.'));
                 return;
             }
             if(end < start){
-                alert('A data final deve ser maior ou igual a data inicial.');
+                alert(translateString('A data final deve ser maior ou igual a data inicial.'));
                 return;
             }
 
@@ -3274,7 +3393,7 @@ ${period}
 
             const acc = getActive();
             const title = 'Analise por Periodo';
-            const rangeText = `${parseISODateLocal(start).toLocaleDateString('pt-BR')} - ${parseISODateLocal(end).toLocaleDateString('pt-BR')} • ${acc?.name || 'Conta'}`;
+            const rangeText = `${formatDateShort(parseISODateLocal(start))} - ${formatDateShort(parseISODateLocal(end))} • ${acc?.name || (CURRENT_LANG==='en'?'Account':'Conta')}`;
             const metricResult = (els.customResult?.textContent || '--').trim();
             const metricWin = (els.customWinrate?.textContent || '--').trim();
             const metricBest = (els.customBest?.textContent || '--').trim();
@@ -3326,7 +3445,7 @@ ${period}
                             const val = parseFloat(e.val) || 0;
                             if (!e.holiday && val !== 0) {
                                 cumSum += val;
-                                chartLabels.push(parseISODateLocal(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
+                                chartLabels.push(formatDateShort(parseISODateLocal(iso)));
                                 chartData.push(cumSum);
                             }
                         }
@@ -3348,7 +3467,7 @@ ${period}
                         data: {
                             labels: chartLabels,
                             datasets: [{
-                                label: 'Lucro Acumulado',
+                                label: (CURRENT_LANG==='en' ? 'Cumulative Profit' : 'Lucro Acumulado'),
                                 data: chartData,
                                 borderColor: '#4f46e5',
                                 backgroundColor: 'rgba(79, 70, 229, 0.10)',
@@ -3514,7 +3633,7 @@ ${period}
                     w.document.close();
                     try{ setTimeout(()=>{ try{ w.focus(); w.print(); }catch(_){} }, 350); }catch(_){}
                 }catch(e2){
-                    alert('Nao foi possivel gerar o PDF (verifique conexao/billing).');
+                    alert(translateString('Nao foi possivel gerar o PDF (verifique conexao/billing).'));
                 }
             });
         }
@@ -3523,7 +3642,11 @@ ${period}
         // --- CLOUD ---
         async function loadFromCloud() {
             try {
-                const docSnap = await getDoc(doc(db, "users", "dante_data"));
+                const docRef = doc(db, "users", "dante_data");
+                const docSnap = await Promise.race([
+                    getDoc(docRef),
+                    new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout ao conectar no Firestore.")), 8000))
+                ]);
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     store = JSON.parse(data.store_json);
@@ -3541,6 +3664,8 @@ ${period}
                 const s = JSON.parse(JSON.stringify(store));
                 delete s.dayDetailsOpen;
                 delete s.tradeDetailsOpen;
+                delete s.apex_fee_rate;
+
                 return s;
             }catch(e){
                 return store;
@@ -3567,6 +3692,549 @@ ${period}
             }
         }
 
+        
+                        
+        // =========================
+        // i18n (Português / English) - Safe & Non-blocking
+        // =========================
+        const LANG_STORAGE_KEY = 'df_app_lang';
+
+        // Phrase dictionary (PT -> EN). Focus on UI strings.
+        const I18N_PT_EN = {
+            "Conectando...":"Connecting...",
+            "Carregando...":"Loading...",
+            "Iniciando...":"Starting...",
+            "Salvando...":"Saving...",
+            "Salvo (Local)":"Saved (Local)",
+            "Erro (Salvo Local)":"Error (Saved locally)",
+            "Área Administrativa":"Admin Area",
+            "Resumo das Contas":"Accounts Summary",
+            "Nova Conta":"New Account",
+            "FAVORITAS":"FAVORITES",
+            "Favoritas":"Favorites",
+            "contas":"accounts",
+            "Conta":"Account",
+            "Contas":"Accounts",
+            "Grupo: tamanho":"Group: size",
+            "Buscar conta...":"Search account...",
+            "Buscar":"Search",
+            "Saldo:":"Balance:",
+            "Saldo Atual":"Current Balance",
+            "Saldo Atual:":"Current Balance:",
+            "Saldo":"Balance",
+            "Lucro":"Profit",
+            "Lucro:":"Profit:",
+            "TETO":"CAP",
+            "TETO 30% (HOJE)":"30% CAP (TODAY)",
+            "Limite sugerido p/ consistência.":"Suggested limit for consistency.",
+            "Gestão de Saques":"Withdrawal Management",
+            "Solicitar Saque":"Request Payout",
+            "Limite Segurança":"Safety Limit",
+            "Limite Segurança:":"Safety Limit:",
+            "Excedente Real":"Real Excess",
+            "Excedente Real:":"Real Excess:",
+            "Falta p/ $500":"Need for $500",
+            "Dias Operados":"Days Traded",
+            "Idade":"Age",
+            "Dica:":"Tip:",
+            "Ordenar:":"Sort:",
+            "Ordenar":"Sort",
+            "Mais próximas do saque":"Closest to payout",
+            "Filtro:":"Filter:",
+            "Filtro":"Filter",
+            "Todas":"All",
+            "Mostrar/Esconder Gráfico":"Show/Hide Chart",
+            "Visão geral em uma página (Balance, progresso e days operados)":"Overview in one page (Balance, progress and days traded)",
+            "Resultado Período":"Period Result",
+            "Taxa de Acerto (Trades)":"Win Rate (Trades)",
+            "Melhor Dia":"Best Day",
+            "Pior Dia":"Worst Day",
+            "AI (PERGUNTAS)":"AI (QUESTIONS)",
+            "Pergunte sobre os números do painel, ciclos, médias, regras da Apex, ou conceitos de mercado/índices (sem dados ao vivo).":"Ask about the dashboard numbers, cycles, averages, Apex rules, or market/index concepts (no live data).",
+            "Configurar":"Configure",
+            "Perguntar":"Ask",
+            "Limpar":"Clear",
+            "Mês":"Month",
+            "Semana":"Week",
+            "Ciclo":"Cycle",
+            "dias":"days",
+            "Janeiro":"January",
+            "Fevereiro":"February",
+            "Março":"March",
+            "Abril":"April",
+            "Maio":"May",
+            "Junho":"June",
+            "Julho":"July",
+            "Agosto":"August",
+            "Setembro":"September",
+            "Outubro":"October",
+            "Novembro":"November",
+            "Dezembro":"December",
+            "Evolução da Performance":"Performance Evolution",
+            "Mês 1":"Month 1",
+            "Mês 1-3":"Month 1-3",
+            "Análise por Período":"Period Analysis",
+            "Saldo Atual (Equity)":"Current Balance (Equity)",
+            "SALDO ATUAL (EQUITY)":"CURRENT BALANCE (EQUITY)",
+            "Início":"Start",
+            "INÍCIO":"START",
+            "Meta":"Goal",
+            "META":"GOAL",
+            "Próxima Janela":"Next Window",
+            "PRÓXIMA JANELA":"NEXT WINDOW",
+            "Janela":"Window",
+            "JANELA":"WINDOW",
+            "SEMANA":"WEEK",
+            "Médias Diárias (Recentes)":"Daily Averages (Recent)",
+            "MÉDIAS DIÁRIAS (RECENTES)":"DAILY AVERAGES (RECENT)",
+            "Dias":"Days",
+            "DIAS":"DAYS",
+            "Lucro Acumulado":"Cumulative Profit",
+            "Fazer Gordura":"Build Cushion",
+            "Adição":"Add-on",
+            "Risco (pts)":"Risk (pts)",
+            "Viável?":"Viable?",
+            "Viável":"Viable",
+            "Inviável":"Not viable",
+            "Gerenciamento":"Management",
+            "GERENCIAMENTO":"MANAGEMENT",
+            "AI (Perguntas)":"AI (Questions)",
+            "Próximas do saque":"Closest to payout",
+            "valores usam a mesma lógica do app (equity Current e safety threshold por tamanho).":"Values follow the same app logic (Equity Current and safety threshold by size).",
+            "Operados":"Traded",
+            "Grupo:":"Group:",
+            "tamanho":"size",
+            "Próxima janela":"Next window",
+            "Início (":"Start (",
+            "A data final deve ser maior ou igual a data inicial.":"End date must be greater than or equal to start date.",
+            "Nao foi possivel gerar o PDF (verifique conexao/billing).":"Could not generate the PDF (check connection/billing).",
+            "Selecione a data inicial e final para gerar o PDF.":"Select a start and end date to generate the PDF.",
+            "Senha:":"Password:",
+            "Mensal (1 a 31)":"Monthly (1 to 31)",
+            "Mensal (1 à 31)":"Monthly (1 to 31)",
+            "PERFORMANCE (CICLOS ATUAIS)":"PERFORMANCE (CURRENT CYCLES)",
+            "Performance (CICLOS ATUAIS)":"Performance (CURRENT CYCLES)",
+            "CICLOS ATUAIS":"CURRENT CYCLES",
+            "Ciclos Atuais":"Current Cycles",
+            "CICLOS":"CYCLES",
+            "Ciclos":"Cycles",
+            "ATUAIS":"CURRENT",
+            "Atuais":"Current",
+            "Equity Atual":"Current Equity",
+            "EQUITY ATUAL":"CURRENT EQUITY",
+            "Disponível":"Available",
+            "DISPONÍVEL":"AVAILABLE",
+            "Acesso restrito":"Restricted access",
+            "Entre com seu usuário e senha de administrador.":"Sign in with your admin username and password.",
+            "Usuário":"Username",
+            "Senha":"Password",
+            "Dante ou Felipe":"Dante or Felipe",
+            "Entrar":"Sign in",
+            "Dica: credenciais são locais (GitHub Pages).":"Tip: credentials are local (GitHub Pages).",
+            "Visão geral em uma página (saldo, progress e days traded)":"Overview in one page (balance, progress and days traded)",
+            "Visão geral em uma página (saldo, progresso e days traded)":"Overview in one page (balance, progress and days traded)",
+            "Tip: valores usam a mesma lógica do app (equity atual e safety threshold por size).":"Tip: values use the same app logic (current equity and safety threshold by size).",
+            "Tip: valores usam a mesma lógica do app (equity atual e safety threshold por tamanho).":"Tip: values use the same app logic (current equity and safety threshold by size).",
+            "Visão geral em uma página (saldo, progresso e dias operados)":"Overview in one page (balance, progress and days traded)",
+            "valores usam a mesma lógica do app (equity atual e safety threshold por tamanho).":"values follow the same app logic (current equity and safety threshold by size).",
+            "Valores usam a mesma lógica do app (equity atual e safety threshold por tamanho).":"Values follow the same app logic (current equity and safety threshold by size).",
+            "Incluir gráfico":"Include chart",
+            "INÍCIO (":"START (",
+
+                    "DATA":"DATE",
+            "NOTA":"NOTE",
+            "Dias com trade:":"Days traded:",
+            "Days com trade:":"Days traded:",
+            "Feriados ignorados no total:":"Holidays ignored in total:",
+            "Feriados ignorados no total":"Holidays ignored in total",
+            "Visão geral em uma página (saldo, progresso e dias traded)":"Overview in one page (balance, progress and days traded)",
+};
+
+        const I18N_EN_PT = (() => {
+            const out = {};
+            for (const [k, v] of Object.entries(I18N_PT_EN)) out[v] = k;
+            return out;
+        })();
+
+        let CURRENT_LANG = 'pt';
+        try {
+            const raw = (localStorage.getItem(LANG_STORAGE_KEY) || '').toLowerCase().trim();
+            if (raw === 'en' || raw === 'pt') CURRENT_LANG = raw;
+        } catch (e) {}
+
+        function _normKey(s){
+            if (s == null) return '';
+            return String(s).replace(/\u00A0/g,' ').replace(/\s+/g,' ').trim();
+        }
+
+        function _isMostlyNumeric(s){
+            const t = _normKey(s);
+            if(!t) return true;
+            const letters = (t.match(/[A-Za-zÀ-ÖØ-öø-ÿ]/g) || []).length;
+            const digits  = (t.match(/[0-9]/g) || []).length;
+            return letters === 0 && digits > 0;
+        }
+
+        function translateString(s){
+            try{
+                if (s == null) return s;
+                const raw = String(s);
+                if (!raw) return raw;
+                if (_isMostlyNumeric(raw)) return raw;
+
+                const lead = raw.match(/^\s*/)?.[0] ?? '';
+                const trail = raw.match(/\s*$/)?.[0] ?? '';
+                const core = raw.slice(lead.length, raw.length - trail.length);
+
+                // avoid translating long user text blocks
+                if(core.length > 300) return raw;
+
+                const coreKey = _normKey(core);
+                if(!coreKey) return raw;
+
+                const dict = (CURRENT_LANG === 'en') ? I18N_PT_EN : I18N_EN_PT;
+
+                // Exact
+                if(dict[coreKey]) return lead + dict[coreKey] + trail;
+
+                // Case-insensitive
+                const lc = coreKey.toLowerCase();
+                for(const [k,v] of Object.entries(dict)){
+                    if(k.toLowerCase() === lc) return lead + v + trail;
+                }
+                // Pattern: "Days com trade: 19 • Feriados ignorados no total: 1"
+                if(CURRENT_LANG === 'en'){
+                    const m1 = core.match(/^(?:Days|Dias)\s+com\s+trade:\s*(\d+)\s*[•·\u2022]\s*Feriados\s+ignorados\s+no\s+total:\s*(\d+)\s*$/i);
+                    if(m1){
+                        return lead + `Days traded: ${m1[1]} • Holidays ignored in total: ${m1[2]}` + trail;
+                    }
+                } else {
+                    const m2 = core.match(/^Days\s+traded:\s*(\d+)\s*[•·\u2022]\s*Holidays\s+ignored\s+in\s+total:\s*(\d+)\s*$/i);
+                    if(m2){
+                        return lead + `Dias com trade: ${m2[1]} • Feriados ignorados no total: ${m2[2]}` + trail;
+                    }
+                }
+
+
+
+                // Composed text (e.g. "50k • Mês 1")
+                let composed = core;
+                const wordPairs = (CURRENT_LANG === 'en')
+                    ? [["Mês","Month"],["Semana","Week"],["SEMANA","WEEK"],["Ciclo","Cycle"],["Ciclos","Cycles"],["CICLOS","CYCLES"],["Mensal","Monthly"],["MENSAL","MONTHLY"],["Atual","Current"],["ATUAL","CURRENT"],["Atuais","Current"],["ATUAIS","CURRENT"],["Dias","Days"],["dias","days"],
+                       ["Operados","Traded"],["operados","traded"],["contas","accounts"],["tamanho","size"],["Grupo","Group"],["Favoritas","Favorites"],
+                       ["Início","Start"],["INÍCIO","START"],["Meta","Goal"],["META","GOAL"],
+                       ["Próxima","Next"],["PRÓXIMA","NEXT"],["Janela","Window"],["JANELA","WINDOW"],
+                       ["Gerenciamento","Management"],["GERENCIAMENTO","MANAGEMENT"],["Lucro","Profit"],["Lucro:","Profit:"],
+                       ["Janeiro","January"],["Fevereiro","February"],["Março","March"],["Abril","April"],
+                       ["Maio","May"],["Junho","June"],["Julho","July"],["Agosto","August"],
+                       ["Setembro","September"],["Outubro","October"],["Novembro","November"],["Dezembro","December"]]
+                    : [["Month","Mês"],["Week","Semana"],["WEEK","SEMANA"],["Cycle","Ciclo"],["Cycles","Ciclos"],["CYCLES","CICLOS"],["Monthly","Mensal"],["MONTHLY","MENSAL"],["Current","Atual"],["CURRENT","ATUAL"],["Days","Dias"],["days","dias"],
+                       ["Traded","Operados"],["traded","operados"],["accounts","contas"],["size","tamanho"],["Group","Grupo"],["Favorites","Favoritas"],
+                       ["Start","Início"],["START","INÍCIO"],["Goal","Meta"],["GOAL","META"],
+                       ["Next","Próxima"],["NEXT","PRÓXIMA"],["Window","Janela"],["WINDOW","JANELA"],
+                       ["Management","Gerenciamento"],["MANAGEMENT","GERENCIAMENTO"],["Profit","Lucro"],["Profit:","Lucro:"],
+                       ["January","Janeiro"],["February","Fevereiro"],["March","Março"],["April","Abril"],
+                       ["May","Maio"],["June","Junho"],["July","Julho"],["August","Agosto"],
+                       ["September","Setembro"],["October","Outubro"],["November","Novembro"],["December","Dezembro"]];
+
+                for(const [a,b] of wordPairs){
+                    const re = new RegExp(`(^|[\\s•\\-\\(\\[\\{\\/])${a}([\\s\\)\\]\\}\\/\\-]|$)`, 'g');
+                    composed = composed.replace(re, `$1${b}$2`);
+                }
+
+                
+                // Numeric connector in Portuguese ranges/cycles: "10 a 10" -> "10 to 10"
+                if(CURRENT_LANG === 'en'){
+                    composed = composed.replace(/(\d+)\s*[aà]\s*(\d+)/g, '$1 to $2');
+                } else {
+                    composed = composed.replace(/(\d+)\s*to\s*(\d+)/gi, '$1 a $2');
+                }
+
+if(composed !== core) return lead + composed + trail;
+
+                return raw;
+            }catch(e){
+                return s;
+            }
+        }
+
+        function shouldSkipNode(node){
+            try{
+                const el = node && (node.nodeType === 1 ? node : node.parentElement);
+                if(!el) return false;
+                if(el.closest && el.closest('[data-no-translate], .no-i18n')) return true;
+                const tag = (el.tagName || '').toUpperCase();
+                if(tag === 'CODE' || tag === 'PRE') return true;
+                return false;
+            }catch(e){ return false; }
+        }
+
+        // -----------------------------
+        // Non-blocking translation engine
+        // -----------------------------
+        let _i18nObserver = null;
+        let _i18nPendingTimer = null;
+        let _i18nPendingSet = new Set();
+
+        let _i18nJobs = [];
+        let _i18nJobMap = new WeakMap();
+        let _i18nScheduled = false;
+        let _i18nIsTranslating = false;
+
+        const I18N_NODE_BUDGET = 300;
+
+        function _translateElementAttrs(el){
+            try{
+                if(!el || el.nodeType !== 1) return;
+                if(shouldSkipNode(el)) return;
+
+                const tag = (el.tagName || '').toUpperCase();
+
+                if(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement){
+                    const ph = el.getAttribute('placeholder');
+                    if(ph){
+                        const next = translateString(ph);
+                        if(next !== ph) el.setAttribute('placeholder', next);
+                    }
+                }
+
+                const tt = el.getAttribute && el.getAttribute('title');
+                if(tt){
+                    const next = translateString(tt);
+                    if(next !== tt) el.setAttribute('title', next);
+                }
+                const ar = el.getAttribute && el.getAttribute('aria-label');
+                if(ar){
+                    const next = translateString(ar);
+                    if(next !== ar) el.setAttribute('aria-label', next);
+                }
+
+                if(el instanceof HTMLInputElement){
+                    const tp = (el.getAttribute('type')||'').toLowerCase();
+                    if(tp === 'button' || tp === 'submit' || tp === 'reset'){
+                        const vv = el.getAttribute('value');
+                        if(vv){
+                            const next = translateString(vv);
+                            if(next !== vv) el.setAttribute('value', next);
+                        }
+                    }
+                }
+
+                if(tag === 'OPTION'){
+                    if(el.text){
+                        const next = translateString(el.text);
+                        if(next !== el.text) el.text = next;
+                    }
+                } else if(tag === 'SELECT'){
+                    try{
+                        Array.from(el.options || []).forEach(opt => {
+                            if(opt && opt.text){
+                                const next = translateString(opt.text);
+                                if(next !== opt.text) opt.text = next;
+                            }
+                        });
+                    }catch(e){}
+                }
+            }catch(e){}
+        }
+
+        function _createJob(root){
+            try{
+                if(!root) return null;
+                const realRoot = (root.nodeType === 3) ? (root.parentNode || root) : root;
+                if(!realRoot || realRoot.nodeType !== 1) return null;
+                if(_i18nJobMap.has(realRoot)) return null;
+
+                const walker = document.createTreeWalker(realRoot, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, null);
+                const job = { root: realRoot, walker };
+                _i18nJobMap.set(realRoot, job);
+                return job;
+            }catch(e){ return null; }
+        }
+
+        function enqueueTranslate(root){
+            try{
+                const job = _createJob(root);
+                if(!job) return;
+                _i18nJobs.push(job);
+                _scheduleJobs();
+            }catch(e){}
+        }
+
+        function _scheduleJobs(){
+            if(_i18nScheduled) return;
+            _i18nScheduled = true;
+
+            const run = (deadline) => {
+                _i18nScheduled = false;
+                _processJobs(deadline);
+            };
+
+            if(window.requestIdleCallback){
+                window.requestIdleCallback(run, { timeout: 200 });
+            }else{
+                setTimeout(() => run({ timeRemaining: () => 0, didTimeout: true }), 20);
+            }
+        }
+
+        function _processJobs(deadline){
+            if(!_i18nJobs.length) return;
+
+            _i18nIsTranslating = true;
+
+            let budget = I18N_NODE_BUDGET;
+            try{
+                if(deadline && typeof deadline.timeRemaining === 'function'){
+                    const tr = deadline.timeRemaining();
+                    if(tr > 20) budget = 1400;
+                    else if(tr > 8) budget = 1000;
+                }
+            }catch(e){}
+
+            while(_i18nJobs.length && budget > 0){
+                const job = _i18nJobs[0];
+                if(!job || !job.root || !document.contains(job.root)){
+                    _i18nJobs.shift();
+                    continue;
+                }
+
+                // translate root attrs
+                _translateElementAttrs(job.root);
+
+                let steps = 0;
+                let done = false;
+
+                while(steps < budget){
+                    const node = job.walker.nextNode();
+                    if(!node){ done = true; break; }
+
+                    if(node.nodeType === 3){
+                        if(!shouldSkipNode(node)){
+                            const raw = node.nodeValue;
+                            if(raw){
+                                const next = translateString(raw);
+                                if(next !== raw) node.nodeValue = next;
+                            }
+                        }
+                    }else if(node.nodeType === 1){
+                        _translateElementAttrs(node);
+                    }
+                    steps++;
+                }
+
+                budget -= steps;
+
+                if(done){
+                    _i18nJobs.shift();
+                    _i18nJobMap.delete(job.root);
+                }else{
+                    // Not finished, continue next slice
+                    break;
+                }
+            }
+
+            _i18nIsTranslating = false;
+
+            if(_i18nJobs.length){
+                _scheduleJobs();
+            }
+        }
+
+        function _enqueueBatch(node){
+            try{
+                const n = (node && node.nodeType === 1) ? node : (node && node.parentNode ? node.parentNode : null);
+                if(!n || n.nodeType !== 1) return;
+                _i18nPendingSet.add(n);
+                if(_i18nPendingTimer) return;
+
+                _i18nPendingTimer = setTimeout(() => {
+                    try{
+                        const arr = Array.from(_i18nPendingSet);
+                        _i18nPendingSet.clear();
+                        _i18nPendingTimer = null;
+                        arr.forEach(x => enqueueTranslate(x));
+                    }catch(e){
+                        _i18nPendingSet.clear();
+                        _i18nPendingTimer = null;
+                    }
+                }, 60);
+            }catch(e){}
+        }
+
+        function startI18nObserver(){
+            try{
+                if(_i18nObserver) return;
+                _i18nObserver = new MutationObserver((muts) => {
+                    if(_i18nIsTranslating) return; // ignore our own writes
+                    for(const m of muts){
+                        if(m.type === 'childList'){
+                            (m.addedNodes || []).forEach(n => _enqueueBatch(n));
+                        }else if(m.type === 'characterData' || m.type === 'attributes'){
+                            _enqueueBatch(m.target);
+                        }
+                    }
+                });
+                _i18nObserver.observe(document.body, { childList:true, subtree:true });
+            }catch(e){}
+        }
+
+        function stopI18nObserver(){
+            try{
+                if(_i18nObserver){
+                    _i18nObserver.disconnect();
+                    _i18nObserver = null;
+                }
+            }catch(e){}
+        }
+
+        function setLangButtonState(){
+            try{
+                const bpt = document.getElementById('lang-pt');
+                const ben = document.getElementById('lang-en');
+                if(!bpt || !ben) return;
+                const isEn = CURRENT_LANG === 'en';
+                ben.classList.toggle('ring-2', isEn);
+                ben.classList.toggle('ring-white/60', isEn);
+                bpt.classList.toggle('ring-2', !isEn);
+                bpt.classList.toggle('ring-white/60', !isEn);
+            }catch(e){}
+        }
+
+        function applyLanguage(){
+            document.documentElement.lang = (CURRENT_LANG === 'en') ? 'en' : 'pt-BR';
+            setLangButtonState();
+
+            // Reset pending work to avoid piling up (prevents freezes)
+            try{
+                stopI18nObserver();
+                _i18nJobs = [];
+                _i18nJobMap = new WeakMap();
+                _i18nPendingSet.clear();
+                if(_i18nPendingTimer){ clearTimeout(_i18nPendingTimer); _i18nPendingTimer = null; }
+            }catch(e){}
+
+            enqueueTranslate(document.body);
+            startI18nObserver();
+        }
+
+        function setLanguage(lang){
+            CURRENT_LANG = (String(lang).toLowerCase().startsWith('en')) ? 'en' : 'pt';
+            try{ localStorage.setItem(LANG_STORAGE_KEY, CURRENT_LANG); }catch(e){}
+            applyLanguage();
+        }
+        window.setLanguage = setLanguage;
+
+        function initLanguageToggle(){
+            const bpt = document.getElementById('lang-pt');
+            const ben = document.getElementById('lang-en');
+            if(bpt) bpt.onclick = (ev) => { try{ ev.preventDefault(); }catch(e){} setLanguage('pt'); };
+            if(ben) ben.onclick = (ev) => { try{ ev.preventDefault(); }catch(e){} setLanguage('en'); };
+
+            // Apply saved language once DOM is ready
+            applyLanguage();
+        }
+
+
         async function init() {
             lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions();
             const showFatalError = (title, msg) => {
@@ -3587,11 +4255,14 @@ ${period}
                  }
             };
 
-            try { await loadFromCloud(); } catch (e) { console.warn(e); if (window.forceOfflineMode) { window.forceOfflineMode(); } return; } 
-            
-            if (!store.activeId) {
+            try { await loadFromCloud(); } catch (e) { showFatalError("Erro de Conexão ou Permissão", e.message || "Falha ao baixar dados."); return; } 
+if (!store.activeId) {
                 try {
-                    const docSnap = await getDoc(doc(db, "users", "dante_data"));
+                    const docRef = doc(db, "users", "dante_data");
+                const docSnap = await Promise.race([
+                    getDoc(docRef),
+                    new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout ao conectar no Firestore.")), 8000))
+                ]);
                     if (docSnap.exists()) { showFatalError("Erro de Integridade", "Seus dados existem no servidor, mas não puderam ser lidos corretamente."); return; }
                 } catch(e) { showFatalError("Sem Conexão", "Não foi possível verificar se você já tem uma conta."); return; }
 
@@ -3656,7 +4327,7 @@ ${period}
             if(t.includes("saldo atual") || t.includes("equity")){
                 return {
                     title: "Saldo Atual (Equity)",
-                    body: "Mostra seu saldo atual baseado nos trades registrados. O progresso considera o ponto em que o drawdown/trailing tende a parar (start + drawdown + $100), que a Apex chama de ‘threshold stop/safety net’.",
+                    body: "Mostra seu saldo atual (equity) com base no seu registro diário/import (ex.: NinjaTrader). O progresso considera o ponto em que o drawdown/trailing tende a parar (start + drawdown + $100), que a Apex chama de ‘threshold stop/safety net’.",
                     link: LINKS.trailing
                 };
             }
@@ -3892,7 +4563,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             const res = _buildPeriodRows(acc, startISO, endISO);
 
             ttl.textContent = title || "Detalhes do período";
-            rng.textContent = `${_formatDM(startISO)} – ${_formatDM(endISO)} • ${acc.name || 'Conta'}`;
+            rng.textContent = `${_formatDM(startISO)} – ${_formatDM(endISO)} • ${acc.name || (CURRENT_LANG==='en'?'Account':'Conta')}`;
             sum.textContent = `Dias com trade: ${res.tradedDays} • Feriados ignorados no total: ${res.holidayDays}`;
             tot.textContent = `Total: ${formatCurrency(res.total)}`;
 
@@ -4239,9 +4910,448 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
         }
 
         // Safe boot (prevents one error from breaking the whole app)
-        window.addEventListener('load', () => {
+        
+
+        // ==============================
+        // NinjaTrader Quick Import (paste)
+        // ==============================
+
+        const NT_IMPORT_PREFIX_KEY = 'df_nt_import_prefix';
+
+        function ntSetStatus(msg, isErr=false){
+            const el = document.getElementById('nt-import-status');
+            if(!el) return;
+            el.textContent = msg || '';
+            el.className = 'text-xs ' + (isErr ? 'text-red-500' : 'text-slate-500 dark:text-slate-400');
+        }
+
+        function ntNormalize(s){
+            return String(s || '')
+                .trim()
+                .toLowerCase()
+                .replace(/\s+/g,' ')
+                .replace(/[^a-z0-9]+/g,'');
+        }
+
+        function ntMoneyToCents(v){
+            if(v === null || v === undefined) return null;
+            let s = String(v).trim();
+            if(!s) return null;
+
+            // negatives like (123.45)
+            let neg = false;
+            if(/^\(.*\)$/.test(s)) { neg = true; s = s.slice(1,-1); }
+            s = s.replace(/[$,\s]/g,'');
+            if(s.startsWith('-')) { neg = true; s = s.slice(1); }
+
+            if(!s) return null;
+            if(!/^\d+(\.\d+)?$/.test(s)) {
+                const f = Number(s);
+                if(!isFinite(f)) return null;
+                const c = Math.round(f * 100);
+                return neg ? -c : c;
+            }
+
+            const parts = s.split('.');
+            const whole = parts[0] || '0';
+            const frac = (parts[1] || '');
+            const frac2 = (frac + '00').slice(0,2);
+            const cents = (parseInt(whole,10) * 100) + parseInt(frac2 || '0',10);
+            return neg ? -cents : cents;
+        }
+
+        function ntInferPrefix(){
+            const input = document.getElementById('nt-import-company');
+            const stored = (localStorage.getItem(NT_IMPORT_PREFIX_KEY) || '').trim();
+            if(input && input.value.trim()) return input.value.trim().toUpperCase();
+            if(stored) return stored.toUpperCase();
+
+            // try active account name
+            try{
+                const acc = getActive && getActive();
+                const name = acc && acc.name ? String(acc.name).trim() : '';
+                const m = name.match(/^([A-Za-z]{1,6})/);
+                if(m && m[1]) return m[1].toUpperCase();
+            }catch(e){}
+            return 'DF';
+        }
+
+        function ntSetDefaults(){
+            const prefix = ntInferPrefix();
+            const companyEl = document.getElementById('nt-import-company');
+            if(companyEl && !companyEl.value.trim()) companyEl.value = prefix;
+
+            const dateEl = document.getElementById('nt-import-date');
+            if(dateEl && !dateEl.value) {
+                const d = new Date();
+                const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                dateEl.value = iso;
+            }
+        }
+
+        window.ntImportInitDefaults = () => {
+            ntSetDefaults();
+        };
+
+        function ntSplitLine(line, delim){
+            if(delim === '\t') return line.split('\t').map(x => x.trim());
+            if(delim === ',')  return line.split(',').map(x => x.trim());
+            // fallback: multiple spaces
+            return line.trim().split(/\s{2,}|\t/).map(x => x.trim());
+        }
+
+        function parseNinjaReportText(text){
+            const t = String(text || '').replace(/\r/g,'').trim();
+            if(!t) return { rows: [], error: 'Cole o relatório do NinjaTrader.' };
+
+            const lines = t.split('\n').map(l => l.trim()).filter(l => l.length);
+            if(lines.length < 2) return { rows: [], error: 'Relatório insuficiente (precisa do cabeçalho + linhas).' };
+
+            const first = lines[0];
+            const delim = first.includes('\t') ? '\t' : (first.includes(',') ? ',' : null);
+
+            const headerRaw = ntSplitLine(lines[0], delim);
+            const header = headerRaw.map(ntNormalize);
+
+            const idx = (nameVariants) => {
+                for(const v of nameVariants){
+                    const k = ntNormalize(v);
+                    const i = header.indexOf(k);
+                    if(i !== -1) return i;
+                }
+                return -1;
+            };
+
+            const iDisplay = idx(['Display name','Display Name','Display']);
+            const iCash = idx(['Cash value','Cash Value','Cash']);
+            const iNetLiq = idx(['Net liquidation','Net Liquidation','NetLiq']);
+            const iTotal = idx(['Total PnL','Total Pnl','Total']);
+            const iRealized = idx(['Realized PnL','Realized Pnl','Realized']);
+            const iGrossRealized = idx(['Gross realized PnL','Gross Realized PnL','Gross realized','GrossRealized']);
+
+            if(iDisplay === -1) return { rows: [], error: 'Não encontrei a coluna "Display name". Copie a tabela com cabeçalho.' };
+
+            const rows = [];
+            for(let li=1; li<lines.length; li++){
+                const cols = ntSplitLine(lines[li], delim);
+                if(cols.length < 3) continue;
+                const display = cols[iDisplay] || '';
+                const cashC = iCash !== -1 ? ntMoneyToCents(cols[iCash]) : null;
+                const netLiqC = iNetLiq !== -1 ? ntMoneyToCents(cols[iNetLiq]) : null;
+                const totalC = iTotal !== -1 ? ntMoneyToCents(cols[iTotal]) : null;
+                const realizedC = iRealized !== -1 ? ntMoneyToCents(cols[iRealized]) : null;
+                const grossRealizedC = iGrossRealized !== -1 ? ntMoneyToCents(cols[iGrossRealized]) : null;
+
+                rows.push({
+                    displayName: display,
+                    cashValueCents: cashC,
+                    netLiqCents: netLiqC,
+                    totalPnLCents: totalC,
+                    realizedPnLCents: realizedC,
+                    grossRealizedPnLCents: grossRealizedC
+                });
+            }
+            return { rows, error: rows.length ? null : 'Nenhuma linha válida foi detectada.' };
+        }
+
+        function ntExtractTrailingNumber(display){
+            const s = String(display || '').trim();
+            // try last 2-3 digits
+            let m = s.match(/(\d{2,3})\s*$/);
+            if(m && m[1]) return m[1];
+            // try patterns like PA-APEX-...-32
+            m = s.match(/-(\d{2,3})\s*$/);
+            if(m && m[1]) return m[1];
+            return null;
+        }
+
+        function ntMakeCode(prefix, digits){
+            if(!digits) return null;
+            const n = String(digits).replace(/\D/g,'');
+            if(!n) return null;
+            // preserve 2 or 3 digits
+            const padded = (n.length === 1) ? ('0' + n) : n;
+            return (String(prefix || 'DF').toUpperCase()) + padded;
+        }
+
+        function ntFindAccountByCode(code){
+            const normCode = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
+            const all = Object.values(store.accounts || {});
+            for(const a of all){
+                const nm = String(a.name || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
+                if(nm === normCode) return a;
+                // also accept "DF22" matching "DF 22"
+                if(nm.includes(normCode)) return a;
+            }
+            return null;
+        }
+
+        function ntCreateAccountIfMissing(code){
+            const active = (() => { try { return getActive(); } catch(e){ return null; } })();
+            const sizeHint = active?.size || '50k';
+            const monthTypeHint = active?.monthType || 1;
+
+            const id = 'acc_' + Date.now() + '_' + Math.random().toString(16).slice(2);
+            const name = String(code || '').replace(/^([A-Z]{1,6})(\d+)/i, (_,p,n) => `${p.toUpperCase()} ${n}`);
+            store.accounts[id] = { id, name, size: sizeHint, monthType: monthTypeHint, data: {}, payouts: [], createdAt: new Date().toISOString(), favorite: false };
+            return store.accounts[id];
+        }
+
+        window.previewNinjaImport = () => {
+            if(!adminSession){
+                alert(translateString("Você precisa estar logado na área administrativa."));
+                return;
+            }
+            ntSetDefaults();
+
+            const prefix = (document.getElementById('nt-import-company')?.value || ntInferPrefix()).trim().toUpperCase();
+            localStorage.setItem(NT_IMPORT_PREFIX_KEY, prefix);
+
+            const txt = document.getElementById('nt-import-text')?.value || '';
+            const out = parseNinjaReportText(txt);
+            const badge = document.getElementById('nt-import-detected');
+            const previewEl = document.getElementById('nt-import-preview');
+
+            if(out.error){
+                if(badge) badge.textContent = 'Erro';
+                if(previewEl){ previewEl.classList.remove('hidden'); previewEl.textContent = '❌ ' + out.error; }
+                ntSetStatus(out.error, true);
+                return;
+            }
+
+            const rows = out.rows;
+            let mapped = 0;
+            const sample = [];
+
+            for(const r of rows){
+                const digits = ntExtractTrailingNumber(r.displayName);
+                const code = ntMakeCode(prefix, digits);
+                if(!code) continue;
+                mapped++;
+                const cash = (r.cashValueCents==null) ? '—' : formatCurrency(r.cashValueCents/100);
+                const pnl = (r.totalPnLCents==null) ? '—' : formatCurrency(r.totalPnLCents/100);
+                sample.push(`${code}  | Cash: ${cash}  | TotalPnL: ${pnl}  | Display: ${r.displayName}`);
+                if(sample.length >= 8) break;
+            }
+
+            if(badge) badge.textContent = `${mapped} contas`;
+            if(previewEl){
+                previewEl.classList.remove('hidden');
+                previewEl.textContent = `Detectadas: ${rows.length} linhas\nMapeadas: ${mapped} contas (prefixo ${prefix})\n\nExemplos:\n` + (sample.length ? sample.join('\n') : '—');
+            }
+            ntSetStatus('Pré-visualização pronta.');
+        };
+
+        window.applyNinjaImportFromAdmin = async () => {
+            if(!adminSession){
+                alert(translateString("Você precisa estar logado na área administrativa."));
+                return;
+            }
+            ntSetDefaults();
+
+            const prefix = (document.getElementById('nt-import-company')?.value || ntInferPrefix()).trim().toUpperCase();
+            localStorage.setItem(NT_IMPORT_PREFIX_KEY, prefix);
+
+            const dateISO = (document.getElementById('nt-import-date')?.value || '').trim();
+            if(!dateISO){
+                ntSetStatus('Escolha uma data.', true);
+                return;
+            }
+
+            const field = (document.getElementById('nt-import-field')?.value || 'total').trim();
+            const overwrite = !!document.getElementById('nt-import-overwrite')?.checked;
+            const updateEquity = !!document.getElementById('nt-import-update-equity')?.checked;
+
+            const txt = document.getElementById('nt-import-text')?.value || '';
+            const out = parseNinjaReportText(txt);
+            if(out.error){
+                ntSetStatus(out.error, true);
+                return;
+            }
+
+            const rows = out.rows;
+            let applied = 0;
+            let created = 0;
+            let skipped = 0;
+
+            const nowIso = new Date().toISOString();
+
+            for(const r of rows){
+                const digits = ntExtractTrailingNumber(r.displayName);
+                const code = ntMakeCode(prefix, digits);
+                if(!code) { skipped++; continue; }
+
+                let acc = ntFindAccountByCode(code);
+                if(!acc){
+                    acc = ntCreateAccountIfMissing(code);
+                    created++;
+                }
+
+                // store last snapshot from NinjaTrader
+                if(updateEquity){
+                    if(!acc.nt) acc.nt = {};
+                    if(r.cashValueCents != null) acc.nt.cashValueCents = r.cashValueCents;
+                    if(r.netLiqCents != null) acc.nt.netLiqCents = r.netLiqCents;
+                    if(r.totalPnLCents != null) acc.nt.totalPnLCents = r.totalPnLCents;
+                    if(r.realizedPnLCents != null) acc.nt.realizedPnLCents = r.realizedPnLCents;
+                    if(r.grossRealizedPnLCents != null) acc.nt.grossRealizedPnLCents = r.grossRealizedPnLCents;
+                    acc.nt.portalBalanceRounded = (r.cashValueCents != null) ? Math.round((r.cashValueCents/100)) : (acc.nt.portalBalanceRounded || null);
+                    acc.nt.asOfIso = nowIso;
+                    acc.nt.source = 'ninjatrader_paste';
+                }
+
+                // write daily operation value
+                const cents = (field === 'realized') ? r.realizedPnLCents : r.totalPnLCents;
+                if(cents == null){
+                    // if no PnL column, still allow equity update
+                    applied++;
+                    continue;
+                }
+
+                if(!acc.data) acc.data = {};
+                if(!acc.data[dateISO]) acc.data[dateISO] = {};
+                const existing = acc.data[dateISO].val;
+
+                if(overwrite || existing === undefined || existing === null || String(existing).trim() === ''){
+                    acc.data[dateISO].val = (cents/100).toFixed(2);
+                    acc.data[dateISO].nt_import = { field, cents, asOfIso: nowIso };
+                    acc.data[dateISO].nt_cashValueCents = (r.cashValueCents != null ? r.cashValueCents : null);
+                }
+
+                applied++;
+            }
+
+            ntSetStatus('Salvando...');
+            try{
+                await saveToCloud();
+            }catch(e){ /* saveToCloud already handles local fallback */ }
+
+            try { renderSidebar(); } catch(e) {}
+            try { renderDashboard(); } catch(e) {}
+            try {
+                const m = document.getElementById('accounts-overview-modal');
+                if(m && !m.classList.contains('hidden')) renderAccountsOverview();
+            } catch(e) {}
+
+            const badge = document.getElementById('nt-import-detected');
+            if(badge) badge.textContent = `${applied} contas`;
+
+            ntSetStatus(`Import concluído: ${applied} contas (${created} criadas, ${skipped} ignoradas).`);
+        };
+// Bootstrap language toggle as early as possible (without waiting for images/icons)
+        (function bootstrapLangEarly(){
+            const run = () => { try { initLanguageToggle(); } catch(e){} };
+            if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+            else run();
+        })();
+
+        
+        // Bootstrap without waiting for full window 'load' (prevents infinite "Iniciando..." if any resource hangs)
+        async function bootstrapApp(){
+            // Wire language buttons ASAP
+            try { initLanguageToggle(); } catch(e){}
+
+            // If running from local file, Firebase modules may be blocked. Show guidance early.
+            try{
+                if(location && location.protocol === 'file:'){
+                    const loader = document.getElementById('app-loader');
+                    if(loader){
+                        loader.innerHTML = `
+                          <div class="text-center p-6 max-w-sm mx-auto">
+                            <div class="text-yellow-400 mb-4 flex justify-center"><i data-lucide="alert-triangle" class="w-12 h-12"></i></div>
+                            <h3 class="text-lg font-bold text-white mb-2">Abra pelo link do GitHub</h3>
+                            <p class="text-xs text-slate-400 mb-6 bg-slate-800 p-3 rounded border border-slate-700">
+                              Este arquivo está sendo aberto via <b>file://</b>. Alguns módulos (Firebase) podem não carregar por segurança do navegador.<br/>
+                              Use o link publicado no GitHub Pages (https://...) ou rode um servidor local (http://localhost).
+                            </p>
+                            <div class="space-y-3">
+                              <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">Recarregar</button>
+                              <button onclick="window.forceOfflineMode && window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2">
+                                <i data-lucide="wifi-off" class="w-4 h-4"></i> Usar em Modo Offline
+                              </button>
+                            </div>
+                          </div>
+                        `;
+                        try { lucide.createIcons(); ensureInfoIcons(); } catch(e){}
+                    }
+                }
+            }catch(e){}
+
+            // Ensure Firebase is ready (with timeout). If it fails, show options instead of hanging forever.
+            try{
+                const statusEl = document.getElementById('status-text');
+                if(statusEl) statusEl.textContent = (typeof translateString === 'function') ? translateString('Iniciando...') : 'Initializing...';
+            }catch(e){}
+
+            let __fbOk = false;
+            try{
+                // Attempt to initialize Firebase (dynamic imports)
+                const fbPromise = __ensureFirebaseApp();
+                const fbTimed = new Promise((res)=>setTimeout(()=>res(false), 12000));
+                __fbOk = await Promise.race([fbPromise, fbTimed]);
+            }catch(e){ __fbOk = false; }
+
+            if(!__fbOk){
+                const loader = document.getElementById('app-loader');
+                if(loader){
+                    loader.innerHTML = `
+                        <div class="text-center p-6 max-w-sm mx-auto">
+                            <div class="text-yellow-400 mb-4 flex justify-center"><i data-lucide="alert-triangle" class="w-12 h-12"></i></div>
+                            <h3 class="text-lg font-bold text-white mb-2">Falha ao carregar módulos</h3>
+                            <p class="text-xs text-slate-400 mb-6 bg-slate-800 p-3 rounded border border-slate-700">
+                                O navegador não conseguiu baixar os módulos do Firebase (bloqueio de rede, adblock, ou conexão lenta).<br/>
+                                Você pode tentar recarregar ou continuar em modo offline.
+                            </p>
+                            <div class="space-y-3">
+                                <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">
+                                    Recarregar
+                                </button>
+                                <button onclick="window.forceOfflineMode && window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2">
+                                    <i data-lucide="wifi-off" class="w-4 h-4"></i> Usar em Modo Offline
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    try { lucide.createIcons(); ensureInfoIcons(); } catch(e){}
+                }
+                return; // stop bootstrap here (offline button can proceed)
+            }
+
+
+            // Optional AI init (never blocks bootstrap)
             try { initAI(); } catch (e) { console.error('initAI failed:', e); }
-            try { init(); } catch (e) {
+
+            // Failsafe: if init() takes too long, show actionable options
+            let bootDone = false;
+            const failsafe = setTimeout(() => {
+                if(bootDone) return;
+                const loader = document.getElementById('app-loader');
+                if(loader){
+                    loader.innerHTML = `
+                        <div class="text-center p-6 max-w-sm mx-auto">
+                            <div class="text-yellow-400 mb-4 flex justify-center"><i data-lucide="alert-triangle" class="w-12 h-12"></i></div>
+                            <h3 class="text-lg font-bold text-white mb-2">Inicialização demorando</h3>
+                            <p class="text-xs text-slate-400 mb-6 bg-slate-800 p-3 rounded border border-slate-700">
+                                Algo está impedindo o carregamento (cache, bloqueio de rede, ou permissão).<br/>
+                                Você pode continuar em modo offline ou recarregar.
+                            </p>
+                            <div class="space-y-3">
+                                <button onclick="window.forceOfflineMode && window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2">
+                                    <i data-lucide="wifi-off" class="w-4 h-4"></i> Usar em Modo Offline
+                                </button>
+                                <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">
+                                    Recarregar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    try { lucide.createIcons(); ensureInfoIcons(); } catch(e){}
+                }
+            }, 8000);
+
+            // Initialize app
+            let _initOk = false;
+            try { await init(); _initOk = true; } catch (e) {
                 console.error('init failed:', e);
                 const loader = document.getElementById('app-loader');
                 if (loader) {
@@ -4252,96 +5362,26 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                     '</div>';
                 }
             }
-            try { bindHelpPopover(); } catch (e) { console.error('bindHelpPopover failed:', e); }
-            try { ensureInfoIcons(); } catch (e) { console.error('ensureInfoIcons failed:', e); }
-            try { bindPeriodInteractions(); } catch (e) { console.error('bindPeriodInteractions failed:', e); }
-        });
-    
-// --- Expose Accounts Overview actions to inline onclick handlers (GitHub Pages safe) ---
-try {
-  window.exportAccountsOverviewPDF = exportAccountsOverviewPDF;
-  window.printAccountsOverview = printAccountsOverview;
-  window.toggleAccountsOverviewShareMenu = toggleAccountsOverviewShareMenu;
-  window.shareAccountsOverviewText = shareAccountsOverviewText;
-  window.shareAccountsOverviewPDF = shareAccountsOverviewPDF;
-  window.copyAccountsOverviewText = copyAccountsOverviewText;
-  window.toggleAccountsOverviewChart = toggleAccountsOverviewChart;
-} catch (e) {
-  console.warn("Accounts Overview global bindings failed:", e);
-}
 
+            bootDone = true;
+            try { clearTimeout(failsafe); } catch(e){}
 
-/* -------------------------------
-   Backup (export/import JSON)
--------------------------------- */
-function downloadFullBackup(){
-    try{
-        const data = (typeof getPersistableStore === 'function') ? getPersistableStore() : (window.store || {});
-        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        const dt = new Date();
-        const stamp = dt.toISOString().slice(0,10);
-        a.href = URL.createObjectURL(blob);
-        a.download = `df_backup_${stamp}.json`;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 250);
-        toast('Backup exportado (JSON).', 'success');
-    }catch(e){
-        console.error(e);
-        alert('Não foi possível exportar o backup.');
-    }
-}
+            if (_initOk) {
+                try { hideAppLoader(); } catch (e) {}
+            }
 
-function triggerBackupImport(){
-    const input = document.getElementById('backup-import-file');
-    if(input) input.click();
-}
-
-async function handleBackupImportFile(ev){
-    try{
-        const file = ev?.target?.files?.[0];
-        if(!file) return;
-        const text = await file.text();
-        const parsed = JSON.parse(text);
-
-        // aplicar backup (mesma higiene usada no modo offline)
-        if(!parsed || typeof parsed !== 'object'){
-            alert('Backup inválido.');
-            return;
+            // Re-apply language AFTER init() so freshly-rendered content is translated.
+            try {
+                const lang = (() => { try { return localStorage.getItem('df_lang') || 'pt'; } catch(e){ return 'pt'; } })();
+                if (typeof window.setLanguage === 'function') window.setLanguage(lang);
+            } catch(e){}
         }
-        // sobrescreve store
-        window.store = parsed;
 
-        // limpar estados voláteis que não devem persistir
-        try{
-            delete window.store?.dayExpanded;
-            delete window.store?.dayExpandedMeta;
-            delete window.store?.periodModal;
-            delete window.store?.ui;
-            delete window.store?.accountsOverviewModalOpen;
-        }catch(_){}
-
-        // salvar imediatamente no localStorage também (para testes offline)
-        try{
-            localStorage.setItem('df_backup_local', JSON.stringify(window.store));
-        }catch(_){}
-
-        // re-render / re-hidratar
-        if(typeof postLoadNormalizeStore === 'function') postLoadNormalizeStore();
-        if(typeof render === 'function') render();
-        if(typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
-
-        toast('Backup importado com sucesso.', 'success');
-    }catch(e){
-        console.error(e);
-        alert('Não foi possível importar o backup. Verifique se o arquivo é um JSON válido.');
-    }finally{
-        // reset input para permitir reimport do mesmo arquivo
-        try{ ev.target.value = ''; }catch(_){}
-    }
-}
-
-</script>
+        // Start as soon as DOM is ready (do not wait for full window load)
+        (function(){
+            if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootstrapApp);
+            else bootstrapApp();
+        })();
+    </script>
 </body>
 </html>
