@@ -930,16 +930,39 @@ body.dark .bg-white { background-color: #1e293b; }
     <script type="module">
                 // Firebase dynamic loader (prevents "stuck on Iniciando..." when module imports hang or are blocked)
         let initializeApp, getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc;
-        async function __loadFirebaseModules(timeoutMs = 12000){
+        async function __loadFirebaseModules(maxWaitMs = 45000){
             const appUrl = "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
             const fsUrl  = "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-            const timed = new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout loading Firebase modules.")), timeoutMs));
-            const loader = (async () => {
-                const appMod = await import(appUrl);
-                const fsMod  = await import(fsUrl);
-                return { appMod, fsMod };
-            })();
-            const { appMod, fsMod } = await Promise.race([loader, timed]);
+
+            // If already loaded, skip
+            if (window.__dfFirebaseModulesLoaded && initializeApp && getFirestore) return true;
+
+            // Do NOT fail fast here. On some networks/CDNs the module import may take > 12s,
+            // and failing early causes unnecessary "Reload" loops. We'll only fail after maxWaitMs.
+            const importPromise = Promise.all([import(appUrl), import(fsUrl)]);
+
+            // After a few seconds, change the loader text to indicate slow connection (but keep loading).
+            let slowTimer = null;
+            try{
+                slowTimer = setTimeout(() => {
+                    try{
+                        const st = document.getElementById('status-text');
+                        if(!st) return;
+                        const lang = (window.CURRENT_LANG || localStorage.getItem('df_lang') || 'pt').toLowerCase();
+                        st.textContent = (lang.startsWith('en'))
+                            ? 'Loading modules... (slow connection)'
+                            : 'Carregando módulos... (conexão lenta)';
+                    }catch(e){}
+                }, 10000);
+            }catch(e){}
+
+            const timed = new Promise((_, rej) =>
+                setTimeout(() => rej(new Error("Timeout loading Firebase modules.")), maxWaitMs)
+            );
+
+            const [appMod, fsMod] = await Promise.race([importPromise, timed]);
+
+            try{ if(slowTimer) clearTimeout(slowTimer); }catch(e){}
 
             initializeApp = appMod.initializeApp;
             getFirestore  = fsMod.getFirestore;
@@ -948,13 +971,15 @@ body.dark .bg-white { background-color: #1e293b; }
             setDoc        = fsMod.setDoc;
             onSnapshot    = fsMod.onSnapshot;
             updateDoc     = fsMod.updateDoc;
+
+            window.__dfFirebaseModulesLoaded = true;
             return true;
         }
 
         async function __initFirebaseIfPossible(){
             try{
                 if (window.__dfFirebaseReady && initializeApp && getFirestore) return true;
-                await __loadFirebaseModules(12000);
+                await __loadFirebaseModules(45000);
                 window.__dfFirebaseReady = true;
                 return true;
             }catch(e){
@@ -2394,9 +2419,11 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         window.filterReport = () => filterReportInternal();
         window.pdfFilteredReport = () => pdfFilteredReportInternal();
         window.shareReport = () => shareReportInternal();
-        window.updateData = (iso, type, val) => { 
-            const acc = getActive(); 
-            if(!acc.data[iso]) acc.data[iso] = {}; 
+        
+        function _applyDataChange(acc, iso, type, val){
+            if(!acc || !iso || !type) return;
+            if(!acc.data) acc.data = {};
+            if(!acc.data[iso]) acc.data[iso] = {};
 
             // Campos por trade (t1meta / t2meta)
             if (type && (type.startsWith('t1m_') || type.startsWith('t2m_'))) {
@@ -2411,40 +2438,55 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                     else if(typeof val === 'string') val = parseFloat(val.replace(',', '.')) || 0;
                 }
                 acc.data[iso][metaKey][field] = val;
-                renderDashboard(); 
-                saveToCloud(); 
                 return;
             }
-            
-                        // Para T1/T2: se o campo ficar vazio, mantenha vazio (nao virar 0)
+
+            // Para T1/T2: se o campo ficar vazio, mantenha vazio (nao virar 0)
             if (type === 't1' || type === 't2') {
                 if (val === '' || val === null || val === undefined) {
                     acc.data[iso][type] = '';
                     const t1 = parseFloat(acc.data[iso].t1) || 0;
                     const t2 = parseFloat(acc.data[iso].t2) || 0;
                     acc.data[iso].val = t1 + t2;
-                    renderDashboard();
-                    saveToCloud();
                     return;
                 }
             }
 
-if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes(type)) {
+            if (['val', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes(type)) {
                 if(val === '' || val === null) val = 0;
                 else if(typeof val === 'string') {
                     val = parseFloat(val.replace(',', '.')) || 0;
                 }
             }
+
             acc.data[iso][type] = val;
-            if (type === 'stopCount') { acc.data[iso].stopCount = parseInt(acc.data[iso].stopCount || 0, 10) || 0; }
+
+            if (type === 'stopCount') {
+                acc.data[iso].stopCount = parseInt(acc.data[iso].stopCount || 0, 10) || 0;
+            }
+
             if (type === 't1' || type === 't2') {
                 const t1 = parseFloat(acc.data[iso].t1) || 0;
                 const t2 = parseFloat(acc.data[iso].t2) || 0;
                 acc.data[iso].val = t1 + t2;
             }
-            renderDashboard(); 
-            saveToCloud(); 
+        }
+
+        // Salva enquanto digita (sem re-render) — evita perda quando o usuário não "blura" o campo
+        window.queueData = (iso, type, val) => {
+            const acc = getActive();
+            _applyDataChange(acc, iso, type, val);
+            scheduleSaveToCloud();
         };
+
+        // Salva e re-renderiza (usado em blur/checkbox/select)
+        window.updateData = (iso, type, val) => {
+            const acc = getActive();
+            _applyDataChange(acc, iso, type, val);
+            renderDashboard();
+            scheduleSaveToCloud();
+        };
+
 
         // Abrir/fechar detalhes do dia (Adição/Stops/Qualidade) — somente no clique
         window.toggleDayDetails = (iso) => {
@@ -3026,18 +3068,18 @@ function renderCalendar(acc) {
         const readOnlyDay = isOutsideMonth;
         const inputDisabledAttr = readOnlyDay ? 'disabled' : '';
         const inputExtraClass = readOnlyDay ? ' opacity-60 cursor-not-allowed' : '';
-        const t1Onblur = readOnlyDay ? '' : `onblur="window.updateData('${iso}','t1',this.value)"`;
-        const t2Onblur = readOnlyDay ? '' : `onblur="window.updateData('${iso}','t2',this.value)"`;
+        const t1Handlers = readOnlyDay ? '' : `oninput="window.queueData('${iso}','t1',this.value)" onblur="window.updateData('${iso}','t1',this.value)"`;
+        const t2Handlers = readOnlyDay ? '' : `oninput="window.queueData('${iso}','t2',this.value)" onblur="window.updateData('${iso}','t2',this.value)"`;
 
         const inputsHtml = `
             <div class="grid grid-cols-2 gap-2">
                 <input type="number" placeholder="T1"
                        class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}"
-                       ${inputDisabledAttr} value="${t1Num}" ${t1Onblur}
+                       ${inputDisabledAttr} value="${t1Num}" ${t1Handlers}
                        onkeydown="if(event.key==='Enter'){this.blur();}">
                 <input type="number" placeholder="T2"
                        class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}"
-                       ${inputDisabledAttr} value="${t2Num}" ${t2Onblur}
+                       ${inputDisabledAttr} value="${t2Num}" ${t2Handlers}
                        onkeydown="if(event.key==='Enter'){this.blur();}">
             </div>
         `;
@@ -3104,11 +3146,11 @@ function renderCalendar(acc) {
                             </label>
                             <label class="flex items-center gap-2">
                                 <span class="text-slate-500 whitespace-nowrap">Target (pts)</span>
-                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t1m.targetPts ?? ''}" ${readOnlyDay ? '' : `onblur=\"window.updateData('${iso}','t1m_targetPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t1m.targetPts ?? ''}" ${readOnlyDay ? '' : `oninput=\"window.queueData('${iso}','t1m_targetPts',this.value)\" onblur=\"window.updateData('${iso}','t1m_targetPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
                             </label>
                             <label class="flex items-center gap-2">
                                 <span class="text-slate-500 whitespace-nowrap">Risco (pts)</span>
-                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t1m.riskPts ?? ''}" ${readOnlyDay ? '' : `onblur=\"window.updateData('${iso}','t1m_riskPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t1m.riskPts ?? ''}" ${readOnlyDay ? '' : `oninput=\"window.queueData('${iso}','t1m_riskPts',this.value)\" onblur=\"window.updateData('${iso}','t1m_riskPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
                             </label>
                             <label class="flex items-center gap-2">
                                 <span class="text-slate-500 whitespace-nowrap">Viável?</span>
@@ -3130,11 +3172,11 @@ function renderCalendar(acc) {
                             </label>
                             <label class="flex items-center gap-2">
                                 <span class="text-slate-500 whitespace-nowrap">Target (pts)</span>
-                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t2m.targetPts ?? ''}" ${readOnlyDay ? '' : `onblur=\"window.updateData('${iso}','t2m_targetPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t2m.targetPts ?? ''}" ${readOnlyDay ? '' : `oninput=\"window.queueData('${iso}','t2m_targetPts',this.value)\" onblur=\"window.updateData('${iso}','t2m_targetPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
                             </label>
                             <label class="flex items-center gap-2">
                                 <span class="text-slate-500 whitespace-nowrap">Risco (pts)</span>
-                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t2m.riskPts ?? ''}" ${readOnlyDay ? '' : `onblur=\"window.updateData('${iso}','t2m_riskPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t2m.riskPts ?? ''}" ${readOnlyDay ? '' : `oninput=\"window.queueData('${iso}','t2m_riskPts',this.value)\" onblur=\"window.updateData('${iso}','t2m_riskPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
                             </label>
                             <label class="flex items-center gap-2">
                                 <span class="text-slate-500 whitespace-nowrap">Viável?</span>
@@ -3639,61 +3681,250 @@ ${period}
         }
 
 
-        // --- CLOUD ---
-        async function loadFromCloud() {
-            try {
-                const docRef = doc(db, "users", "dante_data");
-                const docSnap = await Promise.race([
-                    getDoc(docRef),
-                    new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout ao conectar no Firestore.")), 8000))
-                ]);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    store = JSON.parse(data.store_json);
-                    store.date = new Date(store.date || new Date());
-                    // UI state: sempre iniciar com detalhes fechados
-                    delete store.dayDetailsOpen;
-                    delete store.tradeDetailsOpen;
+                // --- CLOUD (Realtime + Debounced Save; cloud-first) ---
+        const CLOUD_DOC_COL = "users";
+        const CLOUD_DOC_ID  = "dante_data";
+
+        const CLIENT_ID_KEY = "df_client_id";
+        const CLIENT_ID = (() => {
+            try{
+                let id = (localStorage.getItem(CLIENT_ID_KEY) || '').trim();
+                if(!id){
+                    id = 'c_' + Math.random().toString(36).slice(2) + '_' + Date.now().toString(36);
+                    localStorage.setItem(CLIENT_ID_KEY, id);
                 }
-            } catch (e) { throw e; }
+                return id;
+            }catch(e){
+                return 'c_' + Math.random().toString(36).slice(2) + '_' + Date.now().toString(36);
+            }
+        })();
+
+        let __cloudUnsub = null;
+        let __lastRemoteUpdateMs = 0;
+        let __lastLocalWriteMs  = 0;
+
+        let __saveTimer = null;
+        let __saveInFlight = false;
+        let __saveAgain = false;
+        let __dirty = false;
+
+        function _statusEl(){ return document.getElementById('status-text'); }
+        function setCloudStatus(mode, msg){
+            const el = _statusEl();
+            if(!el) return;
+            const txt = (typeof translateString === 'function') ? translateString(msg) : msg;
+            el.textContent = txt;
+
+            if(mode === 'saving') el.className = "status-saving font-bold";
+            else if(mode === 'saved') el.className = "status-saved";
+            else if(mode === 'error') el.className = "text-red-400 font-bold";
+            else if(mode === 'offline') el.className = "text-yellow-400 font-bold";
+            else el.className = "text-slate-300";
         }
 
-        // Remove estado de UI (linhas abertas/fechadas) antes de salvar/backup
+        // Remove estado de UI (linhas abertas/fechadas) e preferências de tela antes de salvar
         function getPersistableStore(){
             try{
                 const s = JSON.parse(JSON.stringify(store));
-                delete s.dayDetailsOpen;
-                delete s.tradeDetailsOpen;
-                delete s.apex_fee_rate;
-
+                // preferências por-device (não sincronizar)
+                try{ delete s.date; }catch(e){}
+                try{ delete s.activeId; }catch(e){}
+                // estado de UI
+                try{ delete s.dayDetailsOpen; }catch(e){}
+                try{ delete s.tradeDetailsOpen; }catch(e){}
+                // recursos removidos
+                try{ delete s.apex_fee_rate; }catch(e){}
                 return s;
             }catch(e){
-                return store;
+                // fallback (não ideal)
+                const clone = { ...store };
+                try{ delete clone.date; }catch(_){}
+                try{ delete clone.activeId; }catch(_){}
+                try{ delete clone.dayDetailsOpen; }catch(_){}
+                try{ delete clone.tradeDetailsOpen; }catch(_){}
+                try{ delete clone.apex_fee_rate; }catch(_){}
+                return clone;
             }
         }
 
-        async function saveToCloud() {
+        async function loadFromCloud() {
+            const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+            const docSnap = await Promise.race([
+                getDoc(docRef),
+                new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout ao conectar no Firestore.")), 10000))
+            ]);
+
+            if (!docSnap.exists()) return;
+
+            const data = docSnap.data() || {};
+            const ms = Number(data.last_update_ms || 0) || 0;
+            if(ms) __lastRemoteUpdateMs = ms;
+
+            if (!data.store_json) return;
+
+            const parsed = JSON.parse(data.store_json);
+
+            // manter data/conta ativa por-device
+            const localDate = (store && store.date) ? new Date(store.date) : new Date();
+            const lastLocalActive = (() => { try { return localStorage.getItem('df_last_activeId'); } catch (e) { return null; } })();
+
+            store = parsed || store;
+            store.date = localDate;
+
+            // UI state: sempre iniciar com detalhes fechados
+            try{ delete store.dayDetailsOpen; delete store.tradeDetailsOpen; }catch(e){}
+
+            // preferir última conta deste dispositivo
+            if (lastLocalActive && store.accounts && store.accounts[lastLocalActive]) {
+                store.activeId = lastLocalActive;
+            } else if (!store.activeId && store.accounts) {
+                store.activeId = Object.keys(store.accounts)[0] || null;
+            }
+        }
+
+        async function saveToCloudNow() {
             if (isOffline) {
-                localStorage.setItem('df_backup_local', JSON.stringify(getPersistableStore()));
-                document.getElementById('status-text').textContent = "Salvo (Local)";
-                document.getElementById('status-text').className = "text-yellow-500 font-bold";
+                setCloudStatus('offline', (CURRENT_LANG==='en' ? "Offline" : "Offline"));
                 return;
             }
-            document.getElementById('status-text').textContent = "Salvando...";
-            try {
-                await setDoc(doc(db, "users", "dante_data"), { store_json: JSON.stringify(getPersistableStore()), last_update: new Date() });
-                document.getElementById('status-text').textContent = "Online";
-                document.getElementById('status-text').className = "status-saved";
-            } catch (e) { 
+            const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+
+            // Se estiver salvando, marque para salvar novamente ao final
+            if(__saveInFlight){
+                __saveAgain = true;
+                return;
+            }
+
+            __saveInFlight = true;
+            __dirty = true;
+            setCloudStatus('saving', "Salvando...");
+
+            try{
+                const nowMs = Date.now();
+                __lastLocalWriteMs = nowMs;
+
+                await setDoc(
+                    docRef,
+                    {
+                        store_json: JSON.stringify(getPersistableStore()),
+                        last_update_ms: nowMs,
+                        last_update_iso: new Date(nowMs).toISOString(),
+                        source_client_id: CLIENT_ID
+                    },
+                    { merge: true }
+                );
+
+                __dirty = false;
+                setCloudStatus('saved', "Online");
+            }catch(e){
                 console.warn("Erro ao salvar na nuvem:", e);
-                localStorage.setItem('df_backup_local', JSON.stringify(getPersistableStore()));
-                document.getElementById('status-text').textContent = "Erro (Salvo Local)";
-                document.getElementById('status-text').className = "text-orange-500 font-bold";
+                setCloudStatus('error', (CURRENT_LANG==='en' ? "Sync error" : "Erro de sincronização"));
+                // Mantém __dirty=true para tentar novamente
+            }finally{
+                __saveInFlight = false;
+                if(__saveAgain){
+                    __saveAgain = false;
+                    try{ await saveToCloudNow(); }catch(e){}
+                }
             }
         }
 
-        
-                        
+        // Debounce para evitar perda de dados quando o usuário digita e sai sem "blur"
+        function scheduleSaveToCloud(){
+            __dirty = true;
+            if(isOffline){
+                setCloudStatus('offline', (CURRENT_LANG==='en' ? "Offline" : "Offline"));
+                return;
+            }
+            setCloudStatus('saving', "Salvando...");
+            if(__saveTimer) clearTimeout(__saveTimer);
+            __saveTimer = setTimeout(() => {
+                __saveTimer = null;
+                saveToCloudNow().catch(()=>{});
+            }, 650);
+        }
+
+        // Expor para usos existentes (lugares que chamam saveToCloud diretamente)
+        async function saveToCloud(){ return saveToCloudNow(); }
+
+        function startCloudRealtimeSync(){
+            try{
+                if(!db || !onSnapshot) return;
+                const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+                if(__cloudUnsub) { try{ __cloudUnsub(); }catch(e){} __cloudUnsub = null; }
+
+                __cloudUnsub = onSnapshot(docRef, (snap) => {
+                    if(!snap.exists()) return;
+                    const data = snap.data() || {};
+                    const ms = Number(data.last_update_ms || 0) || 0;
+                    if(!ms) return;
+
+                    const source = String(data.source_client_id || '');
+                    // ignore our own echo (most of the time)
+                    if(source === CLIENT_ID && ms <= __lastLocalWriteMs){
+                        __lastRemoteUpdateMs = Math.max(__lastRemoteUpdateMs, ms);
+                        return;
+                    }
+                    if(ms <= __lastRemoteUpdateMs) return;
+
+                    // Se temos mudanças locais ainda não confirmadas, não sobrescreva
+                    if(__dirty){
+                        console.warn("Atualização remota detectada, mas há mudanças locais pendentes. Ignorando para evitar perda.");
+                        return;
+                    }
+
+                    __lastRemoteUpdateMs = ms;
+
+                    if(!data.store_json) return;
+
+                    const remote = JSON.parse(data.store_json);
+
+                    const localDate = (store && store.date) ? new Date(store.date) : new Date();
+                    const lastLocalActive = (() => { try { return localStorage.getItem('df_last_activeId'); } catch (e) { return null; } })();
+
+                    store = remote || store;
+                    store.date = localDate;
+
+                    // UI state: sempre iniciar com detalhes fechados
+                    try{ delete store.dayDetailsOpen; delete store.tradeDetailsOpen; }catch(e){}
+
+                    // preferir última conta deste dispositivo
+                    if (lastLocalActive && store.accounts && store.accounts[lastLocalActive]) {
+                        store.activeId = lastLocalActive;
+                    } else if (!store.activeId && store.accounts) {
+                        store.activeId = Object.keys(store.accounts)[0] || null;
+                    }
+
+                    try{
+                        renderSidebar();
+                        if(store.activeId) loadAccount(store.activeId);
+                        syncDatesToView();
+                        setCloudStatus('saved', "Online");
+                    }catch(e){
+                        console.warn("Falha ao aplicar update remoto:", e);
+                    }
+                }, (err) => {
+                    console.warn("Realtime sync error:", err);
+                });
+            }catch(e){
+                console.warn("startCloudRealtimeSync failed:", e);
+            }
+        }
+
+        // Flush de mudanças ao sair (melhora a chance de gravar quando troca de app/dispositivo)
+        try{
+            window.addEventListener('visibilitychange', () => {
+                if(document.hidden && __dirty){
+                    try{ saveToCloudNow(); }catch(e){}
+                }
+            });
+            window.addEventListener('pagehide', () => {
+                if(__dirty){
+                    try{ saveToCloudNow(); }catch(e){}
+                }
+            });
+        }catch(e){}
+
         // =========================
         // i18n (Português / English) - Safe & Non-blocking
         // =========================
@@ -4247,7 +4478,7 @@ if(composed !== core) return lead + composed + trail;
                             <p class="text-xs text-slate-400 mb-6 bg-slate-800 p-2 rounded border border-slate-700 font-mono">${msg}</p>
                             <div class="space-y-3">
                                 <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">Tentar Novamente</button>
-                                <button onclick="window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2"><i data-lucide="wifi-off" class="w-4 h-4"></i> Usar em Modo Offline</button>
+                                <button onclick="window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2"><i data-lucide="wifi-off" class="w-4 h-4"></i> ${__en ? "Use Offline Mode" : "Usar em Modo Offline"}</button>
                             </div>
                         </div>
                     `;
@@ -4288,7 +4519,8 @@ if (!store.activeId) {
                 const l = document.getElementById('app-loader');
                 if(l) { l.classList.add('opacity-0'); setTimeout(()=>l.style.display='none', 500); }
             }, 1000);
-            document.getElementById('status-text').textContent = "Online";
+            try{ setCloudStatus('saved', "Online"); }catch(e){ try{ document.getElementById('status-text').textContent = "Online"; }catch(_){} }
+            try{ startCloudRealtimeSync(); }catch(e){}
         }
 
         
@@ -5267,7 +5499,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                             <div class="space-y-3">
                               <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">Recarregar</button>
                               <button onclick="window.forceOfflineMode && window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2">
-                                <i data-lucide="wifi-off" class="w-4 h-4"></i> Usar em Modo Offline
+                                <i data-lucide="wifi-off" class="w-4 h-4"></i> ${__en ? "Use Offline Mode" : "Usar em Modo Offline"}
                               </button>
                             </div>
                           </div>
@@ -5285,29 +5517,36 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
             let __fbOk = false;
             try{
-                // Attempt to initialize Firebase (dynamic imports)
-                const fbPromise = __ensureFirebaseApp();
-                const fbTimed = new Promise((res)=>setTimeout(()=>res(false), 12000));
-                __fbOk = await Promise.race([fbPromise, fbTimed]);
+                // Attempt to initialize Firebase (dynamic imports).
+                // Avoid failing fast: module downloads can take longer on some networks.
+                __fbOk = await __ensureFirebaseApp();
+                // One quick retry (helps when the first import gets interrupted).
+                if(!__fbOk){
+                    await new Promise(r=>setTimeout(r, 1200));
+                    __fbOk = await __ensureFirebaseApp();
+                }
             }catch(e){ __fbOk = false; }
 
             if(!__fbOk){
+                const __lang = (window.CURRENT_LANG || localStorage.getItem('df_lang') || 'pt').toLowerCase();
+                const __en = __lang.startsWith('en');
                 const loader = document.getElementById('app-loader');
                 if(loader){
                     loader.innerHTML = `
                         <div class="text-center p-6 max-w-sm mx-auto">
                             <div class="text-yellow-400 mb-4 flex justify-center"><i data-lucide="alert-triangle" class="w-12 h-12"></i></div>
-                            <h3 class="text-lg font-bold text-white mb-2">Falha ao carregar módulos</h3>
+                            <h3 class="text-lg font-bold text-white mb-2">${__en ? "Failed to load modules" : "Falha ao carregar módulos"}</h3>
                             <p class="text-xs text-slate-400 mb-6 bg-slate-800 p-3 rounded border border-slate-700">
-                                O navegador não conseguiu baixar os módulos do Firebase (bloqueio de rede, adblock, ou conexão lenta).<br/>
-                                Você pode tentar recarregar ou continuar em modo offline.
+                                ${__en
+                                    ? "Your browser couldn’t download the Firebase modules (network blocking, adblock, or slow connection).<br/>You can try again or continue in offline mode."
+                                    : "O navegador não conseguiu baixar os módulos do Firebase (bloqueio de rede, adblock, ou conexão lenta).<br/>Você pode tentar recarregar ou continuar em modo offline."}
                             </p>
                             <div class="space-y-3">
                                 <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">
                                     Recarregar
                                 </button>
                                 <button onclick="window.forceOfflineMode && window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2">
-                                    <i data-lucide="wifi-off" class="w-4 h-4"></i> Usar em Modo Offline
+                                    <i data-lucide="wifi-off" class="w-4 h-4"></i> ${__en ? "Use Offline Mode" : "Usar em Modo Offline"}
                                 </button>
                             </div>
                         </div>
@@ -5337,7 +5576,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                             </p>
                             <div class="space-y-3">
                                 <button onclick="window.forceOfflineMode && window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2">
-                                    <i data-lucide="wifi-off" class="w-4 h-4"></i> Usar em Modo Offline
+                                    <i data-lucide="wifi-off" class="w-4 h-4"></i> ${__en ? "Use Offline Mode" : "Usar em Modo Offline"}
                                 </button>
                                 <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">
                                     Recarregar
