@@ -3065,7 +3065,7 @@ function renderCalendar(acc) {
         if (valNum > 0) colorClass = 'val-pos'; 
         else if (valNum < 0) colorClass = 'val-neg';
 
-        const readOnlyDay = isOutsideMonth;
+        const readOnlyDay = false; // allow editing also on cross-month days shown in the grid
         const inputDisabledAttr = readOnlyDay ? 'disabled' : '';
         const inputExtraClass = readOnlyDay ? ' opacity-60 cursor-not-allowed' : '';
         const t1Handlers = readOnlyDay ? '' : `oninput="window.queueData('${iso}','t1',this.value)" onblur="window.updateData('${iso}','t1',this.value)"`;
@@ -3090,9 +3090,7 @@ function renderCalendar(acc) {
             ? "text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400 border-indigo-200 dark:border-indigo-700" 
             : "text-slate-300 hover:text-slate-500 dark:text-slate-600 dark:hover:text-slate-400 border-transparent hover:bg-slate-100 dark:hover:bg-slate-800";
 
-        const dayLabel = isOutsideMonth
-            ? `${String(cur.getDate()).padStart(2, '0')}/${String(cur.getMonth() + 1).padStart(2, '0')}`
-            : `${cur.getDate()}`;
+        const dayLabel = isOutsideMonth ? formatMDShort(cur) : `${cur.getDate()}`;
         const dayLabelClass = isOutsideMonth ? "text-slate-400" : "text-slate-600 dark:text-slate-400";
 
         const isOpen = !!(store.dayDetailsOpen[acc.id] && store.dayDetailsOpen[acc.id][iso]);
@@ -3109,7 +3107,7 @@ function renderCalendar(acc) {
             <td class="px-4 py-2 w-48">${inputsHtml}</td>
             <td class="px-4 py-2 text-right"><span class="font-bold text-sm ${colorClass}">${valNum!==0 ? formatCurrency(valNum) : '--'}</span></td>
             <td class="px-4 py-2 text-center w-16">
-                <button onclick="openNoteModal('${iso}', ${isOutsideMonth})" class="p-1.5 rounded-lg border transition ${noteBtnClass}" title="${isOutsideMonth ? 'Ver Nota' : 'Editar Nota'}">
+                <button onclick="openNoteModal('${iso}', false)" class="p-1.5 rounded-lg border transition ${noteBtnClass}" title="Editar Nota">
                     <i data-lucide="${noteIcon}" class="w-4 h-4"></i>
                 </button>
             </td>
