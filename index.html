@@ -4465,7 +4465,7 @@ if(composed !== core) return lead + composed + trail;
 
 
         async function init() {
-            lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions();
+            lucide.createIcons(); ensureInfoIcons(); bindHelpPopover(); bindPeriodInteractions();
             const showFatalError = (title, msg) => {
                  const loader = document.getElementById('app-loader');
                  if (loader) {
