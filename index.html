@@ -439,7 +439,27 @@ body.dark .bg-white { background-color: #1e293b; }
                     <div id="admin-logs-list" class="max-h-72 overflow-y-auto text-xs space-y-2 border border-slate-200 dark:border-slate-700 rounded-lg p-3 bg-slate-50 dark:bg-slate-900">
                         <p class="text-xs text-slate-400 italic">Vazio.</p>
                     </div>
+                
+                <div class="border border-slate-700/50 rounded-xl p-3 bg-slate-900/30">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-300">
+                        Segurança da Nuvem
+                    </div>
+                    <div class="flex flex-wrap gap-2 mt-2">
+                        <button id="btn-restore-prev-cloud" onclick="restorePrevCloudVersion()" class="px-3 py-2 rounded-lg border border-slate-600/60 hover:border-slate-400 text-slate-100 text-sm">
+                            <i class="fa-solid fa-rotate-left mr-2"></i>Restaurar versão anterior (nuvem)
+                        </button>
+                        <button id="btn-force-cloud-save" onclick="forceCloudSaveOnce()" class="px-3 py-2 rounded-lg border border-amber-600/60 hover:border-amber-400 text-amber-200 text-sm">
+                            <i class="fa-solid fa-triangle-exclamation mr-2"></i>Forçar salvar na nuvem
+                        </button>
+                        <button id="btn-download-local-backup" onclick="downloadLocalBackupJson()" class="px-3 py-2 rounded-lg border border-slate-600/60 hover:border-slate-400 text-slate-100 text-sm">
+                            <i class="fa-solid fa-download mr-2"></i>Baixar Backup Local
+                        </button>
+                    </div>
+                    <div id="cloud-safety-msg" class="text-xs text-slate-400 mt-2">
+                        Dica: agora cada salvamento na nuvem grava automaticamente uma cópia anterior (rollback). Assim, se algo der errado, é possível restaurar rapidamente.
+                    </div>
                 </div>
+</div>
 
                 <!-- PANE: AI -->
                 <div id="admin-pane-ai" class="hidden space-y-4">
@@ -546,7 +566,54 @@ body.dark .bg-white { background-color: #1e293b; }
                             <span id="nt-import-status" class="text-xs text-slate-500 dark:text-slate-400"></span>
                         </div>
 
-                        <div id="nt-import-preview" class="hidden mt-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 whitespace-pre-wrap"></div>
+                        <div id="nt-import-preview" class="hidden mt-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 whitespace-pre-wrap">
+                    <div class="mt-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                        <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <i data-lucide="upload" class="w-4 h-4 text-indigo-500"></i> Importar Cash History (Tradovate)
+                        </h4>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                            Selecione um ou mais arquivos CSV no formato: <span class="font-bold">Cash Historydf21.csv</span>, <span class="font-bold">Cash Historyva24.csv</span>, <span class="font-bold">Cash Historydfc213.csv</span>.
+                            O app identifica a conta pelo sufixo do nome do arquivo e compara com a nuvem para evitar duplicidade.
+                        </p>
+
+                        <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Arquivos (CSV)</label>
+                                <div id="cash-import-dropzone" class="w-full mt-1 p-4 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/40 text-center cursor-pointer select-none">
+                                    <div class="text-xs font-bold text-slate-700 dark:text-slate-200">Arraste e solte os arquivos CSV aqui</div>
+                                    <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">ou clique para selecionar</div>
+                                </div>
+                                <input id="cash-import-files" type="file" accept=".csv,text/csv" multiple class="hidden" />
+                                <div id="cash-import-filelist" class="mt-2 space-y-1 text-xs text-slate-700 dark:text-slate-200"></div>
+                                <div class="mt-2 flex items-center gap-2">
+                                    <button id="cash-import-clear" type="button" class="px-2 py-1 rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-[11px] font-bold">Limpar lista</button>
+                                    <span id="cash-import-queuehint" class="text-[11px] text-slate-500 dark:text-slate-400"></span>
+                                </div>
+                                <div class="mt-2 flex flex-wrap gap-4 text-xs text-slate-700 dark:text-slate-200">
+                                    <label class="inline-flex items-center gap-2">
+                                        <input id="cash-import-create-missing" type="checkbox" class="rounded border-slate-300 dark:border-slate-600" checked />
+                                        Criar contas ausentes automaticamente
+                                    </label>
+                                    <label class="inline-flex items-center gap-2">
+                                        <input id="cash-import-update-equity" type="checkbox" class="rounded border-slate-300 dark:border-slate-600" checked />
+                                        Atualizar saldo atual (Amount final do arquivo)
+                                    </label>
+                                    <label class="inline-flex items-center gap-2">
+                                        <input id="cash-import-overwrite" type="checkbox" class="rounded border-slate-300 dark:border-slate-600" />
+                                        Sobrescrever conflitos
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button id="cash-import-btn-preview" type="button" onclick="previewCashHistoryImport()" class="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-bold">Pré-visualizar</button>
+                                <button id="cash-import-btn-apply" type="button" onclick="applyCashHistoryImport()" class="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Importar e Salvar</button>
+                            </div>
+                        </div>
+
+                        <div id="cash-import-status" class="mt-2 text-[11px] text-slate-500 dark:text-slate-400"></div>
+                        <div id="cash-import-preview" class="hidden mt-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 whitespace-pre-wrap"></div>
+                    </div>
+</div>
                     </div>
 
 
@@ -929,7 +996,7 @@ body.dark .bg-white { background-color: #1e293b; }
 
     <script type="module">
                 // Firebase dynamic loader (prevents "stuck on Iniciando..." when module imports hang or are blocked)
-        let initializeApp, getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc;
+        let initializeApp, getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, runTransaction;
         async function __loadFirebaseModules(maxWaitMs = 45000){
             const appUrl = "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
             const fsUrl  = "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -971,6 +1038,7 @@ body.dark .bg-white { background-color: #1e293b; }
             setDoc        = fsMod.setDoc;
             onSnapshot    = fsMod.onSnapshot;
             updateDoc     = fsMod.updateDoc;
+                runTransaction = fsMod.runTransaction;
 
             window.__dfFirebaseModulesLoaded = true;
             return true;
@@ -3389,10 +3457,7 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             els.inpSize.value = acc.size;
             els.inpMonth.value = acc.monthType;
 
-            // Persiste a conta ativa para abrir sempre no último acesso
-            if (typeof saveToCloud === 'function') { 
-                try { saveToCloud().catch(() => {}); } catch (e) {} 
-            }
+            // Conta ativa é por-dispositivo (localStorage). Não salvar na nuvem aqui para evitar loops.
 
             renderSidebar();
             renderDashboard();
@@ -3700,11 +3765,20 @@ ${period}
         let __cloudUnsub = null;
         let __lastRemoteUpdateMs = 0;
         let __lastLocalWriteMs  = 0;
+        let __lastCloudWriteMs = 0;
 
         let __saveTimer = null;
         let __saveInFlight = false;
         let __saveAgain = false;
         let __dirty = false;
+        let __cloudHydrated = false;
+        let __lastLoadedCloudLen = 0;
+        let __pendingSaveBeforeHydrate = false;
+        let __forceCloudSaveOnce = false;
+        let __lastLocalBackupJson = "";
+
+        let __cloudStatusTimer = null;
+
 
         function _statusEl(){ return document.getElementById('status-text'); }
         function setCloudStatus(mode, msg){
@@ -3717,7 +3791,28 @@ ${period}
             else if(mode === 'saved') el.className = "status-saved";
             else if(mode === 'error') el.className = "text-red-400 font-bold";
             else if(mode === 'offline') el.className = "text-yellow-400 font-bold";
+            else if(mode === 'online') el.className = "text-slate-300";
             else el.className = "text-slate-300";
+        }
+
+        function setOnlineStatus(){
+            // Base status when connected and idle
+            if(isOffline){
+                setCloudStatus('offline', (CURRENT_LANG==='en' ? "Offline" : "Offline"));
+            }else{
+                setCloudStatus('online', "Online");
+            }
+        }
+
+        function flashSaved(){
+            if(__cloudStatusTimer) { try{ clearTimeout(__cloudStatusTimer); }catch(e){} __cloudStatusTimer = null; }
+            setCloudStatus('saved', (CURRENT_LANG==='en' ? "Saved" : "Salvo"));
+            __cloudStatusTimer = setTimeout(()=>{
+                __cloudStatusTimer = null;
+                if(!__dirty && !isOffline){
+                    setOnlineStatus();
+                }
+            }, 900);
         }
 
         // Remove estado de UI (linhas abertas/fechadas) e preferências de tela antes de salvar
@@ -3752,13 +3847,13 @@ ${period}
                 new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout ao conectar no Firestore.")), 10000))
             ]);
 
-            if (!docSnap.exists()) return;
+            if (!docSnap.exists()) { __cloudHydrated = true; __lastLoadedCloudLen = 0; return; }
 
             const data = docSnap.data() || {};
             const ms = Number(data.last_update_ms || 0) || 0;
             if(ms) __lastRemoteUpdateMs = ms;
 
-            if (!data.store_json) return;
+            if (!data.store_json) { __cloudHydrated = true; __lastLoadedCloudLen = 0; return; }
 
             const parsed = JSON.parse(data.store_json);
 
@@ -3778,6 +3873,16 @@ ${period}
             } else if (!store.activeId && store.accounts) {
                 store.activeId = Object.keys(store.accounts)[0] || null;
             }
+
+            // Mark cloud as hydrated so saves can proceed
+            __cloudHydrated = true;
+            try { __lastLoadedCloudLen = (data.store_json || '').length; } catch(e) { __lastLoadedCloudLen = 0; }
+
+            // If the user made changes before the cloud finished loading, flush them now
+            if (__pendingSaveBeforeHydrate) {
+                __pendingSaveBeforeHydrate = false;
+                try { scheduleSaveToCloud(); } catch(e) { try { saveToCloudNow(); } catch(_){} }
+            }
         }
 
         async function saveToCloudNow() {
@@ -3785,56 +3890,217 @@ ${period}
                 setCloudStatus('offline', (CURRENT_LANG==='en' ? "Offline" : "Offline"));
                 return;
             }
-            const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+            if (!__cloudHydrated) {
+                __pendingSaveBeforeHydrate = true;
+                setCloudStatus('saving', translateString(CURRENT_LANG==='en' ? 'Loading cloud...' : 'Carregando nuvem...'));
+                return;
+            }
+            if (!db || !doc || !setDoc) return;
 
-            // Se estiver salvando, marque para salvar novamente ao final
             if(__saveInFlight){
                 __saveAgain = true;
                 return;
             }
-
             __saveInFlight = true;
-            __dirty = true;
-            setCloudStatus('saving', "Salvando...");
 
-            try{
-                const nowMs = Date.now();
-                __lastLocalWriteMs = nowMs;
+            // one-shot "force save" (admin override)
+            const force = !!__forceCloudSaveOnce;
+            __forceCloudSaveOnce = false;
 
-                await setDoc(
-                    docRef,
-                    {
-                        store_json: JSON.stringify(getPersistableStore()),
+            const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+            const nowMs = Date.now();
+            const nowIso = new Date(nowMs).toISOString();
+
+            // Persist only what should be synced to cloud
+            const persistable = getPersistableStore();
+            const jsonStr = JSON.stringify(persistable);
+            const newLen = (jsonStr || '').length;
+
+            // If nothing meaningful to save, bail
+            if (!jsonStr || newLen < 20) { __saveInFlight = false; return; }
+
+            setCloudStatus('saving', (CURRENT_LANG==='en' ? "Saving..." : "Salvando..."));
+
+            try {
+                // Preferred: transactional save with rollback fields (prevents catastrophic wipes)
+                if (runTransaction) {
+                    await runTransaction(db, async (txn) => {
+                        const snap = await txn.get(docRef);
+                        const cur = snap.exists() ? (snap.data() || {}) : {};
+                        const curJson = (typeof cur.store_json === 'string') ? cur.store_json : '';
+                        const curLen = curJson.length;
+                        const curMs = Number(cur.last_update_ms || 0) || 0;
+                        const curIso = (typeof cur.last_update_iso === 'string') ? cur.last_update_iso : null;
+
+                        // Safety guard: refuse to overwrite a much larger cloud dataset with a much smaller one
+                        // This is what causes "everything disappeared on all devices".
+                        if (!force && curLen > 2000) {
+                            const threshold = Math.max(900, Math.floor(curLen * 0.85));
+                            if (newLen < threshold) {
+                                throw new Error(
+                                    (CURRENT_LANG==='en'
+                                        ? "Cloud safety protection: refusing to overwrite cloud with a much smaller dataset. Use Admin Area → Force cloud save only if you are 100% sure."
+                                        : "Proteção de segurança da nuvem: recusando sobrescrever a nuvem com um conjunto de dados muito menor. Use Área Administrativa → Forçar salvar somente se tiver 100% de certeza."
+                                    )
+                                );
+                            }
+                        }
+
+                        txn.set(docRef, {
+                            store_json: jsonStr,
+                            last_update_ms: nowMs,
+                            last_update_iso: nowIso,
+                            source_client_id: CLIENT_ID,
+                            schema_version: 1,
+
+                            // rollback (previous cloud version)
+                            prev_store_json: curJson || null,
+                            prev_update_ms: curMs || null,
+                            prev_update_iso: curIso || null
+                        }, { merge: true });
+                    });
+                } else {
+                    // Fallback (no transaction): still keep a local backup, but less safe
+                    await setDoc(docRef, {
+                        store_json: jsonStr,
                         last_update_ms: nowMs,
-                        last_update_iso: new Date(nowMs).toISOString(),
-                        source_client_id: CLIENT_ID
-                    },
-                    { merge: true }
-                );
+                        last_update_iso: nowIso,
+                        source_client_id: CLIENT_ID,
+                        schema_version: 1
+                    }, { merge: true });
+                }
 
                 __dirty = false;
-                setCloudStatus('saved', "Online");
-            }catch(e){
-                console.warn("Erro ao salvar na nuvem:", e);
-                setCloudStatus('error', (CURRENT_LANG==='en' ? "Sync error" : "Erro de sincronização"));
-                // Mantém __dirty=true para tentar novamente
-            }finally{
+                __lastLocalWriteMs = nowMs;
+                __lastCloudWriteMs = nowMs;
+                __lastLoadedCloudLen = newLen;
+
+                flashSaved();
+            } catch (err) {
+                console.error("Cloud save failed:", err);
+                setCloudStatus('error', (err && err.message) ? err.message : (CURRENT_LANG==='en' ? "Cloud save failed" : "Falha ao salvar na nuvem"));
+            } finally {
                 __saveInFlight = false;
-                if(__saveAgain){
+                // If any changes happened while saving, try again soon
+                if (__saveAgain) {
                     __saveAgain = false;
-                    try{ await saveToCloudNow(); }catch(e){}
+                    setTimeout(() => saveToCloudNow(), 900);
                 }
             }
         }
 
+        // ===== Cloud safety tools (rollback / force save / local backup download) =====
+        async function restorePrevCloudVersion(){
+            if(isOffline){
+                toast(translateString(CURRENT_LANG==='en' ? "Offline mode: can't restore from cloud." : "Modo offline: não é possível restaurar da nuvem."), 'warn');
+                return;
+            }
+            try{
+                await __initFirebaseIfPossible();
+                const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+
+                if(!runTransaction){
+                    toast(translateString(CURRENT_LANG==='en' ? "Restore unavailable (transaction module missing)." : "Restauração indisponível (módulo de transação ausente)."), 'error');
+                    return;
+                }
+
+                setCloudStatus('saving', (CURRENT_LANG==='en' ? "Restoring..." : "Restaurando..."));
+
+                await runTransaction(db, async (txn) => {
+                    const snap = await txn.get(docRef);
+                    if(!snap.exists()) throw new Error(CURRENT_LANG==='en' ? "No cloud document found." : "Documento na nuvem não encontrado.");
+                    const cur = snap.data() || {};
+                    const prevJson = (typeof cur.prev_store_json === 'string') ? cur.prev_store_json : '';
+                    const curJson  = (typeof cur.store_json === 'string') ? cur.store_json : '';
+                    if(!prevJson || prevJson.length < 20){
+                        throw new Error(CURRENT_LANG==='en'
+                            ? "No previous cloud version available yet."
+                            : "Ainda não existe uma versão anterior disponível."
+                        );
+                    }
+                    const nowMs = Date.now();
+                    const nowIso = new Date(nowMs).toISOString();
+                    txn.set(docRef, {
+                        store_json: prevJson,
+                        last_update_ms: nowMs,
+                        last_update_iso: nowIso,
+                        source_client_id: CLIENT_ID,
+
+                        // keep current as the new 'prev' so you can undo the restore if needed
+                        prev_store_json: curJson,
+                        prev_update_ms: Number(cur.last_update_ms || 0) || null,
+                        prev_update_iso: (typeof cur.last_update_iso === 'string') ? cur.last_update_iso : null
+                    }, { merge:true });
+                });
+
+                toast(translateString(CURRENT_LANG==='en' ? "Previous cloud version restored." : "Versão anterior restaurada."), 'ok');
+                await loadFromCloud();
+                renderAll();
+                setCloudStatus('saved', (CURRENT_LANG==='en' ? "Restored" : "Restaurado"));
+            }catch(err){
+                console.error(err);
+                setCloudStatus('error', (err && err.message) ? err.message : (CURRENT_LANG==='en' ? "Restore failed" : "Falha ao restaurar"));
+                toast((err && err.message) ? err.message : (CURRENT_LANG==='en' ? "Restore failed" : "Falha ao restaurar"), 'error');
+            }
+        }
+
+        function forceCloudSaveOnce(){
+            __forceCloudSaveOnce = true;
+            toast(translateString(CURRENT_LANG==='en'
+                ? "Force save armed. Next save will bypass the safety guard."
+                : "Forçar salvar ativado. O próximo salvamento vai ignorar a proteção."
+            ), 'warn');
+            scheduleSaveToCloud();
+        }
+
+        function downloadLocalBackupJson(){
+            try{
+                const jb = localStorage.getItem('df_backup_local') || JSON.stringify(getPersistableStore());
+                const blob = new Blob([jb], {type:'application/json'});
+                const a = document.createElement('a');
+                const ts = new Date().toISOString().replace(/[:.]/g,'-');
+                a.href = URL.createObjectURL(blob);
+                a.download = `df_performance_backup_${ts}.json`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 300);
+                toast(translateString(CURRENT_LANG==='en' ? "Local backup downloaded." : "Backup local baixado."), 'ok');
+            }catch(e){
+                toast(translateString(CURRENT_LANG==='en' ? "Failed to download backup." : "Falha ao baixar backup."), 'error');
+            }
+        }
+
+        window.restorePrevCloudVersion = restorePrevCloudVersion;
+        window.forceCloudSaveOnce = forceCloudSaveOnce;
+        window.downloadLocalBackupJson = downloadLocalBackupJson;
+
+
         // Debounce para evitar perda de dados quando o usuário digita e sai sem "blur"
         function scheduleSaveToCloud(){
+            // Local safety backup (per-device) – helps recover if something goes wrong
+            try{
+                const jb = JSON.stringify(getPersistableStore());
+                if(jb && jb !== __lastLocalBackupJson){
+                    __lastLocalBackupJson = jb;
+                    localStorage.setItem('df_backup_local', jb);
+                    localStorage.setItem('df_backup_local_ts', String(Date.now()));
+                }
+            }catch(e){}
+
+            if(!isOffline && !__cloudHydrated){
+                __pendingSaveBeforeHydrate = true;
+                // Wait until we hydrate from cloud before pushing anything (prevents wiping cloud with empty defaults)
+                setCloudStatus('saving', translateString(CURRENT_LANG==='en' ? 'Loading cloud...' : 'Carregando nuvem...'));
+                return;
+            }
+
+
             __dirty = true;
             if(isOffline){
                 setCloudStatus('offline', (CURRENT_LANG==='en' ? "Offline" : "Offline"));
                 return;
             }
-            setCloudStatus('saving', "Salvando...");
+            setCloudStatus('saving', (CURRENT_LANG==='en' ? "Saving..." : "Salvando..."));
             if(__saveTimer) clearTimeout(__saveTimer);
             __saveTimer = setTimeout(() => {
                 __saveTimer = null;
@@ -3897,7 +4163,7 @@ ${period}
                         renderSidebar();
                         if(store.activeId) loadAccount(store.activeId);
                         syncDatesToView();
-                        setCloudStatus('saved', "Online");
+                        setOnlineStatus();
                     }catch(e){
                         console.warn("Falha ao aplicar update remoto:", e);
                     }
@@ -3936,6 +4202,13 @@ ${period}
             "Salvando...":"Saving...",
             "Salvo (Local)":"Saved (Local)",
             "Erro (Salvo Local)":"Error (Saved locally)",
+            "Arraste e solte os arquivos CSV aqui":"Drag and drop CSV files here",
+            "ou clique para selecionar":"or click to browse",
+            "Limpar lista":"Clear list",
+            "Remover":"Remove",
+            "Nenhum arquivo na fila":"No files queued",
+            "arquivo(s) na fila":"file(s) queued",
+
             "Área Administrativa":"Admin Area",
             "Resumo das Contas":"Accounts Summary",
             "Nova Conta":"New Account",
@@ -4077,6 +4350,52 @@ ${period}
             "Feriados ignorados no total:":"Holidays ignored in total:",
             "Feriados ignorados no total":"Holidays ignored in total",
             "Visão geral em uma página (saldo, progresso e dias traded)":"Overview in one page (balance, progress and days traded)",
+
+            "Restaurar versão anterior (nuvem)":"Restore previous version (cloud)",
+            "Forçar salvar na nuvem":"Force cloud save",
+            "Baixar Backup Local":"Download Local Backup",
+            "Dica: agora cada salvamento na nuvem grava automaticamente uma cópia anterior (rollback). Assim, se algo der errado, é possível restaurar rapidamente.":"Tip: every cloud save now automatically stores a previous copy (rollback). If anything goes wrong, you can restore quickly.",
+            "Carregando nuvem...":"Loading cloud...",
+
+            "Segurança da Nuvem":"Cloud Safety",
+            "Importar Cash History (Tradovate)":"Import Cash History (Tradovate)",
+            "Selecione um ou mais arquivos CSV no formato:":"Select one or more CSV files in the format:",
+            "O app identifica a conta pelo sufixo do nome do arquivo e compara com a nuvem para evitar duplicidade.":"The app identifies the account from the filename suffix and checks the cloud to prevent duplicates.",
+            "Arquivos (CSV)":"Files (CSV)",
+            "Criar contas ausentes automaticamente":"Auto-create missing accounts",
+            "Atualizar saldo atual (Amount final do arquivo)":"Update current balance (last Amount in file)",
+            "Sobrescrever conflitos":"Overwrite conflicts",
+            "Nome do arquivo inválido. Use: Cash Historydf21.csv (ou Cash Historydfc213.csv).":"Invalid filename. Use: Cash Historydf21.csv (or Cash Historydfc213.csv).",
+            "Conta não encontrada no app. Ative 'Criar contas ausentes automaticamente' ou crie a conta manualmente.":"Account not found in the app. Enable 'Auto-create missing accounts' or create the account manually.",
+            "Aviso: o final do Account no CSV não bate com o número do nome do arquivo.":"Warning: the Account ending in the CSV doesn't match the number in the filename.",
+            "Arquivos":"Files",
+            "Erros":"Errors",
+            "Dias":"Days",
+            "Novos":"New",
+            "Já existiam":"Already exists",
+            "Conflitos":"Conflicts",
+            "linhas":"rows",
+            "Contas criadas automaticamente":"Auto-created accounts",
+            "Conflitos (não serão importados a menos que você marque 'Sobrescrever conflitos')":"Conflicts (will not be imported unless you check 'Overwrite conflicts')",
+            "App":"App",
+            "mais":"more",
+            "Regra do import: Trade 1 = soma 'Trade Paired' (Gross). Trade 2 = soma de fees/commission (negativo). Fund Transaction é ignorado.":"Import rule: Trade 1 = sum of 'Trade Paired' (Gross). Trade 2 = sum of fees/commission (negative). Fund Transaction is ignored.",
+            "Lendo arquivos...":"Reading files...",
+            "Pré-visualização pronta.":"Preview ready.",
+            "Nenhum arquivo selecionado.":"No files selected.",
+            "Falha ao pré-visualizar. Verifique os arquivos e tente novamente.":"Failed to preview. Check the files and try again.",
+            "Import concluído.":"Import completed.",
+            "Equity atualizado":"Equity updated",
+            "Falha ao importar/salvar. Tente novamente.":"Failed to import/save. Please try again.",
+            "Falha ao importar/salvar.":"Failed to import/save.",
+            "OK":"OK",
+            "Erro ao ler arquivo":"Failed to read file",
+
+            "Importar e Salvar":"Import & Save",
+            "Pré-visualizar":"Preview",
+
+
+
 };
 
         const I18N_EN_PT = (() => {
@@ -4476,7 +4795,7 @@ if(composed !== core) return lead + composed + trail;
                             <p class="text-xs text-slate-400 mb-6 bg-slate-800 p-2 rounded border border-slate-700 font-mono">${msg}</p>
                             <div class="space-y-3">
                                 <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">Tentar Novamente</button>
-                                <button onclick="window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2"><i data-lucide="wifi-off" class="w-4 h-4"></i> ${__en ? "Use Offline Mode" : "Usar em Modo Offline"}</button>
+                                <button onclick="window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2"><i data-lucide="wifi-off" class="w-4 h-4"></i> ${((window.CURRENT_LANG||localStorage.getItem("df_lang")||"pt").toLowerCase().startsWith("en")) ? "Use Offline Mode" : "Usar em Modo Offline"}</button>
                             </div>
                         </div>
                     `;
@@ -4517,7 +4836,7 @@ if (!store.activeId) {
                 const l = document.getElementById('app-loader');
                 if(l) { l.classList.add('opacity-0'); setTimeout(()=>l.style.display='none', 500); }
             }, 1000);
-            try{ setCloudStatus('saved', "Online"); }catch(e){ try{ document.getElementById('status-text').textContent = "Online"; }catch(_){} }
+            try{ setOnlineStatus(); }catch(e){ try{ document.getElementById('status-text').textContent = "Online"; }catch(_){} }
             try{ startCloudRealtimeSync(); }catch(e){}
         }
 
@@ -5468,6 +5787,605 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
             ntSetStatus(`Import concluído: ${applied} contas (${created} criadas, ${skipped} ignoradas).`);
         };
+
+        // =========================
+        // Tradovate Cash History Import (Multi-file) - Safe, Deduped, Cloud-first
+        // =========================
+        let __cashHistoryImportPlan = null;
+
+        function _cashSetStatus(msg, isErr=false){
+            const el = document.getElementById('cash-import-status');
+            if(!el) return;
+            el.textContent = msg || '';
+            el.className = (isErr ? 'mt-2 text-[11px] text-rose-600' : 'mt-2 text-[11px] text-slate-500 dark:text-slate-400');
+        }
+        function _cashShowPreview(txt){
+            const el = document.getElementById('cash-import-preview');
+            if(!el) return;
+            if(!txt){
+                el.classList.add('hidden');
+                el.textContent = '';
+                return;
+            }
+            el.textContent = txt;
+            el.classList.remove('hidden');
+        }
+
+        function _cashParseFilename(name){
+            try{
+                const base = String(name || '').replace(/\.[^/.]+$/,'');
+                const norm = base.replace(/\s+/g,'').toLowerCase();
+                if(!norm.startsWith('cashhistory')) return null;
+                const rem = norm.slice('cashhistory'.length); // e.g. df21, va24, dfc213
+                const m = rem.match(/^([a-z]{2,5})(\d{2,5})$/i);
+                if(!m) return null;
+                const prefix = String(m[1]||'').toUpperCase();
+                const num = String(m[2]||'');
+                return { prefix, num, label: (prefix + ' ' + num).trim(), key: (prefix + num).toUpperCase() };
+            }catch(e){
+                return null;
+            }
+        }
+
+        function _cashSplitCSVLine(line){
+            const out = [];
+            let cur = '';
+            let inQ = false;
+            for(let i=0;i<line.length;i++){
+                const ch = line[i];
+                const nxt = (i+1<line.length) ? line[i+1] : '';
+                if(ch === '"'){
+                    if(inQ && nxt === '"'){ cur += '"'; i++; continue; }
+                    inQ = !inQ; continue;
+                }
+                if(ch === ',' && !inQ){
+                    out.push(cur);
+                    cur = '';
+                    continue;
+                }
+                cur += ch;
+            }
+            out.push(cur);
+            return out;
+        }
+
+        function _cashParseNum(v){
+            if(v===null || v===undefined) return 0;
+            const s = String(v).trim();
+            if(!s) return 0;
+            const n = parseFloat(s.replace(/["']/g,'').replace(/,/g,''));
+            return (isFinite(n) ? n : 0);
+        }
+        function _cashRound2(n){
+            const x = (isFinite(n) ? n : 0);
+            return Math.round((x + Number.EPSILON) * 100) / 100;
+        }
+        function _cashCloseEnough(a,b){
+            return Math.abs((a||0) - (b||0)) <= 0.005; // half-cent tolerance
+        }
+
+        function _cashNormalizeName(s){
+            return String(s||'').toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9]/g,'');
+        }
+
+        function _cashFindAccountByLabel(label){
+            const target = _cashNormalizeName(label);
+            const list = Object.values(store.accounts || {});
+            for(const a of list){
+                if(_cashNormalizeName(a?.name) === target) return a;
+            }
+            // also try without spaces in label: DF21 vs DF 21
+            for(const a of list){
+                if(_cashNormalizeName(a?.name) === target.replace(/\s+/g,'')) return a;
+            }
+            return null;
+        }
+
+        function _cashEnsureAccount(label, createMissing){
+            let acc = _cashFindAccountByLabel(label);
+            if(acc) return {acc, created:false};
+
+            if(!createMissing) return {acc:null, created:false};
+
+            // Create new account safely
+            const id = 'acc_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+            store.accounts[id] = { id, name: label, size: '50k', monthType: 1, data: {}, payouts: [], createdAt: new Date().toISOString(), favorite: false };
+            return {acc: store.accounts[id], created:true};
+        }
+
+        async function _cashParseCashHistoryCSV(file){
+            const text = await file.text();
+            const raw = String(text || '').replace(/^\uFEFF/, ''); // strip BOM
+            const lines = raw.split(/\r?\n/).filter(l => l && l.trim().length>0);
+            if(lines.length < 2) return {daily:{}, lastEquity:null, lastTs:null, rows:0, acctFromFile:null};
+
+            const header = _cashSplitCSVLine(lines[0]).map(h => String(h||'').trim());
+            const idx = (name) => header.findIndex(h => _cashNormalizeName(h) === _cashNormalizeName(name));
+
+            const iAccount = idx('Account');
+            const iTs = idx('Timestamp');
+            const iDate = idx('Date');
+            const iDelta = idx('Delta');
+            const iAmount = idx('Amount');
+            const iType = idx('Cash Change Type');
+
+            const daily = {};
+            let rows = 0;
+            let lastEquity = null;
+            let lastTs = null;
+            let acctFromFile = null;
+
+            for(let li=1; li<lines.length; li++){
+                const cols = _cashSplitCSVLine(lines[li]);
+                if(cols.length < 4) continue;
+                rows++;
+
+                const type = String(cols[iType] ?? '').trim();
+                const dateISO = String(cols[iDate] ?? '').trim();
+                const delta = _cashParseNum(cols[iDelta]);
+                const amount = _cashParseNum(cols[iAmount]);
+                const tsRaw = String(cols[iTs] ?? '').trim();
+                const acct = String(cols[iAccount] ?? '').trim();
+                if(acct && !acctFromFile) acctFromFile = acct;
+
+                if(dateISO && amount && tsRaw){
+                    // Track last equity by latest timestamp
+                    const t = new Date(tsRaw);
+                    if(!isNaN(t.getTime())){
+                        const ms = t.getTime();
+                        if(lastTs === null || ms > lastTs){
+                            lastTs = ms;
+                            lastEquity = amount;
+                        }
+                    }
+                }
+
+                if(!dateISO) continue;
+                const bucket = daily[dateISO] || {gross:0, fees:0, net:0, tradeCount:0, feeCount:0, lastAmount:null, lastTsMs:null};
+
+                // Ignore funding/transfer for daily PnL entries
+                const tNorm = _cashNormalizeName(type);
+                const isFund = tNorm.includes('fundtransaction') || tNorm.includes('fund') && tNorm.includes('transaction');
+                if(isFund){
+                    // still update last amount for the day (equity snapshot)
+                    const t = new Date(tsRaw);
+                    if(!isNaN(t.getTime())){
+                        const ms = t.getTime();
+                        if(bucket.lastTsMs === null || ms >= bucket.lastTsMs){
+                            bucket.lastTsMs = ms;
+                            bucket.lastAmount = amount;
+                        }
+                    }
+                    daily[dateISO] = bucket;
+                    continue;
+                }
+
+                const isTradePaired = tNorm.includes('tradepaired') || tNorm.includes('trade') && tNorm.includes('paired');
+
+                if(isTradePaired){
+                    bucket.gross += delta;
+                    bucket.tradeCount += 1;
+                }else{
+                    bucket.fees += delta;
+                    bucket.feeCount += 1;
+                }
+                bucket.net = bucket.gross + bucket.fees;
+
+                // update last amount per day
+                const t = new Date(tsRaw);
+                if(!isNaN(t.getTime())){
+                    const ms = t.getTime();
+                    if(bucket.lastTsMs === null || ms >= bucket.lastTsMs){
+                        bucket.lastTsMs = ms;
+                        bucket.lastAmount = amount;
+                    }
+                }
+                daily[dateISO] = bucket;
+            }
+
+            return {daily, lastEquity, lastTs, rows, acctFromFile};
+        }
+
+        function _cashEntryHasData(e){
+            if(!e) return false;
+            const t1 = _cashParseNum(e.t1);
+            const t2 = _cashParseNum(e.t2);
+            const hasVal = !(e.val === undefined || e.val === null || e.val === '');
+            const note = String(e.note || '').trim();
+            return hasVal || (Math.abs(t1) > 0.000001) || (Math.abs(t2) > 0.000001) || !!note;
+        }
+        function _cashEntryTotal(e){
+            if(!e) return 0;
+            const hasVal = !(e.val === undefined || e.val === null || e.val === '');
+            if(hasVal) return _cashParseNum(e.val);
+            return _cashParseNum(e.t1) + _cashParseNum(e.t2);
+        }
+
+        async function _cashBuildPlan(files, opts){
+            const plan = { files: [], actions: [], conflicts: [], createdAccounts: [], equityUpdates: [] };
+            const createMissing = !!opts.createMissing;
+            const updateEquity = !!opts.updateEquity;
+
+            for(const file of files){
+                const meta = _cashParseFilename(file.name);
+                if(!meta){
+                    plan.files.push({ file: file.name, ok:false, reason: translateString("Nome do arquivo inválido. Use: Cash Historydf21.csv (ou Cash Historydfc213.csv).") });
+                    continue;
+                }
+
+                const ensured = _cashEnsureAccount(meta.label, createMissing);
+                if(!ensured.acc){
+                    plan.files.push({ file: file.name, ok:false, reason: translateString("Conta não encontrada no app. Ative 'Criar contas ausentes automaticamente' ou crie a conta manualmente.") + " (" + meta.label + ")" });
+                    continue;
+                }
+                if(ensured.created) plan.createdAccounts.push(meta.label);
+
+                const parsed = await _cashParseCashHistoryCSV(file);
+                const acc = ensured.acc;
+
+                // Optional: validate that file account ends with the same digits
+                try{
+                    const acct = String(parsed.acctFromFile || '');
+                    if(acct){
+                        const m = acct.match(/(\d{2,5})\s*$/);
+                        const tail = m ? m[1] : null;
+                        if(tail && String(tail) !== String(meta.num)){
+                            plan.files.push({ file: file.name, ok:true, warning: translateString("Aviso: o final do Account no CSV não bate com o número do nome do arquivo.") + ` (${tail} vs ${meta.num})`, meta, rows: parsed.rows });
+                        }else{
+                            plan.files.push({ file: file.name, ok:true, meta, rows: parsed.rows });
+                        }
+                    }else{
+                        plan.files.push({ file: file.name, ok:true, meta, rows: parsed.rows });
+                    }
+                }catch(e){
+                    plan.files.push({ file: file.name, ok:true, meta, rows: parsed.rows });
+                }
+
+                // Equity update from lastAmount in file
+                if(updateEquity && parsed.lastEquity != null && isFinite(parsed.lastEquity)){
+                    plan.equityUpdates.push({ accId: acc.id, accName: acc.name, equity: _cashRound2(parsed.lastEquity) });
+                }
+
+                const dates = Object.keys(parsed.daily || {}).sort();
+                for(const iso of dates){
+                    const b = parsed.daily[iso];
+                    if(!b) continue;
+                    const gross = _cashRound2(b.gross);
+                    const fees = _cashRound2(b.fees);
+                    const net = _cashRound2(b.net);
+
+                    // Ignore empty days
+                    if(_cashCloseEnough(gross,0) && _cashCloseEnough(fees,0) && _cashCloseEnough(net,0)) continue;
+
+                    const existing = (acc.data && acc.data[iso]) ? acc.data[iso] : null;
+                    if(existing && _cashEntryHasData(existing)){
+                        const exTotal = _cashRound2(_cashEntryTotal(existing));
+                        if(_cashCloseEnough(exTotal, net)){
+                            plan.actions.push({ kind:'match', accId: acc.id, accName: acc.name, dateISO: iso, gross, fees, net });
+                        }else{
+                            plan.actions.push({ kind:'conflict', accId: acc.id, accName: acc.name, dateISO: iso, gross, fees, net, existingTotal: exTotal });
+                            plan.conflicts.push({ accName: acc.name, dateISO: iso, existingTotal: exTotal, importedNet: net });
+                        }
+                    }else{
+                        plan.actions.push({ kind:'new', accId: acc.id, accName: acc.name, dateISO: iso, gross, fees, net });
+                    }
+                }
+            }
+
+            return plan;
+        }
+
+        function _cashPlanToText(plan){
+            const filesOk = plan.files.filter(f => f.ok).length;
+            const filesBad = plan.files.filter(f => !f.ok).length;
+
+            let newN=0, matchN=0, confN=0;
+            for(const a of plan.actions){
+                if(a.kind==='new') newN++;
+                else if(a.kind==='match') matchN++;
+                else if(a.kind==='conflict') confN++;
+            }
+
+            const lines = [];
+            lines.push(`${translateString("Arquivos")}: ${plan.files.length}  |  ${translateString("OK")}: ${filesOk}  |  ${translateString("Erros")}: ${filesBad}`);
+            lines.push(`${translateString("Dias")}: ${translateString("Novos")}: ${newN}  |  ${translateString("Já existiam")}: ${matchN}  |  ${translateString("Conflitos")}: ${confN}`);
+            lines.push('');
+
+            for(const f of plan.files){
+                if(!f.ok){
+                    lines.push(`❌ ${f.file} — ${f.reason || translateString("Erro ao ler arquivo")}`);
+                }else{
+                    const warn = f.warning ? ` — ⚠ ${f.warning}` : '';
+                    lines.push(`✅ ${f.file} → ${f.meta?.label || ''} (${translateString("linhas")}: ${f.rows || 0})${warn}`);
+                }
+            }
+
+            if(plan.createdAccounts && plan.createdAccounts.length){
+                lines.push('');
+                lines.push(`${translateString("Contas criadas automaticamente")}: ${plan.createdAccounts.join(', ')}`);
+            }
+
+            if(plan.conflicts && plan.conflicts.length){
+                lines.push('');
+                lines.push(`${translateString("Conflitos (não serão importados a menos que você marque 'Sobrescrever conflitos')")}:`);
+                const max = Math.min(20, plan.conflicts.length);
+                for(let i=0;i<max;i++){
+                    const c = plan.conflicts[i];
+                    lines.push(`- ${c.accName} ${c.dateISO}: ${translateString("App")}=${formatCurrency(c.existingTotal)}  |  ${translateString("CSV")}=${formatCurrency(c.importedNet)}`);
+                }
+                if(plan.conflicts.length > max){
+                    lines.push(`... (${plan.conflicts.length - max} ${translateString("mais")})`);
+                }
+            }
+
+            lines.push('');
+            lines.push(translateString("Regra do import: Trade 1 = soma 'Trade Paired' (Gross). Trade 2 = soma de fees/commission (negativo). Fund Transaction é ignorado."));
+            
+        
+            return lines.join('\n');
+        }
+
+// -----------------------------
+        // Cash History Import - Drag & Drop Queue
+        // -----------------------------
+        let __cashQueuedFiles = [];
+
+        function _cashFmtBytes(bytes){
+            try{
+                const b = Number(bytes)||0;
+                if(b < 1024) return `${b} B`;
+                const kb = b/1024;
+                if(kb < 1024) return `${kb.toFixed(1)} KB`;
+                const mb = kb/1024;
+                return `${mb.toFixed(1)} MB`;
+            }catch(e){ return ""; }
+        }
+
+        function _cashQueueKey(f){
+            return `${f?.name||""}::${f?.size||0}::${f?.lastModified||0}`;
+        }
+
+        function _cashQueueAddFiles(fileList){
+            const files = Array.from(fileList || []).filter(f => f && (String(f.name||"").toLowerCase().endsWith(".csv")));
+            if(!files.length) return;
+            const existing = new Set(__cashQueuedFiles.map(_cashQueueKey));
+            for(const f of files){
+                const k = _cashQueueKey(f);
+                if(existing.has(k)) continue;
+                __cashQueuedFiles.push(f);
+                existing.add(k);
+            }
+            _cashQueueRender();
+        }
+
+        function _cashQueueClear(){
+            __cashQueuedFiles = [];
+            _cashQueueRender();
+        }
+
+        function _cashQueueRemoveAt(i){
+            __cashQueuedFiles.splice(i, 1);
+            _cashQueueRender();
+        }
+
+        function _cashGetSelectedFiles(){
+            if(__cashQueuedFiles && __cashQueuedFiles.length) return __cashQueuedFiles.slice();
+            const input = document.getElementById('cash-import-files');
+            return Array.from(input?.files || []);
+        }
+
+        function _cashQueueRender(){
+            const list = document.getElementById('cash-import-filelist');
+            const hint = document.getElementById('cash-import-queuehint');
+            if(!list) return;
+
+            list.innerHTML = "";
+
+            const files = (__cashQueuedFiles && __cashQueuedFiles.length) ? __cashQueuedFiles : Array.from(document.getElementById('cash-import-files')?.files || []);
+            if(hint) hint.textContent = files.length ? translateString(`${files.length} arquivo(s) na fila`) : translateString("Nenhum arquivo na fila");
+
+            if(!files.length){
+                list.innerHTML = `<div class="text-[11px] text-slate-500 dark:text-slate-400">${translateString("Nenhum arquivo selecionado.")}</div>`;
+                return;
+            }
+
+            files.forEach((f, i) => {
+                const row = document.createElement("div");
+                row.className = "flex items-center justify-between gap-2 p-2 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900";
+                const left = document.createElement("div");
+                left.className = "min-w-0";
+                left.innerHTML = `<div class="font-bold truncate">${f.name}</div><div class="text-[11px] text-slate-500 dark:text-slate-400">${_cashFmtBytes(f.size)}</div>`;
+                const right = document.createElement("div");
+                right.className = "flex items-center gap-2";
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = "px-2 py-1 rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-[11px] font-bold";
+                btn.textContent = translateString("Remover");
+                btn.onclick = () => _cashQueueRemoveAt(i);
+                right.appendChild(btn);
+
+                row.appendChild(left);
+                row.appendChild(right);
+                list.appendChild(row);
+            });
+
+            try{ lucide.createIcons(); }catch(e){}
+        }
+
+        window.initCashImportDropzone = () => {
+            try{
+                const dz = document.getElementById("cash-import-dropzone");
+                const input = document.getElementById("cash-import-files");
+                const clearBtn = document.getElementById("cash-import-clear");
+                if(!dz || !input) return;
+
+                // initial render
+                _cashQueueRender();
+
+                // click to open picker
+                dz.addEventListener("click", () => { try{ input.click(); }catch(e){} });
+
+                // drag over
+                dz.addEventListener("dragover", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dz.classList.add("ring-2","ring-indigo-400");
+                });
+                dz.addEventListener("dragleave", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dz.classList.remove("ring-2","ring-indigo-400");
+                });
+                dz.addEventListener("drop", (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dz.classList.remove("ring-2","ring-indigo-400");
+                    if(e.dataTransfer && e.dataTransfer.files){
+                        _cashQueueAddFiles(e.dataTransfer.files);
+                    }
+                });
+
+                // picker change (append, not replace)
+                input.addEventListener("change", (e) => {
+                    _cashQueueAddFiles(input.files);
+                    // allow selecting the same file again
+                    input.value = "";
+                });
+
+                if(clearBtn){
+                    clearBtn.addEventListener("click", () => _cashQueueClear());
+                }
+            }catch(e){
+                console.error(e);
+            }
+        };
+
+        // ensure dropzone hooks when admin area renders
+        try{
+            const _origShowAdmin = window.showAdminArea;
+            if(typeof _origShowAdmin === "function" && !window.__cashDropzoneWrapped){
+                window.__cashDropzoneWrapped = true;
+                window.showAdminArea = async (...args) => {
+                    const r = await _origShowAdmin.apply(window, args);
+                    // init after DOM updates
+                    setTimeout(() => { try{ window.initCashImportDropzone(); }catch(e){} }, 50);
+                    return r;
+                };
+            }
+        }catch(e){}
+
+
+        window.previewCashHistoryImport = async () => {
+            try{
+                if(!adminSession){
+                    alert(translateString("Você precisa estar logado na área administrativa."));
+                    return;
+                }
+
+                const files = _cashGetSelectedFiles();
+                if(!files || files.length === 0){
+                    _cashSetStatus(translateString("Nenhum arquivo selecionado."), true);
+                    _cashShowPreview('');
+                    __cashHistoryImportPlan = null;
+                    return;
+                }
+
+                const opts = {
+                    createMissing: !!document.getElementById('cash-import-create-missing')?.checked,
+                    updateEquity: !!document.getElementById('cash-import-update-equity')?.checked
+                };
+
+                _cashSetStatus(translateString("Lendo arquivos..."));
+                _cashShowPreview('');
+
+                const plan = await _cashBuildPlan(files, opts);
+
+                __cashHistoryImportPlan = plan;
+                _cashShowPreview(_cashPlanToText(plan));
+                _cashSetStatus(translateString("Pré-visualização pronta."));
+                try{ lucide.createIcons(); }catch(e){}
+            }catch(e){
+                console.error(e);
+                _cashSetStatus(translateString("Falha ao pré-visualizar. Verifique os arquivos e tente novamente."), true);
+            }
+        };
+
+        window.applyCashHistoryImport = async () => {
+            try{
+                if(!adminSession){
+                    alert(translateString("Você precisa estar logado na área administrativa."));
+                    return;
+                }
+
+                if(!__cashHistoryImportPlan){
+                    await window.previewCashHistoryImport();
+                    if(!__cashHistoryImportPlan) return;
+                }
+
+                const overwrite = !!document.getElementById('cash-import-overwrite')?.checked;
+
+                let imported=0, skipped=0, conflicts=0, matches=0, equityUpdated=0;
+
+                for(const a of (__cashHistoryImportPlan.actions || [])){
+                    const acc = store.accounts && store.accounts[a.accId] ? store.accounts[a.accId] : null;
+                    if(!acc) { skipped++; continue; }
+
+                    if(a.kind === 'match'){
+                        matches++;
+                        continue;
+                    }
+                    if(a.kind === 'conflict' && !overwrite){
+                        conflicts++;
+                        continue;
+                    }
+                    if(a.kind === 'conflict' && overwrite){
+                        conflicts++;
+                        // proceed to overwrite
+                    }
+
+                    if(!acc.data) acc.data = {};
+                    const existing = acc.data[a.dateISO] || {};
+                    // Preserve note/flags if user already had them
+                    const note = (existing.note || '');
+                    const holiday = !!existing.holiday;
+
+                    acc.data[a.dateISO] = {
+                        ...existing,
+                        t1: _cashRound2(a.gross).toFixed(2),
+                        t2: _cashRound2(a.fees).toFixed(2),
+                        val: '', // ensure total is computed from t1+t2
+                        note,
+                        holiday
+                    };
+                    imported++;
+                }
+
+                // Equity updates
+                const doEquity = !!document.getElementById('cash-import-update-equity')?.checked;
+                if(doEquity){
+                    for(const u of (__cashHistoryImportPlan.equityUpdates || [])){
+                        const acc = store.accounts && store.accounts[u.accId] ? store.accounts[u.accId] : null;
+                        if(!acc) continue;
+                        acc.nt = acc.nt || {};
+                        acc.nt.cashValueCents = Math.round((_cashParseNum(u.equity) || 0) * 100);
+                        acc.nt.source = 'tradovate_cash_history';
+                        acc.nt.updatedAt = new Date().toISOString();
+                        equityUpdated++;
+                    }
+                }
+
+                await saveToCloudNow();
+                renderAll();
+
+                _cashSetStatus(translateString("Import concluído.") + " " + translateString("Novos") + ": " + imported + " | " + translateString("Já existiam") + ": " + matches + " | " + translateString("Conflitos") + ": " + conflicts + " | " + translateString("Equity atualizado") + ": " + equityUpdated);
+_cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
+                showToast(translateString("Import concluído."), 'ok');
+            }catch(e){
+                console.error(e);
+                _cashSetStatus(translateString("Falha ao importar/salvar. Tente novamente."), true);
+                showToast(translateString("Falha ao importar/salvar."), 'error');
+            }
+        };
 // Bootstrap language toggle as early as possible (without waiting for images/icons)
         (function bootstrapLangEarly(){
             const run = () => { try { initLanguageToggle(); } catch(e){} };
@@ -5497,7 +6415,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                             <div class="space-y-3">
                               <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">Recarregar</button>
                               <button onclick="window.forceOfflineMode && window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2">
-                                <i data-lucide="wifi-off" class="w-4 h-4"></i> ${__en ? "Use Offline Mode" : "Usar em Modo Offline"}
+                                <i data-lucide="wifi-off" class="w-4 h-4"></i> ${((window.CURRENT_LANG||localStorage.getItem("df_lang")||"pt").toLowerCase().startsWith("en")) ? "Use Offline Mode" : "Usar em Modo Offline"}
                               </button>
                             </div>
                           </div>
@@ -5544,7 +6462,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                                     Recarregar
                                 </button>
                                 <button onclick="window.forceOfflineMode && window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2">
-                                    <i data-lucide="wifi-off" class="w-4 h-4"></i> ${__en ? "Use Offline Mode" : "Usar em Modo Offline"}
+                                    <i data-lucide="wifi-off" class="w-4 h-4"></i> ${((window.CURRENT_LANG||localStorage.getItem("df_lang")||"pt").toLowerCase().startsWith("en")) ? "Use Offline Mode" : "Usar em Modo Offline"}
                                 </button>
                             </div>
                         </div>
@@ -5574,7 +6492,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                             </p>
                             <div class="space-y-3">
                                 <button onclick="window.forceOfflineMode && window.forceOfflineMode()" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2 px-6 rounded-full font-bold transition text-sm flex items-center justify-center gap-2">
-                                    <i data-lucide="wifi-off" class="w-4 h-4"></i> ${__en ? "Use Offline Mode" : "Usar em Modo Offline"}
+                                    <i data-lucide="wifi-off" class="w-4 h-4"></i> ${((window.CURRENT_LANG||localStorage.getItem("df_lang")||"pt").toLowerCase().startsWith("en")) ? "Use Offline Mode" : "Usar em Modo Offline"}
                                 </button>
                                 <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">
                                     Recarregar
@@ -5620,5 +6538,67 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             else bootstrapApp();
         })();
     </script>
+
+<script>
+/* === FIX: Admin Cash Import Dropzone should always init when Admin UI renders === */
+(function(){
+  // Guard: bind listeners only once per page load
+  const _wrapInit = () => {
+    const dz = document.getElementById("cash-import-dropzone");
+    const input = document.getElementById("cash-import-files");
+    const clearBtn = document.getElementById("cash-import-clear");
+    if(!dz || !input) return;
+
+    if (dz.dataset.bound === "1") {
+      try { window._cashQueueRender && window._cashQueueRender(); } catch(e){}
+      return;
+    }
+    dz.dataset.bound = "1";
+
+    try { window._cashQueueRender && window._cashQueueRender(); } catch(e){}
+
+    dz.addEventListener("click", () => input.click());
+    dz.addEventListener("dragover", (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.add("ring-2","ring-indigo-400"); });
+    dz.addEventListener("dragleave", (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.remove("ring-2","ring-indigo-400"); });
+    dz.addEventListener("drop", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      dz.classList.remove("ring-2","ring-indigo-400");
+      if(e.dataTransfer && e.dataTransfer.files){
+        window._cashQueueAddFiles && window._cashQueueAddFiles(e.dataTransfer.files);
+      }
+    });
+
+    input.addEventListener("change", () => {
+      window._cashQueueAddFiles && window._cashQueueAddFiles(input.files);
+      input.value = "";
+    });
+
+    if(clearBtn) clearBtn.addEventListener("click", () => {
+      window._cashQueueClear && window._cashQueueClear();
+    });
+  };
+
+  // Wrap existing initCashImportDropzone if present; otherwise expose a safe one
+  const _origInit = window.initCashImportDropzone;
+  window.initCashImportDropzone = function(){
+    try { if(_origInit) _origInit.apply(this, arguments); } catch(e){}
+    _wrapInit();
+  };
+
+  // Ensure init runs after admin UI (render) finishes
+  const _origRefresh = window.refreshAdminUI;
+  if (typeof _origRefresh === "function") {
+    window.refreshAdminUI = function(){
+      const r = _origRefresh.apply(this, arguments);
+      setTimeout(() => { try { window.initCashImportDropzone(); } catch(e){} }, 50);
+      return r;
+    };
+  } else {
+    // Fallback: if refreshAdminUI doesn't exist, try once after DOM is ready
+    document.addEventListener("DOMContentLoaded", () => setTimeout(_wrapInit, 200));
+  }
+})();
+</script>
+
 </body>
 </html>
