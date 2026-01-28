@@ -332,7 +332,7 @@ body.dark .bg-white { background-color: #1e293b; }
     <div id="admin-modal" class="fixed inset-0 z-[60] hidden no-print">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="closeAdminPanel()"></div>
 
-        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-3xl bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 transform transition-all">
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-3xl bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-4 sm:p-6 transform transition-all max-h-[92vh] overflow-y-auto overscroll-contain">
             <div class="flex justify-between items-center mb-4">
                 <div>
                     <h3 class="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
@@ -6598,6 +6598,126 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
   } else {
     // Fallback: if refreshAdminUI doesn't exist, try once after DOM is ready
     document.addEventListener("DOMContentLoaded", () => setTimeout(_wrapInit, 200));
+  }
+})();
+</script>
+
+
+<script>
+/* === FIX: Ensure Tradovate Cash Import (Drag & Drop) is visible & initialized, without breaking bootstrap === */
+(function(){
+  function ensureCashImportVisible(){
+    const preview = document.getElementById('nt-import-preview');
+    const dz = document.getElementById('cash-import-dropzone');
+    if(!preview || !dz) return;
+
+    // If dropzone is nested in the hidden NinjaTrader preview container, move its card out.
+    if(preview.contains(dz)){
+      // Find nearest card container
+      let card = dz.closest('.rounded-xl');
+      if(!card) card = dz.closest('div');
+      if(card){
+        preview.insertAdjacentElement('afterend', card);
+        try { card.classList.remove('hidden'); } catch(e){}
+      }
+    }
+  }
+
+  // Wrap initCashImportDropzone safely (no recursion)
+  const _prevInit = window.initCashImportDropzone;
+  window.initCashImportDropzone = function(){
+    try { ensureCashImportVisible(); } catch(e){}
+    try { return _prevInit ? _prevInit.apply(this, arguments) : undefined; } catch(e){ return undefined; }
+  };
+
+  // Extra safety: after admin UI renders, ensure visible + init
+  const _prevRefresh = window.refreshAdminUI;
+  if(typeof _prevRefresh === "function"){
+    window.refreshAdminUI = function(){
+      const r = _prevRefresh.apply(this, arguments);
+      setTimeout(() => {
+        try { ensureCashImportVisible(); } catch(e){}
+        try { window.initCashImportDropzone && window.initCashImportDropzone(); } catch(e){}
+      }, 80);
+      return r;
+    };
+  } else {
+    document.addEventListener("DOMContentLoaded", () => {
+      setTimeout(() => {
+        try { ensureCashImportVisible(); } catch(e){}
+        try { window.initCashImportDropzone && window.initCashImportDropzone(); } catch(e){}
+      }, 600);
+    });
+  }
+})();
+</script>
+
+
+<!-- BUILD_ID: RESTORE-TRADOVATE-DROPZONE-2026-01-27 -->
+<script>
+(function(){
+  function ensureTradovateVisible(){
+    const dz = document.getElementById('cash-import-dropzone');
+    const input = document.getElementById('cash-import-files');
+    if(!dz || !input) return;
+
+    // If any parent is hidden, unhide the nearest card
+    let card = dz.closest('.rounded-xl') || dz.closest('div');
+    if(card){
+      card.style.display = '';
+      card.classList.remove('hidden');
+      card.removeAttribute('aria-hidden');
+    }
+
+    // If nested under hidden NinjaTrader preview, move it out
+    const preview = document.getElementById('nt-import-preview');
+    if(preview && preview.contains(dz) && card){
+      preview.insertAdjacentElement('afterend', card);
+    }
+  }
+
+  // Hide ONLY the NinjaTrader card, not the whole container
+  function hideNinjaTraderOnly(){
+    const ntText = document.getElementById('nt-import-text');
+    const ntPreview = document.getElementById('nt-import-preview');
+    // prefer using the textarea id to find the correct card
+    let anchor = ntText || ntPreview;
+    if(!anchor){
+      const h = Array.from(document.querySelectorAll('h3,h4'))
+        .find(x => (x.textContent||'').trim().toLowerCase() === 'import ninjatrader (colar relatório)'.toLowerCase());
+      anchor = h || null;
+    }
+    if(!anchor) return;
+
+    let card = anchor.closest('.rounded-xl');
+    if(card){
+      // extra guard: don't hide if this card contains the Tradovate dropzone
+      if(card.querySelector('#cash-import-dropzone')) return;
+      card.style.display = 'none';
+      card.setAttribute('aria-hidden','true');
+    }
+  }
+
+  // Run after DOM is ready
+  document.addEventListener('DOMContentLoaded', () => {
+    try { ensureTradovateVisible(); } catch(e){}
+    try { hideNinjaTraderOnly(); } catch(e){}
+    // Initialize dropzone after ensuring visible
+    setTimeout(() => { try { window.initCashImportDropzone && window.initCashImportDropzone(); } catch(e){} }, 120);
+  });
+
+  // After admin rerenders, re-apply
+  const _r = window.refreshAdminUI;
+  if(typeof _r === 'function'){
+    window.refreshAdminUI = function(){
+      const out = _r.apply(this, arguments);
+      setTimeout(() => {
+        try { ensureTradovateVisible(); } catch(e){}
+        try { hideNinjaTraderOnly(); } catch(e){}
+        try { window.initCashImportDropzone && window.initCashImportDropzone(); } catch(e){}
+      }, 120);
+      return out;
+    };
   }
 })();
 </script>
