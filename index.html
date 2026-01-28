@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: ALL-IMPORTS-FIX2-2026-01-28-A -->
-<!-- BUILD_ID: TRADOVATE-TOTAL-AUTOFIX-2026-01-28-A -->
+<!-- BUILD_ID: UNIFIED-LOADER-NOLOOP-2026-01-28-1635 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -169,6 +168,29 @@ body.dark .bg-white { background-color: #1e293b; }
             user-select:none;
             background:rgba(255,255,255,.6);
         }
+
+        /* Make legacy buttons match the same (i) style */
+        .info-icon-btn{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            width:18px;height:18px;
+            border-radius:999px;
+            border:1px solid rgba(148,163,184,.9);
+            color:#64748b;
+            font-size:12px;
+            font-weight:800;
+            margin-left:8px;
+            cursor:pointer;
+            user-select:none;
+            background:transparent;
+            padding:0;
+            line-height:1;
+        }
+        .info-icon-btn:hover{ background:rgba(99,102,241,.08); border-color:rgba(99,102,241,.35); color:#4338ca; }
+        body.dark .info-icon-btn{ border-color:rgba(148,163,184,.35); color:#cbd5e1; }
+        body.dark .info-icon-btn:hover{ background:rgba(99,102,241,.18); border-color:rgba(99,102,241,.35); color:#e0e7ff; }
+
         body.dark .info-i{ border-color:#475569; color:#cbd5e1; background:rgba(30,41,59,.6); }
         .info-i:hover{ transform: translateY(-1px); }
 
@@ -302,8 +324,41 @@ body.dark .bg-white { background-color: #1e293b; }
 .dark .day-details-row td{background:rgba(99,102,241,0.08);border-top:1px dashed rgba(71,85,105,0.8);}
 
 </style>
+
+<style id="d2-info-modal-styles">
+  .info-icon-btn{
+    width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;
+    border:1px solid rgba(148,163,184,.9);border-radius:9999px;background:#fff;
+    color:#334155;font-size:12px;line-height:1;font-weight:700;
+  }
+  .info-icon-btn:hover{background:rgba(248,250,252,1);}
+  .info-icon-btn:active{transform:scale(.98);}
+  .d2-info-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px;}
+  .d2-info-overlay.open{display:flex;}
+  .d2-info-modal{max-width:720px;width:100%;background:#fff;border-radius:16px;box-shadow:0 25px 60px rgba(2,6,23,.25);overflow:hidden;}
+  .d2-info-modal header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(226,232,240,1);}
+  .d2-info-modal header h3{font-weight:800;font-size:16px;color:#0f172a;margin:0;}
+  .d2-info-modal header button{width:34px;height:34px;border-radius:10px;border:1px solid rgba(226,232,240,1);background:#fff;color:#334155;font-size:18px;line-height:1;}
+  .d2-info-modal header button:hover{background:rgba(248,250,252,1);}
+  .d2-info-body{padding:14px 16px;color:#0f172a;font-size:14px;line-height:1.5;}
+  .d2-info-body code{background:rgba(241,245,249,1);padding:2px 6px;border-radius:8px;border:1px solid rgba(226,232,240,1);}
+  .d2-info-body ul{margin:10px 0 0 18px;}
+  .d2-info-body li{margin:6px 0;}
+</style>
+
 </head>
 <body class="pb-12 transition-colors duration-300">
+
+<div id="d2InfoOverlay" class="d2-info-overlay" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="d2-info-modal">
+    <header>
+      <h3 id="d2InfoTitle">Informações</h3>
+      <button type="button" id="d2InfoClose" aria-label="Fechar">×</button>
+    </header>
+    <div class="d2-info-body" id="d2InfoBody"></div>
+  </div>
+</div>
+
 
     <div id="app-loader" class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col items-center justify-center text-white transition-opacity duration-700">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
@@ -510,138 +565,118 @@ body.dark .bg-white { background-color: #1e293b; }
                     </div>
                 </div>
                     <!-- NINJATRADER QUICK IMPORT -->
-                    <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-4 bg-white/60 dark:bg-slate-900/40">
-                        <div class="flex items-start justify-between gap-3">
-                            <div>
-                                <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                    <i data-lucide="clipboard-paste" class="w-4 h-4 text-indigo-500"></i> Import NinjaTrader (colar relatório)
-                                </h4>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                    Copie a tabela <b>Account Summary</b> do NinjaTrader (com cabeçalho) e cole abaixo. O app preenche automaticamente as operações (PnL do dia) e atualiza o saldo (Cash Value) de cada conta.
-                                </p>
-                            </div>
-                            <div class="text-xs">
-                                <span id="nt-import-detected" class="px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-200 font-bold">—</span>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
-                            <div>
-                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Empresa / Prefixo</label>
-                                <input id="nt-import-company" type="text" maxlength="6" placeholder="ex: DF ou VA" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100" />
-                                <p class="mt-1 text-[11px] text-slate-400">O app mapeia o final do número (ex.: ...32 → <b>DF 32</b>).</p>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Data do lançamento</label>
-                                <input id="nt-import-date" type="date" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100" />
-                                <p class="mt-1 text-[11px] text-slate-400">Usado para registrar a operação no dia.</p>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Coluna para lançar</label>
-                                <select id="nt-import-field" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100">
-                                    <option value="total">Total PnL (recomendado)</option>
-                                    <option value="realized">Realized PnL</option>
-                                </select>
-                                <p class="mt-1 text-[11px] text-slate-400">Você pode trocar se desejar.</p>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-wrap gap-4 mt-3 text-xs text-slate-700 dark:text-slate-200">
-                            <label class="inline-flex items-center gap-2">
-                                <input id="nt-import-update-equity" type="checkbox" class="rounded border-slate-300 dark:border-slate-600" checked />
-                                Atualizar saldo atual (Cash Value / Net Liq)
-                            </label>
-                            <label class="inline-flex items-center gap-2">
-                                <input id="nt-import-overwrite" type="checkbox" class="rounded border-slate-300 dark:border-slate-600" checked />
-                                Sobrescrever valor do dia (se já existir)
-                            </label>
-                        </div>
-
-                        
-<div class="mt-3">
-  <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-2">Arquivo (NinjaTrader)</label>
-  <div id="nt-file-dropzone" class="w-full rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/60 dark:bg-slate-900/30 p-4 text-center cursor-pointer select-none">
-    <div class="font-bold text-slate-700 dark:text-slate-200">Arraste e solte o arquivo CSV aqui</div>
-    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">ou clique para selecionar</div>
-    <input id="nt-file-input" type="file" accept=".csv,text/csv" multiple class="hidden" />
-  </div>
-
-  <div class="mt-3 flex flex-wrap items-center gap-2">
-    <button id="nt-file-clear" type="button" class="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-bold">
-      Limpar lista
-    </button>
-    <div id="nt-file-queuehint" class="text-xs text-slate-500 dark:text-slate-400">Nenhum arquivo na fila</div>
-    <label class="ml-auto flex items-center gap-2 text-xs text-slate-700 dark:text-slate-200">
-      <input id="nt-auto-preview" type="checkbox" class="rounded" checked />
-      Pré-visualizar automaticamente
-    </label>
-  </div>
-
-  <div id="nt-file-list" class="mt-2 space-y-2"></div>
-
-  <details class="mt-3">
-    <summary class="cursor-pointer text-xs text-slate-600 dark:text-slate-300">Ou cole o relatório manualmente (opcional)</summary>
-    <div class="mt-2">
-      <textarea id="nt-import-text" class="w-full h-32 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"></textarea>
-      <p class="mt-1 text-[11px] text-slate-400">Suporta colagem tabulada (Ctrl+C da tabela) ou CSV exportado.</p>
+<div class="mt-4 p-4 rounded-xl border border-slate-200 bg-white">
+  <div class="flex items-start justify-between gap-3">
+    <div class="flex gap-3">
+      <div class="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center">
+        <i data-lucide="upload" class="w-5 h-5 text-indigo-600"></i>
+      </div>
+      <div>
+        <div class="font-semibold">Importar Performance (NinjaTrader)</div>
+        <div class="text-sm text-slate-600">Importe via Drag & Drop. Clique no (i) para ver formato e regras. <button type="button" class="info-icon-btn ml-2" data-info-key="ninja" aria-label="Info">i</button></div>
+      </div>
     </div>
-  </details>
+    
+  </div>
+
+  <div class="mt-4">
+    <div class="text-sm font-semibold mb-2">Arquivos (CSV)</div>
+
+    <input id="ninjaFileInput" type="file" accept=".csv" multiple class="hidden" />
+
+    <div id="ninjaDropzone" class="border-2 border-dashed border-slate-200 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-300">
+      <div class="font-semibold">Arraste e solte os arquivos CSV aqui</div>
+      <div class="text-sm text-slate-500">ou clique para selecionar</div>
+    </div>
+
+    <div id="ninjaFileList" class="mt-3 space-y-2"></div>
+
+    <div class="flex items-center gap-3 mt-3">
+      <button id="ninjaClearBtn" type="button" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-sm font-medium">Limpar lista</button>
+      <div id="ninjaQueueHint" class="text-sm text-slate-500">Nenhum arquivo na fila</div>
+      <div class="ml-auto flex items-center gap-2 text-sm">
+        <input id="ninjaAutoPreview" type="checkbox" class="rounded" checked />
+        <label for="ninjaAutoPreview">Pré-visualizar automaticamente</label>
+      </div>
+    </div>
+
+    <div class="mt-4 flex items-center justify-between gap-3">
+      <div class="space-y-2">
+        <label class="flex items-center gap-2 text-sm">
+          <input id="ninjaCreateMissing" type="checkbox" class="rounded" checked>
+          <span>Criar contas ausentes automaticamente</span>
+        </label>
+        <label class="flex items-center gap-2 text-sm">
+          <input id="ninjaOverwriteConflicts" type="checkbox" class="rounded" checked>
+          <span>Sobrescrever conflitos</span>
+        </label>
+      </div>
+
+      <div class="flex gap-3">
+        <button id="ninjaPreviewBtn" type="button" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 font-medium">Pré-visualizar</button>
+        <button id="ninjaApplyBtn" type="button" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium">Importar e Salvar</button>
+      </div>
+    </div>
+
+    <div id="ninjaImportStatus" class="mt-2 text-sm text-slate-600"></div>
+
+    <div id="ninjaImportPreview" class="mt-3 p-4 rounded-lg border border-slate-200 bg-slate-50 text-sm"></div>
+  </div>
 </div>
 
+          <!-- Import Cash History (Tradovate) -->
+          <div class="mt-4 p-4 rounded-xl border border-slate-200 bg-white">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="upload" class="w-4 h-4 text-indigo-500"></i>
+                <div>
+                  <div class="text-sm font-semibold text-slate-800">Importar Cash History (Tradovate)</div>
+                  <div class="text-sm text-slate-600">Importe via Drag & Drop. Clique no (i) para ver formato e regras. <button type="button" class="info-icon-btn ml-2" data-info-key="tradovate" aria-label="Info">i</button></div>
+                </div>
+              </div>
+            </div>
 
-                        <div class="flex items-center gap-2 mt-3">
-                            <button id="nt-import-btn-preview" type="button" onclick="previewNinjaImport()" class="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-bold">Pré-visualizar</button>
-                            <button id="nt-import-btn-apply" type="button" onclick="applyNinjaImportFromAdmin()" class="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Importar e Salvar</button>
-                            <span id="nt-import-status" class="text-xs text-slate-500 dark:text-slate-400"></span>
-                        </div>
+            <div class="mt-4">
+              <div class="text-sm font-semibold mb-2 text-slate-700">Arquivos (CSV)</div>
 
-                        <div id="nt-import-preview" class="hidden mt-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 whitespace-pre-wrap">
-                    <div class="mt-4 p-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-                        <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                            <i data-lucide="upload" class="w-4 h-4 text-indigo-500"></i> Importar Cash History (Tradovate)
-                        </h4>
-                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
-                            Selecione um ou mais arquivos CSV no formato: <span class="font-bold">Cash Historydf21.csv</span>, <span class="font-bold">Cash Historyva24.csv</span>, <span class="font-bold">Cash Historydfc213.csv</span>.
-                            O app identifica a conta pelo sufixo do nome do arquivo e compara com a nuvem para evitar duplicidade.
-                        </p>
+              <input id="cash-import-files" type="file" accept=".csv" multiple class="hidden" />
+              <div id="cash-import-dropzone" class="w-full rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 hover:bg-slate-100 hover:border-indigo-300 transition p-6 text-center cursor-pointer">
+                <div class="font-semibold text-slate-700">Arraste e solte os arquivos CSV aqui</div>
+                <div class="text-sm text-slate-500">ou clique para selecionar</div>
+              </div>
 
-                        <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                            <div class="md:col-span-2">
-                                <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Arquivos (CSV)</label>
-                                <div id="cash-import-dropzone" class="w-full mt-1 p-4 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/40 text-center cursor-pointer select-none">
-                                    <div class="text-xs font-bold text-slate-700 dark:text-slate-200">Arraste e solte os arquivos CSV aqui</div>
-                                    <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">ou clique para selecionar</div>
-                                </div>
-                                <input id="cash-import-files" type="file" accept=".csv,text/csv" multiple class="hidden" />
-                                <div id="cash-import-filelist" class="mt-2 space-y-1 text-xs text-slate-700 dark:text-slate-200"></div>
-                                <div class="mt-2 flex items-center gap-2">
-                                    <button id="cash-import-clear" type="button" class="px-2 py-1 rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-[11px] font-bold">Limpar lista</button>
-                                    <span id="cash-import-queuehint" class="text-[11px] text-slate-500 dark:text-slate-400"></span>
-                                </div>
-                                <div class="mt-2 flex flex-wrap gap-4 text-xs text-slate-700 dark:text-slate-200">
-                                    <label class="inline-flex items-center gap-2">
-                                        <input id="cash-import-create-missing" type="checkbox" class="rounded border-slate-300 dark:border-slate-600" checked />
-                                        Criar contas ausentes automaticamente
-                                    </label>
-                                    <label class="inline-flex items-center gap-2">
-                                        <input id="cash-import-update-equity" type="checkbox" class="rounded border-slate-300 dark:border-slate-600" checked />
-                                        Atualizar saldo atual (Amount final do arquivo)
-                                    </label>
-                                    <label class="inline-flex items-center gap-2">
-                                        <input id="cash-import-overwrite" type="checkbox" class="rounded border-slate-300 dark:border-slate-600" />
-                                        Sobrescrever conflitos
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="flex gap-2">
-                                <button id="cash-import-btn-preview" type="button" onclick="previewCashHistoryImport()" class="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-bold">Pré-visualizar</button>
-                                <button id="cash-import-btn-apply" type="button" onclick="applyCashHistoryImport()" class="px-3 py-2 rounded bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Importar e Salvar</button>
-                            </div>
-                        </div>
+              <div id="cash-import-filelist" class="mt-3 space-y-2"></div>
 
-                        <div id="cash-import-status" class="mt-2 text-[11px] text-slate-500 dark:text-slate-400"></div>
-                        <div id="cash-import-preview" class="hidden mt-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-700 dark:text-slate-200 whitespace-pre-wrap"></div>
-                    </div>
+              <div class="flex items-center gap-3 mt-3">
+                <button id="cash-import-clear" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm">Limpar lista</button>
+                <div id="cash-import-queuehint" class="text-sm text-slate-500">Nenhum arquivo na fila</div>
+              </div>
+
+              <!-- Mantido para compatibilidade (sempre ON, pois o app deve atualizar automaticamente) -->
+              <input id="cash-import-update-equity" type="checkbox" checked class="hidden" />
+
+              <div class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div class="flex flex-col gap-2">
+                  <label class="text-sm text-slate-700 flex items-center gap-2">
+                    <input id="cash-import-create-missing" type="checkbox" class="w-4 h-4" checked />
+                    Criar contas ausentes automaticamente
+                  </label>
+                  <label class="text-sm text-slate-700 flex items-center gap-2">
+                    <input id="cash-import-overwrite" type="checkbox" class="w-4 h-4" checked />
+                    Sobrescrever conflitos
+                  </label>
+                </div>
+
+                <div class="flex gap-3">
+                  <button id="cash-import-btn-preview" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800">Pré-visualizar</button>
+                  <button id="cash-import-btn-apply" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white">Importar e Salvar</button>
+                </div>
+              </div>
+
+              <div id="cash-import-status" class="mt-3 text-sm text-slate-600"></div>
+              <div id="cash-import-preview" class="mt-3 p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm hidden"></div>
+            </div>
+          </div>
 </div>
                     </div>
 
@@ -1941,6 +1976,7 @@ async function callOpenAI(question){
       <tbody>${rowsHtml}</tbody>
     </table>
   </div>
+
 </body>
 </html>`;
         }
@@ -2391,7 +2427,13 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 // Tab atual
             setAdminTab(_adminTab);
 
-            if(els.adminSubtitle) els.adminSubtitle.textContent = `Conta ativa: ${getActive().name}`;
+            if(els.adminSubtitle){
+                els.adminSubtitle.textContent = `Conta selecionada: ${getActive().name}`;
+                const b=document.createElement('button');
+                b.type='button'; b.className='info-icon-btn ml-2'; b.setAttribute('data-info-key','selectedAccount'); b.setAttribute('aria-label','Info');
+                b.textContent='i';
+                els.adminSubtitle.appendChild(b);
+            }
             lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions();
         }
 
@@ -2747,6 +2789,72 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             link.click();
             document.body.removeChild(link);
         };
+
+/* ===== App Loader helpers (avoid startup loop) ===== */
+(function(){
+  const getLoader = () => document.getElementById('app-loader');
+  const getStatusEl = () => {
+    const l = getLoader();
+    return l ? (l.querySelector('[data-loader-status]') || l.querySelector('p')) : null;
+  };
+
+  // state: { phase, status, detail, error }
+  window.setAppLoaderState = function(state){
+    try{
+      const el = getStatusEl();
+      if(!el) return;
+      const status = (state && (state.status || state.phase)) ? String(state.status || state.phase) : 'Iniciando...';
+      el.textContent = status;
+
+      const l = getLoader();
+      if(l){
+        let detailEl = l.querySelector('[data-loader-detail]');
+        if(!detailEl){
+          detailEl = document.createElement('div');
+          detailEl.setAttribute('data-loader-detail','');
+          detailEl.className = 'mt-2 text-xs text-slate-500 max-w-md text-center';
+          l.appendChild(detailEl);
+        }
+        const detail = (state && (state.detail || state.error)) ? String(state.detail || state.error) : '';
+        detailEl.textContent = detail;
+        if(state && state.error){ el.classList.add('text-red-600'); }
+        else { el.classList.remove('text-red-600'); }
+      }
+    }catch(_){ }
+  };
+
+  window.hideAppLoader = function(){
+    try{
+      const l = getLoader();
+      if(!l) return;
+      l.style.transition = 'opacity 220ms ease';
+      l.style.opacity = '0';
+      setTimeout(() => { l.style.display = 'none'; }, 240);
+    }catch(_){ }
+  };
+
+  window.showAppLoader = function(text){
+    try{
+      const l = getLoader();
+      if(!l) return;
+      l.style.display = '';
+      l.style.opacity = '1';
+      if(text) window.setAppLoaderState({ status: text });
+    }catch(_){ }
+  };
+
+  // Surface runtime errors on the loader instead of silent "loop".
+  window.addEventListener('error', (ev) => {
+    try{ window.setAppLoaderState({ status: 'Erro ao iniciar', detail: ev && ev.message ? ev.message : 'Erro', error: true }); }catch(_){ }
+  });
+  window.addEventListener('unhandledrejection', (ev) => {
+    try{
+      const reason = ev && ev.reason;
+      const msg = reason && (reason.message || String(reason)) ? (reason.message || String(reason)) : 'Promise rejected';
+      window.setAppLoaderState({ status: 'Erro ao iniciar', detail: msg, error: true });
+    }catch(_){ }
+  });
+})();
 
         window.forceOfflineMode = () => {
             isOffline = true;
@@ -3504,7 +3612,7 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             els.inpSize.value = acc.size;
             els.inpMonth.value = acc.monthType;
 
-            // Conta ativa é por-dispositivo (localStorage). Não salvar na nuvem aqui para evitar loops.
+            // Conta selecionada é por-dispositivo (localStorage). Não salvar na nuvem aqui para evitar loops.
 
             renderSidebar();
             renderDashboard();
@@ -3903,6 +4011,18 @@ ${period}
             if (!data.store_json) { __cloudHydrated = true; __lastLoadedCloudLen = 0; return; }
 
             const parsed = JSON.parse(data.store_json);
+
+            // Proteção contra "rollback":
+            // Se o local estiver mais recente que o cloud, NÃO sobrescreve (mantém local).
+            const localMs = Number((store && store.last_update_ms) ? store.last_update_ms : 0) || 0;
+            if(localMs && ms && localMs > ms){
+                __cloudHydrated = true;
+                __lastLoadedCloudLen = (data.store_json || '').length;
+                // opcional: tenta enviar o local para o cloud em background (sem travar a UI)
+                try{ window.__D2_NEEDS_CLOUD_PUSH = true; }catch(e){}
+                return;
+            }
+
 
             // manter data/conta ativa por-device
             const localDate = (store && store.date) ? new Date(store.date) : new Date();
@@ -4912,6 +5032,31 @@ if (!store.activeId) {
                 link: LINKS.paRules
             };
 
+
+            // Import & Admin help (no Apex links)
+            if(t.includes("importar performance") || t.includes("ninjatrader") || t.includes("ninja")){
+                return {
+                    title: "Importar Performance (NinjaTrader)",
+                    body: "Formato: Performance<X>.csv. O app identifica a conta pelo sufixo X (tudo após 'Performance' e antes de '.csv'). Usa a coluna 'pnl' por trade e agrupa por dia: T1 = primeiro trade do dia; T2 = soma do 2º trade em diante; Total = T1 + T2. X pode ser qualquer combinação de letras/números.",
+                    link: null
+                };
+            }
+            if(t.includes("importar cash history") || t.includes("tradovate") || t.includes("cash history")){
+                return {
+                    title: "Importar Cash History (Tradovate)",
+                    body: "Formato: Cash History<X>.csv. O app identifica a conta pelo sufixo X (tudo após 'Cash History' e antes de '.csv') e atualiza os dias automaticamente. X pode ser qualquer combinação de letras/números.",
+                    link: null
+                };
+            }
+            if(t.includes("conta selecionada") || t.includes("selectedaccount") || t.includes("admin")){
+                return {
+                    title: "Conta selecionada (Admin)",
+                    body: "Esta área mostra e permite gerenciar informações (ex.: saques/histórico/ações) somente da conta selecionada. Isso evita misturar transações de todas as contas em uma lista única, mantendo o admin limpo e fácil de auditar.",
+                    link: null
+                };
+            }
+
+
             if(t.includes("teto 30")){
                 return {
                     title: "Teto 30% (Consistency / Windfall)",
@@ -5019,7 +5164,14 @@ if (!store.activeId) {
             }
 
             function show(anchor){
-                const rawTitle = anchor.dataset.helpTitle || 'Ajuda';
+                let rawTitle = anchor.dataset.helpTitle || anchor.dataset.helpTitle || anchor.dataset.helpTitle || '';
+                if(!rawTitle && anchor.dataset && anchor.dataset.infoKey){
+                    const k = String(anchor.dataset.infoKey);
+                    if(k==='ninja') rawTitle = 'Importar Performance (NinjaTrader)';
+                    else if(k==='tradovate') rawTitle = 'Importar Cash History (Tradovate)';
+                    else if(k==='selectedAccount') rawTitle = 'Conta selecionada (Admin)';
+                }
+                if(!rawTitle) rawTitle = 'Ajuda';
                 const h = _helpForTitle(rawTitle);
                 titleEl.textContent = h.title || rawTitle;
                 bodyEl.textContent = h.body || '';
@@ -5039,19 +5191,29 @@ if (!store.activeId) {
             }
 
             closeBtn.addEventListener('click', hide);
-            document.addEventListener('click', (e)=>{
-                const isInfo = e.target && e.target.classList && e.target.classList.contains('info-i');
-                if(isInfo){
-                    // toggle
-                    if(!pop.classList.contains('hidden')) hide();
-                    else show(e.target);
+                        document.addEventListener('keydown', (e)=>{ if(e && e.key==='Escape') hide(); });
+
+document.addEventListener('click', (e)=>{
+                const icon = (e.target && e.target.closest) ? e.target.closest('.info-i, .info-icon-btn') : null;
+                if(icon){
+                    // toggle (per-icon)
+                    if(!pop.classList.contains('hidden') && window.__helpPopoverAnchor===icon){
+                        window.__helpPopoverAnchor = null;
+                        hide();
+                    }else{
+                        window.__helpPopoverAnchor = icon;
+                        show(icon);
+                    }
                     return;
                 }
                 if(pop.contains(e.target)) return;
+                window.__helpPopoverAnchor = null;
                 hide();
             });
 
             document.addEventListener('mouseover', (e)=>{
+                return; // hover disabled (use click)
+
                 const tgt = e.target;
                 if(tgt && tgt.classList && tgt.classList.contains('info-i')){
                     clearTimeout(hideTimer);
@@ -5060,6 +5222,8 @@ if (!store.activeId) {
             });
 
             document.addEventListener('mouseout', (e)=>{
+                return; // hover disabled (use click)
+
                 const tgt = e.target;
                 if(tgt && tgt.classList && tgt.classList.contains('info-i')){
                     clearTimeout(hideTimer);
@@ -5070,10 +5234,7 @@ if (!store.activeId) {
             
             // Keep the popover visible when moving from the (i) icon to the popover
             pop.addEventListener('mouseenter', ()=>{ clearTimeout(hideTimer); });
-            pop.addEventListener('mouseleave', ()=>{
-                clearTimeout(hideTimer);
-                hideTimer = setTimeout(()=>hide(), 500);
-            });
+            pop.addEventListener('mouseleave', ()=>{ /* keep open; close only on click outside / X / ESC */ });
             // If user clicks/taps inside the popover (e.g., the Apex link), don't auto-hide
             pop.addEventListener('pointerdown', ()=>{ clearTimeout(hideTimer); });
 
@@ -5607,17 +5768,29 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
         let ninjaPerfQueue = [];   // File[]
         let ninjaPerfPreview = null; // { files:[{file, meta, days:[] , total}], grandTotal, dayCount }
 
-        function _ninjaParseFilename(filename){
-          const name = (filename||"").trim();
-          // allow .csv or .CSV
-          const m = name.match(/^performance([a-z]{1,5})(\d+)\.csv$/i);
-          if(!m) return null;
-          const prefix = (m[1]||"").toUpperCase();
-          const numRaw = (m[2]||"");
-          const num = String(parseInt(numRaw,10));
-          if(!prefix || !num || num === "NaN") return null;
-          return { prefix, num, label: `${prefix} ${num}` };
-        }
+        function _ninjaParseFilename(name){
+    // Accept ANY suffix after "Performance" (case-insensitive). The suffix identifies the account.
+    // Example: Performancedf21.csv, PerformanceVA24.csv, PerformanceMyAcc-01.csv
+    const raw = String(name||'').trim();
+    const m = raw.match(/^performance\s*(.+)\.csv$/i);
+    if(!m) return null;
+
+    const suffixRaw = (m[1]||'').trim();
+    const codeNorm = suffixRaw.toLowerCase().replace(/[^a-z0-9]/g,'');
+    if(!codeNorm) return null;
+
+    // If suffix looks like letters+digits, create a friendly label like "DF 21"
+    let prefix=null, digits=null, label=null;
+    const mm = codeNorm.match(/^([a-z]+)(\d+)$/i);
+    if(mm){
+      prefix = mm[1].toUpperCase();
+      digits = mm[2];
+      label = `${prefix} ${digits}`;
+    }else{
+      label = suffixRaw.toUpperCase();
+    }
+    return { prefix, digits, code: codeNorm.toUpperCase(), label, suffixRaw };
+  }
 
         function _ninjaParseMoney(v){
           if(v==null) return 0;
@@ -5677,13 +5850,16 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
           el.style.color = type==='error' ? '#dc2626' : (type==='warn' ? '#b45309' : '#374151');
         }
 
-        function _ninjaRenderQueue(){
+        function _ninjaRenderQueue() {
+          const queueHint = document.getElementById('ninjaQueueHint');
           const list = document.getElementById('ninjaFileList');
           if(!list) return;
           if(!ninjaPerfQueue.length){
+            if(queueHint) queueHint.textContent = 'Nenhum arquivo na fila';
             list.innerHTML = '<div class="text-sm text-slate-500">Nenhum arquivo selecionado.</div>';
             return;
           }
+          if(queueHint) queueHint.textContent = `${ninjaPerfQueue.length} arquivo(s) na fila`;
           list.innerHTML = ninjaPerfQueue.map((f, idx) => `
             <div class="flex items-center justify-between gap-3 p-3 border rounded-lg bg-white">
               <div>
@@ -5704,9 +5880,20 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
           _ninjaSetStatus('', 'ok');
         };
 
-        function _ninjaBindUI(){
+        function _ninjaBindUI() {
+  const clearBtn = document.getElementById('ninjaClearBtn');
+  const queueHint = document.getElementById('ninjaQueueHint');
           const dz = document.getElementById('ninjaDropzone');
           const input = document.getElementById('ninjaFileInput');
+  if (clearBtn) clearBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            ninjaPerfQueue.length = 0;
+            _ninjaRenderQueue();
+            ninjaPerfPreview = null;
+            const box = document.getElementById('ninjaPreviewBox');
+            if (box) box.innerHTML = '';
+            _ninjaSetStatus('Lista limpa.', 'ok');
+          });
           if(!dz || !input) return;
           if(dz.dataset.bound === '1') return;
           dz.dataset.bound = '1';
@@ -5806,7 +5993,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
             const box = document.getElementById('ninjaPreviewBox');
             if(box){
-              box.innerHTML = parsedFiles.map(p=>{
+              box.innerHTML = `<div class="mb-2 text-xs text-slate-600">Arquivos: ${parsedFiles.length} | OK: ${parsedFiles.length} | Erros: 0</div>` + parsedFiles.map(p=>{
                 const header = `<div class="font-semibold mb-2">✅ ${escapeHtml(p.file.name)} → ${escapeHtml(p.meta.label)} | dias: ${p.days.length} | total: ${formatMoney(p.total)}</div>`;
                 const rows = p.days.map(d=>`
                   <div class="flex items-center gap-2 text-sm">
@@ -5836,21 +6023,18 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
               if(!ninjaPerfPreview) return;
             }
 
-            const overwrite = !!document.getElementById('ninjaOverwrite')?.checked;
-            const createMissing = true; // always allow create like Tradovate
+            const overwrite = !!document.getElementById('ninjaOverwriteConflicts')?.checked;
+            const createMissing = !!document.getElementById('ninjaCreateMissing')?.checked;
 
             let appliedDays = 0;
             let skippedConflicts = 0;
             let createdAccounts = 0;
 
             for(const p of ninjaPerfPreview.files){
-              let acc = _ninjaEnsureAccount(p.meta.label, createMissing);
-              if(!acc) throw new Error(`Não consegui encontrar/criar a conta ${p.meta.label}`);
-              // count created (rough)
-              if(!store.accounts[acc.id]?.__ninjaSeen){
-                // mark seen for this run
-                store.accounts[acc.id].__ninjaSeen = true;
-              }
+              const ensure = _cashEnsureAccount(p.meta.label, createMissing);
+              const acc = ensure?.acc;
+              if(ensure?.created) createdAccounts++;
+              if(!acc) throw new Error(`Não consegui encontrar a conta ${p.meta.label}. Marque “Criar contas ausentes automaticamente” para permitir criar.`);
 
               const a = store.accounts[acc.id];
               a.data = a.data || {};
@@ -5876,19 +6060,13 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
               }
             }
 
-            // remove helper marks
-            for(const id of Object.keys(store.accounts||{})){
-              if(store.accounts[id] && store.accounts[id].__ninjaSeen) delete store.accounts[id].__ninjaSeen;
-            }
-
             await saveToCloudNow();
             renderAll();
 
-            if(skippedConflicts){
-              _ninjaSetStatus(`Importado com sucesso (${appliedDays} dias). ${skippedConflicts} conflito(s) ignorado(s).`, 'warn');
-            }else{
-              _ninjaSetStatus(`✅ Importado e salvo com sucesso (${appliedDays} dias).`, 'ok');
-            }
+            const parts = [`✅ Importado e salvo (${appliedDays} dia(s)).`];
+            if(createdAccounts) parts.push(`${createdAccounts} conta(s) criada(s).`);
+            if(skippedConflicts) parts.push(`${skippedConflicts} conflito(s) ignorado(s).`);
+            _ninjaSetStatus(parts.join(' '), skippedConflicts ? 'warn' : 'ok');
           }catch(err){
             console.error(err);
             _ninjaSetStatus(err.message || 'Falha ao importar/salvar. Tente novamente.', 'error');
@@ -5922,17 +6100,28 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
         }
 
         function _cashParseFilename(name){
-            try{
-                const base = String(name || '').replace(/\.[^/.]+$/,'');
-                const norm = base.replace(/\s+/g,'').toLowerCase();
-                if(!norm.startsWith('cashhistory')) return null;
-                const rem = norm.slice('cashhistory'.length); // e.g. df21, va24, dfc213
-                const m = rem.match(/^([a-z]{2,5})(\d{2,5})$/i);
-                if(!m) return null;
-                const prefix = String(m[1]||'').toUpperCase();
-                const num = String(m[2]||'');
-                return { prefix, num, label: (prefix + ' ' + num).trim(), key: (prefix + num).toUpperCase() };
-            }catch(e){
+  try{
+    // Accept ANY suffix after "Cash History" (case-insensitive). The suffix identifies the account.
+    // Example: Cash Historydf21.csv, CashHistoryVA24.csv, Cash HistoryMyAcc-01.csv
+    const raw = String(name||'').trim();
+    const m = raw.match(/^cash\s*history\s*(.+)\.csv$/i);
+    if(!m) return null;
+
+    const suffixRaw = (m[1]||'').trim();
+    const codeNorm = suffixRaw.toLowerCase().replace(/[^a-z0-9]/g,'');
+    if(!codeNorm) return null;
+
+    let prefix=null, digits=null, label=null;
+    const mm = codeNorm.match(/^([a-z]+)(\d+)$/i);
+    if(mm){
+      prefix = mm[1].toUpperCase();
+      digits = mm[2];
+      label = `${prefix} ${digits}`;
+    }else{
+      label = suffixRaw.toUpperCase();
+    }
+    return { prefix, digits, code: codeNorm.toUpperCase(), label, suffixRaw };
+  }catch(e){
                 return null;
             }
         }
@@ -6775,7 +6964,6 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
 </script>
 
 
-<!-- BUILD_ID: RESTORE-TRADOVATE-DROPZONE-2026-01-27 -->
 <script>
 (function(){
   function ensureTradovateVisible(){
@@ -6845,7 +7033,6 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
 </script>
 
 
-<!-- BUILD_ID: TRADOVATE-GROSS-FEES-FIX-2026-01-27 -->
 <script>
 /*
 Fix: Some Tradovate Cash History exports provide "Trade Paired" deltas as NET (fees already included),
@@ -7016,7 +7203,6 @@ We normalize daily buckets so:
 </script>
 
 
-<!-- BUILD_ID: TRADOVATE+NINJA-DND-2026-01-27 -->
 <script>
 (function(){
   // ------- Ninja file queue (similar UX to Tradovate) -------
@@ -7126,11 +7312,9 @@ We normalize daily buckets so:
 
 
 
-<!-- BUILD_ID: NINJA-PERF-PERFECT-APPLY-PREVIEW-2026-01-28-B -->
 
 
 
-<!-- BUILD_ID: NINJA-PERF-HARDSTOP2-2026-01-28 -->
 <script>
 (function(){
   // HARD STOP: prevent legacy Ninja Account Summary parser ("Display name") from ever running when dropping Performance*.csv
@@ -7146,8 +7330,22 @@ We normalize daily buckets so:
     if(!m) return null;
     return {prefix:m[1].toUpperCase(), digits:m[2]};
   }
-  function codeFromAcct(a){ return `${a.prefix}${a.digits}`; }
-  function makeLabel(a){ return `${a.prefix} ${a.digits}`; }
+  function codeFromAcct(a){ 
+    if(!a) return '';
+    if(a.code) return String(a.code).toUpperCase();
+    const p = (a.prefix||'').toString().toUpperCase();
+    const d = (a.digits||'').toString();
+    return (p+d).trim();
+  }
+  function makeLabel(a){ 
+    if(!a) return '';
+    if(a.label) return String(a.label);
+    const p = (a.prefix||'').toString().toUpperCase();
+    const d = (a.digits||'').toString();
+    if(p && d) return `${p} ${d}`;
+    if(a.code) return String(a.code);
+    return (p+d).trim();
+  }
 
   function splitCSV(line){
     const out=[]; let cur=''; let inQ=false;
