@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: LOOPFIX-2026-01-27-A -->
+<!-- BUILD_ID: ALL-IMPORTS-FIX2-2026-01-28-A -->
+<!-- BUILD_ID: TRADOVATE-TOTAL-AUTOFIX-2026-01-28-A -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -556,11 +557,37 @@ body.dark .bg-white { background-color: #1e293b; }
                             </label>
                         </div>
 
-                        <div class="mt-3">
-                            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">Cole o relatório aqui</label>
-                            <textarea id="nt-import-text" rows="7" placeholder="Dica: copie a tabela do NinjaTrader (Ctrl+C) e cole aqui (Ctrl+V)." class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100"></textarea>
-                            <p class="mt-1 text-[11px] text-slate-400">Suporta colagem tabulada (Ctrl+C da tabela) ou CSV exportado.</p>
-                        </div>
+                        
+<div class="mt-3">
+  <label class="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-2">Arquivo (NinjaTrader)</label>
+  <div id="nt-file-dropzone" class="w-full rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50/60 dark:bg-slate-900/30 p-4 text-center cursor-pointer select-none">
+    <div class="font-bold text-slate-700 dark:text-slate-200">Arraste e solte o arquivo CSV aqui</div>
+    <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">ou clique para selecionar</div>
+    <input id="nt-file-input" type="file" accept=".csv,text/csv" multiple class="hidden" />
+  </div>
+
+  <div class="mt-3 flex flex-wrap items-center gap-2">
+    <button id="nt-file-clear" type="button" class="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-bold">
+      Limpar lista
+    </button>
+    <div id="nt-file-queuehint" class="text-xs text-slate-500 dark:text-slate-400">Nenhum arquivo na fila</div>
+    <label class="ml-auto flex items-center gap-2 text-xs text-slate-700 dark:text-slate-200">
+      <input id="nt-auto-preview" type="checkbox" class="rounded" checked />
+      Pré-visualizar automaticamente
+    </label>
+  </div>
+
+  <div id="nt-file-list" class="mt-2 space-y-2"></div>
+
+  <details class="mt-3">
+    <summary class="cursor-pointer text-xs text-slate-600 dark:text-slate-300">Ou cole o relatório manualmente (opcional)</summary>
+    <div class="mt-2">
+      <textarea id="nt-import-text" class="w-full h-32 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"></textarea>
+      <p class="mt-1 text-[11px] text-slate-400">Suporta colagem tabulada (Ctrl+C da tabela) ou CSV exportado.</p>
+    </div>
+  </details>
+</div>
+
 
                         <div class="flex items-center gap-2 mt-3">
                             <button id="nt-import-btn-preview" type="button" onclick="previewNinjaImport()" class="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-bold">Pré-visualizar</button>
@@ -2795,6 +2822,17 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
         function getActive(){return store.accounts[store.activeId];}
 
+        // Expose internal helpers for import modules (Tradovate/Ninja) without leaking 'store' by value.
+        // Important: 'store' is declared with 'let', so it's NOT on window; we expose closures so they always see the current store.
+        try{
+            if(!window.getStore) window.getStore = ()=>store;
+            if(!window.getActive) window.getActive = ()=>store && store.accounts ? store.accounts[store.activeId] : null;
+            if(!window.loadAccount && typeof loadAccount === 'function') window.loadAccount = loadAccount;
+            if(!window.saveToCloud && typeof saveToCloud === 'function') window.saveToCloud = saveToCloud;
+            if(!window.syncToCloud && typeof syncToCloud === 'function') window.syncToCloud = syncToCloud;
+        }catch(e){}
+
+
         function calculateStats(acc) { 
             const rules = RULES[acc.size];
             let tp = 0; 
@@ -3127,13 +3165,20 @@ function renderCalendar(acc) {
         const tr = document.createElement('tr'); 
         const isToday = (iso === getTodayISO());
         tr.className = `dark:border-slate-700 ${isOutsideMonth ? 'opacity-60 bg-slate-50 dark:bg-slate-800/40' : ''} ${isToday ? 'today-row' : ''}`;
-        const valNum = parseFloat(entry.val) || 0;
         const t1Num = (entry.t1 === undefined || entry.t1 === null || entry.t1 === '') ? '' : entry.t1;
         const t2Num = (entry.t2 === undefined || entry.t2 === null || entry.t2 === '') ? '' : entry.t2;
 
+        // Total do dia: preferir `entry.val` quando existir; senão calcular automaticamente por (T1 + T2).
+        // Isso evita que imports programáticos exibam "--" até o usuário clicar/validar o campo.
+        const hasStoredVal = !(entry.val === undefined || entry.val === null || entry.val === '');
+        const hasTrades = !(t1Num === '' && t2Num === '');
+        const t1Calc = parseFloat(t1Num) || 0;
+        const t2Calc = parseFloat(t2Num) || 0;
+        const displayVal = hasStoredVal ? (parseFloat(entry.val) || 0) : (hasTrades ? (t1Calc + t2Calc) : 0);
+
         let colorClass = 'val-zero'; 
-        if (valNum > 0) colorClass = 'val-pos'; 
-        else if (valNum < 0) colorClass = 'val-neg';
+        if (displayVal > 0) colorClass = 'val-pos'; 
+        else if (displayVal < 0) colorClass = 'val-neg';
 
         const readOnlyDay = false; // allow editing also on cross-month days shown in the grid
         const inputDisabledAttr = readOnlyDay ? 'disabled' : '';
@@ -3175,7 +3220,7 @@ function renderCalendar(acc) {
                 </div>
             </td>
             <td class="px-4 py-2 w-48">${inputsHtml}</td>
-            <td class="px-4 py-2 text-right"><span class="font-bold text-sm ${colorClass}">${valNum!==0 ? formatCurrency(valNum) : '--'}</span></td>
+            <td class="px-4 py-2 text-right"><span class="font-bold text-sm ${colorClass}">${(hasTrades || hasStoredVal) ? formatCurrency(displayVal) : '--'}</span></td>
             <td class="px-4 py-2 text-center w-16">
                 <button onclick="openNoteModal('${iso}', false)" class="p-1.5 rounded-lg border transition ${noteBtnClass}" title="Editar Nota">
                     <i data-lucide="${noteIcon}" class="w-4 h-4"></i>
@@ -5551,244 +5596,307 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             return line.trim().split(/\s{2,}|\t/).map(x => x.trim());
         }
 
-        function parseNinjaReportText(text){
-            const t = String(text || '').replace(/\r/g,'').trim();
-            if(!t) return { rows: [], error: 'Cole o relatório do NinjaTrader.' };
+        
+        // =========================
+        // NinjaTrader Performance CSV Import (Drag & Drop) — same model as Tradovate
+        // Expected filename: Performance<company><account>.csv  (ex: Performancedf21.csv)
+        // Expected columns: boughtTimestamp, pnl  (case-insensitive)
+        // Rule: T1 = first trade of the day; T2 = sum of trade #2..N; TOTAL = T1+T2
+        // =========================
 
-            const lines = t.split('\n').map(l => l.trim()).filter(l => l.length);
-            if(lines.length < 2) return { rows: [], error: 'Relatório insuficiente (precisa do cabeçalho + linhas).' };
+        let ninjaPerfQueue = [];   // File[]
+        let ninjaPerfPreview = null; // { files:[{file, meta, days:[] , total}], grandTotal, dayCount }
 
-            const first = lines[0];
-            const delim = first.includes('\t') ? '\t' : (first.includes(',') ? ',' : null);
+        function _ninjaParseFilename(filename){
+          const name = (filename||"").trim();
+          // allow .csv or .CSV
+          const m = name.match(/^performance([a-z]{1,5})(\d+)\.csv$/i);
+          if(!m) return null;
+          const prefix = (m[1]||"").toUpperCase();
+          const numRaw = (m[2]||"");
+          const num = String(parseInt(numRaw,10));
+          if(!prefix || !num || num === "NaN") return null;
+          return { prefix, num, label: `${prefix} ${num}` };
+        }
 
-            const headerRaw = ntSplitLine(lines[0], delim);
-            const header = headerRaw.map(ntNormalize);
+        function _ninjaParseMoney(v){
+          if(v==null) return 0;
+          let s = String(v).trim();
+          if(!s) return 0;
+          // handle ($8.00) style negatives
+          let neg = false;
+          if(s.includes('(') && s.includes(')')){ neg = true; s = s.replace(/[()]/g,''); }
+          s = s.replace(/\$/g,'').replace(/,/g,'').trim();
+          const n = parseFloat(s);
+          if(!isFinite(n)) return 0;
+          return neg ? -Math.abs(n) : n;
+        }
 
-            const idx = (nameVariants) => {
-                for(const v of nameVariants){
-                    const k = ntNormalize(v);
-                    const i = header.indexOf(k);
-                    if(i !== -1) return i;
-                }
-                return -1;
+        function _ninjaToISODateFromTimestamp(ts){
+          // Accept: "1/20/2026 9:30" or "01/20/2026 09:30"
+          const s = String(ts||"").trim();
+          if(!s) return null;
+          const parts = s.split(/\s+/);
+          const d = parts[0] || "";
+          const m = d.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+          if(!m) return null;
+          const mm = String(m[1]).padStart(2,'0');
+          const dd = String(m[2]).padStart(2,'0');
+          let yy = String(m[3]);
+          if(yy.length===2) yy = "20"+yy;
+          return `${yy}-${mm}-${dd}`;
+        }
+
+        function _ninjaEnsureAccount(label, allowCreate){
+          if(!label) return null;
+          const target = String(label).trim().toLowerCase();
+          for(const id of Object.keys(store.accounts||{})){
+            const a = store.accounts[id];
+            if(a && String(a.name||"").trim().toLowerCase() === target){
+              return { id: a.id, label: a.name };
+            }
+          }
+          if(!allowCreate) return null;
+          const id = 'acc_' + Date.now() + '_' + Math.random().toString(16).slice(2,8);
+          store.accounts[id] = {
+            id,
+            name: label,
+            size: '50k',
+            monthType: 1,
+            data: {},
+            payouts: [],
+            createdAt: new Date().toISOString()
+          };
+          return { id, label };
+        }
+
+        function _ninjaSetStatus(msg, type){
+          const el = document.getElementById('ninjaImportStatus');
+          if(!el) return;
+          el.textContent = msg || '';
+          el.style.color = type==='error' ? '#dc2626' : (type==='warn' ? '#b45309' : '#374151');
+        }
+
+        function _ninjaRenderQueue(){
+          const list = document.getElementById('ninjaFileList');
+          if(!list) return;
+          if(!ninjaPerfQueue.length){
+            list.innerHTML = '<div class="text-sm text-slate-500">Nenhum arquivo selecionado.</div>';
+            return;
+          }
+          list.innerHTML = ninjaPerfQueue.map((f, idx) => `
+            <div class="flex items-center justify-between gap-3 p-3 border rounded-lg bg-white">
+              <div>
+                <div class="font-semibold">${escapeHtml(f.name)}</div>
+                <div class="text-xs text-slate-500">${(f.size/1024).toFixed(1)} KB</div>
+              </div>
+              <button class="px-3 py-2 rounded-md border hover:bg-slate-50" onclick="(function(){ window._ninjaRemoveFile(${idx}); })()">Remover</button>
+            </div>
+          `).join('');
+        }
+
+        window._ninjaRemoveFile = (idx) => {
+          ninjaPerfQueue.splice(idx,1);
+          ninjaPerfPreview = null;
+          _ninjaRenderQueue();
+          const box = document.getElementById('ninjaPreviewBox');
+          if(box) box.innerHTML = '';
+          _ninjaSetStatus('', 'ok');
+        };
+
+        function _ninjaBindUI(){
+          const dz = document.getElementById('ninjaDropzone');
+          const input = document.getElementById('ninjaFileInput');
+          if(!dz || !input) return;
+          if(dz.dataset.bound === '1') return;
+          dz.dataset.bound = '1';
+
+          const pick = () => input.click();
+          dz.addEventListener('click', pick);
+
+          dz.addEventListener('dragover', (e)=>{ e.preventDefault(); dz.classList.add('ring-2','ring-indigo-400'); });
+          dz.addEventListener('dragleave', ()=> dz.classList.remove('ring-2','ring-indigo-400'));
+          dz.addEventListener('drop', (e)=>{
+            e.preventDefault();
+            dz.classList.remove('ring-2','ring-indigo-400');
+            const files = Array.from(e.dataTransfer.files||[]).filter(f=>/\.csv$/i.test(f.name));
+            if(files.length) _ninjaAddFiles(files);
+          });
+
+          input.addEventListener('change', ()=>{
+            const files = Array.from(input.files||[]).filter(f=>/\.csv$/i.test(f.name));
+            input.value = '';
+            if(files.length) _ninjaAddFiles(files);
+          });
+
+          _ninjaRenderQueue();
+        }
+
+        function _ninjaAddFiles(files){
+          for(const f of files){
+            // avoid duplicates by name+size
+            if(ninjaPerfQueue.some(x => x.name===f.name && x.size===f.size)) continue;
+            ninjaPerfQueue.push(f);
+          }
+          _ninjaRenderQueue();
+
+          const auto = document.getElementById('ninjaAutoPreview');
+          if(auto && auto.checked){
+            // fire and forget
+            window.previewNinjaImport().catch(()=>{});
+          }
+        }
+
+        async function _ninjaParsePerformanceFile(file){
+          const meta = _ninjaParseFilename(file.name);
+          if(!meta) throw new Error(`Nome inválido: ${file.name}. Use Performance<empresa><conta>.csv (ex: Performancedf21.csv)`);
+          const text = await file.text();
+          const lines = String(text||"").replace(/\r/g,'').split('\n').filter(l => l.trim().length);
+          if(lines.length < 2) throw new Error(`Arquivo vazio: ${file.name}`);
+
+          const header = splitCSV(lines[0]).map(h => String(h||"").trim().toLowerCase());
+          const idxPnl = header.findIndex(h => h === 'pnl' || h.endsWith(':pnl'));
+          const idxTs = header.findIndex(h => h === 'boughttimestamp' || h === 'boughttimestamp' || h === 'boughttime' || h === 'boughttimeStamp'.toLowerCase());
+          if(idxPnl < 0) throw new Error(`Não encontrei a coluna "pnl" em ${file.name}`);
+          if(idxTs < 0) throw new Error(`Não encontrei a coluna "boughtTimestamp" em ${file.name}`);
+
+          const dayMap = new Map(); // iso -> [pnl,...]
+          for(let i=1;i<lines.length;i++){
+            const row = splitCSV(lines[i]);
+            if(!row || !row.length) continue;
+            const iso = _ninjaToISODateFromTimestamp(row[idxTs]);
+            if(!iso) continue;
+            const pnl = _ninjaParseMoney(row[idxPnl]);
+            if(!dayMap.has(iso)) dayMap.set(iso, []);
+            dayMap.get(iso).push(pnl);
+          }
+
+          const days = Array.from(dayMap.entries()).sort((a,b)=>a[0].localeCompare(b[0])).map(([iso, arr])=>{
+            const trades = arr.length;
+            const t1 = trades ? arr[0] : 0;
+            const t2 = trades > 1 ? arr.slice(1).reduce((s,x)=>s+x,0) : 0;
+            const total = t1 + t2;
+            return { iso, t1, t2, total, trades };
+          });
+
+          const total = days.reduce((s,d)=>s+d.total,0);
+          return { file, meta, days, total };
+        }
+
+        window.previewNinjaImport = async () => {
+          try{
+            _ninjaBindUI();
+            _ninjaSetStatus('Lendo arquivo...', 'ok');
+
+            if(!ninjaPerfQueue.length){
+              _ninjaSetStatus('Selecione ou arraste um arquivo CSV.', 'warn');
+              return;
+            }
+
+            const parsedFiles = [];
+            for(const f of ninjaPerfQueue){
+              parsedFiles.push(await _ninjaParsePerformanceFile(f));
+            }
+
+            ninjaPerfPreview = {
+              files: parsedFiles,
+              grandTotal: parsedFiles.reduce((s,x)=>s+x.total,0),
+              dayCount: parsedFiles.reduce((s,x)=>s+x.days.length,0)
             };
 
-            const iDisplay = idx(['Display name','Display Name','Display']);
-            const iCash = idx(['Cash value','Cash Value','Cash']);
-            const iNetLiq = idx(['Net liquidation','Net Liquidation','NetLiq']);
-            const iTotal = idx(['Total PnL','Total Pnl','Total']);
-            const iRealized = idx(['Realized PnL','Realized Pnl','Realized']);
-            const iGrossRealized = idx(['Gross realized PnL','Gross Realized PnL','Gross realized','GrossRealized']);
-
-            if(iDisplay === -1) return { rows: [], error: 'Não encontrei a coluna "Display name". Copie a tabela com cabeçalho.' };
-
-            const rows = [];
-            for(let li=1; li<lines.length; li++){
-                const cols = ntSplitLine(lines[li], delim);
-                if(cols.length < 3) continue;
-                const display = cols[iDisplay] || '';
-                const cashC = iCash !== -1 ? ntMoneyToCents(cols[iCash]) : null;
-                const netLiqC = iNetLiq !== -1 ? ntMoneyToCents(cols[iNetLiq]) : null;
-                const totalC = iTotal !== -1 ? ntMoneyToCents(cols[iTotal]) : null;
-                const realizedC = iRealized !== -1 ? ntMoneyToCents(cols[iRealized]) : null;
-                const grossRealizedC = iGrossRealized !== -1 ? ntMoneyToCents(cols[iGrossRealized]) : null;
-
-                rows.push({
-                    displayName: display,
-                    cashValueCents: cashC,
-                    netLiqCents: netLiqC,
-                    totalPnLCents: totalC,
-                    realizedPnLCents: realizedC,
-                    grossRealizedPnLCents: grossRealizedC
-                });
-            }
-            return { rows, error: rows.length ? null : 'Nenhuma linha válida foi detectada.' };
-        }
-
-        function ntExtractTrailingNumber(display){
-            const s = String(display || '').trim();
-            // try last 2-3 digits
-            let m = s.match(/(\d{2,3})\s*$/);
-            if(m && m[1]) return m[1];
-            // try patterns like PA-APEX-...-32
-            m = s.match(/-(\d{2,3})\s*$/);
-            if(m && m[1]) return m[1];
-            return null;
-        }
-
-        function ntMakeCode(prefix, digits){
-            if(!digits) return null;
-            const n = String(digits).replace(/\D/g,'');
-            if(!n) return null;
-            // preserve 2 or 3 digits
-            const padded = (n.length === 1) ? ('0' + n) : n;
-            return (String(prefix || 'DF').toUpperCase()) + padded;
-        }
-
-        function ntFindAccountByCode(code){
-            const normCode = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
-            const all = Object.values(store.accounts || {});
-            for(const a of all){
-                const nm = String(a.name || '').toUpperCase().replace(/[^A-Z0-9]/g,'');
-                if(nm === normCode) return a;
-                // also accept "DF22" matching "DF 22"
-                if(nm.includes(normCode)) return a;
-            }
-            return null;
-        }
-
-        function ntCreateAccountIfMissing(code){
-            const active = (() => { try { return getActive(); } catch(e){ return null; } })();
-            const sizeHint = active?.size || '50k';
-            const monthTypeHint = active?.monthType || 1;
-
-            const id = 'acc_' + Date.now() + '_' + Math.random().toString(16).slice(2);
-            const name = String(code || '').replace(/^([A-Z]{1,6})(\d+)/i, (_,p,n) => `${p.toUpperCase()} ${n}`);
-            store.accounts[id] = { id, name, size: sizeHint, monthType: monthTypeHint, data: {}, payouts: [], createdAt: new Date().toISOString(), favorite: false };
-            return store.accounts[id];
-        }
-
-        window.previewNinjaImport = () => {
-            if(!adminSession){
-                alert(translateString("Você precisa estar logado na área administrativa."));
-                return;
-            }
-            ntSetDefaults();
-
-            const prefix = (document.getElementById('nt-import-company')?.value || ntInferPrefix()).trim().toUpperCase();
-            localStorage.setItem(NT_IMPORT_PREFIX_KEY, prefix);
-
-            const txt = document.getElementById('nt-import-text')?.value || '';
-            const out = parseNinjaReportText(txt);
-            const badge = document.getElementById('nt-import-detected');
-            const previewEl = document.getElementById('nt-import-preview');
-
-            if(out.error){
-                if(badge) badge.textContent = 'Erro';
-                if(previewEl){ previewEl.classList.remove('hidden'); previewEl.textContent = '❌ ' + out.error; }
-                ntSetStatus(out.error, true);
-                return;
+            const box = document.getElementById('ninjaPreviewBox');
+            if(box){
+              box.innerHTML = parsedFiles.map(p=>{
+                const header = `<div class="font-semibold mb-2">✅ ${escapeHtml(p.file.name)} → ${escapeHtml(p.meta.label)} | dias: ${p.days.length} | total: ${formatMoney(p.total)}</div>`;
+                const rows = p.days.map(d=>`
+                  <div class="flex items-center gap-2 text-sm">
+                    <span class="w-28 text-slate-700">${d.iso}</span>
+                    <span class="w-28">T1 ${formatMoney(d.t1)}</span>
+                    <span class="w-28">T2 ${formatMoney(d.t2)}</span>
+                    <span class="w-28 font-semibold">Total ${formatMoney(d.total)}</span>
+                    <span class="text-slate-500">trades ${d.trades}</span>
+                  </div>
+                `).join('');
+                return `${header}<div class="space-y-1">${rows}</div><div class="mt-2 text-xs text-slate-500">Total arquivo: ${formatMoney(p.total)}</div>`;
+              }).join('<hr class="my-3">');
             }
 
-            const rows = out.rows;
-            let mapped = 0;
-            const sample = [];
-
-            for(const r of rows){
-                const digits = ntExtractTrailingNumber(r.displayName);
-                const code = ntMakeCode(prefix, digits);
-                if(!code) continue;
-                mapped++;
-                const cash = (r.cashValueCents==null) ? '—' : formatCurrency(r.cashValueCents/100);
-                const pnl = (r.totalPnLCents==null) ? '—' : formatCurrency(r.totalPnLCents/100);
-                sample.push(`${code}  | Cash: ${cash}  | TotalPnL: ${pnl}  | Display: ${r.displayName}`);
-                if(sample.length >= 8) break;
-            }
-
-            if(badge) badge.textContent = `${mapped} contas`;
-            if(previewEl){
-                previewEl.classList.remove('hidden');
-                previewEl.textContent = `Detectadas: ${rows.length} linhas\nMapeadas: ${mapped} contas (prefixo ${prefix})\n\nExemplos:\n` + (sample.length ? sample.join('\n') : '—');
-            }
-            ntSetStatus('Pré-visualização pronta.');
+            _ninjaSetStatus('Pré-visualização pronta.', 'ok');
+          }catch(err){
+            console.error(err);
+            _ninjaSetStatus(err.message || 'Erro ao pré-visualizar.', 'error');
+          }
         };
 
         window.applyNinjaImportFromAdmin = async () => {
-            if(!adminSession){
-                alert(translateString("Você precisa estar logado na área administrativa."));
-                return;
-            }
-            ntSetDefaults();
-
-            const prefix = (document.getElementById('nt-import-company')?.value || ntInferPrefix()).trim().toUpperCase();
-            localStorage.setItem(NT_IMPORT_PREFIX_KEY, prefix);
-
-            const dateISO = (document.getElementById('nt-import-date')?.value || '').trim();
-            if(!dateISO){
-                ntSetStatus('Escolha uma data.', true);
-                return;
+          try{
+            _ninjaBindUI();
+            if(!ninjaPerfPreview){
+              await window.previewNinjaImport();
+              if(!ninjaPerfPreview) return;
             }
 
-            const field = (document.getElementById('nt-import-field')?.value || 'total').trim();
-            const overwrite = !!document.getElementById('nt-import-overwrite')?.checked;
-            const updateEquity = !!document.getElementById('nt-import-update-equity')?.checked;
+            const overwrite = !!document.getElementById('ninjaOverwrite')?.checked;
+            const createMissing = true; // always allow create like Tradovate
 
-            const txt = document.getElementById('nt-import-text')?.value || '';
-            const out = parseNinjaReportText(txt);
-            if(out.error){
-                ntSetStatus(out.error, true);
-                return;
+            let appliedDays = 0;
+            let skippedConflicts = 0;
+            let createdAccounts = 0;
+
+            for(const p of ninjaPerfPreview.files){
+              let acc = _ninjaEnsureAccount(p.meta.label, createMissing);
+              if(!acc) throw new Error(`Não consegui encontrar/criar a conta ${p.meta.label}`);
+              // count created (rough)
+              if(!store.accounts[acc.id]?.__ninjaSeen){
+                // mark seen for this run
+                store.accounts[acc.id].__ninjaSeen = true;
+              }
+
+              const a = store.accounts[acc.id];
+              a.data = a.data || {};
+
+              for(const d of p.days){
+                const existing = a.data[d.iso] || {};
+                const existingHasValue = (existing.t1!=null && existing.t1!=='' && Number(existing.t1)!==0) ||
+                                        (existing.t2!=null && existing.t2!=='' && Number(existing.t2)!==0) ||
+                                        (existing.val!=null && existing.val!=='' && Number(existing.val)!==0);
+
+                if(existingHasValue && !overwrite){
+                  skippedConflicts++;
+                  continue;
+                }
+
+                a.data[d.iso] = {
+                  ...existing,
+                  t1: round2(d.t1),
+                  t2: round2(d.t2),
+                  val: round2(d.total)
+                };
+                appliedDays++;
+              }
             }
 
-            const rows = out.rows;
-            let applied = 0;
-            let created = 0;
-            let skipped = 0;
-
-            const nowIso = new Date().toISOString();
-
-            for(const r of rows){
-                const digits = ntExtractTrailingNumber(r.displayName);
-                const code = ntMakeCode(prefix, digits);
-                if(!code) { skipped++; continue; }
-
-                let acc = ntFindAccountByCode(code);
-                if(!acc){
-                    acc = ntCreateAccountIfMissing(code);
-                    created++;
-                }
-
-                // store last snapshot from NinjaTrader
-                if(updateEquity){
-                    if(!acc.nt) acc.nt = {};
-                    if(r.cashValueCents != null) acc.nt.cashValueCents = r.cashValueCents;
-                    if(r.netLiqCents != null) acc.nt.netLiqCents = r.netLiqCents;
-                    if(r.totalPnLCents != null) acc.nt.totalPnLCents = r.totalPnLCents;
-                    if(r.realizedPnLCents != null) acc.nt.realizedPnLCents = r.realizedPnLCents;
-                    if(r.grossRealizedPnLCents != null) acc.nt.grossRealizedPnLCents = r.grossRealizedPnLCents;
-                    acc.nt.portalBalanceRounded = (r.cashValueCents != null) ? Math.round((r.cashValueCents/100)) : (acc.nt.portalBalanceRounded || null);
-                    acc.nt.asOfIso = nowIso;
-                    acc.nt.source = 'ninjatrader_paste';
-                }
-
-                // write daily operation value
-                const cents = (field === 'realized') ? r.realizedPnLCents : r.totalPnLCents;
-                if(cents == null){
-                    // if no PnL column, still allow equity update
-                    applied++;
-                    continue;
-                }
-
-                if(!acc.data) acc.data = {};
-                if(!acc.data[dateISO]) acc.data[dateISO] = {};
-                const existing = acc.data[dateISO].val;
-
-                if(overwrite || existing === undefined || existing === null || String(existing).trim() === ''){
-                    acc.data[dateISO].val = (cents/100).toFixed(2);
-                    acc.data[dateISO].nt_import = { field, cents, asOfIso: nowIso };
-                    acc.data[dateISO].nt_cashValueCents = (r.cashValueCents != null ? r.cashValueCents : null);
-                }
-
-                applied++;
+            // remove helper marks
+            for(const id of Object.keys(store.accounts||{})){
+              if(store.accounts[id] && store.accounts[id].__ninjaSeen) delete store.accounts[id].__ninjaSeen;
             }
 
-            ntSetStatus('Salvando...');
-            try{
-                await saveToCloud();
-            }catch(e){ /* saveToCloud already handles local fallback */ }
+            await saveToCloudNow();
+            renderAll();
 
-            try { renderSidebar(); } catch(e) {}
-            try { renderDashboard(); } catch(e) {}
-            try {
-                const m = document.getElementById('accounts-overview-modal');
-                if(m && !m.classList.contains('hidden')) renderAccountsOverview();
-            } catch(e) {}
-
-            const badge = document.getElementById('nt-import-detected');
-            if(badge) badge.textContent = `${applied} contas`;
-
-            ntSetStatus(`Import concluído: ${applied} contas (${created} criadas, ${skipped} ignoradas).`);
+            if(skippedConflicts){
+              _ninjaSetStatus(`Importado com sucesso (${appliedDays} dias). ${skippedConflicts} conflito(s) ignorado(s).`, 'warn');
+            }else{
+              _ninjaSetStatus(`✅ Importado e salvo com sucesso (${appliedDays} dias).`, 'ok');
+            }
+          }catch(err){
+            console.error(err);
+            _ninjaSetStatus(err.message || 'Falha ao importar/salvar. Tente novamente.', 'error');
+          }
         };
+
+        // bind on load
+        setTimeout(_ninjaBindUI, 50);
 
         // =========================
         // Tradovate Cash History Import (Multi-file) - Safe, Deduped, Cloud-first
@@ -6355,7 +6463,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                         ...existing,
                         t1: _cashRound2(a.gross).toFixed(2),
                         t2: _cashRound2(a.fees).toFixed(2),
-                        val: '', // ensure total is computed from t1+t2
+                        val: _cashRound2((Number(a.gross)||0) + (Number(a.fees)||0)).toFixed(2), // total = gross + fees (auto-preenche)
                         note,
                         holiday
                     };
@@ -6539,6 +6647,20 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
             if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootstrapApp);
             else bootstrapApp();
         })();
+
+        // === Expose internal state/functions for patch modules (safe & idempotent) ===
+        try{
+            if(typeof store !== 'undefined' && !window.__EXPOSED_STORE__){
+                window.__EXPOSED_STORE__ = true;
+                Object.defineProperty(window, "store", { configurable:true, get:()=>store, set:(v)=>{ store=v; } });
+            }
+            if(typeof saveToCloud === 'function') window.saveToCloud = saveToCloud;
+            if(typeof renderAll === 'function') window.renderAll = renderAll;
+            if(typeof getActive === 'function') window.getActive = getActive;
+            window.getStore = ()=>store;
+            if(typeof translateString === 'function') window.translateString = translateString;
+        }catch(e){}
+
     </script>
 
 <script>
@@ -6721,6 +6843,618 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
   }
 })();
 </script>
+
+
+<!-- BUILD_ID: TRADOVATE-GROSS-FEES-FIX-2026-01-27 -->
+<script>
+/*
+Fix: Some Tradovate Cash History exports provide "Trade Paired" deltas as NET (fees already included),
+while others provide explicit "Trade Paired (Gross)" + separate fee/commission rows.
+We normalize daily buckets so:
+- trade1 = gross PnL (before fees) when possible
+- trade2 = total fees/commissions (negative)
+*/
+(function(){
+  // Helper functions rely on existing globals if present
+  const _split = window._cashSplitCSVLine || function(line){
+    const out=[]; let cur=''; let inQ=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i], nxt=(i+1<line.length)?line[i+1]:'';
+      if(ch === '"'){ if(inQ && nxt === '"'){ cur+='"'; i++; continue; } inQ=!inQ; continue; }
+      if(ch === ',' && !inQ){ out.push(cur); cur=''; continue; }
+      cur += ch;
+    }
+    out.push(cur); return out;
+  };
+  const _norm = window._cashNormalizeName || function(s){
+    return String(s||'').toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9]/g,'');
+  };
+  const _num = window._cashParseNum || function(v){
+    if(v===null||v===undefined) return 0;
+    const s=String(v).trim(); if(!s) return 0;
+    const n=parseFloat(s.replace(/["']/g,'').replace(/,/g,''));
+    return (isFinite(n)?n:0);
+  };
+
+  window._cashParseCashHistoryCSV = async function(file){
+    const text = await file.text();
+    const raw = String(text || '').replace(/^\uFEFF/, '');
+    const lines = raw.split(/\r?\n/).filter(l => l && l.trim().length>0);
+    if(lines.length < 2) return {daily:{}, lastEquity:null, lastTs:null, rows:0, acctFromFile:null};
+
+    const header = _split(lines[0]).map(h => String(h||'').trim());
+    const idx = (name) => header.findIndex(h => _norm(h) === _norm(name));
+
+    const iAccount = idx('Account');
+    const iTs = idx('Timestamp');
+    const iDate = idx('Date');
+    const iDelta = idx('Delta');
+    const iAmount = idx('Amount');
+    const iType = idx('Cash Change Type');
+
+    const daily = {};
+    let rows = 0;
+    let lastEquity = null;
+    let lastTs = null;
+    let acctFromFile = null;
+
+    for(let li=1; li<lines.length; li++){
+      const cols = _split(lines[li]);
+      if(cols.length < 4) continue;
+      rows++;
+
+      const typeRaw = String(cols[iType] ?? '').trim();
+      const dateISO = String(cols[iDate] ?? '').trim();
+      const delta = _num(cols[iDelta]);
+      const amount = _num(cols[iAmount]);
+      const tsRaw = String(cols[iTs] ?? '').trim();
+      const acct = String(cols[iAccount] ?? '').trim();
+      if(acct && !acctFromFile) acctFromFile = acct;
+
+      // Track last equity by latest timestamp
+      if(dateISO && amount && tsRaw){
+        const t = new Date(tsRaw);
+        if(!isNaN(t.getTime())){
+          const ms = t.getTime();
+          if(lastTs === null || ms > lastTs){
+            lastTs = ms;
+            lastEquity = amount;
+          }
+        }
+      }
+      if(!dateISO) continue;
+
+      const bucket = daily[dateISO] || {gross:0, fees:0, net:0, tradeNet:0, tradeCount:0, feeCount:0, lastAmount:null, lastTsMs:null};
+
+      const tNorm = _norm(typeRaw);
+
+      // Ignore funding/transfer for PnL (but keep snapshot amount)
+      const isFund = tNorm.includes('fundtransaction') || (tNorm.includes('fund') && tNorm.includes('transaction'));
+      if(isFund){
+        const t = new Date(tsRaw);
+        if(!isNaN(t.getTime())){
+          const ms = t.getTime();
+          if(bucket.lastTsMs === null || ms >= bucket.lastTsMs){
+            bucket.lastTsMs = ms;
+            bucket.lastAmount = amount;
+          }
+        }
+        daily[dateISO] = bucket;
+        continue;
+      }
+
+      const isTradePaired = tNorm.includes('tradepaired') || (tNorm.includes('trade') && tNorm.includes('paired'));
+      const isGrossTag = tNorm.includes('gross');
+      const isNetTag   = tNorm.includes('net');
+
+      // Fee/commission detection (more explicit than "everything else")
+      const isFeeLike = tNorm.includes('commission') || tNorm.includes('commissions') ||
+                        tNorm.includes('fee') || tNorm.includes('fees') ||
+                        tNorm.includes('clearing') || tNorm.includes('exchange') ||
+                        tNorm.includes('regulatory') || tNorm.includes('nfa') ||
+                        tNorm.includes('cbot') || tNorm.includes('cme') || tNorm.includes('ice') ||
+                        tNorm.includes('transactionfee') || tNorm.includes('orderfee');
+
+      if(isTradePaired){
+        if(isGrossTag){
+          bucket.gross += delta;                // "Trade Paired (Gross)"
+        }else if(isNetTag){
+          bucket.tradeNet += delta;             // "Trade Paired (Net)" (rare)
+        }else{
+          // Ambiguous "Trade Paired": some exports are NET, some are gross.
+          // Store as tradeNet for now, we'll reconcile at end of day using fees if present.
+          bucket.tradeNet += delta;
+        }
+        bucket.tradeCount += 1;
+      }else if(isFeeLike){
+        bucket.fees += delta;                   // usually negative
+        bucket.feeCount += 1;
+      }else{
+        // Fallback: keep older behavior but ONLY if it is clearly a fee (usually negative delta)
+        if(delta < 0){
+          bucket.fees += delta;
+          bucket.feeCount += 1;
+        }
+      }
+
+      // update last amount per day
+      const t = new Date(tsRaw);
+      if(!isNaN(t.getTime())){
+        const ms = t.getTime();
+        if(bucket.lastTsMs === null || ms >= bucket.lastTsMs){
+          bucket.lastTsMs = ms;
+          bucket.lastAmount = amount;
+        }
+      }
+
+      daily[dateISO] = bucket;
+    }
+
+    // Reconcile buckets: if gross missing but tradeNet present, derive gross if fees exist
+    for(const d of Object.keys(daily)){
+      const b = daily[d];
+      if((b.gross === 0 || Math.abs(b.gross) < 1e-12) && (b.tradeNet !== 0)){
+        if(b.fees !== 0){
+          // net = tradeNet; gross = net - fees
+          b.net = b.tradeNet;
+          b.gross = b.tradeNet - b.fees;
+        }else{
+          // can't split, treat as net==gross
+          b.gross = b.tradeNet;
+          b.net = b.tradeNet;
+        }
+      }else{
+        b.net = b.gross + b.fees;
+      }
+      // clean helper
+      delete b.tradeNet;
+    }
+
+    return {daily, lastEquity, lastTs, rows, acctFromFile};
+  };
+})();
+</script>
+
+
+<!-- BUILD_ID: TRADOVATE+NINJA-DND-2026-01-27 -->
+<script>
+(function(){
+  // ------- Ninja file queue (similar UX to Tradovate) -------
+  window.__ntQueue = window.__ntQueue || { files: [] };
+  const NTQ = window.__ntQueue;
+
+  function ntRender(){
+    const list = document.getElementById('nt-file-list');
+    const hint = document.getElementById('nt-file-queuehint');
+    if(!list || !hint) return;
+
+    list.innerHTML = '';
+    if(!NTQ.files.length){
+      hint.textContent = 'Nenhum arquivo na fila';
+      return;
+    }
+    hint.textContent = NTQ.files.length + ' arquivo(s) na fila';
+
+    NTQ.files.forEach((f, idx) => {
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900';
+      row.innerHTML = `
+        <div class="min-w-0">
+          <div class="font-bold text-sm text-slate-800 dark:text-slate-100 truncate">${f.name}</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400">${(f.size/1024).toFixed(1)} KB</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button type="button" class="px-3 py-2 rounded bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-bold" data-nt-remove="${idx}">
+            Remover
+          </button>
+        </div>`;
+      list.appendChild(row);
+    });
+
+    list.querySelectorAll('[data-nt-remove]').forEach(btn=>{
+      btn.addEventListener('click', () => {
+        const i = parseInt(btn.getAttribute('data-nt-remove')||'0',10);
+        if(!isNaN(i)) NTQ.files.splice(i,1);
+        ntRender();
+      });
+    });
+  }
+
+  function ntAddFiles(fileList){
+    const files = Array.from(fileList||[]).filter(f => /\.csv$/i.test(f.name));
+    if(!files.length) return;
+    NTQ.files.push(...files);
+    ntRender();
+
+    const auto = document.getElementById('nt-auto-preview');
+    if(auto && auto.checked){
+      // Use the newest file to populate textarea and preview
+      const f = files[files.length-1];
+      f.text().then(txt => {
+        const ta = document.getElementById('nt-import-text');
+        if(ta){ ta.value = txt; }
+        // If the app has preview function, run it
+        if(typeof window.previewNinjaImport === 'function'){
+          window.previewNinjaImport();
+        }
+      }).catch(()=>{});
+    }
+  }
+
+  function ntClear(){
+    NTQ.files = [];
+    ntRender();
+  }
+
+  window.initNinjaImportDropzone = function(){
+    const dz = document.getElementById('nt-file-dropzone');
+    const input = document.getElementById('nt-file-input');
+    const clear = document.getElementById('nt-file-clear');
+    if(!dz || !input) return;
+
+    if(dz.dataset.bound === '1'){ ntRender(); return; }
+    dz.dataset.bound = '1';
+
+    dz.addEventListener('click', () => input.click());
+    dz.addEventListener('dragover', (e)=>{ e.preventDefault(); e.stopPropagation(); dz.classList.add('ring-2','ring-indigo-400'); });
+    dz.addEventListener('dragleave', (e)=>{ e.preventDefault(); e.stopPropagation(); dz.classList.remove('ring-2','ring-indigo-400'); });
+    dz.addEventListener('drop', (e)=>{
+      e.preventDefault(); e.stopPropagation();
+      dz.classList.remove('ring-2','ring-indigo-400');
+      if(e.dataTransfer && e.dataTransfer.files) ntAddFiles(e.dataTransfer.files);
+    });
+    input.addEventListener('change', ()=>{ ntAddFiles(input.files); input.value=''; });
+    if(clear) clear.addEventListener('click', ntClear);
+
+    ntRender();
+  };
+
+  // Init after admin UI renders
+  document.addEventListener('DOMContentLoaded', ()=>{
+    setTimeout(()=>{ try{ window.initNinjaImportDropzone(); }catch(e){} }, 250);
+  });
+  const _r = window.refreshAdminUI;
+  if(typeof _r === 'function'){
+    window.refreshAdminUI = function(){
+      const out = _r.apply(this, arguments);
+      setTimeout(()=>{ try{ window.initNinjaImportDropzone(); }catch(e){} }, 180);
+      return out;
+    };
+  }
+})();
+</script>
+
+
+
+<!-- BUILD_ID: NINJA-PERF-PERFECT-APPLY-PREVIEW-2026-01-28-B -->
+
+
+
+<!-- BUILD_ID: NINJA-PERF-HARDSTOP2-2026-01-28 -->
+<script>
+(function(){
+  // HARD STOP: prevent legacy Ninja Account Summary parser ("Display name") from ever running when dropping Performance*.csv
+  // We intercept drop & file-input events at CAPTURE phase and stop propagation, then run our own queue+preview/apply.
+  const Q = window.__ntQueue = window.__ntQueue || { files: [] };
+  const $ = (id)=>document.getElementById(id);
+
+  function isPerfFile(f){ return !!(f && f.name && /^performance/i.test(f.name)); }
+
+  function parseAcct(name){
+    const base = String(name||'').replace(/\s+/g,'');
+    const m = base.match(/^performance([a-zA-Z]+)(\d+)\.csv$/i);
+    if(!m) return null;
+    return {prefix:m[1].toUpperCase(), digits:m[2]};
+  }
+  function codeFromAcct(a){ return `${a.prefix}${a.digits}`; }
+  function makeLabel(a){ return `${a.prefix} ${a.digits}`; }
+
+  function splitCSV(line){
+    const out=[]; let cur=''; let inQ=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i], nxt=(i+1<line.length)?line[i+1]:'';
+      if(ch === '"'){ if(inQ && nxt === '"'){ cur+='"'; i++; continue; } inQ=!inQ; continue; }
+      if(ch === ',' && !inQ){ out.push(cur); cur=''; continue; }
+      cur += ch;
+    }
+    out.push(cur); return out;
+  }
+
+  function parseTS(ts){
+    const s = String(ts||'').trim();
+    if(!s) return {iso:null, ms:null};
+    const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+    if(!m) return {iso:null, ms:null};
+    const mm = parseInt(m[1],10), dd=parseInt(m[2],10), yyyy=parseInt(m[3],10);
+    const hh=parseInt(m[4],10), mi=parseInt(m[5],10), ss=parseInt(m[6]||'0',10);
+    const iso = `${String(yyyy).padStart(4,'0')}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+    const dt = new Date(yyyy, mm-1, dd, hh, mi, ss);
+    return {iso, ms: isNaN(dt.getTime())? null : dt.getTime()};
+  }
+
+  function moneyToCents(v){
+    let s=String(v||'').trim(); if(!s) return 0;
+    let neg=false;
+    if(s.includes('(')&&s.includes(')')){neg=true; s=s.replace(/[()]/g,'');}
+    s=s.replace(/[^0-9.\-]/g,'');
+    if(s.startsWith('-')){neg=true; s=s.slice(1);}
+    const n=parseFloat(s); if(!isFinite(n)) return 0;
+    const c=Math.round(n*100); return neg?-c:c;
+  }
+
+  function buildSplit(arr){
+    const t1c = arr[0]?.cents ?? 0;
+    const t2c = arr.slice(1).reduce((a,x)=>a+(x.cents||0),0);
+    return {t1c,t2c,totalc:t1c+t2c,trades:arr.length};
+  }
+
+  async function parsePerformance(file){
+    const acct = parseAcct(file.name);
+    if(!acct) return {error:`Nome inválido: ${file.name}`, acct:null, daily:{}};
+    const raw = String(await file.text()||'').replace(/^\uFEFF/,'');
+    const lines = raw.split(/\r?\n/).filter(l=>l && l.trim().length>0);
+    if(lines.length<2) return {error:`CSV vazio: ${file.name}`, acct, daily:{}};
+
+    const header = splitCSV(lines[0]).map(h=>String(h||'').trim().toLowerCase());
+    const idx = (n)=>header.indexOf(String(n).toLowerCase());
+    const iPnl = idx('pnl');
+    const iSold = idx('soldTimestamp');
+    const iBought = idx('boughtTimestamp');
+    if(iPnl<0) return {error:`Coluna "pnl" não encontrada: ${file.name}`, acct, daily:{}};
+
+    const daily = {}; // iso -> [{ms,cents}]
+    for(let i=1;i<lines.length;i++){
+      const cols = splitCSV(lines[i]);
+      const cents = moneyToCents(cols[iPnl]);
+      const tsRaw = (iSold>=0? cols[iSold] : '') || (iBought>=0? cols[iBought] : '');
+      const {iso, ms} = parseTS(tsRaw);
+      if(!iso) continue;
+      if(!daily[iso]) daily[iso] = [];
+      daily[iso].push({ms: ms ?? i, cents});
+    }
+    for(const d of Object.keys(daily)){ daily[d].sort((a,b)=>(a.ms??0)-(b.ms??0)); }
+    return {acct, daily};
+  }
+
+  // Use the app's own Ninja helper functions (they close over `store`, which is NOT on window)
+  function findOrCreateAccountByCode(code, createMissing){
+    try{
+      const fnFind = window.ntFindAccountByCode;
+      const fnCreate = window.ntCreateAccountIfMissing;
+      if(typeof fnFind === 'function'){
+        const acc = fnFind(code);
+        if(acc) return {acc, created:false};
+      }
+      if(createMissing && typeof fnCreate === 'function'){
+        const createdAcc = fnCreate(code);
+        return createdAcc ? {acc: createdAcc, created:true} : {acc:null, created:false};
+      }
+    }catch(e){}
+    return {acc:null, created:false};
+  }
+
+  function setStatus(msg, isErr){
+    const el = $('nt-import-status');
+    if(!el) return;
+    el.textContent = msg || '';
+    el.classList.toggle('text-red-600', !!isErr);
+    el.classList.toggle('text-slate-500', !isErr);
+  }
+
+  function setPreview(lines){
+    const el = $('nt-import-preview');
+    if(!el) return;
+    el.classList.remove('hidden');
+    el.textContent = (lines||[]).join('\n');
+  }
+
+  function renderFileList(){
+    const list = $('nt-file-list');
+    const hint = $('nt-file-queuehint');
+    if(hint) hint.textContent = `${Q.files.length} arquivo(s) na fila`;
+    if(!list) return;
+    list.innerHTML = '';
+    Q.files.forEach((f, idx)=>{
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between gap-3 p-3 rounded-lg border bg-white';
+      row.innerHTML = `
+        <div class="min-w-0">
+          <div class="font-semibold truncate">${f.name}</div>
+          <div class="text-xs text-slate-500">${(f.size/1024).toFixed(1)} KB</div>
+        </div>
+        <button class="px-3 py-2 rounded-md border bg-slate-50 hover:bg-slate-100 text-sm" data-idx="${idx}">Remover</button>
+      `;
+      row.querySelector('button').addEventListener('click', ()=>{
+        Q.files.splice(idx,1);
+        renderFileList();
+        setStatus('', false);
+        setPreview([]);
+      });
+      list.appendChild(row);
+    });
+  }
+
+  async function previewPerf(){
+    const perf = Q.files.filter(isPerfFile);
+    if(!perf.length) return;
+    const lines = [];
+    lines.push(`Arquivos Performance: ${perf.length} arquivo(s)`);
+    for(const f of perf){
+      const r = await parsePerformance(f);
+      if(r.error){ setStatus(r.error, true); lines.push(`❌ ${f.name}: ${r.error}`); continue; }
+
+      const code = codeFromAcct(r.acct);
+      const label = makeLabel(r.acct);
+      const found = findOrCreateAccountByCode(code, false);
+      const acc = found.acc;
+
+      const days = Object.keys(r.daily||{}).sort();
+      lines.push(`✅ ${f.name} → ${label}`);
+      let totalC=0;
+      for(const iso of days){
+        const split = buildSplit(r.daily[iso]||[]);
+        totalC += split.totalc;
+
+        let tag='Novo', icon='🟩';
+        if(acc && acc.data && acc.data[iso] && (acc.data[iso].val!=null || acc.data[iso].t1!=null || acc.data[iso].t2!=null)){
+          icon='🟦'; tag='Já existia';
+          const existingVal = parseFloat(acc.data[iso].val ?? ( (parseFloat(acc.data[iso].t1||0)+parseFloat(acc.data[iso].t2||0)) ));
+          const incoming = split.totalc/100;
+          if(isFinite(existingVal) && (existingVal.toFixed(2) !== incoming.toFixed(2))){
+            icon='🟨'; tag='Conflito (vai sobrescrever)';
+          }
+        }
+        lines.push(`   ${icon} ${iso} | T1 ${(split.t1c/100).toFixed(2)} | T2 ${(split.t2c/100).toFixed(2)} | Total ${(split.totalc/100).toFixed(2)} | trades ${split.trades} | ${tag}`);
+      }
+      lines.push(`   📌 Total arquivo: ${(totalC/100).toFixed(2)} | dias: ${days.length}`);
+      if(!acc) lines.push(`   ⚠️ Aviso: conta ${label} não foi encontrada (será criada ao salvar, se permitido).`);
+      lines.push('');
+    }
+    setPreview(lines);
+    setStatus('Pré-visualização pronta.', false);
+  }
+
+  async function applyPerf(){
+    const perf = Q.files.filter(isPerfFile);
+    if(!perf.length) return;
+
+    let filesApplied=0, daysApplied=0, created=0;
+    const touchedAccountIds = new Set();
+
+    for(const f of perf){
+      const r = await parsePerformance(f);
+      if(r.error){ setStatus(r.error, true); return; }
+
+      const code = codeFromAcct(r.acct);
+      const label = makeLabel(r.acct);
+      const ensured = findOrCreateAccountByCode(code, true);
+      const acc = ensured.acc;
+
+      if(!acc){
+        setStatus(`Não consegui encontrar/criar a conta ${label}`, true);
+        return;
+      }
+      if(ensured.created) created++;
+      if(!acc.data) acc.data = {};
+
+      const days = Object.keys(r.daily||{}).sort();
+      for(const iso of days){
+        const split = buildSplit(r.daily[iso]||[]);
+        if(!acc.data[iso]) acc.data[iso] = {};
+        acc.data[iso].t1 = (split.t1c/100).toFixed(2);
+        acc.data[iso].t2 = (split.t2c/100).toFixed(2);
+        acc.data[iso].val = (split.totalc/100).toFixed(2);
+        acc.data[iso].nt_perf = { source:'performance_csv', file:f.name, trades:split.trades, t1_cents:split.t1c, t2_cents:split.t2c, ts:new Date().toISOString() };
+        daysApplied++;
+      }
+      filesApplied++;
+      if(acc.id) touchedAccountIds.add(acc.id);
+    }
+
+    // If the account already exists and is visible, reload it to refresh UI immediately
+    try{
+      const fnLoad = window.loadAccount;
+      if(typeof fnLoad === 'function'){
+        // Prefer reloading current active account if it was touched
+        const currentActiveId = (()=>{ try { return (window.getActive && window.getActive().id) || null; } catch(e){ return null; } })();
+        if(currentActiveId && touchedAccountIds.has(currentActiveId)) fnLoad(currentActiveId);
+        else {
+          // else load first touched account
+          const firstId = touchedAccountIds.values().next().value;
+          if(firstId) fnLoad(firstId);
+        }
+      }
+    }catch(e){}
+
+    // Recompute & render
+    try{ if(typeof window.computeAll === 'function') window.computeAll(); }catch(e){}
+    try{
+      if(typeof window.render === 'function') window.render();
+      if(typeof window.refreshUI === 'function') window.refreshUI();
+      if(typeof window.renderAdmin === 'function') window.renderAdmin();
+      if(typeof window.refreshAdminUI === 'function') window.refreshAdminUI();
+    }catch(e){}
+
+    // Save to cloud
+    try{
+      if(typeof window.saveToCloud === 'function') await window.saveToCloud();
+      else if(typeof window.syncToCloud === 'function') await window.syncToCloud();
+      setStatus(`✅ Salvo e aplicado! arquivos: ${filesApplied} | dias: ${daysApplied} | contas criadas: ${created}`, false);
+    }catch(e){
+      setStatus(`⚠️ Aplicou local, mas falhou ao salvar na nuvem: ${(e && e.message)?e.message:e}`, true);
+    }
+  }
+
+  function hardBind(){
+    const dz = $('nt-file-dropzone');
+    const inp = $('nt-file-input');
+    const clearBtn = $('nt-file-clear');
+    const auto = $('nt-auto-preview');
+    const btnPrev = $('nt-import-btn-preview');
+    const btnApply = $('nt-import-btn-apply');
+
+    if(btnPrev) btnPrev.onclick = (ev)=>{ ev && ev.preventDefault(); previewPerf(); };
+    if(btnApply) btnApply.onclick = (ev)=>{ ev && ev.preventDefault(); applyPerf(); };
+
+    if(clearBtn){
+      clearBtn.onclick = (ev)=>{ ev && ev.preventDefault(); Q.files.length=0; renderFileList(); setStatus('', false); setPreview([]); };
+    }
+
+    function addFiles(fileList){
+      const files = Array.from(fileList||[]);
+      const perf = files.filter(isPerfFile);
+      if(!perf.length){
+        setStatus('Arquivo inválido para Ninja Performance. Use Performance{prefixo}{numero}.csv', true);
+        return;
+      }
+      Q.files = perf;
+      renderFileList();
+      setStatus('', false);
+      if(auto && auto.checked) previewPerf();
+    }
+
+    if(dz){
+      dz.addEventListener('dragover', (e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
+      dz.addEventListener('drop', (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        const dt = e.dataTransfer;
+        if(dt && dt.files && dt.files.length) addFiles(dt.files);
+      }, true);
+      dz.addEventListener('click', ()=>{ if(inp) inp.click(); }, true);
+    }
+
+    if(inp){
+      inp.addEventListener('change', (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        addFiles(inp.files);
+        inp.value = '';
+      }, true);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    setTimeout(()=>{
+      hardBind();
+      renderFileList();
+      setStatus('', false);
+    }, 400);
+  });
+
+  const _r = window.refreshAdminUI;
+  if(typeof _r === 'function'){
+    window.refreshAdminUI = function(){
+      const out = _r.apply(this, arguments);
+      setTimeout(()=>{ hardBind(); renderFileList(); }, 250);
+      return out;
+    };
+  }
+})();
+</script>
+
 
 </body>
 </html>
