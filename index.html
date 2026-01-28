@@ -1978,6 +1978,102 @@ async function callOpenAI(question){
   </div>
 
 </body>
+<script>
+/**
+ * RESTORE AUTO-PREVIEW ON DROP (Ninja + Tradovate)
+ * - Não mexe na lógica de import.
+ * - Apenas dispara o preview automaticamente após adicionar arquivos à fila.
+ */
+(function () {
+  function safeCall(fn) { try { fn && fn(); } catch(e) {} }
+
+  function clickOrCall(previewBtnId, previewFnNames) {
+    // 1) tenta clicar no botão de preview
+    const btn = document.getElementById(previewBtnId);
+    if (btn) { btn.click(); return true; }
+
+    // 2) tenta chamar funções globais (caso existam)
+    for (const name of previewFnNames) {
+      const fn = window[name];
+      if (typeof fn === "function") { safeCall(fn); return true; }
+    }
+    return false;
+  }
+
+  function attachAutoPreview(dropzoneId, inputId, previewBtnId, previewFnNames, autoCheckboxId) {
+    const dz = document.getElementById(dropzoneId);
+    const inp = document.getElementById(inputId);
+
+    function shouldAuto() {
+      const cb = autoCheckboxId ? document.getElementById(autoCheckboxId) : null;
+      // Se checkbox existir, respeita. Se não existir, assume auto ON.
+      return cb ? !!cb.checked : true;
+    }
+
+    function triggerPreviewSoon() {
+      if (!shouldAuto()) return;
+      // espera a fila ser atualizada pelo handler original
+      setTimeout(() => clickOrCall(previewBtnId, previewFnNames), 50);
+    }
+
+    // Dropzone: usa CAPTURE pra não depender do bubbling (e não quebrar nada existente)
+    if (dz && !dz.__autoPreviewBound) {
+      dz.__autoPreviewBound = true;
+
+      dz.addEventListener("drop", function () {
+        triggerPreviewSoon();
+      }, true);
+
+      // Alguns browsers/fluxos adicionam arquivo via click->input; garantimos também:
+      dz.addEventListener("click", function () {
+        // quando abrir o file picker, o preview virá no change do input
+      }, true);
+    }
+
+    // File input
+    if (inp && !inp.__autoPreviewBound) {
+      inp.__autoPreviewBound = true;
+      inp.addEventListener("change", function () {
+        triggerPreviewSoon();
+      }, true);
+    }
+  }
+
+  function bindAll() {
+    // IDs que já vêm sendo usados no seu app:
+    // Ninja
+    attachAutoPreview(
+      "nt-file-dropzone",
+      "nt-file-input",
+      "nt-import-btn-preview",
+      ["previewNinjaImport", "previewNinjaImportFromAdmin", "previewNinja"],
+      "nt-auto-preview"
+    );
+
+    // Tradovate
+    attachAutoPreview(
+      "tv-file-dropzone",
+      "tv-file-input",
+      "tv-import-btn-preview",
+      ["previewTradovateImport", "previewTradovate", "tvPreviewImport"],
+      "tv-auto-preview"
+    );
+  }
+
+  document.addEventListener("DOMContentLoaded", bindAll);
+
+  // Se seu admin re-renderiza a UI, reatacha sem duplicar:
+  const oldRefresh = window.refreshAdminUI;
+  if (typeof oldRefresh === "function") {
+    window.refreshAdminUI = function () {
+      const r = oldRefresh.apply(this, arguments);
+      setTimeout(bindAll, 150);
+      return r;
+    };
+  }
+})();
+</script>
+
 </html>`;
         }
 
