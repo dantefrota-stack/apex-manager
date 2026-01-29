@@ -712,7 +712,7 @@ body.dark .bg-white { background-color: #1e293b; }
         <div class="p-4 border-t border-slate-700 bg-slate-800 space-y-2">
             <button onclick="openAdminPanel('payouts')" class="w-full py-2 bg-slate-700 hover:bg-slate-600 rounded-md text-xs font-bold flex items-center justify-center gap-2 transition text-slate-300"><i data-lucide="shield" class="w-3 h-3"></i> Área Administrativa</button>
             <button id="btn-accounts-overview" type="button" onclick="openAccountsOverview()" class="w-full flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-md transition">
-                <i data-lucide="layout-list" class="w-4 h-4"></i> Resumo das Contas
+                <i data-lucide="layout-list" class="w-4 h-4"></i> Accounts Summary
             </button>
             <button onclick="createAccount()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 rounded-md text-sm font-bold flex items-center justify-center gap-2 transition"><i data-lucide="plus-circle" class="w-4 h-4"></i> Nova Conta</button>
         </div>
@@ -729,7 +729,7 @@ body.dark .bg-white { background-color: #1e293b; }
                         <i data-lucide="layout-list" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h2 class="font-bold text-slate-800 dark:text-white">Resumo das Contas</h2>
+                        <h2 class="font-bold text-slate-800 dark:text-white">Accounts Summary</h2>
                         <p class="text-xs text-slate-500 dark:text-slate-400">Visão geral em uma página (saldo, progresso e dias operados)</p>
                     </div>
                 </div>
@@ -772,7 +772,7 @@ body.dark .bg-white { background-color: #1e293b; }
                         </div>
 
                         <div class="flex items-center gap-2">
-                            <span class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Filtro:</span>
+                            <span class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Filter:</span>
                             <select id="accounts-overview-size" onchange="onAccountsOverviewControlsChange()" class="px-2 py-2 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
                                 <option value="all" selected>Todas</option>
                                 <option value="25k">25k</option>
@@ -820,7 +820,7 @@ body.dark .bg-white { background-color: #1e293b; }
                                     <th class="px-4 py-3 font-semibold">Meta (Safety)</th>
                                     <th class="px-4 py-3 font-semibold">Disponível</th>
                                     <th class="px-4 py-3 font-semibold">Falta p/ $500</th>
-                                    <th class="px-4 py-3 font-semibold">Dias Operados</th>
+                                    <th class="px-4 py-3 font-semibold">Days Traded</th>
                                     <th class="px-4 py-3 font-semibold">Idade</th>
                                 </tr>
                             </thead>
@@ -830,7 +830,7 @@ body.dark .bg-white { background-color: #1e293b; }
                 </div>
 
                 <div class="text-[11px] text-slate-500 dark:text-slate-400">
-                    * “Dias Operados” = dias úteis com algum registro (Trade 1 ou Trade 2 ou Total), desconsiderando feriados marcados no app.
+                    * “Days Traded” = business days with any record (Trade 1, Trade 2, or Total), excluding holidays marked in the app.
                 </div>
             </div>
         </div>
@@ -1789,7 +1789,7 @@ async function callOpenAI(question){
 
         // EXPOSE FUNCTIONS TO WINDOW
         window.toggleSidebar = () => { const isOpen=!els.sidebar.classList.contains('sidebar-closed'); if(isOpen){els.sidebar.classList.add('sidebar-closed');els.sidebar.classList.remove('sidebar-open');els.backdrop.classList.add('hidden');}else{els.sidebar.classList.remove('sidebar-closed');els.sidebar.classList.add('sidebar-open');els.backdrop.classList.remove('hidden');} };
-        // ACCOUNTS OVERVIEW (Resumo das Contas)
+        // ACCOUNTS OVERVIEW (Accounts Summary)
         let accountsOverviewChart = null;
 
         function getAccountOperationalDays(acc){
@@ -1969,8 +1969,11 @@ async function callOpenAI(question){
                 `;
             }).join('');
 
-            const title = 'Resumo das Contas';
-            const subtitle = `Ordenação: ${(prefs.sort||'closest')}  |  Filtro: ${(prefs.size||'all')}`;
+            const isEN = ((localStorage.getItem(LANG_STORAGE_KEY) || window.CURRENT_LANG || document.documentElement.lang || 'pt').toString().toLowerCase().startsWith('en'));
+            const title = isEN ? 'Accounts Summary' : 'Accounts Summary';
+            const subtitle = isEN
+                ? `Sort: ${(prefs.sort||'closest')} | Filter: ${(prefs.size||'all')}`
+                : `Sort: ${(prefs.sort||'closest')} | Filter: ${(prefs.size||'all')}`;
             return `<!doctype html>
 <html>
 <head>
@@ -1996,7 +1999,7 @@ async function callOpenAI(question){
 </head>
 <body>
   <h1>${title}</h1>
-  <div class="meta">${subtitle}<br>Gerado em: ${new Date().toLocaleString()}</div>
+  <div class="meta">${subtitle}<br>Generated on: ${new Date().toLocaleString()}</div>
   <div class="box">
     ${include && chartDataUrl ? `<div class="chartWrap">
         <div class="chartTitle">${escapeHtml(metricLabel)}</div>
@@ -2005,7 +2008,7 @@ async function callOpenAI(question){
     <table>
       <thead>
         <tr>
-          <th>Conta</th><th>Size</th><th>Equity</th><th>Safety</th><th>Disponível</th><th>Falta p/$500</th><th>Dias</th><th>Idade</th>
+          <th>${isEN?'Account':'Conta'}</th><th>Size</th><th>Equity</th><th>Safety</th><th>${isEN?'Available':'Disponível'}</th><th>${isEN?'Need for $500':'Falta p/$500'}</th><th>${isEN?'Days':'Dias'}</th><th>${isEN?'Age':'Idade'}</th>
         </tr>
       </thead>
       <tbody>${rowsHtml}</tbody>
@@ -4418,7 +4421,7 @@ async function saveToCloudNow() {
             "arquivo(s) na fila":"file(s) queued",
 
             "Área Administrativa":"Admin Area",
-            "Resumo das Contas":"Accounts Summary",
+            "Accounts Summary":"Accounts Summary",
             "Nova Conta":"New Account",
             "FAVORITAS":"FAVORITES",
             "Favoritas":"Favorites",
@@ -4450,7 +4453,7 @@ async function saveToCloudNow() {
             "Ordenar:":"Sort:",
             "Ordenar":"Sort",
             "Mais próximas do saque":"Closest to payout",
-            "Filtro:":"Filter:",
+            "Filter:":"Filter:",
             "Filtro":"Filter",
             "Todas":"All",
             "Mostrar/Esconder Gráfico":"Show/Hide Chart",
@@ -4496,9 +4499,9 @@ async function saveToCloudNow() {
             "JANELA":"WINDOW",
             "SEMANA":"WEEK",
             "Médias Diárias (Recentes)":"Daily Averages (Recent)",
-            "MÉDIAS DIÁRIAS (RECENTES)":"DAILY AVERAGES (RECENT)",
+            "MÉDAYS DIÁRIAS (RECENTES)":"DAILY AVERAGES (RECENT)",
             "Dias":"Days",
-            "DIAS":"DAYS",
+            "DAYS":"DAYS",
             "Lucro Acumulado":"Cumulative Profit",
             "Fazer Gordura":"Build Cushion",
             "Adição":"Add-on",
@@ -4604,6 +4607,37 @@ async function saveToCloudNow() {
 
 
 
+
+            "Resumo de Contas":"Accounts Summary",
+            "Sort:":"Sort:",
+            "Filter:":"Filter:",
+            "Generated on:":"Generated on:",
+            "Conta selecionada:":"Selected account:",
+            "Conta ativa:":"Active account:",
+            "Logado como":"Logged in as",
+            "Histórico de Saques":"Withdrawal History",
+            "Mostra os registros da conta ativa.":"Shows records for the selected account.",
+            "Limpar Histórico":"Clear History",
+            "Total Sacado:":"Total Withdrawn:",
+            "Vazio.":"Empty.",
+            "Saques":"Withdrawals",
+            "Importe via Drag & Drop. Clique no (i) para ver formato e regras.":"Import via Drag & Drop. Click the (i) to see format and rules.",
+            "Selecione um ou mais arquivos CSV no formato":"Select one or more CSV files in the format",
+            "O app identifica a conta pelo sufixo do nome do arquivo e compara com a nuvem para evitar duplicidade.":"The app identifies the account by the file name suffix and compares with the cloud to avoid duplicates.",
+            "Arquivos (CSV)":"Files (CSV)",
+            "Criar contas ausentes automaticamente":"Auto-create missing accounts",
+            "Sobrecrever conflitos":"Overwrite conflicts",
+            "Sobrescrever conflitos":"Overwrite conflicts",
+  "Sair": "Sign out",
+  "Conta selecionada (Admin)": "Selected account (Admin)",
+  "Pré-visualizar automaticamente": "Auto-preview",
+  "“Cancelar” marca o saque como cancelado (não apaga). “Apagar”/“Limpar” só aparece para Super Admin.": "“Cancel” marks the withdrawal as canceled (does not delete). “Delete”/“Clear” shows only for Super Admin.",
+  "\"Cancelar\" marca o saque como cancelado (não apaga). \"Apagar\"/\"Limpar\" só aparece para Super Admin.": "\"Cancel\" marks the withdrawal as canceled (does not delete). \"Delete\"/\"Clear\" shows only for Super Admin.",
+  "* “Days Traded” = business days with any record (Trade 1, Trade 2, or Total), excluding holidays marked in the app.": "* “Days Traded” = business days with any entry (Trade 1, Trade 2, or Total), excluding holidays marked in the app.",
+  "Esta área mostra e permite gerenciar informações (ex.: saques/histórico/ações) somente da conta selecionada. Isso evita misturar transações de todas as accounts em uma lista única, mantendo o admin limpo e fácil de auditar.": "This area shows and lets you manage info (e.g., withdrawals/history/actions) only for the selected account. This avoids mixing all accounts’ transactions in one list, keeping the admin clean and easy to audit.",
+  "Formato: Performance<X>.csv. O app identifica a conta pelo sufixo X (tudo após 'Performance' e antes de '.csv'). Usa a coluna 'pnl' por trade e agrupa por dia: T1 = primeiro trade do dia; T2 = soma do 2º trade em diante; Total = T1 + T2. X pode ser qualquer combinação de letras/números.": "Format: Performance<X>.csv. The app identifies the account by suffix X (everything after 'Performance' and before '.csv'). It uses the 'pnl' column per trade and groups by day: T1 = first trade of the day; T2 = sum of trade #2 onward; Total = T1 + T2. X can be any mix of letters/numbers.",
+  "Formato: Cash History<X>.csv. O app identifica a conta pelo sufixo X (tudo após 'Cash History' e antes de '.csv') e atualiza os days automaticamente. X pode ser qualquer combinação de letras/números.": "Format: Cash History<X>.csv. The app identifies the account by suffix X (everything after 'Cash History' and before '.csv') and updates the days automatically. X can be any mix of letters/numbers.",
+
 };
 
         const I18N_EN_PT = (() => {
@@ -4675,9 +4709,81 @@ async function saveToCloudNow() {
 
                 // Composed text (e.g. "50k • Mês 1")
                 let composed = core;
+
+          // Phrase-level replacements (handles punctuation/labels that word-boundary pairs miss)
+          const phrasePairs = (CURRENT_LANG === 'en')
+            ? [
+                ["Conta selecionada:", "Selected account:"],
+                ["Conta selecionada (Admin)", "Selected account (Admin)"],
+                ["Accounts Summary", "Accounts Summary"],
+                ["RESUMO DAS CONTAS", "ACCOUNTS SUMMARY"],
+                ["Sort:", "Sort:"],
+                ["Generated on:", "Generated:"],
+                ["DAYS", "DAYS"],
+                ["AGE", "AGE"],
+                ["AVAILABLE", "AVAILABLE"],
+                ["NEED FOR $500", "NEED FOR $500"],
+                ["ACCOUNT", "ACCOUNT"],
+                ["TAMANHO", "SIZE"],
+                ['* “Cancelar” marca o saque como cancelado (não apaga). “Apagar”/“Limpar” só aparece para Super Admin.',
+                 '* "Cancel" marks the withdrawal as canceled (does not delete). "Delete"/"Clear" appears only for Super Admin.'],
+                ['* "Cancelar" marca o saque como cancelado (não apaga). "Apagar"/"Limpar" só aparece para Super Admin.',
+                 '* "Cancel" marks the withdrawal as canceled (does not delete). "Delete"/"Clear" appears only for Super Admin.'],
+                ['* “Days Traded” = business days with any record (Trade 1, Trade 2, or Total), excluding holidays marked in the app.',
+                 '* "Days Traded" = business days with any record (Trade 1, Trade 2, or Total), excluding holidays marked in the app.'],
+                ['Pré-visualizar automaticamente', 'Auto preview'],
+                ['Pré-visualizar', 'Preview'],
+                ['Importar e Salvar', 'Import & Save'],
+                ['Importar Performance', 'Import Performance'],
+                ['Importar Cash History', 'Import Cash History'],
+                ['Criar contas ausentes automaticamente', 'Auto-create missing accounts'],
+                ['Sobrescrever conflitos', 'Overwrite conflicts'],
+                ['Limpar lista', 'Clear list'],
+                ['Nenhum arquivo selecionado.', 'No files selected.'],
+                ['Nenhum arquivo na fila', 'No files queued'],
+                ['Falha ao importar/salvar. Tente novamente.', 'Import/Save failed. Please try again.'],
+                ['Esta área mostra e permite gerenciar informações (ex.: saques/histórico/ações) somente da conta selecionada. Isso evita misturar transações de todas as accounts em uma lista única, mantendo o admin limpo e fácil de auditar.',
+                 'This area shows and lets you manage information (e.g., withdrawals/history/actions) for the selected account only. This avoids mixing transactions from all accounts into a single list, keeping the admin clean and easy to audit.'],
+              ]
+            : [
+                ["Selected account:", "Conta selecionada:"],
+                ["Selected account (Admin)", "Conta selecionada (Admin)"],
+                ["Accounts Summary", "Accounts Summary"],
+                ["ACCOUNTS SUMMARY", "RESUMO DAS CONTAS"],
+                ["Sort:", "Sort:"],
+                ["Generated:", "Generated on:"],
+                ["DAYS", "DAYS"],
+                ["AGE", "AGE"],
+                ["AVAILABLE", "AVAILABLE"],
+                ["NEED FOR $500", "NEED FOR $500"],
+                ["ACCOUNT", "ACCOUNT"],
+                ["SIZE", "TAMANHO"],
+                ['* "Cancel" marks the withdrawal as canceled (does not delete). "Delete"/"Clear" appears only for Super Admin.',
+                 '* “Cancelar” marca o saque como cancelado (não apaga). “Apagar”/“Limpar” só aparece para Super Admin.'],
+                ['* "Days Traded" = business days with any record (Trade 1, Trade 2, or Total), excluding holidays marked in the app.',
+                 '* “Days Traded” = business days with any record (Trade 1, Trade 2, or Total), excluding holidays marked in the app.'],
+                ['Auto preview', 'Pré-visualizar automaticamente'],
+                ['Preview', 'Pré-visualizar'],
+                ['Import & Save', 'Importar e Salvar'],
+                ['Import Performance', 'Importar Performance'],
+                ['Import Cash History', 'Importar Cash History'],
+                ['Auto-create missing accounts', 'Criar contas ausentes automaticamente'],
+                ['Overwrite conflicts', 'Sobrescrever conflitos'],
+                ['Clear list', 'Limpar lista'],
+                ['No files selected.', 'Nenhum arquivo selecionado.'],
+                ['No files queued', 'Nenhum arquivo na fila'],
+                ['Import/Save failed. Please try again.', 'Falha ao importar/salvar. Tente novamente.'],
+                ['This area shows and lets you manage information (e.g., withdrawals/history/actions) for the selected account only. This avoids mixing transactions from all accounts into a single list, keeping the admin clean and easy to audit.',
+                 'Esta área mostra e permite gerenciar informações (ex.: saques/histórico/ações) somente da conta selecionada. Isso evita misturar transações de todas as accounts em uma lista única, mantendo o admin limpo e fácil de auditar.'],
+              ];
+          for (const [src, dst] of phrasePairs) {
+            if (!src) continue;
+            composed = composed.split(src).join(dst);
+          }
+
                 const wordPairs = (CURRENT_LANG === 'en')
                     ? [["Mês","Month"],["Semana","Week"],["SEMANA","WEEK"],["Ciclo","Cycle"],["Ciclos","Cycles"],["CICLOS","CYCLES"],["Mensal","Monthly"],["MENSAL","MONTHLY"],["Atual","Current"],["ATUAL","CURRENT"],["Atuais","Current"],["ATUAIS","CURRENT"],["Dias","Days"],["dias","days"],
-                       ["Operados","Traded"],["operados","traded"],["contas","accounts"],["tamanho","size"],["Grupo","Group"],["Favoritas","Favorites"],
+                       ["Operados","Traded"],["operados","traded"],["contas","accounts"],["tamanho","size"],["Grupo","Group"],["Favoritas","Favorites"],["Sair","Sign out"],
                        ["Início","Start"],["INÍCIO","START"],["Meta","Goal"],["META","GOAL"],
                        ["Próxima","Next"],["PRÓXIMA","NEXT"],["Janela","Window"],["JANELA","WINDOW"],
                        ["Gerenciamento","Management"],["GERENCIAMENTO","MANAGEMENT"],["Lucro","Profit"],["Lucro:","Profit:"],
@@ -4704,6 +4810,15 @@ async function saveToCloudNow() {
                     composed = composed.replace(/(\d+)\s*[aà]\s*(\d+)/g, '$1 to $2');
                 } else {
                     composed = composed.replace(/(\d+)\s*to\s*(\d+)/gi, '$1 a $2');
+                }
+
+                // Dynamic labels that include values (match full string)
+                if(CURRENT_LANG === 'en'){
+                    composed = composed.replace(/^Conta selecionada:\s*(.+)$/i, 'Selected account: $1');
+                    composed = composed.replace(/^Sort:\s*([^|]+?)\s*\|\s*Filter:\s*(.+)$/i, 'Sort: $1 | Filter: $2');
+                } else {
+                    composed = composed.replace(/^Selected account:\s*(.+)$/i, 'Conta selecionada: $1');
+                    composed = composed.replace(/^Sort:\s*([^|]+?)\s*\|\s*Filter:\s*(.+)$/i, 'Sort: $1 | Filter: $2');
                 }
 
 if(composed !== core) return lead + composed + trail;
@@ -5214,8 +5329,10 @@ if (!store.activeId) {
                 }
                 if(!rawTitle) rawTitle = 'Ajuda';
                 const h = _helpForTitle(rawTitle);
-                titleEl.textContent = h.title || rawTitle;
-                bodyEl.textContent = h.body || '';
+                const finalTitle = (typeof translateString==='function') ? translateString(h.title || rawTitle) : (h.title || rawTitle);
+                const finalBody  = (typeof translateString==='function') ? translateString(h.body || '') : (h.body || '');
+                titleEl.textContent = finalTitle;
+                bodyEl.textContent  = finalBody;
                 if(h.link){
                     linkEl.href = h.link;
                     linkEl.style.display = 'inline-flex';
@@ -5603,7 +5720,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                         </div>
                         <div style="text-align:right;color:#555;font-size:12px;">
                             <div>${acc.size || ''} • ${acc.monthType ? ('Mês ' + acc.monthType) : ''}</div>
-                            <div>Gerado em: ${new Date().toLocaleString()}</div>
+                            <div>Generated on: ${new Date().toLocaleString()}</div>
                         </div>
                     </div>
                     <div style="margin-top:10px;padding:10px;border:1px solid #ddd;border-radius:10px;">
