@@ -1205,19 +1205,39 @@ Usuário administrador:`) || '';
             return session;
         }
 
-        let store = { activeId: null, date: new Date(), accounts: {}, adminLogs: [] };
+        
+  // Local persistence (prevents data loss if cloud save fails)
+  const LOCAL_STORE_KEY = 'df_store_local_v1';
+  function saveStoreToLocal(){
+    try { localStorage.setItem(LOCAL_STORE_KEY, JSON.stringify(getPersistableStore())); } catch(e) {}
+  }
+  function loadStoreFromLocal(){
+    try {
+      const raw = localStorage.getItem(LOCAL_STORE_KEY);
+      if(!raw) return null;
+      const obj = JSON.parse(raw);
+      if(!obj || typeof obj !== 'object') return null;
+      // Back-compat
+      if(!obj.last_update_ms && obj.updatedAt) obj.last_update_ms = obj.updatedAt;
+      return obj;
+    } catch(e){ return null; }
+  }
+
+let store = { activeId: null, date: new Date(), accounts: {}, adminLogs: [] };
 
         // --- Build/Version guard (prevents stale cached builds from overwriting cloud) ---
         const APP_BUILD_ID = "2026-01-28-import-ui-unified-applyfix2";
         function touchStore(){
           try {
-            store.updatedAt = Date.now();
+            const now = Date.now();
+            store.updatedAt = now;
+            store.last_update_ms = now;
             store.appBuildId = APP_BUILD_ID;
+            saveStoreToLocal();
           } catch(e) {}
         }
 
-
-        let isOffline = false;
+let isOffline = false;
         let currentNoteIso = null;
         let currentNoteReadOnly = false;
 
@@ -4065,9 +4085,10 @@ ${period}
                 __pendingSaveBeforeHydrate = false;
                 try { scheduleSaveToCloud(); } catch(e) { try { saveToCloudNow(); } catch(_){} }
             }
-        }
+        saveStoreToLocal();
+      }
 
-        async function saveToCloudNow() {
+async function saveToCloudNow() {
             if (isOffline) {
                 setCloudStatus('offline', (CURRENT_LANG==='en' ? "Offline" : "Offline"));
                 return;
@@ -4216,7 +4237,12 @@ ${period}
                 });
 
                 toast(translateString(CURRENT_LANG==='en' ? "Previous cloud version restored." : "Versão anterior restaurada."), 'ok');
-                await loadFromCloud();
+                const __local = loadStoreFromLocal();
+        if(__local){
+          // Merge local snapshot first; cloud sync will resolve by last_update_ms
+          store = Object.assign(store, __local);
+        }
+        await loadFromCloud();
                 renderAll();
                 setCloudStatus('saved', (CURRENT_LANG==='en' ? "Restored" : "Restaurado"));
             }catch(err){
@@ -6088,7 +6114,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             }
         touchStore();
         await saveToCloudNow();
-            renderAll();
+                try{ renderAll(); }catch(err){ console.error(err); }
 
             const parts = [`✅ Importado e salvo (${appliedDays} dia(s)).`];
             if(createdAccounts) parts.push(`${createdAccounts} conta(s) criada(s).`);
@@ -6645,7 +6671,12 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
         };
 
         window.applyCashHistoryImport = async () => {
-            try{
+            try{ 
+            // Defensive store init
+            store = (store && typeof store==='object') ? store : {};
+            store.accounts = (store.accounts && typeof store.accounts==='object') ? store.accounts : {};
+            store.last_update_ms = store.last_update_ms || store.updatedAt || 0;
+          
                 if(!adminSession){
                     alert(translateString("Você precisa estar logado na área administrativa."));
                     return;
@@ -6709,7 +6740,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                 }
         touchStore();
         await saveToCloudNow();
-                renderAll();
+                try{ renderAll(); }catch(err){ console.error(err); }
 
                 _cashSetStatus(translateString("Import concluído.") + " " + translateString("Novos") + ": " + imported + " | " + translateString("Já existiam") + ": " + matches + " | " + translateString("Conflitos") + ": " + conflicts + " | " + translateString("Equity atualizado") + ": " + equityUpdated);
 _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
