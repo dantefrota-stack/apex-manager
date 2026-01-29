@@ -1206,6 +1206,17 @@ Usuário administrador:`) || '';
         }
 
         let store = { activeId: null, date: new Date(), accounts: {}, adminLogs: [] };
+
+        // --- Build/Version guard (prevents stale cached builds from overwriting cloud) ---
+        const APP_BUILD_ID = "2026-01-28-import-ui-unified-applyfix2";
+        function touchStore(){
+          try {
+            store.updatedAt = Date.now();
+            store.appBuildId = APP_BUILD_ID;
+          } catch(e) {}
+        }
+
+
         let isOffline = false;
         let currentNoteIso = null;
         let currentNoteReadOnly = false;
@@ -6075,8 +6086,8 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                 appliedDays++;
               }
             }
-
-            await saveToCloudNow();
+        touchStore();
+        await saveToCloudNow();
             renderAll();
 
             const parts = [`✅ Importado e salvo (${appliedDays} dia(s)).`];
@@ -6696,8 +6707,8 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                         equityUpdated++;
                     }
                 }
-
-                await saveToCloudNow();
+        touchStore();
+        await saveToCloudNow();
                 renderAll();
 
                 _cashSetStatus(translateString("Import concluído.") + " " + translateString("Novos") + ": " + imported + " | " + translateString("Já existiam") + ": " + matches + " | " + translateString("Conflitos") + ": " + conflicts + " | " + translateString("Equity atualizado") + ": " + equityUpdated);
