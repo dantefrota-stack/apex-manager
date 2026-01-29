@@ -3005,15 +3005,17 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 } 
             }); 
 
-            const w = (acc.payouts || []).reduce((s,p) => p.voided ? s : s + p.amount, 0); 
-            let grossEquity = (Number(rules.start || 0) + tp - w);
-            // Se existir snapshot importado do NinjaTrader, usar como fonte do saldo bruto (Cash Value)
-            try{
-                if(acc && acc.nt && typeof acc.nt.cashValueCents === 'number' && isFinite(acc.nt.cashValueCents)){
-                    grossEquity = acc.nt.cashValueCents / 100;
-                }
-            }catch(e){}
-            // Equity uses the broker cash value / net liquidation (no extra fee adjustments).
+            const w = (acc.payouts || []).reduce((s,p) => p.voided ? s : s + p.amount, 0);
+            // Equity base calculado a partir das entradas do app (T1/T2/Total) e saques.
+            // Importante: ao “zerar”/apagar as entradas, não devemos manter um snapshot antigo do NinjaTrader
+            // sobrescrevendo o cálculo (isso causa lucros negativos “fantasmas”, ex.: -$143 com tudo zerado).
+            const equityFromData = (Number(rules.start || 0) + tp - w);
+            let grossEquity = equityFromData;
+
+            // Equity is always derived from the entries (T1/T2/Total) minus withdrawals.
+            // This guarantees instant consistency with what you see in the calendar and avoids any "cached" balance.
+            // (Imported broker Cash Value / Net Liq is stored only as reference and is not used for calculations.)
+            // Equity uses the derived value (no extra fee adjustments).
             const peakGross = pe;
 
             return {
@@ -4622,6 +4624,12 @@ async function saveToCloudNow() {
             "Vazio.":"Empty.",
             "Saques":"Withdrawals",
             "Importe via Drag & Drop. Clique no (i) para ver formato e regras.":"Import via Drag & Drop. Click the (i) to see format and rules.",
+            "Gráfico:":"Chart:",
+            "Progresso até Safety (%)":"Progress to Safety (%)",
+            "Disponível p/ saque ($)":"Available for Withdrawal ($)",
+            "Falta p/ $500 ($)":"Need for $500 ($)",
+            "Equity líquido ($)":"Net Equity ($)",
+            "0% = no start • 100% = atingiu safety":"0% = not started • 100% = reached safety",
             "Selecione um ou mais arquivos CSV no formato":"Select one or more CSV files in the format",
             "O app identifica a conta pelo sufixo do nome do arquivo e compara com a nuvem para evitar duplicidade.":"The app identifies the account by the file name suffix and compares with the cloud to avoid duplicates.",
             "Arquivos (CSV)":"Files (CSV)",
@@ -4711,8 +4719,7 @@ async function saveToCloudNow() {
                 let composed = core;
 
           // Phrase-level replacements (handles punctuation/labels that word-boundary pairs miss)
-          const phrasePairs = (CURRENT_LANG === 'en')
-            ? [
+          const phrasePairsBase = [
                 ["Conta selecionada:", "Selected account:"],
                 ["Conta selecionada (Admin)", "Selected account (Admin)"],
                 ["Accounts Summary", "Accounts Summary"],
@@ -4744,39 +4751,17 @@ async function saveToCloudNow() {
                 ['Falha ao importar/salvar. Tente novamente.', 'Import/Save failed. Please try again.'],
                 ['Esta área mostra e permite gerenciar informações (ex.: saques/histórico/ações) somente da conta selecionada. Isso evita misturar transações de todas as accounts em uma lista única, mantendo o admin limpo e fácil de auditar.',
                  'This area shows and lets you manage information (e.g., withdrawals/history/actions) for the selected account only. This avoids mixing transactions from all accounts into a single list, keeping the admin clean and easy to audit.'],
-              ]
-            : [
-                ["Selected account:", "Conta selecionada:"],
-                ["Selected account (Admin)", "Conta selecionada (Admin)"],
-                ["Accounts Summary", "Accounts Summary"],
-                ["ACCOUNTS SUMMARY", "RESUMO DAS CONTAS"],
-                ["Sort:", "Sort:"],
-                ["Generated:", "Generated on:"],
-                ["DAYS", "DAYS"],
-                ["AGE", "AGE"],
-                ["AVAILABLE", "AVAILABLE"],
-                ["NEED FOR $500", "NEED FOR $500"],
-                ["ACCOUNT", "ACCOUNT"],
-                ["SIZE", "TAMANHO"],
-                ['* "Cancel" marks the withdrawal as canceled (does not delete). "Delete"/"Clear" appears only for Super Admin.',
-                 '* “Cancelar” marca o saque como cancelado (não apaga). “Apagar”/“Limpar” só aparece para Super Admin.'],
-                ['* "Days Traded" = business days with any record (Trade 1, Trade 2, or Total), excluding holidays marked in the app.',
-                 '* “Days Traded” = business days with any record (Trade 1, Trade 2, or Total), excluding holidays marked in the app.'],
-                ['Auto preview', 'Pré-visualizar automaticamente'],
-                ['Preview', 'Pré-visualizar'],
-                ['Import & Save', 'Importar e Salvar'],
-                ['Import Performance', 'Importar Performance'],
-                ['Import Cash History', 'Importar Cash History'],
-                ['Auto-create missing accounts', 'Criar contas ausentes automaticamente'],
-                ['Overwrite conflicts', 'Sobrescrever conflitos'],
-                ['Clear list', 'Limpar lista'],
-                ['No files selected.', 'Nenhum arquivo selecionado.'],
-                ['No files queued', 'Nenhum arquivo na fila'],
-                ['Import/Save failed. Please try again.', 'Falha ao importar/salvar. Tente novamente.'],
-                ['This area shows and lets you manage information (e.g., withdrawals/history/actions) for the selected account only. This avoids mixing transactions from all accounts into a single list, keeping the admin clean and easy to audit.',
-                 'Esta área mostra e permite gerenciar informações (ex.: saques/histórico/ações) somente da conta selecionada. Isso evita misturar transações de todas as accounts em uma lista única, mantendo o admin limpo e fácil de auditar.'],
-              ];
-          for (const [src, dst] of phrasePairs) {
+              
+              ["Gerado em:", "Generated:"],
+              ["Ordenação:", "Sort:"],
+              ["Filtro:", "Filter:"]
+
+            ];
+const phrasePairs = (CURRENT_LANG === 'en')
+            ? phrasePairsBase
+            : phrasePairsBase.map(([src, dst]) => [dst, src]);
+
+for (const [src, dst] of phrasePairs) {
             if (!src) continue;
             composed = composed.split(src).join(dst);
           }
