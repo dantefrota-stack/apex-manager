@@ -665,7 +665,11 @@ body.dark .bg-white { background-color: #1e293b; }
                     <input id="cash-import-overwrite" type="checkbox" class="w-4 h-4" checked />
                     Sobrescrever conflitos
                   </label>
-                </div>
+                                    <label class="text-sm text-slate-700 flex items-center gap-2" title="Ao soltar arquivos, o sistema faz a pré-visualização automaticamente.">
+                      <input id="tradoAutoPreview" type="checkbox" class="w-4 h-4" checked />
+                      Pré-visualizar automaticamente
+                    </label>
+</div>
 
                 <div class="flex gap-3">
                   <button id="cash-import-btn-preview" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-800">Pré-visualizar</button>
@@ -1978,102 +1982,6 @@ async function callOpenAI(question){
   </div>
 
 </body>
-<script>
-/**
- * RESTORE AUTO-PREVIEW ON DROP (Ninja + Tradovate)
- * - Não mexe na lógica de import.
- * - Apenas dispara o preview automaticamente após adicionar arquivos à fila.
- */
-(function () {
-  function safeCall(fn) { try { fn && fn(); } catch(e) {} }
-
-  function clickOrCall(previewBtnId, previewFnNames) {
-    // 1) tenta clicar no botão de preview
-    const btn = document.getElementById(previewBtnId);
-    if (btn) { btn.click(); return true; }
-
-    // 2) tenta chamar funções globais (caso existam)
-    for (const name of previewFnNames) {
-      const fn = window[name];
-      if (typeof fn === "function") { safeCall(fn); return true; }
-    }
-    return false;
-  }
-
-  function attachAutoPreview(dropzoneId, inputId, previewBtnId, previewFnNames, autoCheckboxId) {
-    const dz = document.getElementById(dropzoneId);
-    const inp = document.getElementById(inputId);
-
-    function shouldAuto() {
-      const cb = autoCheckboxId ? document.getElementById(autoCheckboxId) : null;
-      // Se checkbox existir, respeita. Se não existir, assume auto ON.
-      return cb ? !!cb.checked : true;
-    }
-
-    function triggerPreviewSoon() {
-      if (!shouldAuto()) return;
-      // espera a fila ser atualizada pelo handler original
-      setTimeout(() => clickOrCall(previewBtnId, previewFnNames), 50);
-    }
-
-    // Dropzone: usa CAPTURE pra não depender do bubbling (e não quebrar nada existente)
-    if (dz && !dz.__autoPreviewBound) {
-      dz.__autoPreviewBound = true;
-
-      dz.addEventListener("drop", function () {
-        triggerPreviewSoon();
-      }, true);
-
-      // Alguns browsers/fluxos adicionam arquivo via click->input; garantimos também:
-      dz.addEventListener("click", function () {
-        // quando abrir o file picker, o preview virá no change do input
-      }, true);
-    }
-
-    // File input
-    if (inp && !inp.__autoPreviewBound) {
-      inp.__autoPreviewBound = true;
-      inp.addEventListener("change", function () {
-        triggerPreviewSoon();
-      }, true);
-    }
-  }
-
-  function bindAll() {
-    // IDs que já vêm sendo usados no seu app:
-    // Ninja
-    attachAutoPreview(
-      "nt-file-dropzone",
-      "nt-file-input",
-      "nt-import-btn-preview",
-      ["previewNinjaImport", "previewNinjaImportFromAdmin", "previewNinja"],
-      "nt-auto-preview"
-    );
-
-    // Tradovate
-    attachAutoPreview(
-      "tv-file-dropzone",
-      "tv-file-input",
-      "tv-import-btn-preview",
-      ["previewTradovateImport", "previewTradovate", "tvPreviewImport"],
-      "tv-auto-preview"
-    );
-  }
-
-  document.addEventListener("DOMContentLoaded", bindAll);
-
-  // Se seu admin re-renderiza a UI, reatacha sem duplicar:
-  const oldRefresh = window.refreshAdminUI;
-  if (typeof oldRefresh === "function") {
-    window.refreshAdminUI = function () {
-      const r = oldRefresh.apply(this, arguments);
-      setTimeout(bindAll, 150);
-      return r;
-    };
-  }
-})();
-</script>
-
 </html>`;
         }
 
@@ -5918,25 +5826,37 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
         function _ninjaEnsureAccount(label, allowCreate){
           if(!label) return null;
-          const target = String(label).trim().toLowerCase();
-          for(const id of Object.keys(store.accounts||{})){
-            const a = store.accounts[id];
-            if(a && String(a.name||"").trim().toLowerCase() === target){
-              return { id: a.id, label: a.name };
-            }
-          }
+
+          // Reaproveita a mesma lógica do Tradovate (evita duplicar contas e garante gravar na conta correta)
+          const existing = _cashFindAccountByLabel(label);
+          if(existing) return existing;
+
           if(!allowCreate) return null;
-          const id = 'acc_' + Date.now() + '_' + Math.random().toString(16).slice(2,8);
-          store.accounts[id] = {
-            id,
-            name: label,
-            size: '50k',
-            monthType: 1,
-            data: {},
-            payouts: [],
-            createdAt: new Date().toISOString()
-          };
-          return { id, label };
+
+          // Canonicaliza (ex.: "df21" -> "DF 21", "DFC213" -> "DFC 213")
+          const raw = String(label).trim();
+          const clean = raw.replace(/[^A-Za-z0-9]/g,'');
+          const m = clean.match(/^(.*?)(\d+)$/);
+          const prefixUp = m ? String(m[1]||'').toUpperCase() : clean.toUpperCase();
+          const num = m ? parseInt(m[2],10) : undefined;
+          const canon = (num!==undefined && prefixUp) ? `${prefixUp} ${num}` : (raw.toUpperCase());
+
+          // Confere de novo após canonicalizar
+          const again = _cashFindAccountByLabel(canon);
+          if(again) return again;
+
+          // Cria nova conta
+          const id = String(store.nextAccountId || (Object.keys(store.accounts||{}).length + 1));
+          store.nextAccountId = (parseInt(id,10) || 1) + 1;
+          store.accounts[id] = { name: canon, createdAt: Date.now(), size: '50k' };
+
+          // garante estruturas
+          store.trades = store.trades || {};
+          if(!store.trades[id]) store.trades[id] = { data: {} };
+          store.withdrawals = store.withdrawals || {};
+          if(!store.withdrawals[id]) store.withdrawals[id] = { items: [] };
+
+          return { id, ...store.accounts[id] };
         }
 
         function _ninjaSetStatus(msg, type){
@@ -6195,31 +6115,29 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             el.classList.remove('hidden');
         }
 
-        function _cashParseFilename(name){
-  try{
-    // Accept ANY suffix after "Cash History" (case-insensitive). The suffix identifies the account.
-    // Example: Cash Historydf21.csv, CashHistoryVA24.csv, Cash HistoryMyAcc-01.csv
-    const raw = String(name||'').trim();
-    const m = raw.match(/^cash\s*history\s*(.+)\.csv$/i);
-    if(!m) return null;
+        function _cashParseFilename(fileName){
+          const name = String(fileName||'').trim();
+          const m = name.match(/^cash\s*history\s*(.+)\.csv$/i);
+          if(!m) return null;
 
-    const suffixRaw = (m[1]||'').trim();
-    const codeNorm = suffixRaw.toLowerCase().replace(/[^a-z0-9]/g,'');
-    if(!codeNorm) return null;
+          // Sufixo pode vir com espaços, parênteses (ex.: " (1)"), hífens, etc.
+          let suffixRaw = String(m[1]||'').trim();
+          suffixRaw = suffixRaw.replace(/\s*\(\d+\)\s*$/,'');  // remove " (1)" no final
+          suffixRaw = suffixRaw.replace(/\.csv$/i,'').trim();
 
-    let prefix=null, digits=null, label=null;
-    const mm = codeNorm.match(/^([a-z]+)(\d+)$/i);
-    if(mm){
-      prefix = mm[1].toUpperCase();
-      digits = mm[2];
-      label = `${prefix} ${digits}`;
-    }else{
-      label = suffixRaw.toUpperCase();
-    }
-    return { prefix, digits, code: codeNorm.toUpperCase(), label, suffixRaw };
-  }catch(e){
-                return null;
-            }
+          // Mantém somente alfanuméricos para o identificador da conta (ex.: "df21", "va24", "dfc213")
+          const suffixClean = suffixRaw.replace(/[^A-Za-z0-9]/g,'').trim();
+
+          const numMatch = suffixClean.match(/(\d+)$/);
+          const num = numMatch ? parseInt(numMatch[1], 10) : undefined;
+          const prefix = numMatch ? suffixClean.slice(0, -numMatch[1].length) : suffixClean;
+
+          const prefixUp = String(prefix||'').toUpperCase();
+          const label = (num !== undefined && prefixUp)
+            ? `${prefixUp} ${num}`
+            : (suffixClean || suffixRaw || '').toUpperCase();
+
+          return { raw: name, suffix: suffixClean || suffixRaw, prefix: prefixUp, num, label };
         }
 
         function _cashSplitCSVLine(line){
@@ -6551,6 +6469,16 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                 existing.add(k);
             }
             _cashQueueRender();
+        
+
+            // Auto pré-visualizar ao adicionar arquivos (mesma experiência do Ninja / antes)
+            try{
+              const ap = document.getElementById('tradoAutoPreview');
+              if(!ap || ap.checked){
+                setTimeout(()=>{ try{ window.previewCashHistoryImport && window.previewCashHistoryImport(); }catch(e){} }, 50);
+              }
+            }catch(e){}
+
         }
 
         function _cashQueueClear(){
@@ -7747,6 +7675,54 @@ We normalize daily buckets so:
     };
   }
 })();
+
+
+// ========== ADMIN IMPORT BUTTON BINDINGS (DND SAVE FIX) ==========
+(function bindAdminImportButtonsOnce(){
+  if (window.__adminImportButtonsBound) return;
+  window.__adminImportButtonsBound = true;
+
+  function safeBind(id, fn){
+    const el = document.getElementById(id);
+    if (!el) return;
+    // avoid double-binding if DOM re-rendered
+    if (el.__boundClick) return;
+    el.__boundClick = true;
+    el.addEventListener('click', (e)=>{
+      e.preventDefault();
+      e.stopPropagation();
+      try { fn(); } catch(err){ console.error('Import button error', id, err); }
+    }, {passive:false});
+  }
+
+  function doBind(){
+    // Tradovate (Cash History)
+    safeBind('cash-import-btn-preview', ()=> window.previewCashHistoryImport && window.previewCashHistoryImport());
+    safeBind('cash-import-btn-apply', ()=> window.applyCashHistoryImport && window.applyCashHistoryImport());
+
+    // Ninja (Performance)
+    safeBind('ninja-import-btn-preview', ()=> window.previewNinjaImport && window.previewNinjaImport());
+    safeBind('ninja-import-btn-apply', ()=> window.applyNinjaImport && window.applyNinjaImport());
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', doBind);
+  } else {
+    doBind();
+  }
+
+  // Also re-bind when admin modal opens (in case elements are injected later)
+  const _origOpenAdmin = window.openAdmin;
+  if (typeof _origOpenAdmin === 'function') {
+    window.openAdmin = function(){
+      const r = _origOpenAdmin.apply(this, arguments);
+      setTimeout(doBind, 0);
+      setTimeout(doBind, 250);
+      return r;
+    };
+  }
+})();
+// ========== END BINDINGS ==========
 </script>
 
 
