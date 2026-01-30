@@ -697,7 +697,12 @@ body.dark .bg-white { background-color: #1e293b; }
             <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
         </div>
         <div class="p-4 pt-3 pb-0">
-            <div class="relative">
+            <button onclick="openAdminPanel('payouts')" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-slate-800/70 hover:bg-slate-800 border border-slate-700 text-slate-100 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                <i data-lucide="shield" class="w-4 h-4 text-indigo-400"></i>
+                <span>Área Administrativa</span>
+            </button>
+
+            <div class="mt-3 relative">
                 <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
                 <input id="account-search" type="text" placeholder="Buscar conta..." class="w-full pl-9 pr-9 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-100 text-sm placeholder-slate-500 outline-none focus:ring-2 focus:ring-indigo-500/40" />
                 <button id="account-search-clear" type="button" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs hidden" title="Limpar">x</button>
@@ -709,12 +714,10 @@ body.dark .bg-white { background-color: #1e293b; }
         </div>
         
         <div class="flex-1 overflow-y-auto p-4 space-y-2" id="account-list"></div>
-        <div class="p-4 border-t border-slate-700 bg-slate-800 space-y-2">
-            <button onclick="openAdminPanel('payouts')" class="w-full py-2 bg-slate-700 hover:bg-slate-600 rounded-md text-xs font-bold flex items-center justify-center gap-2 transition text-slate-300"><i data-lucide="shield" class="w-3 h-3"></i> Área Administrativa</button>
-            <button id="btn-accounts-overview" type="button" onclick="openAccountsOverview()" class="w-full flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-md transition">
-                <i data-lucide="layout-list" class="w-4 h-4"></i> Accounts Summary
+        <div class="p-4 border-t border-slate-700 bg-slate-800 space-y-2">            <button id="btn-accounts-overview" type="button" onclick="openAccountsOverview()" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-slate-800/70 hover:bg-slate-800 border border-slate-700 text-slate-100 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
+                <i data-lucide="layout-list" class="w-4 h-4"></i> Resumo de Contas
             </button>
-            <button onclick="createAccount()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 rounded-md text-sm font-bold flex items-center justify-center gap-2 transition"><i data-lucide="plus-circle" class="w-4 h-4"></i> Nova Conta</button>
+            <button onclick="createAccount()" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 border border-indigo-500/30 text-white text-sm font-bold transition shadow-lg shadow-indigo-500/20 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"><i data-lucide="plus-circle" class="w-4 h-4"></i> Nova Conta</button>
         </div>
     </div>
 
@@ -729,7 +732,7 @@ body.dark .bg-white { background-color: #1e293b; }
                         <i data-lucide="layout-list" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h2 class="font-bold text-slate-800 dark:text-white">Accounts Summary</h2>
+                        <h2 class="font-bold text-slate-800 dark:text-white">Resumo de Contas</h2>
                         <p class="text-xs text-slate-500 dark:text-slate-400">Visão geral em uma página (saldo, progresso e dias operados)</p>
                     </div>
                 </div>
@@ -3018,9 +3021,14 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             // Equity uses the derived value (no extra fee adjustments).
             const peakGross = pe;
 
+            const monthTotal = (typeof getMonthlyDataFixed==='function') ? (getMonthlyDataFixed(acc).total || 0) : 0;
+            const gainCap = (monthTotal>0)?(monthTotal*0.30)/0.70:0;
+
             return {
                 currentEquity: grossEquity,
                 totalProfit: tp,
+                monthTotal: monthTotal,
+                gainCap: gainCap,
                 daysTraded: dt,
                 peakEquity: peakGross,
                 maxDay: md === -Infinity ? 0 : md,
@@ -3471,11 +3479,12 @@ function renderDashboard() {
             els.equityProgress.style.width = `${percent}%`;
             els.equityProgress.className = `progress-bar-fill ${percent >= 100 ? 'bg-green-500' : 'bg-indigo-500'}`;
 
-            let gainCap=(stats.totalProfit>0)?(stats.totalProfit*0.30)/0.70:0; els.gainCap.textContent=gainCap>0?formatCurrency(gainCap): (CURRENT_LANG==='en'?'Build Cushion':'Fazer Gordura'); 
-            
+            const mDataMonth = getMonthlyDataFixed(acc);
+            let gainCap=(mDataMonth.total>0)?(mDataMonth.total*0.30)/0.70:0; 
+            els.gainCap.textContent=gainCap>0?formatCurrency(gainCap): (CURRENT_LANG==='en'?'Build Cushion':'Fazer Gordura');
             renderCalendar(acc); 
             
-            if(els.statsMonth) els.statsMonth.textContent = formatCurrency(getMonthlyDataFixed(acc).total); 
+            if(els.statsMonth) els.statsMonth.textContent = formatCurrency(mDataMonth.total); 
             if(els.statsC10) els.statsC10.textContent = formatCurrency(calcCycle(acc, 10)); 
             if(els.statsC15) els.statsC15.textContent = formatCurrency(calcCycle(acc, 15)); 
             if(els.statsC20) els.statsC20.textContent = formatCurrency(calcCycle(acc, 20));
@@ -3501,10 +3510,7 @@ function renderDashboard() {
 
             if(!els.filterStart.value) { syncDatesToView(); } filterReportInternal();
             
-            const mData=getMonthlyDataFixed(acc); 
-            if(els.weeklyList) els.weeklyList.innerHTML=mData.html; 
-            
-            renderPayoutManager(); 
+            if(els.weeklyList) els.weeklyList.innerHTML=mDataMonth.html; renderPayoutManager(); 
             renderPayoutHistory(acc); 
             lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions(); 
         }
