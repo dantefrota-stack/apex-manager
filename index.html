@@ -365,6 +365,48 @@ body.dark .bg-white { background-color: #1e293b; }
         <p class="text-sm animate-pulse">Iniciando...</p>
     </div>
 
+
+<script>
+  // Startup watchdog: prevents infinite "Iniciando..." if the module bootstrap fails early.
+  (function(){
+    try{
+      // If module bootstrap completes it will set __DF_BOOT_OK__.
+      setTimeout(function(){
+        try{
+          if(window.__DF_BOOT_OK__) return;
+          var loader = document.getElementById('app-loader');
+          if(!loader) return;
+          var isHidden = (loader.style && loader.style.display === 'none');
+          if(isHidden) return;
+
+          // Keep it simple: replace loader content with actionable buttons.
+          loader.innerHTML = `
+            <div class="text-center p-6 max-w-sm mx-auto">
+              <div style="font-size:42px; line-height:1; margin-bottom:12px;">⚠️</div>
+              <div style="font-weight:900; font-size:16px; margin-bottom:8px;">Inicialização travada</div>
+              <div style="font-size:12px; opacity:.75; margin-bottom:16px;">
+                Algo impediu o carregamento (cache, bloqueio de rede/extension, ou módulo não carregou).
+                <br/>Clique em Recarregar. Se preferir, continue em Modo Offline.
+              </div>
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <button onclick="location.reload()" style="background:#4f46e5;color:#fff;border:none;border-radius:9999px;padding:10px 14px;font-weight:900;font-size:12px;cursor:pointer;">
+                  Recarregar
+                </button>
+                <button onclick="(window.forceOfflineMode?window.forceOfflineMode():alert('Modo Offline indisponível nesta falha. Recarregue pelo link do GitHub Pages.'))" style="background:#ca8a04;color:#fff;border:none;border-radius:9999px;padding:10px 14px;font-weight:900;font-size:12px;cursor:pointer;">
+                  Usar Modo Offline
+                </button>
+              </div>
+              <div style="margin-top:14px; font-size:11px; opacity:.6;">
+                Dica: teste sem AdBlock/Brave Shields e limpe cache do site.
+              </div>
+            </div>
+          `;
+        }catch(e){}
+      }, 9000);
+    }catch(e){}
+  })();
+</script>
+
     <div id="note-modal" class="fixed inset-0 z-[60] hidden no-print">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="closeNoteModal()"></div>
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-lg bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 transform transition-all">
@@ -1890,7 +1932,7 @@ async function callOpenAI(question){
 
         
         // --- Accounts Overview: PDF / Print / Share (robust, GitHub Pages safe) ---
-        function showToast(msg){
+        function showToast(msg, type='info', ms=1800){
             try{
                 let el=document.getElementById('df-toast');
                 if(!el){
@@ -1898,24 +1940,45 @@ async function callOpenAI(question){
                     el.id='df-toast';
                     el.style.position='fixed';
                     el.style.left='50%';
-                    el.style.bottom='18px';
+                    el.style.top='16px';
                     el.style.transform='translateX(-50%)';
                     el.style.zIndex='99999';
-                    el.style.maxWidth='90vw';
-                    el.style.padding='10px 12px';
-                    el.style.borderRadius='12px';
-                    el.style.background='rgba(15,23,42,.92)';
-                    el.style.color='#fff';
+                    el.style.maxWidth='92vw';
+                    el.style.padding='10px 14px';
+                    el.style.borderRadius='14px';
                     el.style.fontSize='12px';
-                    el.style.boxShadow='0 10px 30px rgba(0,0,0,.25)';
+                    el.style.fontWeight='800';
+                    el.style.letterSpacing='.02em';
+                    el.style.boxShadow='0 14px 40px rgba(0,0,0,.22)';
                     el.style.opacity='0';
-                    el.style.transition='opacity .15s ease';
+                    el.style.transition='opacity .12s ease, transform .12s ease';
+                    el.style.pointerEvents='none';
                     document.body.appendChild(el);
                 }
+
+                const styles = {
+                    ok:    { bg:'rgba(16,185,129,.95)', fg:'#052e1b', bd:'rgba(16,185,129,.40)' },   // emerald
+                    error: { bg:'rgba(239,68,68,.95)',  fg:'#fff',    bd:'rgba(239,68,68,.35)'  },   // red
+                    warn:  { bg:'rgba(245,158,11,.95)', fg:'#1f2937', bd:'rgba(245,158,11,.35)' },   // amber
+                    info:  { bg:'rgba(15,23,42,.92)',   fg:'#fff',    bd:'rgba(148,163,184,.25)' }    // slate
+                };
+                const s = styles[type] || styles.info;
+
                 el.textContent = msg || '';
+                el.style.background = s.bg;
+                el.style.color = s.fg;
+                el.style.border = `1px solid ${s.bd}`;
+
                 el.style.opacity='1';
+                el.style.transform='translateX(-50%) translateY(0)';
+
                 clearTimeout(el._t);
-                el._t=setTimeout(()=>{ try{ el.style.opacity='0'; }catch(e){} }, 1800);
+                el._t=setTimeout(()=>{ 
+                    try{ 
+                        el.style.opacity='0';
+                        el.style.transform='translateX(-50%) translateY(-4px)';
+                    }catch(e){} 
+                }, (ms||1800));
             }catch(e){}
         }
 
@@ -4421,6 +4484,7 @@ async function saveToCloudNow() {
             "Salvando...":"Saving...",
             "Salvo (Local)":"Saved (Local)",
             "Erro (Salvo Local)":"Error (Saved locally)",
+            "GRAVADO COM SUCESSO":"SAVED SUCCESSFULLY",
             "Arraste e solte os arquivos CSV aqui":"Drag and drop CSV files here",
             "ou clique para selecionar":"or click to browse",
             "Limpar lista":"Clear list",
@@ -6197,7 +6261,9 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
               if(ensure?.created) createdAccounts++;
               if(!acc) throw new Error(`Não consegui encontrar a conta ${p.meta.label}. Marque “Criar contas ausentes automaticamente” para permitir criar.`);
 
-              const a = store.accounts[acc.id];
+              const accId = _cashResolveAccountId(acc) || acc.id;
+              const a = (accId && store.accounts[accId]) ? store.accounts[accId] : acc;
+              if(a && !a.id && accId) a.id = accId;
               a.data = a.data || {};
 
               for(const d of p.days){
@@ -6228,6 +6294,19 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             if(createdAccounts) parts.push(`${createdAccounts} conta(s) criada(s).`);
             if(skippedConflicts) parts.push(`${skippedConflicts} conflito(s) ignorado(s).`);
             _ninjaSetStatus(parts.join(' '), skippedConflicts ? 'warn' : 'ok');
+            showToast(translateString("GRAVADO COM SUCESSO"), 'ok', 1200);
+            setTimeout(()=>{ 
+              try{
+                ninjaPerfQueue.length = 0;
+                ninjaPerfPreview = null;
+                _ninjaRenderQueue();
+                const box = document.getElementById('ninjaPreviewBox');
+                if(box) box.innerHTML = '';
+                const input = document.getElementById('ninjaFileInput');
+                if(input) input.value = '';
+                _ninjaSetStatus('', 'ok');
+              }catch(e){}
+            }, 1200);
           }catch(err){
             console.error(err);
             _ninjaSetStatus(err.message || 'Falha ao importar/salvar. Tente novamente.', 'error');
@@ -6260,6 +6339,18 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             el.classList.remove('hidden');
         }
 
+        function _cashResetImportUI(){
+            try{ __cashHistoryImportPlan = null; }catch(e){}
+            try{ _cashQueueClear(); }catch(e){}
+            try{
+                const input = document.getElementById('cash-import-files');
+                if(input) input.value = '';
+            }catch(e){}
+            try{ _cashShowPreview(''); }catch(e){}
+            try{ _cashSetStatus(''); }catch(e){}
+        }
+
+        
         function _cashParseFilename(fileName){
           const name = String(fileName||'').trim();
           const m = name.match(/^cash\s*history\s*(.+)\.csv$/i);
@@ -6270,20 +6361,24 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
           suffixRaw = suffixRaw.replace(/\s*\(\d+\)\s*$/,'');  // remove " (1)" no final
           suffixRaw = suffixRaw.replace(/\.csv$/i,'').trim();
 
-          // Mantém somente alfanuméricos para o identificador da conta (ex.: "df21", "va24", "dfc213")
+          // Mantém somente alfanuméricos para o identificador da conta (ex.: "df21", "va24", "ca01")
           const suffixClean = suffixRaw.replace(/[^A-Za-z0-9]/g,'').trim();
 
           const numMatch = suffixClean.match(/(\d+)$/);
-          const num = numMatch ? parseInt(numMatch[1], 10) : undefined;
+          const numStr = numMatch ? String(numMatch[1]) : undefined; // preserva zeros à esquerda (ex.: "01")
+          const num = numStr !== undefined ? parseInt(numStr, 10) : undefined;
           const prefix = numMatch ? suffixClean.slice(0, -numMatch[1].length) : suffixClean;
 
           const prefixUp = String(prefix||'').toUpperCase();
-          const label = (num !== undefined && prefixUp)
-            ? `${prefixUp} ${num}`
+
+          // Label preserva o formato do arquivo (ex.: CA 01)
+          const label = (numStr !== undefined && prefixUp)
+            ? `${prefixUp} ${numStr}`
             : (suffixClean || suffixRaw || '').toUpperCase();
 
-          return { raw: name, suffix: suffixClean || suffixRaw, prefix: prefixUp, num, label };
+          return { raw: name, suffix: suffixClean || suffixRaw, prefix: prefixUp, num, numStr, label };
         }
+
 
         function _cashSplitCSVLine(line){
             const out = [];
@@ -6326,17 +6421,49 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             return String(s||'').toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9]/g,'');
         }
 
-        function _cashFindAccountByLabel(label){
+        function _cashNormalizeAccountKey(label){
+            // Normaliza "CA 01" == "CA1" == "ca0001"
+            const raw = String(label||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+            const m = raw.match(/^([A-Z]+)(\d+)$/);
+            if(m){
+                const p = m[1];
+                const n = String(parseInt(m[2],10));
+                return p + n;
+            }
+            return raw;
+        }
+
+        
+        function _cashResolveAccountId(accOrLabel){
+            const label = (typeof accOrLabel === 'string') ? accOrLabel : (accOrLabel && accOrLabel.name ? accOrLabel.name : '');
             const target = _cashNormalizeName(label);
-            const list = Object.values(store.accounts || {});
-            for(const a of list){
-                if(_cashNormalizeName(a?.name) === target) return a;
+            const targetKey = _cashNormalizeAccountKey(label);
+
+            for(const [id, a] of Object.entries(store.accounts || {})){
+                const aName = a?.name || '';
+                if(_cashNormalizeName(aName) === target || _cashNormalizeAccountKey(aName) === targetKey){
+                    if(a && !a.id) a.id = id;
+                    return id;
+                }
             }
-            // also try without spaces in label: DF21 vs DF 21
-            for(const a of list){
-                if(_cashNormalizeName(a?.name) === target.replace(/\s+/g,'')) return a;
-            }
+
+            // fallback: if object carries an id that exists
+            try{
+                if(accOrLabel && accOrLabel.id && store.accounts && store.accounts[accOrLabel.id]){
+                    if(store.accounts[accOrLabel.id] && !store.accounts[accOrLabel.id].id) store.accounts[accOrLabel.id].id = accOrLabel.id;
+                    return accOrLabel.id;
+                }
+            }catch(e){}
             return null;
+        }
+
+
+        function _cashFindAccountByLabel(label){
+            const id = _cashResolveAccountId(label);
+            if(!id) return null;
+            const a = store.accounts[id];
+            if(a && !a.id) a.id = id;
+            return a;
         }
 
         function _cashEnsureAccount(label, createMissing){
@@ -6518,8 +6645,28 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                     const existing = (acc.data && acc.data[iso]) ? acc.data[iso] : null;
                     if(existing && _cashEntryHasData(existing)){
                         const exTotal = _cashRound2(_cashEntryTotal(existing));
-                        if(_cashCloseEnough(exTotal, net)){
-                            plan.actions.push({ kind:'match', accId: acc.id, accName: acc.name, dateISO: iso, gross, fees, net });
+                        const totalsMatch = _cashCloseEnough(exTotal, net);
+
+                        if(totalsMatch){
+                            // If totals match but Trade1/Trade2 components differ (common when user typed net in T1),
+                            // treat as conflict so "Sobrescrever conflitos" will properly normalize fields.
+                            const exT1 = _cashRound2(_cashParseNum(existing.t1));
+                            const exT2 = _cashRound2(_cashParseNum(existing.t2));
+                            const exHasT1 = isFinite(exT1);
+                            const exHasT2 = isFinite(exT2);
+
+                            const t1Ok = exHasT1 && _cashCloseEnough(exT1, gross);
+                            const t2Ok = (
+                                (_cashCloseEnough(fees, 0) && (!exHasT2 || _cashCloseEnough(exT2, 0))) ||
+                                (exHasT2 && _cashCloseEnough(exT2, fees))
+                            );
+
+                            if(t1Ok && t2Ok){
+                                plan.actions.push({ kind:'match', accId: acc.id, accName: acc.name, dateISO: iso, gross, fees, net });
+                            }else{
+                                plan.actions.push({ kind:'conflict', accId: acc.id, accName: acc.name, dateISO: iso, gross, fees, net, existingTotal: exTotal, reason:'component_mismatch' });
+                                plan.conflicts.push({ accName: acc.name, dateISO: iso, existingTotal: exTotal, importedNet: net });
+                            }
                         }else{
                             plan.actions.push({ kind:'conflict', accId: acc.id, accName: acc.name, dateISO: iso, gross, fees, net, existingTotal: exTotal });
                             plan.conflicts.push({ accName: acc.name, dateISO: iso, existingTotal: exTotal, importedNet: net });
@@ -6852,7 +6999,8 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
                 _cashSetStatus(translateString("Import concluído.") + " " + translateString("Novos") + ": " + imported + " | " + translateString("Já existiam") + ": " + matches + " | " + translateString("Conflitos") + ": " + conflicts + " | " + translateString("Equity atualizado") + ": " + equityUpdated);
 _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
-                showToast(translateString("Import concluído."), 'ok');
+                showToast(translateString("GRAVADO COM SUCESSO"), 'ok', 1200);
+                setTimeout(()=>{ try{ _cashResetImportUI(); }catch(e){} }, 1200);
             }catch(e){
                 console.error(e);
                 _cashSetStatus(translateString("Falha ao importar/salvar. Tente novamente."), true);
@@ -6869,6 +7017,7 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
         
         // Bootstrap without waiting for full window 'load' (prevents infinite "Iniciando..." if any resource hangs)
         async function bootstrapApp(){
+            try{ window.__DF_BOOT_STARTED__ = true; }catch(e){}
             // Wire language buttons ASAP
             try { initLanguageToggle(); } catch(e){}
 
@@ -6995,6 +7144,8 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
             try { clearTimeout(failsafe); } catch(e){}
 
             if (_initOk) {
+                try{ window.__DF_BOOT_OK__ = true; }catch(e){}
+
                 try { hideAppLoader(); } catch (e) {}
             }
 
