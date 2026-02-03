@@ -990,6 +990,35 @@ body.dark .bg-white { background-color: #1e293b; }
                         <div id="equity-progress" class="progress-bar-fill w-0"></div>
                     </div>
                     <p id="equity-diff" class="text-xs font-medium mt-1 text-gray-500 text-right">--</p>
+                    <div class="mt-3 pt-3 border-t border-slate-200/70 dark:border-slate-700/60">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                                <span class="inline-flex items-center gap-1">
+                                    <span class="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                                    <span id="dd-mode-label">Trailing DD (Apex)</span>
+                                </span>
+                                <button class="help-icon" data-help="trailing" title="Info">i</button>
+                            </div>
+                            <div class="text-right text-[11px] font-semibold">
+                                <span class="text-slate-500 dark:text-slate-400">Limite:</span>
+                                <span id="dd-floor" class="text-slate-800 dark:text-slate-100 ml-1">$0.00</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-2">
+                            <div class="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                                <div id="dd-thermo" class="h-2 w-0 rounded-full"></div>
+                            </div>
+                            <div class="mt-2 flex items-center justify-between text-[11px]">
+                                <div class="text-slate-500 dark:text-slate-400">
+                                    Buffer:
+                                    <span id="dd-buffer" class="font-semibold text-slate-800 dark:text-slate-100">$0.00</span>
+                                </div>
+                                <div id="dd-alert" class="font-semibold"></div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
             
@@ -1205,6 +1234,42 @@ body.dark .bg-white { background-color: #1e293b; }
             '300k': { start: 300000, drawdown: 7500, safetyThreshold: 307600 }
         };
 
+        // =========================
+        // Apex PA Trailing Drawdown (Trailing Threshold)
+        // - Uses plan drawdown amount and stops at the Safety Net
+        // - Once Safety Net is reached, liquidation threshold becomes fixed at (start + $100)
+        // =========================
+        function getDrawdownConfig(acc){
+            const base = RULES[acc.size] || { start: 0, drawdown: 0, safetyThreshold: 0 };
+            const cfg = (acc && acc.ddRule) ? acc.ddRule : null;
+
+            // mode: 'apex_pa_trailing' | 'none'
+            const mode = (cfg && cfg.mode) ? cfg.mode : 'apex_pa_trailing';
+
+            const start = (cfg && Number.isFinite(cfg.start)) ? Number(cfg.start) : base.start;
+            const drawdown = (cfg && Number.isFinite(cfg.drawdown)) ? Number(cfg.drawdown) : base.drawdown;
+            const safetyThreshold = (cfg && Number.isFinite(cfg.safetyThreshold)) ? Number(cfg.safetyThreshold) : base.safetyThreshold;
+
+            return { mode, start, drawdown, safetyThreshold, fixedFloor: start + 100 };
+        }
+
+        function computeTrailingFloor(acc, stats){
+            const cfg = getDrawdownConfig(acc);
+            if(cfg.mode === 'none'){
+                return { enabled:false, floor: null, buffer: null, cfg };
+            }
+            const peak = Number(stats && stats.peakEquity) || cfg.start;
+            let floor = peak - cfg.drawdown;
+
+            // Stop trailing when peak reaches Safety Net (initial + drawdown + $100)
+            if(cfg.safetyThreshold && peak >= cfg.safetyThreshold){
+                floor = cfg.fixedFloor; // start + $100
+            }
+            const current = Number(stats && stats.currentEquity) || cfg.start;
+            const buffer = current - floor;
+            return { enabled:true, floor, buffer, cfg };
+        }
+
         // SENHAS E SEGURANÇA (uso local — para segurança real, use Firebase Auth)
         const SECURITY = {
             Dante:  { pass: '1996', role: 'super' },
@@ -1295,6 +1360,7 @@ let isOffline = false;
             activeName: document.getElementById('active-account-name'), activeConfig: document.getElementById('active-account-config'), 
             inpSize: document.getElementById('config-size'), inpMonth: document.getElementById('config-month'), 
             equity: document.getElementById('current-equity'), equityDiff: document.getElementById('equity-diff'), equityProgress: document.getElementById('equity-progress'),
+            ddFloor: document.getElementById('dd-floor'), ddBuffer: document.getElementById('dd-buffer'), ddThermo: document.getElementById('dd-thermo'), ddAlert: document.getElementById('dd-alert'), ddModeLabel: document.getElementById('dd-mode-label'),
             gainCap: document.getElementById('gain-cap'), 
             statsMonth: document.getElementById('stats-month'), statsC10: document.getElementById('stats-c10'), statsC15: document.getElementById('stats-c15'), statsC20: document.getElementById('stats-c20'),
             labelC10: document.getElementById('label-c10'),
@@ -3541,6 +3607,51 @@ function renderDashboard() {
             if (percent < 0) percent = 0;
             els.equityProgress.style.width = `${percent}%`;
             els.equityProgress.className = `progress-bar-fill ${percent >= 100 ? 'bg-green-500' : 'bg-indigo-500'}`;
+
+            // Trailing Drawdown (Apex PA Trailing Threshold)
+            try{
+                const dd = computeTrailingFloor(acc, stats);
+                if(dd.enabled && els.ddFloor && els.ddBuffer && els.ddThermo){
+                    els.ddModeLabel.textContent = (CURRENT_LANG==='en') ? 'Trailing DD (Apex)' : 'Drawdown Real (Apex)';
+                    els.ddFloor.textContent = formatCurrency(dd.floor);
+                    els.ddBuffer.textContent = formatCurrency(dd.buffer);
+
+                    // Thermometer: 0..$2,000 buffer scale (clamped) for visual risk
+                    const scale = 2000;
+                    const pct = Math.max(0, Math.min(100, (dd.buffer/scale)*100));
+                    els.ddThermo.style.width = pct + '%';
+
+                    // Color + alert text
+                    let cls = 'bg-green-500';
+                    let alertTxt = '';
+                    let alertCls = 'text-green-600';
+                    if(dd.buffer <= 0){
+                        cls = 'bg-red-600';
+                        alertTxt = (CURRENT_LANG==='en') ? 'VIOLATION' : 'VIOLAÇÃO';
+                        alertCls = 'text-red-600';
+                    }else if(dd.buffer < 250){
+                        cls = 'bg-red-500';
+                        alertTxt = (CURRENT_LANG==='en') ? 'CRITICAL' : 'CRÍTICO';
+                        alertCls = 'text-red-600';
+                    }else if(dd.buffer < 600){
+                        cls = 'bg-orange-500';
+                        alertTxt = (CURRENT_LANG==='en') ? 'ALERT' : 'ALERTA';
+                        alertCls = 'text-orange-600';
+                    }else if(dd.buffer < 1200){
+                        cls = 'bg-yellow-400';
+                        alertTxt = (CURRENT_LANG==='en') ? 'CAUTION' : 'ATENÇÃO';
+                        alertCls = 'text-yellow-600';
+                    }
+                    els.ddThermo.className = 'h-2 rounded-full ' + cls;
+                    if(els.ddAlert){
+                        els.ddAlert.textContent = alertTxt;
+                        els.ddAlert.className = 'font-semibold ' + alertCls;
+                    }
+                }else if(els.ddModeLabel){
+                    // hidden / disabled
+                    els.ddModeLabel.textContent = (CURRENT_LANG==='en') ? 'Drawdown (off)' : 'Drawdown (off)';
+                }
+            }catch(e){}
 
             const mDataMonth = getMonthlyDataFixed(acc);
             let gainCap=(mDataMonth.total>0)?(mDataMonth.total*0.30)/0.70:0; 
