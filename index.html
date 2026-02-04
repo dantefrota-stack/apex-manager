@@ -73,6 +73,20 @@ body.dark .bg-white { background-color: #1e293b; }
             transform: scale(1.02); outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); z-index: 10;
         }
         .trade-input::placeholder { color: #cbd5e1; font-weight: normal; font-size: 0.75rem; }
+
+        /* Trade Inputs: better fit on mobile */
+        .trade-input { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+        @media (max-width: 480px){
+            td.trade-col { width: 11.5rem !important; min-width: 11.5rem; padding-left: 0.75rem; padding-right: 0.75rem; }
+            .trade-grid { gap: 0.4rem; }
+            .trade-input { font-size: 0.78rem; padding: 0.32rem 0.4rem; line-height: 1.15; }
+            .trade-input::placeholder { font-size: 0.68rem; }
+        }
+        @media (max-width: 360px){
+            .trade-grid { grid-template-columns: 1fr; }
+            td.trade-col { width: 8.2rem !important; min-width: 8.2rem; }
+        }
+
         
         #sidebar { transition: transform 0.3s ease-in-out; }
         .sidebar-open { transform: translateX(0); } .sidebar-closed { transform: translateX(-100%); }
@@ -364,48 +378,6 @@ body.dark .bg-white { background-color: #1e293b; }
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
         <p class="text-sm animate-pulse">Iniciando...</p>
     </div>
-
-
-<script>
-  // Startup watchdog: prevents infinite "Iniciando..." if the module bootstrap fails early.
-  (function(){
-    try{
-      // If module bootstrap completes it will set __DF_BOOT_OK__.
-      setTimeout(function(){
-        try{
-          if(window.__DF_BOOT_OK__) return;
-          var loader = document.getElementById('app-loader');
-          if(!loader) return;
-          var isHidden = (loader.style && loader.style.display === 'none');
-          if(isHidden) return;
-
-          // Keep it simple: replace loader content with actionable buttons.
-          loader.innerHTML = `
-            <div class="text-center p-6 max-w-sm mx-auto">
-              <div style="font-size:42px; line-height:1; margin-bottom:12px;">⚠️</div>
-              <div style="font-weight:900; font-size:16px; margin-bottom:8px;">Inicialização travada</div>
-              <div style="font-size:12px; opacity:.75; margin-bottom:16px;">
-                Algo impediu o carregamento (cache, bloqueio de rede/extension, ou módulo não carregou).
-                <br/>Clique em Recarregar. Se preferir, continue em Modo Offline.
-              </div>
-              <div style="display:flex; flex-direction:column; gap:10px;">
-                <button onclick="location.reload()" style="background:#4f46e5;color:#fff;border:none;border-radius:9999px;padding:10px 14px;font-weight:900;font-size:12px;cursor:pointer;">
-                  Recarregar
-                </button>
-                <button onclick="(window.forceOfflineMode?window.forceOfflineMode():alert('Modo Offline indisponível nesta falha. Recarregue pelo link do GitHub Pages.'))" style="background:#ca8a04;color:#fff;border:none;border-radius:9999px;padding:10px 14px;font-weight:900;font-size:12px;cursor:pointer;">
-                  Usar Modo Offline
-                </button>
-              </div>
-              <div style="margin-top:14px; font-size:11px; opacity:.6;">
-                Dica: teste sem AdBlock/Brave Shields e limpe cache do site.
-              </div>
-            </div>
-          `;
-        }catch(e){}
-      }, 9000);
-    }catch(e){}
-  })();
-</script>
 
     <div id="note-modal" class="fixed inset-0 z-[60] hidden no-print">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="closeNoteModal()"></div>
@@ -739,12 +711,7 @@ body.dark .bg-white { background-color: #1e293b; }
             <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white"><i data-lucide="x"></i></button>
         </div>
         <div class="p-4 pt-3 pb-0">
-            <button onclick="openAdminPanel('payouts')" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-slate-800/70 hover:bg-slate-800 border border-slate-700 text-slate-100 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
-                <i data-lucide="shield" class="w-4 h-4 text-indigo-400"></i>
-                <span>Área Administrativa</span>
-            </button>
-
-            <div class="mt-3 relative">
+            <div class="relative">
                 <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
                 <input id="account-search" type="text" placeholder="Buscar conta..." class="w-full pl-9 pr-9 py-2 rounded-md bg-slate-800 border border-slate-700 text-slate-100 text-sm placeholder-slate-500 outline-none focus:ring-2 focus:ring-indigo-500/40" />
                 <button id="account-search-clear" type="button" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs hidden" title="Limpar">x</button>
@@ -756,10 +723,12 @@ body.dark .bg-white { background-color: #1e293b; }
         </div>
         
         <div class="flex-1 overflow-y-auto p-4 space-y-2" id="account-list"></div>
-        <div class="p-4 border-t border-slate-700 bg-slate-800 space-y-2">            <button id="btn-accounts-overview" type="button" onclick="openAccountsOverview()" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-slate-800/70 hover:bg-slate-800 border border-slate-700 text-slate-100 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-indigo-500/30">
-                <i data-lucide="layout-list" class="w-4 h-4"></i> Resumo de Contas
+        <div class="p-4 border-t border-slate-700 bg-slate-800 space-y-2">
+            <button onclick="openAdminPanel('payouts')" class="w-full py-2 bg-slate-700 hover:bg-slate-600 rounded-md text-xs font-bold flex items-center justify-center gap-2 transition text-slate-300"><i data-lucide="shield" class="w-3 h-3"></i> Área Administrativa</button>
+            <button id="btn-accounts-overview" type="button" onclick="openAccountsOverview()" class="w-full flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-md transition">
+                <i data-lucide="layout-list" class="w-4 h-4"></i> Accounts Summary
             </button>
-            <button onclick="createAccount()" class="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 border border-indigo-500/30 text-white text-sm font-bold transition shadow-lg shadow-indigo-500/20 focus:outline-none focus:ring-2 focus:ring-indigo-400/40"><i data-lucide="plus-circle" class="w-4 h-4"></i> Nova Conta</button>
+            <button onclick="createAccount()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 rounded-md text-sm font-bold flex items-center justify-center gap-2 transition"><i data-lucide="plus-circle" class="w-4 h-4"></i> Nova Conta</button>
         </div>
     </div>
 
@@ -774,7 +743,7 @@ body.dark .bg-white { background-color: #1e293b; }
                         <i data-lucide="layout-list" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h2 class="font-bold text-slate-800 dark:text-white">Resumo de Contas</h2>
+                        <h2 class="font-bold text-slate-800 dark:text-white">Accounts Summary</h2>
                         <p class="text-xs text-slate-500 dark:text-slate-400">Visão geral em uma página (saldo, progresso e dias operados)</p>
                     </div>
                 </div>
@@ -990,35 +959,6 @@ body.dark .bg-white { background-color: #1e293b; }
                         <div id="equity-progress" class="progress-bar-fill w-0"></div>
                     </div>
                     <p id="equity-diff" class="text-xs font-medium mt-1 text-gray-500 text-right">--</p>
-                    <div class="mt-3 pt-3 border-t border-slate-200/70 dark:border-slate-700/60">
-                        <div class="flex items-center justify-between gap-3">
-                            <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                <span class="inline-flex items-center gap-1">
-                                    <span class="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600"></span>
-                                    <span id="dd-mode-label">Trailing DD (Apex)</span>
-                                </span>
-                                <button class="help-icon" data-help="trailing" title="Info">i</button>
-                            </div>
-                            <div class="text-right text-[11px] font-semibold">
-                                <span class="text-slate-500 dark:text-slate-400">Limite:</span>
-                                <span id="dd-floor" class="text-slate-800 dark:text-slate-100 ml-1">$0.00</span>
-                            </div>
-                        </div>
-
-                        <div class="mt-2">
-                            <div class="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
-                                <div id="dd-thermo" class="h-2 w-0 rounded-full"></div>
-                            </div>
-                            <div class="mt-2 flex items-center justify-between text-[11px]">
-                                <div class="text-slate-500 dark:text-slate-400">
-                                    Buffer:
-                                    <span id="dd-buffer" class="font-semibold text-slate-800 dark:text-slate-100">$0.00</span>
-                                </div>
-                                <div id="dd-alert" class="font-semibold"></div>
-                            </div>
-                        </div>
-                    </div>
-
                 </div>
             </div>
             
@@ -1234,42 +1174,6 @@ body.dark .bg-white { background-color: #1e293b; }
             '300k': { start: 300000, drawdown: 7500, safetyThreshold: 307600 }
         };
 
-        // =========================
-        // Apex PA Trailing Drawdown (Trailing Threshold)
-        // - Uses plan drawdown amount and stops at the Safety Net
-        // - Once Safety Net is reached, liquidation threshold becomes fixed at (start + $100)
-        // =========================
-        function getDrawdownConfig(acc){
-            const base = RULES[acc.size] || { start: 0, drawdown: 0, safetyThreshold: 0 };
-            const cfg = (acc && acc.ddRule) ? acc.ddRule : null;
-
-            // mode: 'apex_pa_trailing' | 'none'
-            const mode = (cfg && cfg.mode) ? cfg.mode : 'apex_pa_trailing';
-
-            const start = (cfg && Number.isFinite(cfg.start)) ? Number(cfg.start) : base.start;
-            const drawdown = (cfg && Number.isFinite(cfg.drawdown)) ? Number(cfg.drawdown) : base.drawdown;
-            const safetyThreshold = (cfg && Number.isFinite(cfg.safetyThreshold)) ? Number(cfg.safetyThreshold) : base.safetyThreshold;
-
-            return { mode, start, drawdown, safetyThreshold, fixedFloor: start + 100 };
-        }
-
-        function computeTrailingFloor(acc, stats){
-            const cfg = getDrawdownConfig(acc);
-            if(cfg.mode === 'none'){
-                return { enabled:false, floor: null, buffer: null, cfg };
-            }
-            const peak = Number(stats && stats.peakEquity) || cfg.start;
-            let floor = peak - cfg.drawdown;
-
-            // Stop trailing when peak reaches Safety Net (initial + drawdown + $100)
-            if(cfg.safetyThreshold && peak >= cfg.safetyThreshold){
-                floor = cfg.fixedFloor; // start + $100
-            }
-            const current = Number(stats && stats.currentEquity) || cfg.start;
-            const buffer = current - floor;
-            return { enabled:true, floor, buffer, cfg };
-        }
-
         // SENHAS E SEGURANÇA (uso local — para segurança real, use Firebase Auth)
         const SECURITY = {
             Dante:  { pass: '1996', role: 'super' },
@@ -1360,7 +1264,6 @@ let isOffline = false;
             activeName: document.getElementById('active-account-name'), activeConfig: document.getElementById('active-account-config'), 
             inpSize: document.getElementById('config-size'), inpMonth: document.getElementById('config-month'), 
             equity: document.getElementById('current-equity'), equityDiff: document.getElementById('equity-diff'), equityProgress: document.getElementById('equity-progress'),
-            ddFloor: document.getElementById('dd-floor'), ddBuffer: document.getElementById('dd-buffer'), ddThermo: document.getElementById('dd-thermo'), ddAlert: document.getElementById('dd-alert'), ddModeLabel: document.getElementById('dd-mode-label'),
             gainCap: document.getElementById('gain-cap'), 
             statsMonth: document.getElementById('stats-month'), statsC10: document.getElementById('stats-c10'), statsC15: document.getElementById('stats-c15'), statsC20: document.getElementById('stats-c20'),
             labelC10: document.getElementById('label-c10'),
@@ -1998,7 +1901,7 @@ async function callOpenAI(question){
 
         
         // --- Accounts Overview: PDF / Print / Share (robust, GitHub Pages safe) ---
-        function showToast(msg, type='info', ms=1800){
+        function showToast(msg){
             try{
                 let el=document.getElementById('df-toast');
                 if(!el){
@@ -2006,45 +1909,24 @@ async function callOpenAI(question){
                     el.id='df-toast';
                     el.style.position='fixed';
                     el.style.left='50%';
-                    el.style.top='16px';
+                    el.style.bottom='18px';
                     el.style.transform='translateX(-50%)';
                     el.style.zIndex='99999';
-                    el.style.maxWidth='92vw';
-                    el.style.padding='10px 14px';
-                    el.style.borderRadius='14px';
+                    el.style.maxWidth='90vw';
+                    el.style.padding='10px 12px';
+                    el.style.borderRadius='12px';
+                    el.style.background='rgba(15,23,42,.92)';
+                    el.style.color='#fff';
                     el.style.fontSize='12px';
-                    el.style.fontWeight='800';
-                    el.style.letterSpacing='.02em';
-                    el.style.boxShadow='0 14px 40px rgba(0,0,0,.22)';
+                    el.style.boxShadow='0 10px 30px rgba(0,0,0,.25)';
                     el.style.opacity='0';
-                    el.style.transition='opacity .12s ease, transform .12s ease';
-                    el.style.pointerEvents='none';
+                    el.style.transition='opacity .15s ease';
                     document.body.appendChild(el);
                 }
-
-                const styles = {
-                    ok:    { bg:'rgba(16,185,129,.95)', fg:'#052e1b', bd:'rgba(16,185,129,.40)' },   // emerald
-                    error: { bg:'rgba(239,68,68,.95)',  fg:'#fff',    bd:'rgba(239,68,68,.35)'  },   // red
-                    warn:  { bg:'rgba(245,158,11,.95)', fg:'#1f2937', bd:'rgba(245,158,11,.35)' },   // amber
-                    info:  { bg:'rgba(15,23,42,.92)',   fg:'#fff',    bd:'rgba(148,163,184,.25)' }    // slate
-                };
-                const s = styles[type] || styles.info;
-
                 el.textContent = msg || '';
-                el.style.background = s.bg;
-                el.style.color = s.fg;
-                el.style.border = `1px solid ${s.bd}`;
-
                 el.style.opacity='1';
-                el.style.transform='translateX(-50%) translateY(0)';
-
                 clearTimeout(el._t);
-                el._t=setTimeout(()=>{ 
-                    try{ 
-                        el.style.opacity='0';
-                        el.style.transform='translateX(-50%) translateY(-4px)';
-                    }catch(e){} 
-                }, (ms||1800));
+                el._t=setTimeout(()=>{ try{ el.style.opacity='0'; }catch(e){} }, 1800);
             }catch(e){}
         }
 
@@ -2283,8 +2165,9 @@ async function callOpenAI(question){
                 const equity = Number(stats.currentEquity || 0);
                 const threshold = Number(rules.safetyThreshold || 0);
                 const rawSurplus = Math.max(0, equity - threshold);
-                const availablePayout = Math.floor(rawSurplus / 500) * 500; // $500 increments
-                const missingTo500 = rawSurplus >= 500 ? 0 : (500 - rawSurplus);
+                const availablePayout = rawSurplus >= 500 ? (Math.floor(rawSurplus / 500) * 500) : 0; // $500 increments
+                // Real amount missing to reach first $500 available (can be > 500 if below safety)
+                const missingTo500 = Math.max(0, (threshold + 500) - equity);
 
                 const opDays = getAccountOperationalDays(acc);
                 const ageDays = getAccountAgeDays(acc);
@@ -2363,11 +2246,14 @@ async function callOpenAI(question){
                 const missClass = row.missingTo500 <= 0 ? 'text-emerald-600' : 'text-slate-800 dark:text-white';
                 const missLabel = row.missingTo500 <= 0 ? 'OK' : formatCurrency(row.missingTo500);
 
+                const startEquity = Number((RULES[acc.size] || RULES['50k']).start || 0);
+                const equityClass = row.equity >= startEquity ? 'text-emerald-600' : 'text-rose-500';
+
                 rows.push(`
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
                         <td class="px-4 py-3 font-semibold text-slate-800 dark:text-white">${escapeHtml(acc.name || 'Sem nome')}</td>
                         <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${escapeHtml(acc.size || '--')}</td>
-                        <td class="px-4 py-3 font-semibold text-slate-800 dark:text-white">${formatCurrency(row.equity)}</td>
+                        <td class="px-4 py-3 font-semibold ${equityClass}">${formatCurrency(row.equity)}</td>
                         <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${formatCurrency(row.threshold)}</td>
                         <td class="px-4 py-3 font-bold ${availClass}">${availLabel}</td>
                         <td class="px-4 py-3 font-bold ${missClass}">${missLabel}</td>
@@ -3150,14 +3036,9 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             // Equity uses the derived value (no extra fee adjustments).
             const peakGross = pe;
 
-            const monthTotal = (typeof getMonthlyDataFixed==='function') ? (getMonthlyDataFixed(acc).total || 0) : 0;
-            const gainCap = (monthTotal>0)?(monthTotal*0.30)/0.70:0;
-
             return {
                 currentEquity: grossEquity,
                 totalProfit: tp,
-                monthTotal: monthTotal,
-                gainCap: gainCap,
                 daysTraded: dt,
                 peakEquity: peakGross,
                 maxDay: md === -Infinity ? 0 : md,
@@ -3472,7 +3353,7 @@ function renderCalendar(acc) {
         const t2Handlers = readOnlyDay ? '' : `oninput="window.queueData('${iso}','t2',this.value)" onblur="window.updateData('${iso}','t2',this.value)"`;
 
         const inputsHtml = `
-            <div class="grid grid-cols-2 gap-2">
+            <div class="trade-grid grid grid-cols-2 gap-2">
                 <input type="number" placeholder="T1"
                        class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}"
                        ${inputDisabledAttr} value="${t1Num}" ${t1Handlers}
@@ -3504,7 +3385,7 @@ function renderCalendar(acc) {
                     </button>
                 </div>
             </td>
-            <td class="px-4 py-2 w-48">${inputsHtml}</td>
+            <td class="px-4 py-2 w-48 trade-col">${inputsHtml}</td>
             <td class="px-4 py-2 text-right"><span class="font-bold text-sm ${colorClass}">${(hasTrades || hasStoredVal) ? formatCurrency(displayVal) : '--'}</span></td>
             <td class="px-4 py-2 text-center w-16">
                 <button onclick="openNoteModal('${iso}', false)" class="p-1.5 rounded-lg border transition ${noteBtnClass}" title="Editar Nota">
@@ -3608,57 +3489,11 @@ function renderDashboard() {
             els.equityProgress.style.width = `${percent}%`;
             els.equityProgress.className = `progress-bar-fill ${percent >= 100 ? 'bg-green-500' : 'bg-indigo-500'}`;
 
-            // Trailing Drawdown (Apex PA Trailing Threshold)
-            try{
-                const dd = computeTrailingFloor(acc, stats);
-                if(dd.enabled && els.ddFloor && els.ddBuffer && els.ddThermo){
-                    els.ddModeLabel.textContent = (CURRENT_LANG==='en') ? 'Trailing DD (Apex)' : 'Drawdown Real (Apex)';
-                    els.ddFloor.textContent = formatCurrency(dd.floor);
-                    els.ddBuffer.textContent = formatCurrency(dd.buffer);
-
-                    // Thermometer: 0..$2,000 buffer scale (clamped) for visual risk
-                    const scale = 2000;
-                    const pct = Math.max(0, Math.min(100, (dd.buffer/scale)*100));
-                    els.ddThermo.style.width = pct + '%';
-
-                    // Color + alert text
-                    let cls = 'bg-green-500';
-                    let alertTxt = '';
-                    let alertCls = 'text-green-600';
-                    if(dd.buffer <= 0){
-                        cls = 'bg-red-600';
-                        alertTxt = (CURRENT_LANG==='en') ? 'VIOLATION' : 'VIOLAÇÃO';
-                        alertCls = 'text-red-600';
-                    }else if(dd.buffer < 250){
-                        cls = 'bg-red-500';
-                        alertTxt = (CURRENT_LANG==='en') ? 'CRITICAL' : 'CRÍTICO';
-                        alertCls = 'text-red-600';
-                    }else if(dd.buffer < 600){
-                        cls = 'bg-orange-500';
-                        alertTxt = (CURRENT_LANG==='en') ? 'ALERT' : 'ALERTA';
-                        alertCls = 'text-orange-600';
-                    }else if(dd.buffer < 1200){
-                        cls = 'bg-yellow-400';
-                        alertTxt = (CURRENT_LANG==='en') ? 'CAUTION' : 'ATENÇÃO';
-                        alertCls = 'text-yellow-600';
-                    }
-                    els.ddThermo.className = 'h-2 rounded-full ' + cls;
-                    if(els.ddAlert){
-                        els.ddAlert.textContent = alertTxt;
-                        els.ddAlert.className = 'font-semibold ' + alertCls;
-                    }
-                }else if(els.ddModeLabel){
-                    // hidden / disabled
-                    els.ddModeLabel.textContent = (CURRENT_LANG==='en') ? 'Drawdown (off)' : 'Drawdown (off)';
-                }
-            }catch(e){}
-
-            const mDataMonth = getMonthlyDataFixed(acc);
-            let gainCap=(mDataMonth.total>0)?(mDataMonth.total*0.30)/0.70:0; 
-            els.gainCap.textContent=gainCap>0?formatCurrency(gainCap): (CURRENT_LANG==='en'?'Build Cushion':'Fazer Gordura');
+            let gainCap=(stats.totalProfit>0)?(stats.totalProfit*0.30)/0.70:0; els.gainCap.textContent=gainCap>0?formatCurrency(gainCap): (CURRENT_LANG==='en'?'Build Cushion':'Fazer Gordura'); 
+            
             renderCalendar(acc); 
             
-            if(els.statsMonth) els.statsMonth.textContent = formatCurrency(mDataMonth.total); 
+            if(els.statsMonth) els.statsMonth.textContent = formatCurrency(getMonthlyDataFixed(acc).total); 
             if(els.statsC10) els.statsC10.textContent = formatCurrency(calcCycle(acc, 10)); 
             if(els.statsC15) els.statsC15.textContent = formatCurrency(calcCycle(acc, 15)); 
             if(els.statsC20) els.statsC20.textContent = formatCurrency(calcCycle(acc, 20));
@@ -3684,7 +3519,10 @@ function renderDashboard() {
 
             if(!els.filterStart.value) { syncDatesToView(); } filterReportInternal();
             
-            if(els.weeklyList) els.weeklyList.innerHTML=mDataMonth.html; renderPayoutManager(); 
+            const mData=getMonthlyDataFixed(acc); 
+            if(els.weeklyList) els.weeklyList.innerHTML=mData.html; 
+            
+            renderPayoutManager(); 
             renderPayoutHistory(acc); 
             lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions(); 
         }
@@ -4595,7 +4433,6 @@ async function saveToCloudNow() {
             "Salvando...":"Saving...",
             "Salvo (Local)":"Saved (Local)",
             "Erro (Salvo Local)":"Error (Saved locally)",
-            "GRAVADO COM SUCESSO":"SAVED SUCCESSFULLY",
             "Arraste e solte os arquivos CSV aqui":"Drag and drop CSV files here",
             "ou clique para selecionar":"or click to browse",
             "Limpar lista":"Clear list",
@@ -6372,9 +6209,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
               if(ensure?.created) createdAccounts++;
               if(!acc) throw new Error(`Não consegui encontrar a conta ${p.meta.label}. Marque “Criar contas ausentes automaticamente” para permitir criar.`);
 
-              const accId = _cashResolveAccountId(acc) || acc.id;
-              const a = (accId && store.accounts[accId]) ? store.accounts[accId] : acc;
-              if(a && !a.id && accId) a.id = accId;
+              const a = store.accounts[acc.id];
               a.data = a.data || {};
 
               for(const d of p.days){
@@ -6405,19 +6240,6 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             if(createdAccounts) parts.push(`${createdAccounts} conta(s) criada(s).`);
             if(skippedConflicts) parts.push(`${skippedConflicts} conflito(s) ignorado(s).`);
             _ninjaSetStatus(parts.join(' '), skippedConflicts ? 'warn' : 'ok');
-            showToast(translateString("GRAVADO COM SUCESSO"), 'ok', 1200);
-            setTimeout(()=>{ 
-              try{
-                ninjaPerfQueue.length = 0;
-                ninjaPerfPreview = null;
-                _ninjaRenderQueue();
-                const box = document.getElementById('ninjaPreviewBox');
-                if(box) box.innerHTML = '';
-                const input = document.getElementById('ninjaFileInput');
-                if(input) input.value = '';
-                _ninjaSetStatus('', 'ok');
-              }catch(e){}
-            }, 1200);
           }catch(err){
             console.error(err);
             _ninjaSetStatus(err.message || 'Falha ao importar/salvar. Tente novamente.', 'error');
@@ -6450,18 +6272,6 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             el.classList.remove('hidden');
         }
 
-        function _cashResetImportUI(){
-            try{ __cashHistoryImportPlan = null; }catch(e){}
-            try{ _cashQueueClear(); }catch(e){}
-            try{
-                const input = document.getElementById('cash-import-files');
-                if(input) input.value = '';
-            }catch(e){}
-            try{ _cashShowPreview(''); }catch(e){}
-            try{ _cashSetStatus(''); }catch(e){}
-        }
-
-        
         function _cashParseFilename(fileName){
           const name = String(fileName||'').trim();
           const m = name.match(/^cash\s*history\s*(.+)\.csv$/i);
@@ -6472,24 +6282,20 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
           suffixRaw = suffixRaw.replace(/\s*\(\d+\)\s*$/,'');  // remove " (1)" no final
           suffixRaw = suffixRaw.replace(/\.csv$/i,'').trim();
 
-          // Mantém somente alfanuméricos para o identificador da conta (ex.: "df21", "va24", "ca01")
+          // Mantém somente alfanuméricos para o identificador da conta (ex.: "df21", "va24", "dfc213")
           const suffixClean = suffixRaw.replace(/[^A-Za-z0-9]/g,'').trim();
 
           const numMatch = suffixClean.match(/(\d+)$/);
-          const numStr = numMatch ? String(numMatch[1]) : undefined; // preserva zeros à esquerda (ex.: "01")
-          const num = numStr !== undefined ? parseInt(numStr, 10) : undefined;
+          const num = numMatch ? parseInt(numMatch[1], 10) : undefined;
           const prefix = numMatch ? suffixClean.slice(0, -numMatch[1].length) : suffixClean;
 
           const prefixUp = String(prefix||'').toUpperCase();
-
-          // Label preserva o formato do arquivo (ex.: CA 01)
-          const label = (numStr !== undefined && prefixUp)
-            ? `${prefixUp} ${numStr}`
+          const label = (num !== undefined && prefixUp)
+            ? `${prefixUp} ${num}`
             : (suffixClean || suffixRaw || '').toUpperCase();
 
-          return { raw: name, suffix: suffixClean || suffixRaw, prefix: prefixUp, num, numStr, label };
+          return { raw: name, suffix: suffixClean || suffixRaw, prefix: prefixUp, num, label };
         }
-
 
         function _cashSplitCSVLine(line){
             const out = [];
@@ -6532,49 +6338,17 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             return String(s||'').toLowerCase().replace(/\s+/g,'').replace(/[^a-z0-9]/g,'');
         }
 
-        function _cashNormalizeAccountKey(label){
-            // Normaliza "CA 01" == "CA1" == "ca0001"
-            const raw = String(label||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
-            const m = raw.match(/^([A-Z]+)(\d+)$/);
-            if(m){
-                const p = m[1];
-                const n = String(parseInt(m[2],10));
-                return p + n;
-            }
-            return raw;
-        }
-
-        
-        function _cashResolveAccountId(accOrLabel){
-            const label = (typeof accOrLabel === 'string') ? accOrLabel : (accOrLabel && accOrLabel.name ? accOrLabel.name : '');
-            const target = _cashNormalizeName(label);
-            const targetKey = _cashNormalizeAccountKey(label);
-
-            for(const [id, a] of Object.entries(store.accounts || {})){
-                const aName = a?.name || '';
-                if(_cashNormalizeName(aName) === target || _cashNormalizeAccountKey(aName) === targetKey){
-                    if(a && !a.id) a.id = id;
-                    return id;
-                }
-            }
-
-            // fallback: if object carries an id that exists
-            try{
-                if(accOrLabel && accOrLabel.id && store.accounts && store.accounts[accOrLabel.id]){
-                    if(store.accounts[accOrLabel.id] && !store.accounts[accOrLabel.id].id) store.accounts[accOrLabel.id].id = accOrLabel.id;
-                    return accOrLabel.id;
-                }
-            }catch(e){}
-            return null;
-        }
-
-
         function _cashFindAccountByLabel(label){
-            const id = _cashResolveAccountId(label);
-            if(!id) return null;
-            const a = store.accounts[id];
-            if(a && !a.id) a.id = id;
-            return a;
+            const target = _cashNormalizeName(label);
+            const list = Object.values(store.accounts || {});
+            for(const a of list){
+                if(_cashNormalizeName(a?.name) === target) return a;
+            }
+            // also try without spaces in label: DF21 vs DF 21
+            for(const a of list){
+                if(_cashNormalizeName(a?.name) === target.replace(/\s+/g,'')) return a;
+            }
+            return null;
         }
 
         function _cashEnsureAccount(label, createMissing){
@@ -6756,28 +6530,8 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                     const existing = (acc.data && acc.data[iso]) ? acc.data[iso] : null;
                     if(existing && _cashEntryHasData(existing)){
                         const exTotal = _cashRound2(_cashEntryTotal(existing));
-                        const totalsMatch = _cashCloseEnough(exTotal, net);
-
-                        if(totalsMatch){
-                            // If totals match but Trade1/Trade2 components differ (common when user typed net in T1),
-                            // treat as conflict so "Sobrescrever conflitos" will properly normalize fields.
-                            const exT1 = _cashRound2(_cashParseNum(existing.t1));
-                            const exT2 = _cashRound2(_cashParseNum(existing.t2));
-                            const exHasT1 = isFinite(exT1);
-                            const exHasT2 = isFinite(exT2);
-
-                            const t1Ok = exHasT1 && _cashCloseEnough(exT1, gross);
-                            const t2Ok = (
-                                (_cashCloseEnough(fees, 0) && (!exHasT2 || _cashCloseEnough(exT2, 0))) ||
-                                (exHasT2 && _cashCloseEnough(exT2, fees))
-                            );
-
-                            if(t1Ok && t2Ok){
-                                plan.actions.push({ kind:'match', accId: acc.id, accName: acc.name, dateISO: iso, gross, fees, net });
-                            }else{
-                                plan.actions.push({ kind:'conflict', accId: acc.id, accName: acc.name, dateISO: iso, gross, fees, net, existingTotal: exTotal, reason:'component_mismatch' });
-                                plan.conflicts.push({ accName: acc.name, dateISO: iso, existingTotal: exTotal, importedNet: net });
-                            }
+                        if(_cashCloseEnough(exTotal, net)){
+                            plan.actions.push({ kind:'match', accId: acc.id, accName: acc.name, dateISO: iso, gross, fees, net });
                         }else{
                             plan.actions.push({ kind:'conflict', accId: acc.id, accName: acc.name, dateISO: iso, gross, fees, net, existingTotal: exTotal });
                             plan.conflicts.push({ accName: acc.name, dateISO: iso, existingTotal: exTotal, importedNet: net });
@@ -7110,8 +6864,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
                 _cashSetStatus(translateString("Import concluído.") + " " + translateString("Novos") + ": " + imported + " | " + translateString("Já existiam") + ": " + matches + " | " + translateString("Conflitos") + ": " + conflicts + " | " + translateString("Equity atualizado") + ": " + equityUpdated);
 _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
-                showToast(translateString("GRAVADO COM SUCESSO"), 'ok', 1200);
-                setTimeout(()=>{ try{ _cashResetImportUI(); }catch(e){} }, 1200);
+                showToast(translateString("Import concluído."), 'ok');
             }catch(e){
                 console.error(e);
                 _cashSetStatus(translateString("Falha ao importar/salvar. Tente novamente."), true);
@@ -7128,7 +6881,6 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
         
         // Bootstrap without waiting for full window 'load' (prevents infinite "Iniciando..." if any resource hangs)
         async function bootstrapApp(){
-            try{ window.__DF_BOOT_STARTED__ = true; }catch(e){}
             // Wire language buttons ASAP
             try { initLanguageToggle(); } catch(e){}
 
@@ -7255,8 +7007,6 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
             try { clearTimeout(failsafe); } catch(e){}
 
             if (_initOk) {
-                try{ window.__DF_BOOT_OK__ = true; }catch(e){}
-
                 try { hideAppLoader(); } catch (e) {}
             }
 
