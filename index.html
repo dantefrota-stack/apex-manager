@@ -1323,13 +1323,29 @@ Usuário administrador:`) || '';
   }
   function loadStoreFromLocal(){
     try {
-      const raw = localStorage.getItem(LOCAL_STORE_KEY);
-      if(!raw) return null;
-      const obj = JSON.parse(raw);
-      if(!obj || typeof obj !== 'object') return null;
+      const rawMain = localStorage.getItem(LOCAL_STORE_KEY);
+      const rawBackup = localStorage.getItem('df_backup_local');
+      const tsBackup = Number(localStorage.getItem('df_backup_local_ts') || 0) || 0;
+
+      let mainObj = null;
+      if(rawMain){
+        try{ mainObj = JSON.parse(rawMain); }catch(e){ mainObj = null; }
+      }
+      let backupObj = null;
+      if(rawBackup){
+        try{ backupObj = JSON.parse(rawBackup); }catch(e){ backupObj = null; }
+      }
+
+      // Normalize timestamps (for comparison)
+      const mainMs = Number((mainObj && (mainObj.last_update_ms || mainObj.updatedAt)) || 0) || 0;
+      const backMs = Number((backupObj && (backupObj.last_update_ms || backupObj.updatedAt)) || tsBackup || 0) || 0;
+
+      const pick = (backMs > mainMs) ? backupObj : mainObj;
+      if(!pick || typeof pick !== 'object') return null;
+
       // Back-compat
-      if(!obj.last_update_ms && obj.updatedAt) obj.last_update_ms = obj.updatedAt;
-      return obj;
+      if(!pick.last_update_ms && pick.updatedAt) pick.last_update_ms = pick.updatedAt;
+      return pick;
     } catch(e){ return null; }
   }
 
@@ -4302,6 +4318,14 @@ async function saveToCloudNow() {
             const nowMs = Date.now();
             const nowIso = new Date(nowMs).toISOString();
 
+            // Stamp store so rollback protection works across devices/days
+            try{
+                store.updatedAt = nowMs;
+                store.last_update_ms = nowMs;
+                store.appBuildId = APP_BUILD_ID;
+                saveStoreToLocal();
+            }catch(e){}
+
             // Persist only what should be synced to cloud
             const persistable = getPersistableStore();
             const jsonStr = JSON.stringify(persistable);
@@ -4482,6 +4506,9 @@ async function saveToCloudNow() {
                     localStorage.setItem('df_backup_local_ts', String(Date.now()));
                 }
             }catch(e){}
+            // Always persist the primary local snapshot (so data never disappears even if cloud save fails)
+            try{ touchStore(); }catch(e){}
+
 
             if(!isOffline && !__cloudHydrated){
                 __pendingSaveBeforeHydrate = true;
@@ -4493,7 +4520,7 @@ async function saveToCloudNow() {
 
             __dirty = true;
             if(isOffline){
-                setCloudStatus('offline', (CURRENT_LANG==='en' ? "Offline" : "Offline"));
+                setCloudStatus('saved', (CURRENT_LANG==='en' ? "Saved (Local)" : "Salvo (Local)"));
                 return;
             }
             setCloudStatus('saving', (CURRENT_LANG==='en' ? "Saving..." : "Salvando..."));
