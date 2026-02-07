@@ -323,43 +323,6 @@ body.dark .bg-white { background-color: #1e293b; }
 .day-details-row td{background:rgba(99,102,241,0.04);border-top:1px dashed rgba(148,163,184,0.6);}
 .dark .day-details-row td{background:rgba(99,102,241,0.08);border-top:1px dashed rgba(71,85,105,0.8);}
 
-
-
-/* Mobile readability for T1/T2 inputs (prevents narrow, clipped numbers) */
-.trade-input{
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
-  text-align: right;
-  font-size: 14px;
-  line-height: 1.15;
-  padding: 6px 8px !important;
-  min-height: 34px;
-  min-width: 78px;
-  box-sizing: border-box;
-}
-.trade-input::placeholder{opacity:.65;}
-.trade-cell-grid{gap: 8px;}
-
-@media (max-width: 480px){
-  .trade-input{
-    font-size: 15px;
-    padding: 7px 8px !important;
-    min-width: 92px;
-  }
-  /* Force enough room for two fields side-by-side */
-  td .trade-cell-grid{
-    display: grid !important;
-    grid-template-columns: minmax(92px, 1fr) minmax(92px, 1fr) !important;
-    gap: 8px !important;
-  }
-}
-@media (max-width: 360px){
-  /* Stack fields on very small screens */
-  td .trade-cell-grid{
-    grid-template-columns: 1fr !important;
-  }
-}
-
 </style>
 
 <style id="d2-info-modal-styles">
@@ -882,7 +845,22 @@ body.dark .bg-white { background-color: #1e293b; }
                                 <option value="available">Disponível p/ saque ($)</option>
                                 <option value="missing">Falta p/ $500 ($)</option>
                                 <option value="equity">Equity líquido ($)</option>
+                                <option value="timeline">Trajetória no Período (linhas)</option>
                             </select>
+                            <div id="accounts-overview-timeline-controls" class="hidden ml-2 flex items-center gap-2 flex-wrap">
+                                <div class="flex items-center gap-1">
+                                    <span class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">De</span>
+                                    <input id="accounts-overview-timeline-start" type="date" class="px-2 py-1.5 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Até</span>
+                                    <input id="accounts-overview-timeline-end" type="date" class="px-2 py-1.5 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+                                </div>
+                                <button type="button" onclick="applyAccountsOverviewTimeline()" class="px-3 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">
+                                    Aplicar
+                                </button>
+                            </div>
+
                         </div>
                         <p id="accounts-overview-chart-hint" class="text-[11px] text-slate-500 dark:text-slate-400">0% = no start • 100% = atingiu safety</p>
                     </div>
@@ -1360,29 +1338,13 @@ Usuário administrador:`) || '';
   }
   function loadStoreFromLocal(){
     try {
-      const rawMain = localStorage.getItem(LOCAL_STORE_KEY);
-      const rawBackup = localStorage.getItem('df_backup_local');
-      const tsBackup = Number(localStorage.getItem('df_backup_local_ts') || 0) || 0;
-
-      let mainObj = null;
-      if(rawMain){
-        try{ mainObj = JSON.parse(rawMain); }catch(e){ mainObj = null; }
-      }
-      let backupObj = null;
-      if(rawBackup){
-        try{ backupObj = JSON.parse(rawBackup); }catch(e){ backupObj = null; }
-      }
-
-      // Normalize timestamps (for comparison)
-      const mainMs = Number((mainObj && (mainObj.last_update_ms || mainObj.updatedAt)) || 0) || 0;
-      const backMs = Number((backupObj && (backupObj.last_update_ms || backupObj.updatedAt)) || tsBackup || 0) || 0;
-
-      const pick = (backMs > mainMs) ? backupObj : mainObj;
-      if(!pick || typeof pick !== 'object') return null;
-
+      const raw = localStorage.getItem(LOCAL_STORE_KEY);
+      if(!raw) return null;
+      const obj = JSON.parse(raw);
+      if(!obj || typeof obj !== 'object') return null;
       // Back-compat
-      if(!pick.last_update_ms && pick.updatedAt) pick.last_update_ms = pick.updatedAt;
-      return pick;
+      if(!obj.last_update_ms && obj.updatedAt) obj.last_update_ms = obj.updatedAt;
+      return obj;
     } catch(e){ return null; }
   }
 
@@ -2005,6 +1967,29 @@ async function callOpenAI(question){
             if(sortSel) prefs.sort = sortSel.value || prefs.sort;
             if(sizeSel) prefs.size = sizeSel.value || prefs.size;
             if(metricSel) prefs.chartMetric = metricSel.value || prefs.chartMetric;
+            // timeline controls visibility + defaults
+            try{
+                const tControls = document.getElementById('accounts-overview-timeline-controls');
+                const tStart = document.getElementById('accounts-overview-timeline-start');
+                const tEnd = document.getElementById('accounts-overview-timeline-end');
+                if(tControls){
+                    const isTimeline = (prefs.chartMetric === 'timeline');
+                    tControls.classList.toggle('hidden', !isTimeline);
+                    if(isTimeline){
+                        // initialize prefs storage
+                        prefs.timelineStart = prefs.timelineStart || '';
+                        prefs.timelineEnd = prefs.timelineEnd || '';
+                        // default to current month range if empty
+                        if(tStart && !tStart.value){
+                            tStart.value = prefs.timelineStart || toISODateLocal(new Date(store.date.getFullYear(), store.date.getMonth(), 1));
+                        }
+                        if(tEnd && !tEnd.value){
+                            tEnd.value = prefs.timelineEnd || toISODateLocal(new Date(store.date.getFullYear(), store.date.getMonth()+1, 0));
+                        }
+                    }
+                }
+            }catch(e){}
+
 
             // reset horizontal scroll so the first columns are always visible after sorting/filtering
             const tscroll = document.getElementById('accounts-overview-table-scroll');
@@ -2015,6 +2000,71 @@ async function callOpenAI(question){
             renderAccountsOverview();
             try { bindAccountsOverviewExportButtons(); } catch(e){}
             try { lucide.createIcons(); } catch(e){}
+        }
+
+
+        function applyAccountsOverviewTimeline(){
+            window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'closest', size: 'all', chartMetric: 'progress' };
+            const prefs = window.accountsOverviewPrefs;
+            const tStart = document.getElementById('accounts-overview-timeline-start');
+            const tEnd = document.getElementById('accounts-overview-timeline-end');
+            if(tStart) prefs.timelineStart = tStart.value || '';
+            if(tEnd) prefs.timelineEnd = tEnd.value || '';
+            // render
+            renderAccountsOverview();
+            try { bindAccountsOverviewExportButtons(); } catch(e){}
+        }
+        // --- Accounts Overview: reactive chart UX (Option A) ---
+        // Show chart only after the user interacts with chart controls (metric/dates).
+        // Prevents boot deadlocks and removes the need to click "Mostrar/Esconder Gráfico".
+        function _dfDebounce(fn, ms){
+            let t = null;
+            return function(){
+                const args = arguments;
+                clearTimeout(t);
+                t = setTimeout(()=>{ try{ fn.apply(null, args); }catch(e){} }, ms||400);
+            }
+        }
+
+        function _accountsOverviewShowChartIfNeeded(){
+            const wrap = document.getElementById('accounts-overview-chart-wrap');
+            if(!wrap) return;
+            if(wrap.classList.contains('hidden')) wrap.classList.remove('hidden');
+        }
+
+        function bindAccountsOverviewReactiveControls(){
+            if(window._accountsOverviewReactiveBound) return;
+            window._accountsOverviewReactiveBound = true;
+
+            const metricSel = document.getElementById('accounts-overview-chart-metric');
+            const tStart = document.getElementById('accounts-overview-timeline-start');
+            const tEnd = document.getElementById('accounts-overview-timeline-end');
+
+            // Metric change => show chart and render (no extra clicks)
+            if(metricSel){
+                metricSel.addEventListener('change', ()=>{
+                    _accountsOverviewShowChartIfNeeded();
+                    // render (onchange already calls onAccountsOverviewControlsChange, but ensure in case of programmatic changes)
+                    try{ onAccountsOverviewControlsChange(); }catch(e){}
+                });
+            }
+
+            // Timeline date inputs => auto-apply with debounce (no "Aplicar" needed)
+            const debouncedApply = _dfDebounce(()=>{
+                try{
+                    // keep prefs in sync
+                    window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'closest', size: 'all', chartMetric: 'progress' };
+                    const prefs = window.accountsOverviewPrefs;
+                    if(tStart) prefs.timelineStart = tStart.value || '';
+                    if(tEnd) prefs.timelineEnd = tEnd.value || '';
+                    _accountsOverviewShowChartIfNeeded();
+                    renderAccountsOverview();
+                    try{ bindAccountsOverviewExportButtons(); }catch(e){}
+                }catch(e){}
+            }, 450);
+
+            if(tStart) tStart.addEventListener('input', debouncedApply);
+            if(tEnd) tEnd.addEventListener('input', debouncedApply);
         }
 
 
@@ -2038,9 +2088,10 @@ async function callOpenAI(question){
             if(sortSel) sortSel.value = prefs.sort || 'closest';
             if(sizeSel) sizeSel.value = prefs.size || 'all';
             if(metricSel) metricSel.value = prefs.chartMetric || 'progress';
-            renderAccountsOverview();
+            onAccountsOverviewControlsChange();
             try { bindAccountsOverviewExportButtons(); } catch(e){}
             try { lucide.createIcons(); } catch(e){}
+            try { bindAccountsOverviewReactiveControls(); } catch(e){}
         }
 
         function closeAccountsOverview(){
@@ -2314,6 +2365,29 @@ async function callOpenAI(question){
             if(sortSel) prefs.sort = sortSel.value || prefs.sort;
             if(sizeSel) prefs.size = sizeSel.value || prefs.size;
             if(metricSel) prefs.chartMetric = metricSel.value || prefs.chartMetric;
+            // timeline controls visibility + defaults
+            try{
+                const tControls = document.getElementById('accounts-overview-timeline-controls');
+                const tStart = document.getElementById('accounts-overview-timeline-start');
+                const tEnd = document.getElementById('accounts-overview-timeline-end');
+                if(tControls){
+                    const isTimeline = (prefs.chartMetric === 'timeline');
+                    tControls.classList.toggle('hidden', !isTimeline);
+                    if(isTimeline){
+                        // initialize prefs storage
+                        prefs.timelineStart = prefs.timelineStart || '';
+                        prefs.timelineEnd = prefs.timelineEnd || '';
+                        // default to current month range if empty
+                        if(tStart && !tStart.value){
+                            tStart.value = prefs.timelineStart || toISODateLocal(new Date(store.date.getFullYear(), store.date.getMonth(), 1));
+                        }
+                        if(tEnd && !tEnd.value){
+                            tEnd.value = prefs.timelineEnd || toISODateLocal(new Date(store.date.getFullYear(), store.date.getMonth()+1, 0));
+                        }
+                    }
+                }
+            }catch(e){}
+
 
             let accounts = Object.values(store.accounts || {}).slice();
 
@@ -2447,6 +2521,108 @@ async function callOpenAI(question){
             }
 
             if(!canvas || !wrap || wrap.classList.contains('hidden')) return;
+            // timeline (multi-line) chart
+            if(prefs.chartMetric === 'timeline'){
+                const hint = document.getElementById('accounts-overview-chart-hint');
+                if(hint) hint.textContent = 'Linhas por conta (lucro acumulado no período selecionado).';
+                const tStartEl = document.getElementById('accounts-overview-timeline-start');
+                const tEndEl = document.getElementById('accounts-overview-timeline-end');
+                const startIso = (tStartEl && tStartEl.value) ? tStartEl.value : (window.accountsOverviewPrefs.timelineStart || '');
+                const endIso = (tEndEl && tEndEl.value) ? tEndEl.value : (window.accountsOverviewPrefs.timelineEnd || '');
+                // persist
+                window.accountsOverviewPrefs.timelineStart = startIso || window.accountsOverviewPrefs.timelineStart || '';
+                window.accountsOverviewPrefs.timelineEnd = endIso || window.accountsOverviewPrefs.timelineEnd || '';
+                if(!startIso || !endIso){
+                    // default to current month
+                    const defStart = toISODateLocal(new Date(store.date.getFullYear(), store.date.getMonth(), 1));
+                    const defEnd = toISODateLocal(new Date(store.date.getFullYear(), store.date.getMonth()+1, 0));
+                    if(tStartEl) tStartEl.value = defStart;
+                    if(tEndEl) tEndEl.value = defEnd;
+                }
+                const sIso = (tStartEl && tStartEl.value) ? tStartEl.value : startIso;
+                const eIso = (tEndEl && tEndEl.value) ? tEndEl.value : endIso;
+
+                // build union date labels where any account traded within range
+                const labelSet = new Set();
+                for(const row of computed){
+                    const acc = row.acc;
+                    const dates = Object.keys(acc.data || {});
+                    for(const iso of dates){
+                        if(iso < sIso || iso > eIso) continue;
+                        const entry = acc.data[iso] || {};
+                        if(entry && entry.holiday) continue;
+                        const v = Number(entry.val || 0);
+                        if(v !== 0) labelSet.add(iso);
+                    }
+                }
+                const isoLabels = Array.from(labelSet).sort();
+                const labelsX = isoLabels.map(iso => formatDateShort(parseISODateLocal(iso)));
+
+                // canvas sizing
+                try{
+                    if(accountsOverviewChart) { accountsOverviewChart.destroy(); accountsOverviewChart = null; }
+                    const ctx = canvas.getContext('2d');
+                    const isDark = document.documentElement.classList.contains('dark');
+                    const gridColor = isDark ? '#334155' : '#f3f4f6';
+                    const textColor = isDark ? '#94a3b8' : '#64748b';
+
+                    canvas.height = 320;
+                    canvas.width = 980;
+                    canvas.style.width = '100%';
+
+                    // color generator (deterministic)
+                    const colorFor = (name, i)=>{
+                        let h=0;
+                        const s=String(name||'') + '|' + i;
+                        for(let k=0;k<s.length;k++) h = (h*31 + s.charCodeAt(k)) % 360;
+                        return `hsl(${h}, 72%, ${isDark ? '62%' : '42%'})`;
+                    };
+
+                    const datasets = computed.map((row, i)=>{
+                        const acc = row.acc;
+                        let cum = 0;
+                        const dataY = [];
+                        for(const iso of isoLabels){
+                            const entry = (acc.data || {})[iso] || {};
+                            const v = (entry && !entry.holiday) ? Number(entry.val || 0) : 0;
+                            if(v !== 0) cum += v;
+                            dataY.push(Number(cum.toFixed(2)));
+                        }
+                        const c = colorFor(acc.name || acc.id, i);
+                        return {
+                            label: acc.name || acc.id || ('Conta ' + (i+1)),
+                            data: dataY,
+                            borderColor: c,
+                            backgroundColor: 'transparent',
+                            borderWidth: 2.2,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            tension: 0.35,
+                            spanGaps: true
+                        };
+                    });
+
+                    accountsOverviewChart = new Chart(ctx, {
+                        type: 'line',
+                        data: { labels: labelsX, datasets },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            animation: false,
+                            plugins: {
+                                legend: { display: true, position: 'bottom', labels: { color: textColor, boxWidth: 10, boxHeight: 10, usePointStyle: true } },
+                                tooltip: { callbacks: { label: (c)=> `${c.dataset.label}: ${formatCurrency(c.raw)}` } }
+                            },
+                            scales: {
+                                y: { grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> '$' + Number(v).toLocaleString() } },
+                                x: { grid: { display: false }, ticks: { color: textColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } }
+                            }
+                        }
+                    });
+                }catch(e){}
+                return;
+            }
+
 
             try {
                 if(accountsOverviewChart) { accountsOverviewChart.destroy(); accountsOverviewChart = null; }
@@ -3528,7 +3704,7 @@ function renderCalendar(acc) {
         const t2Handlers = readOnlyDay ? '' : `oninput="window.queueData('${iso}','t2',this.value)" onblur="window.updateData('${iso}','t2',this.value)"`;
 
         const inputsHtml = `
-            <div class="trade-cell-grid grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-2 gap-2">
                 <input type="number" placeholder="T1"
                        class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}"
                        ${inputDisabledAttr} value="${t1Num}" ${t1Handlers}
@@ -3593,7 +3769,7 @@ function renderCalendar(acc) {
                 <div class="space-y-4">
                     <div>
                         <div class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">Trade 1</div>
-                        <div class="trade-cell-grid grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" ${t1m.add ? 'checked' : ''} ${readOnlyDay ? 'disabled' : ''} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','t1m_add',this.checked)\"`}>
                                 <span class="text-slate-600 dark:text-slate-300">Adição</span>
@@ -3619,7 +3795,7 @@ function renderCalendar(acc) {
 
                     <div class="border-t border-slate-200 dark:border-slate-700 pt-4">
                         <div class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">Trade 2</div>
-                        <div class="trade-cell-grid grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" ${t2m.add ? 'checked' : ''} ${readOnlyDay ? 'disabled' : ''} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','t2m_add',this.checked)\"`}>
                                 <span class="text-slate-600 dark:text-slate-300">Adição</span>
@@ -4355,14 +4531,6 @@ async function saveToCloudNow() {
             const nowMs = Date.now();
             const nowIso = new Date(nowMs).toISOString();
 
-            // Stamp store so rollback protection works across devices/days
-            try{
-                store.updatedAt = nowMs;
-                store.last_update_ms = nowMs;
-                store.appBuildId = APP_BUILD_ID;
-                saveStoreToLocal();
-            }catch(e){}
-
             // Persist only what should be synced to cloud
             const persistable = getPersistableStore();
             const jsonStr = JSON.stringify(persistable);
@@ -4543,9 +4711,6 @@ async function saveToCloudNow() {
                     localStorage.setItem('df_backup_local_ts', String(Date.now()));
                 }
             }catch(e){}
-            // Always persist the primary local snapshot (so data never disappears even if cloud save fails)
-            try{ touchStore(); }catch(e){}
-
 
             if(!isOffline && !__cloudHydrated){
                 __pendingSaveBeforeHydrate = true;
@@ -4557,7 +4722,7 @@ async function saveToCloudNow() {
 
             __dirty = true;
             if(isOffline){
-                setCloudStatus('saved', (CURRENT_LANG==='en' ? "Saved (Local)" : "Salvo (Local)"));
+                setCloudStatus('offline', (CURRENT_LANG==='en' ? "Offline" : "Offline"));
                 return;
             }
             setCloudStatus('saving', (CURRENT_LANG==='en' ? "Saving..." : "Salvando..."));
