@@ -4553,7 +4553,7 @@ ${period}
         const DF_WS_KEY = "df_workspace_id";
         const DF_DOCID_KEY = "df_cloud_doc_id";
         function __getWorkspaceId(){
-            try{ return (localStorage.getItem(DF_WS_KEY) || "").trim(); }catch(e){ return ""; }
+            try{ return (localStorage.getItem(DF_WS_KEY) || "df_apex_manager").trim() || "df_apex_manager"; }catch(e){ return "df_apex_manager"; }
         }
         function __getCloudDocId(){
             try{ return (localStorage.getItem(DF_DOCID_KEY) || CLOUD_DOC_ID).trim() || CLOUD_DOC_ID; }catch(e){ return CLOUD_DOC_ID; }
@@ -4573,6 +4573,9 @@ ${period}
             const out = [];
             try{
                 if(ws){
+                    // Prefer workspace root doc (matches your rules: /workspaces/{workspaceId})
+                    out.push(doc(db, "workspaces", ws));
+                    // Optional subpaths (kept for backward/alternative structures)
                     out.push(doc(db, "workspaces", ws, "users", docId));
                     out.push(doc(db, "workspaces", ws, "docs",  docId));
                 }
@@ -5938,6 +5941,12 @@ if(composed !== core) return lead + composed + trail;
                     lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions();
                  }
             };
+
+            // Require login before touching Firestore (unless Offline mode)
+            try { await __waitForAuthOrOffline(); } catch(e) {}
+
+            // If still not authenticated and not offline, stop here (user will see login modal)
+            try{ if(!isOffline && (!auth || !auth.currentUser)) { return; } }catch(e){}
 
             try { await loadFromCloud(); } catch (e) { showFatalError("Erro de Conexão ou Permissão", e.message || "Falha ao baixar dados."); return; } 
 if (!store.activeId) {
