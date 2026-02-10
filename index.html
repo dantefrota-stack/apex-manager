@@ -378,6 +378,8 @@ body.dark .bg-white { background-color: #1e293b; }
           if(!loader) return;
           var isHidden = (loader.style && loader.style.display === 'none');
           if(isHidden) return;
+          try{ if(window.__DF_BOOT_DONE__ || window.__DF_BOOT_OK__) return; }catch(e){}
+          try{ if(loader.getAttribute && loader.getAttribute('data-loader-lock')==='1') return; }catch(e){}
 
           // Keep it simple: replace loader content with actionable buttons.
           loader.innerHTML = `
@@ -1164,6 +1166,67 @@ body.dark .bg-white { background-color: #1e293b; }
     <script type="module">
                 // Firebase dynamic loader (prevents "stuck on Iniciando..." when module imports hang or are blocked)
         let initializeApp, getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, runTransaction;
+        // Compat fallback (works on file:// where ES module imports may be blocked)
+        async function __loadScriptTag(src){
+            return new Promise((resolve, reject) => {
+                try{
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.async = true;
+                    s.onload = () => resolve(true);
+                    s.onerror = () => reject(new Error('Failed to load script: ' + src));
+                    document.head.appendChild(s);
+                }catch(e){ reject(e); }
+            });
+        }
+
+        async function __loadFirebaseCompat(maxWaitMs = 45000){
+            if (window.firebase && firebase.apps && firebase.apps.length && firebase.firestore) {
+                // already available
+            } else {
+                const base = "https://www.gstatic.com/firebasejs/10.7.1/";
+                const timed = (p) => Promise.race([
+                    p,
+                    new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout loading Firebase compat.")), maxWaitMs))
+                ]);
+                await timed(__loadScriptTag(base + "firebase-app-compat.js"));
+                await timed(__loadScriptTag(base + "firebase-firestore-compat.js"));
+                await timed(__loadScriptTag(base + "firebase-auth-compat.js"));
+            }
+
+            if (!window.firebase || !firebase.initializeApp || !firebase.firestore) {
+                throw new Error("Firebase compat not available after load.");
+            }
+
+            // Map compat APIs to the modular names used in this app
+            initializeApp = (cfg) => {
+                if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(cfg);
+                return firebase.app();
+            };
+            getFirestore = () => firebase.firestore();
+
+            doc = (dbInst, ...segs) => dbInst.doc(segs.join('/'));
+            getDoc = (docRef) => docRef.get();
+            setDoc = (docRef, data, opts) => {
+                const merge = !!(opts && opts.merge);
+                return docRef.set(data, merge ? { merge: true } : undefined);
+            };
+            updateDoc = (docRef, data) => docRef.update(data);
+            onSnapshot = (docRef, cb, err) => docRef.onSnapshot(cb, err);
+            runTransaction = (dbInst, updateFn) => dbInst.runTransaction(updateFn);
+
+            // Auth
+            getAuth = () => firebase.auth();
+            onAuthStateChanged = (authInst, cb) => authInst.onAuthStateChanged(cb);
+            signInWithEmailAndPassword = (authInst, email, pass) => authInst.signInWithEmailAndPassword(email, pass);
+            signOut = (authInst) => authInst.signOut();
+            setPersistence = (authInst, persistence) => authInst.setPersistence(persistence);
+            browserLocalPersistence = firebase.auth.Auth.Persistence.LOCAL;
+
+            window.__dfFirebaseModulesLoaded = true;
+            return true;
+        }
+
         let getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence;
         let auth = null;
         async function __loadFirebaseModules(maxWaitMs = 45000){
@@ -1197,7 +1260,19 @@ body.dark .bg-white { background-color: #1e293b; }
                 setTimeout(() => rej(new Error("Timeout loading Firebase modules.")), maxWaitMs)
             );
 
-            const [appMod, fsMod, authMod] = await Promise.race([importPromise, timed]);
+            let appMod, fsMod, authMod;
+            try{
+                [appMod, fsMod, authMod] = await Promise.race([importPromise, timed]);
+            }catch(e){
+                // Fallback to compat (handles file:// environments and stricter module policies)
+                try{
+                    await __loadFirebaseCompat(maxWaitMs);
+                    try{ if(slowTimer) clearTimeout(slowTimer); }catch(_){}
+                    return true;
+                }catch(e2){
+                    throw e; // keep original error
+                }
+            }
 
             try{ if(slowTimer) clearTimeout(slowTimer); }catch(e){}
 
@@ -7709,6 +7784,7 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
                 if(location && location.protocol === 'file:'){
                     const loader = document.getElementById('app-loader');
                     if(loader){
+                        try{ loader.setAttribute('data-loader-lock','1'); }catch(e){}
                         loader.innerHTML = `
                           <div class="text-center p-6 max-w-sm mx-auto">
                             <div class="text-yellow-400 mb-4 flex justify-center"><i data-lucide="alert-triangle" class="w-12 h-12"></i></div>
@@ -7820,6 +7896,7 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
                 console.error('init failed:', e);
                 const loader = document.getElementById('app-loader');
                 if (loader) {
+                    try{ loader.setAttribute('data-loader-lock','1'); }catch(e){}
                     loader.innerHTML = '<div class="text-center p-6 max-w-sm mx-auto">' +
                         '<div class="text-red-500 mb-4">Falha ao iniciar</div>' +
                         '<div class="text-xs text-slate-400">Abra o Console para ver detalhes, ou tente recarregar.</div>' +
@@ -7829,6 +7906,7 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
             }
 
             bootDone = true;
+            try{ window.__DF_BOOT_DONE__ = true; }catch(e){}
             try { clearTimeout(failsafe); } catch(e){}
 
             if (_initOk) {
