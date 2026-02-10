@@ -1167,31 +1167,91 @@ body.dark .bg-white { background-color: #1e293b; }
                 // Firebase dynamic loader (prevents "stuck on Iniciando..." when module imports hang or are blocked)
         let initializeApp, getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, runTransaction;
         // Compat fallback (works on file:// where ES module imports may be blocked)
-        async function __loadScriptTag(src){
+        async 
+function __loadScriptTag(src){
             return new Promise((resolve, reject) => {
                 try{
+                    window.__firebaseLoadDiag = window.__firebaseLoadDiag || { attempts: [], lastUrl: "", lastError: "" };
                     const s = document.createElement('script');
                     s.src = src;
                     s.async = true;
-                    s.onload = () => resolve(true);
-                    s.onerror = () => reject(new Error('Failed to load script: ' + src));
+                    s.crossOrigin = "anonymous";
+                    const started = Date.now();
+                    s.onload = () => {
+                        try{
+                            window.__firebaseLoadDiag.attempts.push({ url: src, ok: true, ms: Date.now()-started });
+                        }catch(e){}
+                        resolve(true);
+                    };
+                    s.onerror = (ev) => {
+                        const err = new Error('Failed to load script: ' + src);
+                        try{
+                            window.__firebaseLoadDiag.lastUrl = src;
+                            window.__firebaseLoadDiag.lastError = (ev && ev.message) ? ev.message : 'script load error';
+                            window.__firebaseLoadDiag.attempts.push({ url: src, ok: false, ms: Date.now()-started });
+                        }catch(e){}
+                        reject(err);
+                    };
                     document.head.appendChild(s);
-                }catch(e){ reject(e); }
+                }catch(e){
+                    try{
+                        window.__firebaseLoadDiag = window.__firebaseLoadDiag || { attempts: [], lastUrl: "", lastError: "" };
+                        window.__firebaseLoadDiag.lastUrl = src;
+                        window.__firebaseLoadDiag.lastError = String(e && e.message || e);
+                        window.__firebaseLoadDiag.attempts.push({ url: src, ok: false, ms: 0 });
+                    }catch(_){}
+                    reject(e);
+                }
             });
         }
 
-        async function __loadFirebaseCompat(maxWaitMs = 45000){
-            if (window.firebase && firebase.apps && firebase.apps.length && firebase.firestore) {
+
+        
+async function __loadFirebaseCompat(maxWaitMs = 45000){
+            // Try multiple CDNs (some blockers target gstatic.com)
+            const diag = window.__firebaseLoadDiag = window.__firebaseLoadDiag || { attempts: [], lastUrl: "", lastError: "" };
+
+            if (window.firebase && firebase.initializeApp && firebase.firestore) {
                 // already available
             } else {
-                const base = "https://www.gstatic.com/firebasejs/10.7.1/";
+                const candidates = [
+                    { base: "https://www.gstatic.com/firebasejs/10.7.1/", files: ["firebase-app-compat.js","firebase-firestore-compat.js","firebase-auth-compat.js"] },
+                    { base: "https://cdn.jsdelivr.net/npm/firebase@10.7.1/", files: ["firebase-app-compat.js","firebase-firestore-compat.js","firebase-auth-compat.js"] },
+                    { base: "https://unpkg.com/firebase@10.7.1/", files: ["firebase-app-compat.js","firebase-firestore-compat.js","firebase-auth-compat.js"] },
+                    { base: "https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/", files: ["firebase-app-compat.min.js","firebase-firestore-compat.min.js","firebase-auth-compat.min.js"] }
+                ];
+
                 const timed = (p) => Promise.race([
                     p,
                     new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout loading Firebase compat.")), maxWaitMs))
                 ]);
-                await timed(__loadScriptTag(base + "firebase-app-compat.js"));
-                await timed(__loadScriptTag(base + "firebase-firestore-compat.js"));
-                await timed(__loadScriptTag(base + "firebase-auth-compat.js"));
+
+                let loaded = false;
+                let lastErr = null;
+
+                for (const c of candidates){
+                    if (loaded) break;
+                    try{
+                        // Avoid re-adding same script tags if partially loaded
+                        for (const f of c.files){
+                            const url = c.base + f;
+                            diag.attempts.push({ url, ok: null, ms: null, trying: true });
+                            await timed(__loadScriptTag(url));
+                        }
+                        loaded = true;
+                    }catch(e){
+                        lastErr = e;
+                        try{
+                            diag.lastUrl = String((e && e.message || '')).replace('Failed to load script: ','');
+                            diag.lastError = String(e && e.message || e);
+                        }catch(_){}
+                        // Clean up: keep trying next CDN
+                    }
+                }
+
+                if(!loaded){
+                    throw (lastErr || new Error("Unable to load Firebase compat from all CDNs."));
+                }
             }
 
             if (!window.firebase || !firebase.initializeApp || !firebase.firestore) {
@@ -1220,85 +1280,12 @@ body.dark .bg-white { background-color: #1e293b; }
             onAuthStateChanged = (authInst, cb) => authInst.onAuthStateChanged(cb);
             signInWithEmailAndPassword = (authInst, email, pass) => authInst.signInWithEmailAndPassword(email, pass);
             signOut = (authInst) => authInst.signOut();
+            // Persistence (best-effort)
             setPersistence = (authInst, persistence) => authInst.setPersistence(persistence);
             browserLocalPersistence = firebase.auth.Auth.Persistence.LOCAL;
-
-            window.__dfFirebaseModulesLoaded = true;
-            return true;
         }
 
-        let getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence;
-        let auth = null;
-        async function __loadFirebaseModules(maxWaitMs = 45000){
-            const appUrl = "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-            const fsUrl  = "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-            const authUrl= "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-            // If already loaded, skip
-            if (window.__dfFirebaseModulesLoaded && initializeApp && getFirestore) return true;
-
-            // Do NOT fail fast here. On some networks/CDNs the module import may take > 12s,
-            // and failing early causes unnecessary "Reload" loops. We'll only fail after maxWaitMs.
-            const importPromise = Promise.all([import(appUrl), import(fsUrl), import(authUrl)]);
-
-            // After a few seconds, change the loader text to indicate slow connection (but keep loading).
-            let slowTimer = null;
-            try{
-                slowTimer = setTimeout(() => {
-                    try{
-                        const st = document.getElementById('status-text');
-                        if(!st) return;
-                        const lang = (window.CURRENT_LANG || localStorage.getItem('df_lang') || 'pt').toLowerCase();
-                        st.textContent = (lang.startsWith('en'))
-                            ? 'Loading modules... (slow connection)'
-                            : 'Carregando módulos... (conexão lenta)';
-                    }catch(e){}
-                }, 10000);
-            }catch(e){}
-
-            const timed = new Promise((_, rej) =>
-                setTimeout(() => rej(new Error("Timeout loading Firebase modules.")), maxWaitMs)
-            );
-
-            let appMod, fsMod, authMod;
-            try{
-                [appMod, fsMod, authMod] = await Promise.race([importPromise, timed]);
-            }catch(e){
-                // Fallback to compat (handles file:// environments and stricter module policies)
-                try{
-                    await __loadFirebaseCompat(maxWaitMs);
-                    try{ if(slowTimer) clearTimeout(slowTimer); }catch(_){}
-                    return true;
-                }catch(e2){
-                    throw e; // keep original error
-                }
-            }
-
-            try{ if(slowTimer) clearTimeout(slowTimer); }catch(e){}
-
-            initializeApp = appMod.initializeApp;
-            getFirestore  = fsMod.getFirestore;
-            doc           = fsMod.doc;
-            getDoc        = fsMod.getDoc;
-            setDoc        = fsMod.setDoc;
-            onSnapshot    = fsMod.onSnapshot;
-            updateDoc     = fsMod.updateDoc;
-                runTransaction = fsMod.runTransaction;
-
-            // Auth
-            getAuth = authMod.getAuth;
-            onAuthStateChanged = authMod.onAuthStateChanged;
-            signInWithEmailAndPassword = authMod.signInWithEmailAndPassword;
-            signOut = authMod.signOut;
-            setPersistence = authMod.setPersistence;
-            browserLocalPersistence = authMod.browserLocalPersistence;
-
-
-            window.__dfFirebaseModulesLoaded = true;
-            return true;
-        }
-
-        async function __initFirebaseIfPossible(){
+async function __initFirebaseIfPossible(){
             try{
                 if (window.__dfFirebaseReady && initializeApp && getFirestore) return true;
                 await __loadFirebaseModules(45000);
@@ -7834,6 +7821,7 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
             }catch(e){ __fbOk = false; }
 
             if(!__fbOk){
+                try{ const loader=document.getElementById('app-loader'); if(loader) loader.setAttribute('data-loader-lock','1'); }catch(e){}
                 const __lang = (window.CURRENT_LANG || localStorage.getItem('df_lang') || 'pt').toLowerCase();
                 const __en = __lang.startsWith('en');
                 const loader = document.getElementById('app-loader');
@@ -7846,7 +7834,16 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
                                 ${__en
                                     ? "Your browser couldn’t download the Firebase modules (network blocking, adblock, or slow connection).<br/>You can try again or continue in offline mode."
                                     : "O navegador não conseguiu baixar os módulos do Firebase (bloqueio de rede, adblock, ou conexão lenta).<br/>Você pode tentar recarregar ou continuar em modo offline."}
-                            </p>
+                            
+</p>
+                            <details class="text-left text-xs text-slate-300/80 mb-5 bg-slate-900/40 p-3 rounded border border-slate-700">
+                              <summary class="cursor-pointer font-bold">${__en ? "Technical details" : "Detalhes técnicos"}</summary>
+                              <div class="mt-2 font-mono break-all">
+                                <div>${__en ? "Last URL" : "Última URL"}: <span class="text-slate-100">${(window.__firebaseLoadDiag&&window.__firebaseLoadDiag.lastUrl)||"?"}</span></div>
+                                <div>${__en ? "Last error" : "Último erro"}: <span class="text-slate-100">${(window.__firebaseLoadDiag&&window.__firebaseLoadDiag.lastError)||"?"}</span></div>
+                                <div class="mt-2 opacity-80">${__en ? "Tip: open the URL in a new tab. If it shows ERR_BLOCKED_BY_CLIENT, disable adblock/shields for this site." : "Dica: abra a URL em uma nova aba. Se aparecer ERR_BLOCKED_BY_CLIENT, desative AdBlock/Shields para este site."}</div>
+                              </div>
+                            </details>
                             <div class="space-y-3">
                                 <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">
                                     Recarregar
@@ -7871,6 +7868,7 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
             const failsafe = setTimeout(() => {
                 if(bootDone) return;
                 const loader = document.getElementById('app-loader');
+                try{ if(loader && loader.getAttribute('data-loader-lock')==='1') return; }catch(e){}
                 if(loader){
                     loader.innerHTML = `
                         <div class="text-center p-6 max-w-sm mx-auto">
