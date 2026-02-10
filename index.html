@@ -3409,31 +3409,66 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         function filterReportInternal() {
             const start = els.filterStart.value; const end = els.filterEnd.value;
             if(!start || !end) return;
-            const acc = getActive(); let sum=0; let wins=0; let totalTrades=0; let best=-Infinity; let worst=Infinity; let chartLabels=[]; let chartData=[]; let cumSum=0;
+            const acc = getActive();
+            // Métricas por período devem respeitar SOMENTE o intervalo selecionado.
+            // Contagem de trades: usa T1/T2 quando existirem; caso contrário, considera 1 trade (o TOTAL do dia).
+            // Melhor/Pior dia: usa o TOTAL do dia (val) quando presente; senão, soma T1+T2.
+            let sum = 0;
+            let wins = 0;
+            let totalTrades = 0;
+            let tradedDays = 0;
+            let best = -Infinity;
+            let worst = Infinity;
+            let chartLabels = [];
+            let chartData = [];
+            let cumSum = 0;
             
             Object.keys(acc.data).sort().forEach(iso => {
                 if(iso >= start && iso <= end) {
                     const e = acc.data[iso];
-                    const val = parseFloat(e.val) || 0;
-                    const t1 = parseFloat(e.t1);
-                    const t2 = parseFloat(e.t2);
+                    const val = (parseFloat(e.val) || 0);
+                    const t1n = parseFloat(e.t1);
+                    const t2n = parseFloat(e.t2);
 
                     if(!e.holiday) {
+                        // Determina se há trades (T1/T2) válidos nesse dia
+                        const hasT1 = !isNaN(t1n) && t1n !== 0;
+                        const hasT2 = !isNaN(t2n) && t2n !== 0;
+                        let dayTrades = 0;
+                        let dayWins = 0;
+
+                        if (hasT1) { dayTrades++; if (t1n > 0) dayWins++; }
+                        if (hasT2) { dayTrades++; if (t2n > 0) dayWins++; }
+
+                        // Total do dia (para soma e melhor/pior)
+                        // Prioriza 'val' (TOTAL já calculado). Se não existir, usa soma de T1+T2.
+                        let dayTotal = 0;
                         if (val !== 0) {
-                            sum += val;
-                            if(val > best) best = val; if(val < worst) worst = val;
-                            cumSum += val;
-                            
-                            // GRÁFICO CLÁSSICO: Só adiciona se operou
+                            dayTotal = val;
+                        } else if (hasT1 || hasT2) {
+                            dayTotal = (isNaN(t1n) ? 0 : t1n) + (isNaN(t2n) ? 0 : t2n);
+                        }
+
+                        // Se não há T1/T2 mas há total do dia, assume 1 trade (o dia)
+                        if (dayTrades === 0 && dayTotal !== 0) {
+                            dayTrades = 1;
+                            if (dayTotal > 0) dayWins = 1;
+                        }
+
+                        if (dayTotal !== 0) {
+                            tradedDays++;
+                            sum += dayTotal;
+                            if(dayTotal > best) best = dayTotal;
+                            if(dayTotal < worst) worst = dayTotal;
+                            cumSum += dayTotal;
+
+                            // Gráfico: lucro acumulado apenas em dias operados
                             chartLabels.push(formatDateShort(parseISODateLocal(iso)));
                             chartData.push(cumSum);
                         }
-                        if (!isNaN(t1) || !isNaN(t2)) {
-                            if (t1) { totalTrades++; if(t1 > 0) wins++; }
-                            if (t2) { totalTrades++; if(t2 > 0) wins++; }
-                        } else if (val !== 0) {
-                            totalTrades++; if(val > 0) wins++;
-                        }
+
+                        totalTrades += dayTrades;
+                        wins += dayWins;
                     }
                 }
             });
@@ -3441,7 +3476,8 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             els.customResult.textContent = formatCurrency(sum); els.customResult.className = sum >= 0 ? "font-bold text-green-600" : "font-bold text-red-600";
             const rate = totalTrades > 0 ? ((wins/totalTrades)*100).toFixed(0)+"%" : "0%";
             els.customWinrate.textContent = `${rate} (${wins}/${totalTrades})`;
-            els.customBest.textContent = best > -Infinity ? formatCurrency(best) : "--"; els.customWorst.textContent = worst < Infinity ? formatCurrency(worst) : "--";
+            els.customBest.textContent = best > -Infinity ? formatCurrency(best) : "--";
+            els.customWorst.textContent = worst < Infinity ? formatCurrency(worst) : "--";
             updateChart(chartLabels, chartData);
         }
 
