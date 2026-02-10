@@ -914,6 +914,16 @@ body.dark .bg-white { background-color: #1e293b; }
             <div id="cloud-status" class="text-xs flex items-center gap-1 text-slate-400 font-medium">
                 <i data-lucide="cloud" class="w-3 h-3"></i> <span id="status-text">Conectando...</span>
             </div>
+            <div id="auth-area" class="hidden md:flex items-center gap-2">
+                <div id="auth-badge" class="hidden items-center gap-1 text-xs text-slate-300">
+                    <i data-lucide="user" class="w-3 h-3"></i>
+                    <span id="auth-email" class="max-w-[160px] truncate"></span>
+                </div>
+                <button id="auth-btn" onclick="window.openAuthModal && window.openAuthModal()" class="px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-bold border border-slate-700">
+                    Login
+                </button>
+            </div>
+
             <div class="flex items-center gap-2 ml-1" id="lang-toggle">
                 <button type="button" id="lang-pt" onclick="window.setLanguage && window.setLanguage('pt')" class="w-7 h-5 rounded overflow-hidden border border-slate-600/40 hover:border-indigo-400 transition" title="Português">
                     <img src="https://flagcdn.com/24x18/br.png" class="w-full h-full object-cover" alt="PT">
@@ -1154,16 +1164,19 @@ body.dark .bg-white { background-color: #1e293b; }
     <script type="module">
                 // Firebase dynamic loader (prevents "stuck on Iniciando..." when module imports hang or are blocked)
         let initializeApp, getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, runTransaction;
+        let getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, setPersistence, browserLocalPersistence;
+        let auth = null;
         async function __loadFirebaseModules(maxWaitMs = 45000){
             const appUrl = "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
             const fsUrl  = "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+            const authUrl= "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
             // If already loaded, skip
             if (window.__dfFirebaseModulesLoaded && initializeApp && getFirestore) return true;
 
             // Do NOT fail fast here. On some networks/CDNs the module import may take > 12s,
             // and failing early causes unnecessary "Reload" loops. We'll only fail after maxWaitMs.
-            const importPromise = Promise.all([import(appUrl), import(fsUrl)]);
+            const importPromise = Promise.all([import(appUrl), import(fsUrl), import(authUrl)]);
 
             // After a few seconds, change the loader text to indicate slow connection (but keep loading).
             let slowTimer = null;
@@ -1184,7 +1197,7 @@ body.dark .bg-white { background-color: #1e293b; }
                 setTimeout(() => rej(new Error("Timeout loading Firebase modules.")), maxWaitMs)
             );
 
-            const [appMod, fsMod] = await Promise.race([importPromise, timed]);
+            const [appMod, fsMod, authMod] = await Promise.race([importPromise, timed]);
 
             try{ if(slowTimer) clearTimeout(slowTimer); }catch(e){}
 
@@ -1196,6 +1209,15 @@ body.dark .bg-white { background-color: #1e293b; }
             onSnapshot    = fsMod.onSnapshot;
             updateDoc     = fsMod.updateDoc;
                 runTransaction = fsMod.runTransaction;
+
+            // Auth
+            getAuth = authMod.getAuth;
+            onAuthStateChanged = authMod.onAuthStateChanged;
+            signInWithEmailAndPassword = authMod.signInWithEmailAndPassword;
+            signOut = authMod.signOut;
+            setPersistence = authMod.setPersistence;
+            browserLocalPersistence = authMod.browserLocalPersistence;
+
 
             window.__dfFirebaseModulesLoaded = true;
             return true;
@@ -1232,6 +1254,8 @@ body.dark .bg-white { background-color: #1e293b; }
                 if(!ok) return false;
                 __firebaseApp = initializeApp(firebaseConfig);
                 db = getFirestore(__firebaseApp);
+                try { auth = getAuth(__firebaseApp); } catch(e) { auth = null; }
+                try { if(auth && setPersistence && browserLocalPersistence) await setPersistence(auth, browserLocalPersistence); } catch(e) {}
                 return true;
             }catch(e){
                 console.error("Firebase init failed:", e);
@@ -2250,6 +2274,65 @@ async function callOpenAI(question){
       <tbody>${rowsHtml}</tbody>
     </table>
   </div>
+
+
+<!-- Firebase Auth Modal (cloud sync gate) -->
+<div id="auth-modal" class="fixed inset-0 z-[99998] hidden">
+  <div class="absolute inset-0 bg-black/70"></div>
+  <div class="relative w-full h-full flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-5">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <h3 class="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+            <i data-lucide="shield" class="w-5 h-5 text-indigo-500"></i>
+            <span id="auth-title">Login</span>
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" id="auth-subtitle">Entre para sincronizar com a nuvem.</p>
+        </div>
+        <button type="button" onclick="window.closeAuthModal && window.closeAuthModal()" class="text-slate-400 hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-3">
+        <div>
+          <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Email</label>
+          <input id="auth-email-input" type="email" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2" placeholder="you@email.com" autocomplete="username">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Password</label>
+          <input id="auth-pass-input" type="password" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2" placeholder="••••••••" autocomplete="current-password">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Workspace ID (opcional)</label>
+            <input id="auth-ws-input" type="text" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm" placeholder="default">
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Cloud Doc ID</label>
+            <input id="auth-docid-input" type="text" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm" placeholder="dante_data">
+          </div>
+        </div>
+
+        <div id="auth-error" class="hidden text-xs text-red-500 font-bold bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-2"></div>
+
+        <button id="auth-login-btn" type="button" onclick="window.dfAuthSignIn && window.dfAuthSignIn()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-extrabold transition">
+          Entrar
+        </button>
+
+        <button type="button" onclick="window.forceOfflineMode && window.forceOfflineMode(); window.__resolveAuthWait && window.__resolveAuthWait(null);" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2.5 rounded-xl font-extrabold transition flex items-center justify-center gap-2">
+          <i data-lucide="wifi-off" class="w-4 h-4"></i>
+          Modo Offline
+        </button>
+      </div>
+
+      <div class="mt-4 text-[11px] text-slate-500 dark:text-slate-400">
+        <span class="font-bold">Nota:</span> o usuário precisa estar na lista <span class="font-mono">allowedUids</span> no workspace definido nas rules do Firestore.
+      </div>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>`;
@@ -4391,6 +4474,227 @@ ${period}
         const CLOUD_DOC_COL = "users";
         const CLOUD_DOC_ID  = "dante_data";
 
+        // --- AUTH + WORKSPACE (Firebase Auth gate for Firestore) ---
+        const DF_WS_KEY = "df_workspace_id";
+        const DF_DOCID_KEY = "df_cloud_doc_id";
+        function __getWorkspaceId(){
+            try{ return (localStorage.getItem(DF_WS_KEY) || "").trim(); }catch(e){ return ""; }
+        }
+        function __getCloudDocId(){
+            try{ return (localStorage.getItem(DF_DOCID_KEY) || CLOUD_DOC_ID).trim() || CLOUD_DOC_ID; }catch(e){ return CLOUD_DOC_ID; }
+        }
+        function __setWorkspaceId(v){
+            try{ localStorage.setItem(DF_WS_KEY, (v||"").trim()); }catch(e){}
+        }
+        function __setCloudDocId(v){
+            try{ localStorage.setItem(DF_DOCID_KEY, (v||"").trim() || CLOUD_DOC_ID); }catch(e){}
+        }
+
+        let __cloudDocRef = null;
+
+        function __buildCloudDocCandidates(){
+            const ws = __getWorkspaceId();
+            const docId = __getCloudDocId();
+            const out = [];
+            try{
+                if(ws){
+                    out.push(doc(db, "workspaces", ws, "users", docId));
+                    out.push(doc(db, "workspaces", ws, "docs",  docId));
+                }
+                out.push(doc(db, CLOUD_DOC_COL, docId));
+            }catch(e){}
+            return out;
+        }
+
+        async function __resolveCloudDocRefForRead(){
+            if(__cloudDocRef) return __cloudDocRef;
+            const candidates = __buildCloudDocCandidates();
+            let lastErr = null;
+            for(const ref of candidates){
+                try{
+                    // Quick probe (permission check + existence)
+                    await Promise.race([
+                        getDoc(ref),
+                        new Promise((_, rej)=>setTimeout(()=>rej(new Error("Timeout ao conectar no Firestore.")), 8000))
+                    ]);
+                    __cloudDocRef = ref;
+                    return ref;
+                }catch(e){
+                    lastErr = e;
+                }
+            }
+            throw lastErr || new Error("Sem permissão para acessar os dados.");
+        }
+
+        async function __resolveCloudDocRefForWrite(){
+            if(__cloudDocRef) return __cloudDocRef;
+            const candidates = __buildCloudDocCandidates();
+            let lastErr = null;
+            for(const ref of candidates){
+                try{
+                    // Prefer the first candidate we can write to. If it doesn't exist yet,
+                    // setDoc will create it, so a getDoc probe is enough to validate permission.
+                    await Promise.race([
+                        getDoc(ref),
+                        new Promise((_, rej)=>setTimeout(()=>rej(new Error("Timeout ao conectar no Firestore.")), 8000))
+                    ]);
+                    __cloudDocRef = ref;
+                    return ref;
+                }catch(e){
+                    // If permission-denied, keep trying other candidates.
+                    lastErr = e;
+                }
+            }
+            // If all probes failed, fall back to first candidate and let setDoc surface the real error.
+            if(candidates && candidates.length){
+                __cloudDocRef = candidates[0];
+                return __cloudDocRef;
+            }
+            throw lastErr || new Error("Sem permissão para salvar os dados.");
+        }
+
+        function __setAuthHeader(user){
+            try{
+                const badge = document.getElementById('auth-badge');
+                const emailEl = document.getElementById('auth-email');
+                const btn = document.getElementById('auth-btn');
+                if(badge && emailEl && btn){
+                    if(user){
+                        badge.classList.remove('hidden');
+                        badge.classList.add('flex');
+                        emailEl.textContent = (user.email || user.uid || '').toString();
+                        btn.textContent = (CURRENT_LANG==='en' ? "Logout" : "Sair");
+                        btn.onclick = () => { window.dfAuthSignOut && window.dfAuthSignOut(); };
+                    }else{
+                        badge.classList.add('hidden');
+                        badge.classList.remove('flex');
+                        emailEl.textContent = '';
+                        btn.textContent = (CURRENT_LANG==='en' ? "Login" : "Login");
+                        btn.onclick = () => { window.openAuthModal && window.openAuthModal(); };
+                    }
+                }
+            }catch(e){}
+        }
+
+        function __setAuthModalText(){
+            const en = String(CURRENT_LANG||'pt').toLowerCase().startsWith('en');
+            const title = document.getElementById('auth-title');
+            const sub = document.getElementById('auth-subtitle');
+            const btn = document.getElementById('auth-login-btn');
+            if(title) title.textContent = en ? "Sign in" : "Login";
+            if(sub) sub.textContent = en ? "Sign in to enable cloud sync." : "Entre para sincronizar com a nuvem.";
+            if(btn) btn.textContent = en ? "Sign in" : "Entrar";
+        }
+
+        function __showAuthError(msg){
+            const el = document.getElementById('auth-error');
+            if(!el) return;
+            if(msg){
+                el.textContent = msg;
+                el.classList.remove('hidden');
+            }else{
+                el.textContent = '';
+                el.classList.add('hidden');
+            }
+        }
+
+        window.openAuthModal = function(){
+            try{
+                __setAuthModalText();
+                __showAuthError('');
+                const modal = document.getElementById('auth-modal');
+                if(modal) modal.classList.remove('hidden');
+                const ws = document.getElementById('auth-ws-input');
+                const docid = document.getElementById('auth-docid-input');
+                const email = document.getElementById('auth-email-input');
+                if(ws) ws.value = __getWorkspaceId() || 'default';
+                if(docid) docid.value = __getCloudDocId() || CLOUD_DOC_ID;
+                if(email && !email.value) email.focus();
+                try { lucide.createIcons(); } catch(e){}
+            }catch(e){}
+        };
+
+        window.closeAuthModal = function(){
+            try{
+                const modal = document.getElementById('auth-modal');
+                if(modal) modal.classList.add('hidden');
+            }catch(e){}
+        };
+
+        window.dfAuthSignIn = async function(){
+            try{
+                __showAuthError('');
+                if(!auth || !signInWithEmailAndPassword){
+                    __showAuthError((CURRENT_LANG==='en') ? "Auth module not ready." : "Auth não está pronto.");
+                    return;
+                }
+                const email = (document.getElementById('auth-email-input')?.value || '').trim();
+                const pass  = (document.getElementById('auth-pass-input')?.value || '').trim();
+                const ws    = (document.getElementById('auth-ws-input')?.value || '').trim();
+                const docid = (document.getElementById('auth-docid-input')?.value || '').trim();
+                if(!email || !pass){
+                    __showAuthError((CURRENT_LANG==='en') ? "Email and password are required." : "Email e senha são obrigatórios.");
+                    return;
+                }
+                __setWorkspaceId(ws === 'default' ? '' : ws); // allow empty = legacy
+                __setCloudDocId(docid || CLOUD_DOC_ID);
+                setCloudStatus('saving', (CURRENT_LANG==='en') ? "Signing in..." : "Entrando...");
+                await signInWithEmailAndPassword(auth, email, pass);
+                window.closeAuthModal();
+                __showAuthError('');
+            }catch(e){
+                const msg = (e && (e.message || e.code)) ? (e.message || e.code) : String(e||'Erro');
+                __showAuthError(msg);
+                setCloudStatus('error', msg);
+            }
+        };
+
+        window.dfAuthSignOut = async function(){
+            try{
+                if(!auth || !signOut) return;
+                await signOut(auth);
+                __cloudDocRef = null;
+                __setAuthHeader(null);
+                setCloudStatus('error', (CURRENT_LANG==='en') ? "Signed out" : "Saiu");
+                window.openAuthModal();
+            }catch(e){}
+        };
+
+        async function __waitForAuthOrOffline(){
+            if(isOffline) return null;
+            if(!auth || !onAuthStateChanged) return null;
+
+            // If already logged in (persisted session), proceed immediately
+            try{
+                if(auth.currentUser){
+                    __setAuthHeader(auth.currentUser);
+                    return auth.currentUser;
+                }
+            }catch(e){}
+
+            // Otherwise, wait
+            window.openAuthModal();
+
+            return await new Promise((resolve) => {
+                window.__resolveAuthWait = resolve;
+                const unsub = onAuthStateChanged(auth, (user) => {
+                    try{
+                        if(user){
+                            __setAuthHeader(user);
+                            window.closeAuthModal();
+                            __showAuthError('');
+                            resolve(user);
+                            try{ unsub(); }catch(e){}
+                        }else{
+                            __setAuthHeader(null);
+                            setCloudStatus('error', (CURRENT_LANG==='en') ? "Login required" : "Login necessário");
+                        }
+                    }catch(e){}
+                });
+            });
+        }
+
+
         const CLIENT_ID_KEY = "df_client_id";
         const CLIENT_ID = (() => {
             try{
@@ -4484,7 +4788,7 @@ ${period}
         }
 
         async function loadFromCloud() {
-            const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+            const docRef = await __resolveCloudDocRefForRead();
             const docSnap = await Promise.race([
                 getDoc(docRef),
                 new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout ao conectar no Firestore.")), 10000))
@@ -4563,7 +4867,7 @@ async function saveToCloudNow() {
             const force = !!__forceCloudSaveOnce;
             __forceCloudSaveOnce = false;
 
-            const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+            const docRef = await __resolveCloudDocRefForWrite();
             const nowMs = Date.now();
             const nowIso = new Date(nowMs).toISOString();
 
@@ -4653,7 +4957,7 @@ async function saveToCloudNow() {
             }
             try{
                 await __initFirebaseIfPossible();
-                const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+                const docRef = __cloudDocRef || doc(db, CLOUD_DOC_COL, __getCloudDocId());
 
                 if(!runTransaction){
                     toast(translateString(CURRENT_LANG==='en' ? "Restore unavailable (transaction module missing)." : "Restauração indisponível (módulo de transação ausente)."), 'error');
@@ -4775,7 +5079,7 @@ async function saveToCloudNow() {
         function startCloudRealtimeSync(){
             try{
                 if(!db || !onSnapshot) return;
-                const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+                const docRef = (__cloudDocRef || doc(db, CLOUD_DOC_COL, __getCloudDocId()));
                 if(__cloudUnsub) { try{ __cloudUnsub(); }catch(e){} __cloudUnsub = null; }
 
                 __cloudUnsub = onSnapshot(docRef, (snap) => {
@@ -5563,7 +5867,7 @@ if(composed !== core) return lead + composed + trail;
             try { await loadFromCloud(); } catch (e) { showFatalError("Erro de Conexão ou Permissão", e.message || "Falha ao baixar dados."); return; } 
 if (!store.activeId) {
                 try {
-                    const docRef = doc(db, "users", "dante_data");
+                    const docRef = (__cloudDocRef || doc(db, "users", __getCloudDocId()));
                 const docSnap = await Promise.race([
                     getDoc(docRef),
                     new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout ao conectar no Firestore.")), 8000))
@@ -7507,7 +7811,12 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
 
             // Initialize app
             let _initOk = false;
-            try { await init(); _initOk = true; } catch (e) {
+            try {
+                // Require Firebase Auth before accessing Firestore (unless Offline Mode)
+                try { await __waitForAuthOrOffline(); } catch(e) {}
+                if(!isOffline && auth && !auth.currentUser){ throw new Error("Login necessário"); }
+                await init(); _initOk = true;
+            } catch (e) {
                 console.error('init failed:', e);
                 const loader = document.getElementById('app-loader');
                 if (loader) {
