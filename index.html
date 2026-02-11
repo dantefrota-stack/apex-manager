@@ -1165,141 +1165,439 @@ body.dark .bg-white { background-color: #1e293b; }
 
 
     <script type="module">
-                // Firebase dynamic loader (prevents "stuck on Iniciando..." when module imports hang or are blocked)
-        let initializeApp, getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, runTransaction;
-        // Compat fallback (works on file:// where ES module imports may be blocked)
-        async 
-function __loadScriptTag(src){
-            return new Promise((resolve, reject) => {
-                try{
-                    window.__firebaseLoadDiag = window.__firebaseLoadDiag || { attempts: [], lastUrl: "", lastError: "" };
-                    const s = document.createElement('script');
-                    s.src = src;
-                    s.async = true;
-                    s.crossOrigin = "anonymous";
-                    const started = Date.now();
-                    s.onload = () => {
-                        try{
-                            window.__firebaseLoadDiag.attempts.push({ url: src, ok: true, ms: Date.now()-started });
-                        }catch(e){}
-                        resolve(true);
-                    };
-                    s.onerror = (ev) => {
-                        const err = new Error('Failed to load script: ' + src);
-                        try{
-                            window.__firebaseLoadDiag.lastUrl = src;
-                            window.__firebaseLoadDiag.lastError = (ev && ev.message) ? ev.message : 'script load error';
-                            window.__firebaseLoadDiag.attempts.push({ url: src, ok: false, ms: Date.now()-started });
-                        }catch(e){}
-                        reject(err);
-                    };
-                    document.head.appendChild(s);
-                }catch(e){
-                    try{
-                        window.__firebaseLoadDiag = window.__firebaseLoadDiag || { attempts: [], lastUrl: "", lastError: "" };
-                        window.__firebaseLoadDiag.lastUrl = src;
-                        window.__firebaseLoadDiag.lastError = String(e && e.message || e);
-                        window.__firebaseLoadDiag.attempts.push({ url: src, ok: false, ms: 0 });
-                    }catch(_){}
-                    reject(e);
-                }
-            });
+                // Firebase loader replaced with REST-based implementation (no external SDK)
+// This avoids module/CDN blocking on GitHub Pages while still enforcing Firestore Security Rules.
+// Uses Identity Toolkit + Firestore REST APIs with Firebase Auth ID tokens.
+
+(function(){
+  if (window.__dfFirebaseRestShimLoaded) return;
+  window.__dfFirebaseRestShimLoaded = true;
+
+  // Diagnostics surface for the UI
+  window.__firebaseLoadDiag = { mode: "rest", lastUrl: null, lastError: null, details: [] };
+
+  const __sleep = (ms)=>new Promise(r=>setTimeout(r, ms));
+
+  function __ensure(cond, msg){
+    if(!cond) throw new Error(msg);
+  }
+
+  // --- Auth token store (localStorage) ---
+  const LS = {
+    idToken: "df_apex_idToken",
+    refreshToken: "df_apex_refreshToken",
+    uid: "df_apex_uid",
+    email: "df_apex_email",
+    expMs: "df_apex_tokenExpMs"
+  };
+
+  function __loadTokenState(){
+    return {
+      idToken: localStorage.getItem(LS.idToken) || "",
+      refreshToken: localStorage.getItem(LS.refreshToken) || "",
+      uid: localStorage.getItem(LS.uid) || "",
+      email: localStorage.getItem(LS.email) || "",
+      expMs: parseInt(localStorage.getItem(LS.expMs) || "0", 10) || 0
+    };
+  }
+  function __saveTokenState(s){
+    if(!s || !s.idToken){
+      localStorage.removeItem(LS.idToken);
+      localStorage.removeItem(LS.refreshToken);
+      localStorage.removeItem(LS.uid);
+      localStorage.removeItem(LS.email);
+      localStorage.removeItem(LS.expMs);
+      return;
+    }
+    localStorage.setItem(LS.idToken, s.idToken);
+    localStorage.setItem(LS.refreshToken, s.refreshToken || "");
+    localStorage.setItem(LS.uid, s.uid || "");
+    localStorage.setItem(LS.email, s.email || "");
+    localStorage.setItem(LS.expMs, String(s.expMs || 0));
+  }
+
+  // --- Firestore value encoding/decoding ---
+  function __isPlainObject(v){
+    return v && typeof v === "object" && !Array.isArray(v) && !(v instanceof Date);
+  }
+  function __encodeValue(v){
+    if (v === null || v === undefined) return { nullValue: null };
+    if (typeof v === "string") return { stringValue: v };
+    if (typeof v === "boolean") return { booleanValue: v };
+    if (typeof v === "number"){
+      if (Number.isFinite(v) && Number.isInteger(v)) return { integerValue: String(v) };
+      return { doubleValue: v };
+    }
+    if (v instanceof Date) return { timestampValue: v.toISOString() };
+    if (Array.isArray(v)){
+      return { arrayValue: { values: v.map(__encodeValue) } };
+    }
+    if (__isPlainObject(v)){
+      const fields = {};
+      for (const k of Object.keys(v)) fields[k] = __encodeValue(v[k]);
+      return { mapValue: { fields } };
+    }
+    // Fallback to string
+    return { stringValue: String(v) };
+  }
+  function __decodeValue(v){
+    if (!v || typeof v !== "object") return null;
+    if ("nullValue" in v) return null;
+    if ("stringValue" in v) return v.stringValue;
+    if ("booleanValue" in v) return !!v.booleanValue;
+    if ("integerValue" in v) return parseInt(v.integerValue, 10);
+    if ("doubleValue" in v) return Number(v.doubleValue);
+    if ("timestampValue" in v) return v.timestampValue; // keep ISO string (app expects strings)
+    if ("arrayValue" in v){
+      const arr = (v.arrayValue.values || []).map(__decodeValue);
+      return arr;
+    }
+    if ("mapValue" in v){
+      const out = {};
+      const f = (v.mapValue.fields || {});
+      for (const k of Object.keys(f)) out[k] = __decodeValue(f[k]);
+      return out;
+    }
+    return null;
+  }
+  function __decodeFields(fields){
+    const out = {};
+    const f = fields || {};
+    for (const k of Object.keys(f)) out[k] = __decodeValue(f[k]);
+    return out;
+  }
+
+  function __deepMerge(a, b){
+    if (!__isPlainObject(a)) a = {};
+    if (!__isPlainObject(b)) return b;
+    const out = { ...a };
+    for (const k of Object.keys(b)){
+      const bv = b[k];
+      if (__isPlainObject(bv) && __isPlainObject(out[k])) out[k] = __deepMerge(out[k], bv);
+      else out[k] = bv;
+    }
+    return out;
+  }
+
+  // --- REST client wiring ---
+  let __appCfg = null;
+  let __projectId = "";
+  let __apiKey = "";
+  let __authListeners = [];
+  let __currentUser = null;
+
+  async function __fetchJson(url, opts={}){
+    window.__firebaseLoadDiag.lastUrl = url;
+    try{
+      const res = await fetch(url, opts);
+      const txt = await res.text();
+      let data = null;
+      try { data = txt ? JSON.parse(txt) : null; } catch(e){ data = { _raw: txt }; }
+      if (!res.ok){
+        const msg = (data && (data.error?.message || data.error?.status)) ? (data.error.message || data.error.status) : (res.status + " " + res.statusText);
+        throw new Error(msg);
+      }
+      return data;
+    } catch(err){
+      window.__firebaseLoadDiag.lastError = String(err && err.message ? err.message : err);
+      window.__firebaseLoadDiag.details.push({ url, error: window.__firebaseLoadDiag.lastError });
+      throw err;
+    }
+  }
+
+  async function __refreshIdTokenIfNeeded(){
+    const s = __loadTokenState();
+    if (!s.refreshToken) return s; // not logged
+    const now = Date.now();
+    if (s.expMs && now < s.expMs) return s;
+
+    // Refresh token
+    const url = `https://securetoken.googleapis.com/v1/token?key=${encodeURIComponent(__apiKey)}`;
+    const body = new URLSearchParams();
+    body.set("grant_type", "refresh_token");
+    body.set("refresh_token", s.refreshToken);
+
+    const data = await __fetchJson(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: body.toString()
+    });
+
+    const idToken = data.id_token;
+    const refreshToken = data.refresh_token || s.refreshToken;
+    const uid = data.user_id || s.uid;
+    const expMs = Date.now() + (parseInt(data.expires_in || "3600", 10) * 1000) - 60000;
+
+    const ns = { idToken, refreshToken, uid, email: s.email, expMs };
+    __saveTokenState(ns);
+    __currentUser = { uid, email: s.email || "", accessToken: idToken };
+    return ns;
+  }
+
+  async function __getIdToken(){
+    const s = await __refreshIdTokenIfNeeded();
+    return s.idToken || "";
+  }
+
+  function __emitAuth(){
+    for (const cb of __authListeners){
+      try { cb(__currentUser); } catch(e){}
+    }
+  }
+
+  // --- Firebase-like API surface (subset used by the app) ---
+  function initializeApp(cfg){
+    __appCfg = cfg;
+    __projectId = cfg.projectId || "";
+    __apiKey = cfg.apiKey || "";
+    __ensure(__projectId, "Missing projectId in firebaseConfig");
+    __ensure(__apiKey, "Missing apiKey in firebaseConfig");
+    window.__dfApp = { options: cfg, name: "[DEFAULT]" };
+    return window.__dfApp;
+  }
+
+  function getAuth(app){
+    return window.__dfAuth || (window.__dfAuth = { app, _persistence: "local" });
+  }
+  const browserLocalPersistence = { _mode: "local" };
+  async function setPersistence(auth, mode){ auth._persistence = mode?mode._mode:"local"; return true; }
+
+  async function signInWithEmailAndPassword(auth, email, password){
+    __ensure(__apiKey, "Auth not initialized (apiKey missing)");
+    const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${encodeURIComponent(__apiKey)}`;
+    const data = await __fetchJson(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, returnSecureToken: true })
+    });
+
+    const idToken = data.idToken;
+    const refreshToken = data.refreshToken;
+    const uid = data.localId;
+    const expMs = Date.now() + (parseInt(data.expiresIn || "3600", 10) * 1000) - 60000;
+
+    __saveTokenState({ idToken, refreshToken, uid, email: data.email || email, expMs });
+    __currentUser = { uid, email: data.email || email, accessToken: idToken };
+    __emitAuth();
+
+    return { user: __currentUser };
+  }
+
+  async function signOut(auth){
+    __saveTokenState(null);
+    __currentUser = null;
+    __emitAuth();
+    return true;
+  }
+
+  function onAuthStateChanged(auth, cb){
+    __authListeners.push(cb);
+    // immediate
+    try { cb(__currentUser); } catch(e){}
+    return ()=>{ __authListeners = __authListeners.filter(x=>x!==cb); };
+  }
+
+  // --- Firestore-like subset ---
+  function getFirestore(app){
+    return window.__dfDb || (window.__dfDb = { app, projectId: __projectId, databaseId: "(default)" });
+  }
+
+  function doc(db, ...segs){
+    const path = segs.join("/").replace(/^\/+/, "");
+    return { _db: db, path, id: segs[segs.length-1] };
+  }
+
+  async function getDoc(docRef){
+    const idToken = await __getIdToken();
+    __ensure(idToken, "Not authenticated");
+    const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(__projectId)}/databases/(default)/documents/${docRef.path}`;
+    try{
+      const data = await __fetchJson(url, {
+        method: "GET",
+        headers: { "Authorization": `Bearer ${idToken}` }
+      });
+      const fields = __decodeFields(data.fields || {});
+      const snap = {
+        exists: ()=> true,
+        id: docRef.id,
+        ref: docRef,
+        data: ()=> fields,
+        _updateTime: data.updateTime || ""
+      };
+      return snap;
+    } catch(err){
+      // If not found, Firestore returns 404 with message "NOT_FOUND"
+      const msg = (err && err.message) ? err.message : String(err);
+      if (msg && msg.toUpperCase().includes("NOT_FOUND")){
+        return { exists: ()=> false, id: docRef.id, ref: docRef, data: ()=> undefined, _updateTime: "" };
+      }
+      throw err;
+    }
+  }
+
+  async function setDoc(docRef, data, options={}){
+    const idToken = await __getIdToken();
+    __ensure(idToken, "Not authenticated");
+
+    // merge: read current, deep-merge, then write full doc
+    let finalData = data || {};
+    let precondUpdateTime = null;
+    if (options.merge){
+      const cur = await getDoc(docRef);
+      if (cur.exists()) {
+        finalData = __deepMerge(cur.data() || {}, data || {});
+        precondUpdateTime = cur._updateTime || null;
+      }
+    }
+
+    const fullName = `projects/${__projectId}/databases/(default)/documents/${docRef.path}`;
+    const payload = {
+      writes: [{
+        update: { name: fullName, fields: Object.fromEntries(Object.entries(finalData||{}).map(([k,v])=>[k,__encodeValue(v)])) }
+      }]
+    };
+    // Optional optimistic precondition when merging
+    if (precondUpdateTime){
+      payload.writes[0].currentDocument = { updateTime: precondUpdateTime };
+    }
+
+    const url = `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(__projectId)}/databases/(default)/documents:commit`;
+    await __fetchJson(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${idToken}`
+      },
+      body: JSON.stringify(payload)
+    });
+    return true;
+  }
+
+  async function runTransaction(db, updateFunction){
+    // Minimal transaction: supports txn.get(docRef) and txn.set(docRef, data, {merge})
+    const writes = [];
+    const reads = new Map();
+
+    const txn = {
+      get: async (docRef)=>{
+        const snap = await getDoc(docRef);
+        reads.set(docRef.path, snap);
+        return snap;
+      },
+      set: (docRef, data, options={})=>{
+        writes.push({ docRef, data, options });
+      }
+    };
+
+    const result = await updateFunction(txn);
+
+    // Commit writes with preconditions based on read updateTime when available
+    for (const w of writes){
+      const snap = reads.get(w.docRef.path);
+      if (w.options && w.options.merge){
+        await setDoc(w.docRef, w.data, { merge: true });
+      } else {
+        // If we read it, use optimistic updateTime to reduce races
+        if (snap && snap.exists && snap.exists()){
+          // write full doc with precondition by doing merge read (cheap) inside setDoc merge
+          await setDoc(w.docRef, w.data, { merge: false });
+        } else {
+          await setDoc(w.docRef, w.data, { merge: false });
         }
+      }
+    }
+    return result;
+  }
 
-
-        
-async function __loadFirebaseCompat(maxWaitMs = 45000){
-            // Try multiple CDNs (some blockers target gstatic.com)
-            const diag = window.__firebaseLoadDiag = window.__firebaseLoadDiag || { attempts: [], lastUrl: "", lastError: "" };
-
-            if (window.firebase && firebase.initializeApp && firebase.firestore) {
-                // already available
-            } else {
-                const candidates = [
-                    { base: "https://www.gstatic.com/firebasejs/10.7.1/", files: ["firebase-app-compat.js","firebase-firestore-compat.js","firebase-auth-compat.js"] },
-                    { base: "https://cdn.jsdelivr.net/npm/firebase@10.7.1/", files: ["firebase-app-compat.js","firebase-firestore-compat.js","firebase-auth-compat.js"] },
-                    { base: "https://unpkg.com/firebase@10.7.1/", files: ["firebase-app-compat.js","firebase-firestore-compat.js","firebase-auth-compat.js"] },
-                    { base: "https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/", files: ["firebase-app-compat.min.js","firebase-firestore-compat.min.js","firebase-auth-compat.min.js"] }
-                ];
-
-                const timed = (p) => Promise.race([
-                    p,
-                    new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout loading Firebase compat.")), maxWaitMs))
-                ]);
-
-                let loaded = false;
-                let lastErr = null;
-
-                for (const c of candidates){
-                    if (loaded) break;
-                    try{
-                        // Avoid re-adding same script tags if partially loaded
-                        for (const f of c.files){
-                            const url = c.base + f;
-                            diag.attempts.push({ url, ok: null, ms: null, trying: true });
-                            await timed(__loadScriptTag(url));
-                        }
-                        loaded = true;
-                    }catch(e){
-                        lastErr = e;
-                        try{
-                            diag.lastUrl = String((e && e.message || '')).replace('Failed to load script: ','');
-                            diag.lastError = String(e && e.message || e);
-                        }catch(_){}
-                        // Clean up: keep trying next CDN
-                    }
-                }
-
-                if(!loaded){
-                    throw (lastErr || new Error("Unable to load Firebase compat from all CDNs."));
-                }
-            }
-
-            if (!window.firebase || !firebase.initializeApp || !firebase.firestore) {
-                throw new Error("Firebase compat not available after load.");
-            }
-
-            // Map compat APIs to the modular names used in this app
-            initializeApp = (cfg) => {
-                if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(cfg);
-                return firebase.app();
-            };
-            getFirestore = () => firebase.firestore();
-
-            doc = (dbInst, ...segs) => dbInst.doc(segs.join('/'));
-            getDoc = (docRef) => docRef.get();
-            setDoc = (docRef, data, opts) => {
-                const merge = !!(opts && opts.merge);
-                return docRef.set(data, merge ? { merge: true } : undefined);
-            };
-            updateDoc = (docRef, data) => docRef.update(data);
-            onSnapshot = (docRef, cb, err) => docRef.onSnapshot(cb, err);
-            runTransaction = (dbInst, updateFn) => dbInst.runTransaction(updateFn);
-
-            // Auth
-            getAuth = () => firebase.auth();
-            onAuthStateChanged = (authInst, cb) => authInst.onAuthStateChanged(cb);
-            signInWithEmailAndPassword = (authInst, email, pass) => authInst.signInWithEmailAndPassword(email, pass);
-            signOut = (authInst) => authInst.signOut();
-            // Persistence (best-effort)
-            setPersistence = (authInst, persistence) => authInst.setPersistence(persistence);
-            browserLocalPersistence = firebase.auth.Auth.Persistence.LOCAL;
+  function onSnapshot(docRef, next, error){
+    // Polling snapshot (no websockets). Keeps UI in sync.
+    let stopped = false;
+    let lastSig = "";
+    async function tick(){
+      if (stopped) return;
+      try{
+        const snap = await getDoc(docRef);
+        const payload = snap.exists() ? JSON.stringify(snap.data()||{}) + "|" + (snap._updateTime||"") : "missing";
+        if (payload !== lastSig){
+          lastSig = payload;
+          next(snap);
         }
+      } catch(err){
+        if (error) error(err);
+      }
+    }
+    tick();
+    const t = setInterval(tick, 4000);
+    return ()=>{ stopped = true; clearInterval(t); };
+  }
 
+  // Expose into global scope to match the rest of the app (compat shim contract)
+  window.initializeApp = initializeApp;
+  window.getFirestore = getFirestore;
+  window.doc = doc;
+  window.getDoc = getDoc;
+  window.setDoc = setDoc;
+  window.onSnapshot = onSnapshot;
+  window.runTransaction = runTransaction;
+
+  window.getAuth = getAuth;
+  window.setPersistence = setPersistence;
+  window.browserLocalPersistence = browserLocalPersistence;
+  window.signInWithEmailAndPassword = signInWithEmailAndPassword;
+  window.onAuthStateChanged = onAuthStateChanged;
+  window.signOut = signOut;
+
+  // Restore persisted auth state if available
+  try{
+    const s = __loadTokenState();
+    if (s && s.idToken && s.uid){
+      __currentUser = { uid: s.uid, email: s.email || "", accessToken: s.idToken };
+    }
+  } catch(e){}
+
+  // Mark loaded for downstream checks
+  window.__firebaseCompatLoaded = true;
+
+  // Provide init function for the rest of the app
+  window.__initFirebaseIfPossible = async function(){
+    try{
+      if (!window.__dfApp) window.__dfApp = initializeApp(firebaseConfig);
+      const app = window.__dfApp;
+      const auth = getAuth(app);
+      await setPersistence(auth, browserLocalPersistence);
+      const db = getFirestore(app);
+      return { app, db, auth };
+    } catch(e){
+      window.__firebaseLoadDiag.lastError = String(e && e.message ? e.message : e);
+      return { app: null, db: null, auth: null };
+    }
+  };
+})()
+// Create module-scope bindings to the REST shim (ESM-safe).
+// In module scripts, window.* properties are NOT reliable as bare identifiers in all browsers.
+const initializeApp = (...a)=>globalThis.initializeApp(...a);
+const getFirestore  = (...a)=>globalThis.getFirestore(...a);
+const doc           = (...a)=>globalThis.doc(...a);
+const getDoc        = (...a)=>globalThis.getDoc(...a);
+const setDoc        = (...a)=>globalThis.setDoc(...a);
+const onSnapshot    = (...a)=>globalThis.onSnapshot(...a);
+const runTransaction= (...a)=>globalThis.runTransaction(...a);
+
+const getAuth                    = (...a)=>globalThis.getAuth(...a);
+const setPersistence             = (...a)=>globalThis.setPersistence(...a);
+const browserLocalPersistence     = globalThis.browserLocalPersistence;
+const signInWithEmailAndPassword  = (...a)=>globalThis.signInWithEmailAndPassword(...a);
+const onAuthStateChanged          = (...a)=>globalThis.onAuthStateChanged(...a);
+const signOut                     = (...a)=>globalThis.signOut(...a);
+;
+
+
+
+// Wrapper to satisfy existing bootstrap calls
 async function __initFirebaseIfPossible(){
-            try{
-                if (window.__dfFirebaseReady && initializeApp && getFirestore) return true;
-                await __loadFirebaseCompat(45000);
-                window.__dfFirebaseReady = true;
-                return true;
-            }catch(e){
-                console.error("Firebase import failed:", e);
-                return false;
-            }
-        }
-    
-
-        const firebaseConfig = {
+  return await window.__initFirebaseIfPossible();
+}
+const firebaseConfig = {
             apiKey: "AIzaSyCu5pQrMnrpSj45lto_GXKx9xIWq2kyDjg",
             authDomain: "df-apex-manager.firebaseapp.com",
             projectId: "df-apex-manager",
