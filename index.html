@@ -1,4 +1,12 @@
 <!DOCTYPE html>
+<!-- 
+═══════════════════════════════════════════════
+  DF APEX MANAGER - FIXED VERSION v2.0
+  DATE: 2026-02-11
+  FIXES: Login modal + Loading screen bypass
+═══════════════════════════════════════════════
+-->
+
 <!-- DF APEX MANAGER • STEP3 AUTH • BUILD 2026-02-10 23:51 UTC -->
 <html lang="pt-BR">
 <head>
@@ -2341,7 +2349,7 @@ async function callOpenAI(question){
 
 
 <!-- Firebase Auth Modal (cloud sync gate) -->
-<div id="auth-modal" class="fixed inset-0 z-[99998] hidden">
+<div id="auth-modal" class="fixed inset-0 z-[99998]" hidden">
   <div class="absolute inset-0 bg-black/70"></div>
   <div class="relative w-full h-full flex items-center justify-center p-4">
     <div class="w-full max-w-md bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-5">
@@ -4666,11 +4674,19 @@ ${period}
         }
 
         window.openAuthModal = function(){
+            console.log('[v2.0] 🔓 Opening auth modal');
             try{
                 __setAuthModalText();
                 __showAuthError('');
                 const modal = document.getElementById('auth-modal');
-                if(modal) modal.classList.remove('hidden');
+                if(modal) {
+                    modal.classList.remove('hidden');
+                    modal.style.display = 'block';
+                    console.log('[v2.0] ✅ Modal opened');
+                } else {
+                    console.error('[v2.0] ❌ Modal not found');
+                    alert('Login modal não encontrado. Versão incorreta?');
+                }
                 const ws = document.getElementById('auth-ws-input');
                 const docid = document.getElementById('auth-docid-input');
                 const email = document.getElementById('auth-email-input');
@@ -4678,7 +4694,7 @@ ${period}
                 if(docid) docid.value = __getCloudDocId() || CLOUD_DOC_ID;
                 if(email && !email.value) email.focus();
                 try { lucide.createIcons(); } catch(e){}
-            }catch(e){}
+            }catch(e){ console.error('[v2.0] Modal error:', e); }
         };
 
         window.closeAuthModal = function(){
@@ -8064,13 +8080,13 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
     };
   } else {
     document.addEventListener("DOMContentLoaded", () => {
-        // === FIX: Hide loading screen after 3 seconds ===
+        // === FIX v2.0: Hide loading screen after 3 seconds ===
         setTimeout(() => {
             try {
                 const loader = document.getElementById('app-loader');
                 if(loader) {
                     loader.style.display = 'none';
-                    console.log('✅ Loading screen hidden');
+                    console.log('✅ [v2.0] Loading screen hidden');
                 }
             } catch(e) { console.error('Bypass error:', e); }
         }, 3000);
