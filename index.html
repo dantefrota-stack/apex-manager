@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <!--
 ═══════════════════════════════════════════════
-  DF APEX MANAGER - FIXED VERSION v3.0 FINAL
+  DF APEX MANAGER - v4.2 FIXED
   DATE: 2026-02-11
-  FIXES: Modal injected via JavaScript
-  THIS VERSION WILL WORK GUARANTEED
+  FIXED: Login and Offline mode now work properly
 ═══════════════════════════════════════════════
 -->
 
@@ -357,7 +356,66 @@ body.dark .bg-white { background-color: #1e293b; }
 </style>
 
 </head>
-<body class="pb-12 transition-colors duration-300">
+<body style="margin:0;padding:0;" class="pb-12 transition-colors duration-300">
+
+<!-- LOGIN SCREEN v4.2 -->
+<div id="login-screen" class="fixed inset-0 z-[99999] bg-gradient-to-br from-indigo-900 via-slate-900 to-slate-900 flex items-center justify-center">
+  <div class="w-full max-w-md p-8">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700">
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-extrabold text-slate-800 dark:text-white mb-2">DF Apex Manager</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400">Entre com seu email e senha</p>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 block">Email</label>
+          <input id="login-email" type="email" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="seu@email.com" autocomplete="username">
+        </div>
+
+        <div>
+          <label class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 block">Senha</label>
+          <input id="login-password" type="password" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="••••••••" autocomplete="current-password">
+        </div>
+
+        <details class="mt-2">
+          <summary class="text-xs text-slate-500 dark:text-slate-400 cursor-pointer hover:text-slate-700 dark:hover:text-slate-200 select-none">⚙️ Configurações avançadas (opcional)</summary>
+          <div class="mt-3 space-y-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+            <div>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-400 mb-1 block">Workspace ID</label>
+              <input id="login-workspace" type="text" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" placeholder="default" value="default">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-slate-600 dark:text-slate-400 mb-1 block">Cloud Doc ID</label>
+              <input id="login-docid" type="text" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" placeholder="dante_data" value="dante_data">
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 italic">💡 Esses campos definem o caminho do Firestore</p>
+          </div>
+        </details>
+
+        <div id="login-error" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl text-sm font-medium"></div>
+
+        <button id="login-btn" type="button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition duration-200 flex items-center justify-center gap-2 shadow-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+          Entrar
+        </button>
+
+        <button id="offline-btn" type="button" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded-xl transition duration-200 flex items-center justify-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"></line><path d="M8.5 16.5a5 5 0 0 1 7 0"></path><path d="M2 8.82a15 15 0 0 1 4.17-2.65"></path><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"></path><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"></path><path d="M5 13a10 10 0 0 1 5.24-2.76"></path><circle cx="12" cy="20" r="1"></circle></svg>
+          Modo Offline
+        </button>
+      </div>
+
+      <p class="text-xs text-center text-slate-500 dark:text-slate-400 mt-6">
+        🔒 Autenticação segura via Firebase
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="main-app" class="hidden">
+
 
 <div id="d2InfoOverlay" class="d2-info-overlay" role="dialog" aria-modal="true" aria-hidden="true">
   <div class="d2-info-modal">
@@ -2349,29 +2407,8 @@ async function callOpenAI(question){
   </div>
 
 
-
-</div>
-
-
-<script>
-// ============================================================================
-// AUTH MODAL INJECTOR v3.0 - GUARANTEED FIX
-// Injects modal HTML directly into DOM via JavaScript
-// ============================================================================
-
-(function() {
-    console.log('[v3.0] 🚀 Starting auth modal injection...');
-
-    // Remove any broken auth-modal first
-    const oldModal = document.getElementById('auth-modal');
-    if(oldModal) {
-        oldModal.remove();
-        console.log('[v3.0] Removed old broken modal');
-    }
-
-    // Create the complete modal HTML
-    const modalHTML = `
-<div id="auth-modal" class="fixed inset-0 z-[99998] hidden">
+<!-- Firebase Auth Modal (cloud sync gate) -->
+<div id="auth-modal" class="fixed inset-0 z-[99998]">
   <div class="absolute inset-0 bg-black/70"></div>
   <div class="relative w-full h-full flex items-center justify-center p-4">
     <div class="w-full max-w-md bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-5">
@@ -2391,99 +2428,183 @@ async function callOpenAI(question){
       <div class="mt-4 space-y-3">
         <div>
           <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Email</label>
-          <input id="auth-email-input" type="email" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-700 px-3 py-2" placeholder="you@email.com" autocomplete="username">
+          <input id="auth-email-input" type="email" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2" placeholder="you@email.com" autocomplete="username">
         </div>
         <div>
           <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Password</label>
-          <input id="auth-pass-input" type="password" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-700 px-3 py-2" placeholder="********" autocomplete="current password">
+          <input id="auth-pass-input" type="password" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2" placeholder="••••••••" autocomplete="current-password">
         </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Workspace ID (opcional)</label>
+            <input id="auth-ws-input" type="text" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm" placeholder="default">
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Cloud Doc ID</label>
+            <input id="auth-docid-input" type="text" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm" placeholder="dante_data">
+          </div>
+        </div>
+
+        <div id="auth-error" class="hidden text-xs text-red-500 font-bold bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-2"></div>
+
+        <button id="auth-login-btn" type="button" onclick="window.dfAuthSignIn && window.dfAuthSignIn()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-extrabold transition">
+          Entrar
+        </button>
+
+        <button type="button" onclick="window.forceOfflineMode && window.forceOfflineMode(); window.__resolveAuthWait && window.__resolveAuthWait(null);" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2.5 rounded-xl font-extrabold transition flex items-center justify-center gap-2">
+          <i data-lucide="wifi-off" class="w-4 h-4"></i>
+          Modo Offline
+        </button>
       </div>
 
-      <div class="grid grid-cols-2 gap-3 mt-4">
-        <div>
-          <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Workspace ID (opcional)</label>
-          <input id="auth-ws-input" type="text" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm" placeholder="default">
-        </div>
-        <div>
-          <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Cloud Doc ID</label>
-          <input id="auth-docid-input" type="text" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm" placeholder="dante_data">
-        </div>
+      <div class="mt-4 text-[11px] text-slate-500 dark:text-slate-400">
+        <span class="font-bold">Nota:</span> o usuário precisa estar na lista <span class="font-mono">allowedUids</span> no workspace definido nas rules do Firestore.
       </div>
-
-      <div id="auth-error" class="hidden text-xs text-red-500 font-bold bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-2 mt-3"></div>
-
-      <button id="auth-login-btn" type="button" onclick="window.doAuthSignIn && window.doAuthSignIn()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-extrabold transition mt-4">
-        Entrar
-      </button>
-
-      <button type="button" onclick="window.forceOfflineMode && window.forceOfflineMode(); window.__resolveAuthMatt && window.__resolveAuthMatt(null);" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2.5 rounded-xl font-extrabold transition flex items-center justify-center gap-2 mt-2">
-        <i data-lucide="wifi-off" class="w-4 h-4"></i>
-        Modo Offline
-      </button>
     </div>
   </div>
-
-  <div class="mt-4 text-[11px] text-slate-500 dark:text-slate-400">
-    <span class="font-bold">Nota:</span> <span> o usuário precisa estar na lista <span class="font-mono">allowedIds</span> no workspace definido nas rules do Firestore.</span>
-  </div>
 </div>
-`;
 
-    // Inject into body
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    console.log('[v3.0] ✅ Modal HTML injected successfully');
+</div>
 
-    // Verify it exists
-    const newModal = document.getElementById('auth-modal');
-    if(newModal) {
-        console.log('[v3.0] ✅ Modal verified in DOM');
+<script>
+// ============================================================================
+// v4.2 FIXED - Proper App Integration
+// ============================================================================
 
-        // Try to initialize icons
-        try {
-            if(window.lucide) {
-                lucide.createIcons();
-                console.log('[v3.0] ✅ Icons initialized');
-            }
-        } catch(e) {
-            console.log('[v3.0] ⚠️ Could not init icons:', e);
-        }
+(function() {
+    console.log('[v4.2] 🚀 Login system initializing...');
+
+    // Wait for DOM
+    if(document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initLogin);
     } else {
-        console.error('[v3.0] ❌ CRITICAL: Modal injection failed!');
+        initLogin();
     }
 
-    // Override openAuthModal to guarantee it works
-    window.openAuthModal = function(){
-        console.log('[v3.0] 🔓 Opening auth modal');
-        const modal = document.getElementById('auth-modal');
-        if(modal) {
-            try {
-                // Set values
-                const ws = document.getElementById('auth-ws-input');
-                const docid = document.getElementById('auth-docid-input');
-                const email = document.getElementById('auth-email-input');
+    function initLogin() {
+        console.log('[v4.2] ✅ DOM ready, setting up login');
 
-                if(ws) ws.value = window.__getWorkspaceId ? window.__getWorkspaceId() : 'default';
-                if(docid) docid.value = window.__getCloudDocId ? window.__getCloudDocId() : 'dante_data';
+        const loginBtn = document.getElementById('login-btn');
+        const offlineBtn = document.getElementById('offline-btn');
+        const emailInput = document.getElementById('login-email');
+        const passInput = document.getElementById('login-password');
 
-                // Show modal
-                modal.classList.remove('hidden');
-                modal.style.display = 'block';
+        if(loginBtn) {
+            loginBtn.onclick = handleLogin;
+            console.log('[v4.2] ✅ Login button connected');
+        }
 
-                if(email && !email.value) email.focus();
+        if(offlineBtn) {
+            offlineBtn.onclick = handleOfflineMode;
+            console.log('[v4.2] ✅ Offline button connected');
+        }
 
-                console.log('[v3.0] ✅ Modal opened successfully');
-            } catch(e) {
-                console.error('[v3.0] ❌ Error opening modal:', e);
+        // Enter key
+        if(emailInput) emailInput.addEventListener('keypress', e => { if(e.key === 'Enter') handleLogin(); });
+        if(passInput) passInput.addEventListener('keypress', e => { if(e.key === 'Enter') handleLogin(); });
+
+        console.log('[v4.2] ✅ Login screen ready');
+    }
+
+    window.handleLogin = async function() {
+        console.log('[v4.2] 🔐 Login attempt');
+
+        const email = document.getElementById('login-email').value.trim();
+        const password = document.getElementById('login-password').value;
+        const workspace = document.getElementById('login-workspace')?.value.trim() || 'default';
+        const docid = document.getElementById('login-docid')?.value.trim() || 'dante_data';
+
+        const errorDiv = document.getElementById('login-error');
+        const loginBtn = document.getElementById('login-btn');
+
+        if(!email || !password) {
+            showError('❌ Preencha email e senha');
+            return;
+        }
+
+        errorDiv.classList.add('hidden');
+        loginBtn.disabled = true;
+        loginBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+
+        try {
+            console.log('[v4.2] Checking Firebase...');
+
+            if(!window.firebase || !firebase.auth) {
+                throw new Error('Firebase não inicializado');
             }
-        } else {
-            console.error('[v3.0] ❌ Modal element not found!');
-            alert('ERRO: Modal não encontrado. Atualize a página.');
+
+            console.log('[v4.2] Authenticating...');
+            const userCred = await firebase.auth().signInWithEmailAndPassword(email, password);
+
+            console.log('[v4.2] ✅ Auth success:', userCred.user.email);
+
+            // Store settings
+            localStorage.setItem('workspaceId', workspace);
+            localStorage.setItem('cloudDocId', docid);
+
+            // Switch to main app
+            switchToMainApp();
+
+        } catch(error) {
+            console.error('[v4.2] ❌ Login error:', error);
+
+            let msg = 'Erro: ';
+            if(error.code === 'auth/user-not-found') msg += 'Usuário não encontrado';
+            else if(error.code === 'auth/wrong-password') msg += 'Senha incorreta';
+            else if(error.code === 'auth/invalid-email') msg += 'Email inválido';
+            else if(error.code === 'auth/network-request-failed') msg += 'Sem conexão';
+            else msg += error.message;
+
+            showError(msg);
+
+            loginBtn.disabled = false;
+            loginBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Entrar';
         }
     };
 
-    console.log('[v3.0] ✅ Auth modal system ready');
+    window.handleOfflineMode = function() {
+        console.log('[v4.2] 📴 Offline mode selected');
+        switchToMainApp();
+    };
+
+    function switchToMainApp() {
+        console.log('[v4.2] Switching to main app...');
+
+        const loginScreen = document.getElementById('login-screen');
+        const mainApp = document.getElementById('main-app');
+        const loader = document.getElementById('app-loader');
+
+        if(loginScreen) {
+            loginScreen.style.display = 'none';
+            console.log('[v4.2] ✅ Login screen hidden');
+        }
+
+        if(mainApp) {
+            mainApp.classList.remove('hidden');
+            mainApp.style.display = 'block';
+            console.log('[v4.2] ✅ Main app shown');
+        }
+
+        if(loader) {
+            loader.style.display = 'none';
+            console.log('[v4.2] ✅ Loader hidden');
+        }
+
+        console.log('[v4.2] ✅ Switched to main app successfully');
+    }
+
+    function showError(msg) {
+        const errorDiv = document.getElementById('login-error');
+        if(errorDiv) {
+            errorDiv.textContent = msg;
+            errorDiv.classList.remove('hidden');
+        }
+    }
+
 })();
 </script>
+
 </body>
 </html>`;
         }
@@ -4608,139 +4729,7 @@ ${period}
                       <tr><td><b>Pior Dia</b></td><td>${metricWorst}</td></tr>
                     </table>
 
-                    
-<script>
-// ============================================================================
-// AUTH MODAL INJECTOR v3.0 - GUARANTEED FIX
-// Injects modal HTML directly into DOM via JavaScript
-// ============================================================================
-
-(function() {
-    console.log('[v3.0] 🚀 Starting auth modal injection...');
-
-    // Remove any broken auth-modal first
-    const oldModal = document.getElementById('auth-modal');
-    if(oldModal) {
-        oldModal.remove();
-        console.log('[v3.0] Removed old broken modal');
-    }
-
-    // Create the complete modal HTML
-    const modalHTML = `
-<div id="auth-modal" class="fixed inset-0 z-[99998] hidden">
-  <div class="absolute inset-0 bg-black/70"></div>
-  <div class="relative w-full h-full flex items-center justify-center p-4">
-    <div class="w-full max-w-md bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-5">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <h3 class="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-            <i data-lucide="shield" class="w-5 h-5 text-indigo-500"></i>
-            <span id="auth-title">Login</span>
-          </h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" id="auth-subtitle">Entre para sincronizar com a nuvem.</p>
-        </div>
-        <button type="button" onclick="window.closeAuthModal && window.closeAuthModal()" class="text-slate-400 hover:text-slate-200">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="mt-4 space-y-3">
-        <div>
-          <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Email</label>
-          <input id="auth-email-input" type="email" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-700 px-3 py-2" placeholder="you@email.com" autocomplete="username">
-        </div>
-        <div>
-          <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Password</label>
-          <input id="auth-pass-input" type="password" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-700 px-3 py-2" placeholder="********" autocomplete="current password">
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3 mt-4">
-        <div>
-          <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Workspace ID (opcional)</label>
-          <input id="auth-ws-input" type="text" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm" placeholder="default">
-        </div>
-        <div>
-          <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Cloud Doc ID</label>
-          <input id="auth-docid-input" type="text" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm" placeholder="dante_data">
-        </div>
-      </div>
-
-      <div id="auth-error" class="hidden text-xs text-red-500 font-bold bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-2 mt-3"></div>
-
-      <button id="auth-login-btn" type="button" onclick="window.doAuthSignIn && window.doAuthSignIn()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-extrabold transition mt-4">
-        Entrar
-      </button>
-
-      <button type="button" onclick="window.forceOfflineMode && window.forceOfflineMode(); window.__resolveAuthMatt && window.__resolveAuthMatt(null);" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2.5 rounded-xl font-extrabold transition flex items-center justify-center gap-2 mt-2">
-        <i data-lucide="wifi-off" class="w-4 h-4"></i>
-        Modo Offline
-      </button>
-    </div>
-  </div>
-
-  <div class="mt-4 text-[11px] text-slate-500 dark:text-slate-400">
-    <span class="font-bold">Nota:</span> <span> o usuário precisa estar na lista <span class="font-mono">allowedIds</span> no workspace definido nas rules do Firestore.</span>
-  </div>
-</div>
-`;
-
-    // Inject into body
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    console.log('[v3.0] ✅ Modal HTML injected successfully');
-
-    // Verify it exists
-    const newModal = document.getElementById('auth-modal');
-    if(newModal) {
-        console.log('[v3.0] ✅ Modal verified in DOM');
-
-        // Try to initialize icons
-        try {
-            if(window.lucide) {
-                lucide.createIcons();
-                console.log('[v3.0] ✅ Icons initialized');
-            }
-        } catch(e) {
-            console.log('[v3.0] ⚠️ Could not init icons:', e);
-        }
-    } else {
-        console.error('[v3.0] ❌ CRITICAL: Modal injection failed!');
-    }
-
-    // Override openAuthModal to guarantee it works
-    window.openAuthModal = function(){
-        console.log('[v3.0] 🔓 Opening auth modal');
-        const modal = document.getElementById('auth-modal');
-        if(modal) {
-            try {
-                // Set values
-                const ws = document.getElementById('auth-ws-input');
-                const docid = document.getElementById('auth-docid-input');
-                const email = document.getElementById('auth-email-input');
-
-                if(ws) ws.value = window.__getWorkspaceId ? window.__getWorkspaceId() : 'default';
-                if(docid) docid.value = window.__getCloudDocId ? window.__getCloudDocId() : 'dante_data';
-
-                // Show modal
-                modal.classList.remove('hidden');
-                modal.style.display = 'block';
-
-                if(email && !email.value) email.focus();
-
-                console.log('[v3.0] ✅ Modal opened successfully');
-            } catch(e) {
-                console.error('[v3.0] ❌ Error opening modal:', e);
-            }
-        } else {
-            console.error('[v3.0] ❌ Modal element not found!');
-            alert('ERRO: Modal não encontrado. Atualize a página.');
-        }
-    };
-
-    console.log('[v3.0] ✅ Auth modal system ready');
-})();
-</script>
-</body></html>`;
+                    </body></html>`;
                     w.document.open();
                     w.document.write(html);
                     w.document.close();
@@ -9030,137 +9019,5 @@ We normalize daily buckets so:
 </script>
 
 
-
-<script>
-// ============================================================================
-// AUTH MODAL INJECTOR v3.0 - GUARANTEED FIX
-// Injects modal HTML directly into DOM via JavaScript
-// ============================================================================
-
-(function() {
-    console.log('[v3.0] 🚀 Starting auth modal injection...');
-
-    // Remove any broken auth-modal first
-    const oldModal = document.getElementById('auth-modal');
-    if(oldModal) {
-        oldModal.remove();
-        console.log('[v3.0] Removed old broken modal');
-    }
-
-    // Create the complete modal HTML
-    const modalHTML = `
-<div id="auth-modal" class="fixed inset-0 z-[99998] hidden">
-  <div class="absolute inset-0 bg-black/70"></div>
-  <div class="relative w-full h-full flex items-center justify-center p-4">
-    <div class="w-full max-w-md bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-5">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <h3 class="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-            <i data-lucide="shield" class="w-5 h-5 text-indigo-500"></i>
-            <span id="auth-title">Login</span>
-          </h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" id="auth-subtitle">Entre para sincronizar com a nuvem.</p>
-        </div>
-        <button type="button" onclick="window.closeAuthModal && window.closeAuthModal()" class="text-slate-400 hover:text-slate-200">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="mt-4 space-y-3">
-        <div>
-          <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Email</label>
-          <input id="auth-email-input" type="email" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-700 px-3 py-2" placeholder="you@email.com" autocomplete="username">
-        </div>
-        <div>
-          <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Password</label>
-          <input id="auth-pass-input" type="password" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-700 px-3 py-2" placeholder="********" autocomplete="current password">
-        </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3 mt-4">
-        <div>
-          <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Workspace ID (opcional)</label>
-          <input id="auth-ws-input" type="text" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm" placeholder="default">
-        </div>
-        <div>
-          <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Cloud Doc ID</label>
-          <input id="auth-docid-input" type="text" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm" placeholder="dante_data">
-        </div>
-      </div>
-
-      <div id="auth-error" class="hidden text-xs text-red-500 font-bold bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-2 mt-3"></div>
-
-      <button id="auth-login-btn" type="button" onclick="window.doAuthSignIn && window.doAuthSignIn()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-extrabold transition mt-4">
-        Entrar
-      </button>
-
-      <button type="button" onclick="window.forceOfflineMode && window.forceOfflineMode(); window.__resolveAuthMatt && window.__resolveAuthMatt(null);" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2.5 rounded-xl font-extrabold transition flex items-center justify-center gap-2 mt-2">
-        <i data-lucide="wifi-off" class="w-4 h-4"></i>
-        Modo Offline
-      </button>
-    </div>
-  </div>
-
-  <div class="mt-4 text-[11px] text-slate-500 dark:text-slate-400">
-    <span class="font-bold">Nota:</span> <span> o usuário precisa estar na lista <span class="font-mono">allowedIds</span> no workspace definido nas rules do Firestore.</span>
-  </div>
-</div>
-`;
-
-    // Inject into body
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    console.log('[v3.0] ✅ Modal HTML injected successfully');
-
-    // Verify it exists
-    const newModal = document.getElementById('auth-modal');
-    if(newModal) {
-        console.log('[v3.0] ✅ Modal verified in DOM');
-
-        // Try to initialize icons
-        try {
-            if(window.lucide) {
-                lucide.createIcons();
-                console.log('[v3.0] ✅ Icons initialized');
-            }
-        } catch(e) {
-            console.log('[v3.0] ⚠️ Could not init icons:', e);
-        }
-    } else {
-        console.error('[v3.0] ❌ CRITICAL: Modal injection failed!');
-    }
-
-    // Override openAuthModal to guarantee it works
-    window.openAuthModal = function(){
-        console.log('[v3.0] 🔓 Opening auth modal');
-        const modal = document.getElementById('auth-modal');
-        if(modal) {
-            try {
-                // Set values
-                const ws = document.getElementById('auth-ws-input');
-                const docid = document.getElementById('auth-docid-input');
-                const email = document.getElementById('auth-email-input');
-
-                if(ws) ws.value = window.__getWorkspaceId ? window.__getWorkspaceId() : 'default';
-                if(docid) docid.value = window.__getCloudDocId ? window.__getCloudDocId() : 'dante_data';
-
-                // Show modal
-                modal.classList.remove('hidden');
-                modal.style.display = 'block';
-
-                if(email && !email.value) email.focus();
-
-                console.log('[v3.0] ✅ Modal opened successfully');
-            } catch(e) {
-                console.error('[v3.0] ❌ Error opening modal:', e);
-            }
-        } else {
-            console.error('[v3.0] ❌ Modal element not found!');
-            alert('ERRO: Modal não encontrado. Atualize a página.');
-        }
-    };
-
-    console.log('[v3.0] ✅ Auth modal system ready');
-})();
-</script>
 </body>
 </html>
