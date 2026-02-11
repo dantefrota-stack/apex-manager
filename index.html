@@ -1213,8 +1213,10 @@ async function __loadFirebaseCompat(maxWaitMs = 45000){
             // Try multiple CDNs (some blockers target gstatic.com)
             const diag = window.__firebaseLoadDiag = window.__firebaseLoadDiag || { attempts: [], lastUrl: "", lastError: "" };
 
-            if (window.firebase && firebase.initializeApp && firebase.firestore) {
-                // already available
+            // Force fresh load - clear any partial/broken firebase object
+            try { if(window.firebase) delete window.firebase; } catch(e){}
+            if (false) {
+                // Disabled: don't trust cached firebase
             } else {
                 const candidates = [
                     { base: "https://www.gstatic.com/firebasejs/10.7.1/", files: ["firebase-app-compat.js","firebase-firestore-compat.js","firebase-auth-compat.js"] },
@@ -1289,6 +1291,8 @@ async function __loadFirebaseCompat(maxWaitMs = 45000){
 
 async function __initFirebaseIfPossible(){
             try{
+                // Force reset of Firebase ready flag to ensure fresh initialization
+                window.__dfFirebaseReady = false;
                 if (window.__dfFirebaseReady && initializeApp && getFirestore) return true;
                 await __loadFirebaseCompat(45000);
                 window.__dfFirebaseReady = true;
