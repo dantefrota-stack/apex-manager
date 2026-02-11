@@ -378,16 +378,16 @@ body.dark .bg-white { background-color: #1e293b; }
           <input id="login-password" type="password" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="••••••••" autocomplete="current-password">
         </div>
 
-        <details class="mt-2 hidden">
+        <details class="mt-2">
           <summary class="text-xs text-slate-500 dark:text-slate-400 cursor-pointer hover:text-slate-700 dark:hover:text-slate-200 select-none">⚙️ Configurações avançadas (opcional)</summary>
           <div class="mt-3 space-y-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
             <div>
               <label class="text-xs font-bold text-slate-600 dark:text-slate-400 mb-1 block">Workspace ID</label>
-              <input id="login-workspace" type="text" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" placeholder="df_apex_manager" value="df_apex_manager" readonly disabled>
+              <input id="login-workspace" type="text" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" placeholder="default" value="default">
             </div>
             <div>
               <label class="text-xs font-bold text-slate-600 dark:text-slate-400 mb-1 block">Cloud Doc ID</label>
-              <input id="login-docid" type="text" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" placeholder="dante_data" value="dante_data" readonly disabled>
+              <input id="login-docid" type="text" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm" placeholder="df_apex_manager" value="dante_data">
             </div>
             <p class="text-xs text-slate-500 dark:text-slate-400 italic">💡 Esses campos definem o caminho do Firestore</p>
           </div>
@@ -2408,7 +2408,7 @@ async function callOpenAI(question){
 
 
 <!-- Firebase Auth Modal (cloud sync gate) -->
-<div id="auth-modal" class="fixed inset-0 z-[99998] hidden">
+<div id="auth-modal" class="fixed inset-0 z-[99998]">
   <div class="absolute inset-0 bg-black/70"></div>
   <div class="relative w-full h-full flex items-center justify-center p-4">
     <div class="w-full max-w-md bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-5">
@@ -2435,18 +2435,16 @@ async function callOpenAI(question){
           <input id="auth-pass-input" type="password" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2" placeholder="••••••••" autocomplete="current-password">
         </div>
 
-        <div class="grid grid-cols-2 gap-3 hidden">
+        <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Workspace ID (opcional)</label>
             <input id="auth-ws-input" type="text" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm" placeholder="default">
           </div>
           <div>
             <label class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Cloud Doc ID</label>
-            <input id="auth-docid-input" type="text" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm" placeholder="dante_data">
+            <input id="auth-docid-input" type="text" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2 text-sm" placeholder="df_apex_manager">
           </div>
         </div>
-
-        <div class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Workspace locked: <span class="font-bold">df_apex_manager</span></div>
 
         <div id="auth-error" class="hidden text-xs text-red-500 font-bold bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-2"></div>
 
@@ -2475,6 +2473,9 @@ async function callOpenAI(question){
 // ============================================================================
 
 (function() {
+
+    // --- LOCKED WORKSPACE: always use workspaces/df_apex_manager (no legacy paths) ---
+    window.DF_LOCKED_WORKSPACE_ID = "df_apex_manager";
     console.log('[v4.2] 🚀 Login system initializing...');
 
     // Wait for DOM
@@ -2486,6 +2487,22 @@ async function callOpenAI(question){
 
     function initLogin() {
         console.log('[v4.2] ✅ DOM ready, setting up login');
+
+        // Lock workspace/doc inputs everywhere to avoid Firestore path conflicts
+        try{
+            // Login screen optional fields (if present)
+            const ws1 = document.getElementById('login-workspace');
+            if(ws1){ ws1.value = 'df_apex_manager'; ws1.disabled = true; ws1.setAttribute('readonly','readonly'); ws1.parentElement?.classList?.add('hidden'); }
+            const doc1 = document.getElementById('login-docid');
+            if(doc1){ doc1.value = 'df_apex_manager'; doc1.disabled = true; doc1.setAttribute('readonly','readonly'); doc1.parentElement?.classList?.add('hidden'); }
+
+            // Auth modal advanced fields
+            const ws2 = document.getElementById('auth-ws-input');
+            if(ws2){ ws2.value = 'df_apex_manager'; ws2.disabled = true; ws2.setAttribute('readonly','readonly'); ws2.parentElement?.classList?.add('hidden'); }
+            const doc2 = document.getElementById('auth-docid-input');
+            if(doc2){ doc2.value = 'df_apex_manager'; doc2.disabled = true; doc2.setAttribute('readonly','readonly'); doc2.parentElement?.classList?.add('hidden'); }
+        }catch(e){}
+
 
         const loginBtn = document.getElementById('login-btn');
         const offlineBtn = document.getElementById('offline-btn');
@@ -2512,10 +2529,18 @@ async function callOpenAI(question){
     window.handleLogin = async function() {
         console.log('[v4.2] 🔐 Login attempt');
 
+        // Enforce locked workspace/docId to prevent path conflicts
+        try{
+            const wsEl = document.getElementById('login-workspace');
+            if(wsEl){ wsEl.value = LOCKED_WORKSPACE_ID; wsEl.setAttribute('readonly','readonly'); wsEl.disabled = true; wsEl.parentElement?.classList?.add('hidden'); }
+            const docEl = document.getElementById('login-docid');
+            if(docEl){ docEl.value = CLOUD_DOC_ID; docEl.setAttribute('readonly','readonly'); docEl.disabled = true; docEl.parentElement?.classList?.add('hidden'); }
+        }catch(e){}
+
         const email = document.getElementById('login-email').value.trim();
         const password = document.getElementById('login-password').value;
-        const workspace = "df_apex_manager";
-        const docid = "dante_data";
+        const workspace = LOCKED_WORKSPACE_ID;
+        const docid = CLOUD_DOC_ID;
 
         const errorDiv = document.getElementById('login-error');
         const loginBtn = document.getElementById('login-btn');
@@ -2537,17 +2562,13 @@ async function callOpenAI(question){
             }
 
             console.log('[v4.2] Authenticating...');
-            try{ await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL); }catch(_e){}
             const userCred = await firebase.auth().signInWithEmailAndPassword(email, password);
 
             console.log('[v4.2] ✅ Auth success:', userCred.user.email);
 
-            // Store settings (locked + in-sync keys)
-            localStorage.setItem("df_workspace_id", workspace);
-            localStorage.setItem("df_cloud_doc_id", docid);
-            localStorage.setItem("workspaceId", workspace);
-            localStorage.setItem("cloudDocId", docid);
-
+            // Store settings
+            try{ localStorage.setItem(DF_WS_KEY, workspace); }catch(e){}
+            try{ localStorage.setItem(DF_DOCID_KEY, docid); }catch(e){}
 
             // Switch to main app
             switchToMainApp();
@@ -2609,7 +2630,7 @@ async function callOpenAI(question){
     }
 
 })();
-</script>
+<\/script>
 
 </body>
 </html>`;
@@ -4748,10 +4769,9 @@ ${period}
 
 
                 // --- CLOUD (Realtime + Debounced Save; cloud-first) ---
-        const CLOUD_DOC_COL = "users";
-        const CLOUD_DOC_ID  = "dante_data";
         const LOCKED_WORKSPACE_ID = "df_apex_manager";
-        const LOCKED_CLOUD_DOC_ID  = "dante_data";
+        const CLOUD_DOC_COL = "workspaces";
+        const CLOUD_DOC_ID  = LOCKED_WORKSPACE_ID;
 
         // --- AUTH + WORKSPACE (Firebase Auth gate for Firestore) ---
         const DF_WS_KEY = "df_workspace_id";
@@ -4760,33 +4780,28 @@ ${period}
             return LOCKED_WORKSPACE_ID;
         }
         function __getCloudDocId(){
-            return LOCKED_CLOUD_DOC_ID;
+            return CLOUD_DOC_ID;
         }
-        function __setWorkspaceId(_v){
-            try{
-                localStorage.setItem(DF_WS_KEY, LOCKED_WORKSPACE_ID);
-                // legacy/debug keys kept in sync (ignored by app)
-                localStorage.setItem("workspaceId", LOCKED_WORKSPACE_ID);
-            }catch(e){}
+        function __setWorkspaceId(v){
+            // Locked: prevent path conflicts
+            try{ localStorage.setItem(DF_WS_KEY, LOCKED_WORKSPACE_ID); }catch(e){}
+        }catch(e){}
         }
-        function __setCloudDocId(_v){
-            try{
-                localStorage.setItem(DF_DOCID_KEY, LOCKED_CLOUD_DOC_ID);
-                // legacy/debug keys kept in sync (ignored by app)
-                localStorage.setItem("cloudDocId", LOCKED_CLOUD_DOC_ID);
-            }catch(e){}
+        function __setCloudDocId(v){
+            // Locked: prevent path conflicts
+            try{ localStorage.setItem(DF_DOCID_KEY, CLOUD_DOC_ID); }catch(e){}
+        }catch(e){}
         }
 
         let __cloudDocRef = null;
 
         function __buildCloudDocCandidates(){
-            // Strict: all cloud state is stored ONLY in /workspaces/df_apex_manager
-            // (prevents path conflicts and accidental writes to legacy locations)
-            const out = [];
+            // Strict single source of truth: workspace root doc
             try{
-                out.push(doc(db, "workspaces", LOCKED_WORKSPACE_ID));
-            }catch(e){}
-            return out;
+                return [doc(db, "workspaces", LOCKED_WORKSPACE_ID)];
+            }catch(e){
+                return [];
+            }
         }
 
         async function __resolveCloudDocRefForRead(){
@@ -4887,12 +4902,11 @@ ${period}
                 __showAuthError('');
                 const modal = document.getElementById('auth-modal');
                 if(modal) modal.classList.remove('hidden');
-                try{ const mainApp=document.getElementById('main-app'); if(mainApp) mainApp.classList.add('hidden'); }catch(_e){}
                 const ws = document.getElementById('auth-ws-input');
                 const docid = document.getElementById('auth-docid-input');
                 const email = document.getElementById('auth-email-input');
-                if(ws){ ws.value = LOCKED_WORKSPACE_ID; ws.readOnly = true; ws.disabled = true; }
-                if(docid){ docid.value = LOCKED_CLOUD_DOC_ID; docid.readOnly = true; docid.disabled = true; }
+                if(ws) ws.value = __getWorkspaceId() || 'default';
+                if(docid) docid.value = __getCloudDocId() || CLOUD_DOC_ID;
                 if(email && !email.value) email.focus();
                 try { lucide.createIcons(); } catch(e){}
             }catch(e){}
@@ -4914,17 +4928,16 @@ ${period}
                 }
                 const email = (document.getElementById('auth-email-input')?.value || '').trim();
                 const pass  = (document.getElementById('auth-pass-input')?.value || '').trim();
-                const ws = LOCKED_WORKSPACE_ID;
-                const docid = LOCKED_CLOUD_DOC_ID;
+                const ws    = LOCKED_WORKSPACE_ID;
+                const docid = CLOUD_DOC_ID;
                 if(!email || !pass){
                     __showAuthError((CURRENT_LANG==='en') ? "Email and password are required." : "Email e senha são obrigatórios.");
                     return;
                 }
                 __setWorkspaceId(LOCKED_WORKSPACE_ID);
-                __setCloudDocId(LOCKED_CLOUD_DOC_ID);
+                __setCloudDocId(CLOUD_DOC_ID);
                 setCloudStatus('saving', (CURRENT_LANG==='en') ? "Signing in..." : "Entrando...");
                 await signInWithEmailAndPassword(auth, email, pass);
-                try{ const ls=document.getElementById('login-screen'); if(ls) ls.style.display='none'; }catch(_e){}
                 window.closeAuthModal();
                 __showAuthError('');
             }catch(e){
@@ -6158,7 +6171,7 @@ if(composed !== core) return lead + composed + trail;
             try { await loadFromCloud(); } catch (e) { showFatalError("Erro de Conexão ou Permissão", e.message || "Falha ao baixar dados."); return; } 
 if (!store.activeId) {
                 try {
-                    const docRef = (__cloudDocRef || doc(db, "workspaces", LOCKED_WORKSPACE_ID));
+                    const docRef = (__cloudDocRef || doc(db, "users", __getCloudDocId()));
                 const docSnap = await Promise.race([
                     getDoc(docRef),
                     new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout ao conectar no Firestore.")), 8000))
