@@ -4666,19 +4666,11 @@ ${period}
         }
 
         window.openAuthModal = function(){
-            console.log('🔓 Opening login modal...');
             try{
                 __setAuthModalText();
                 __showAuthError('');
                 const modal = document.getElementById('auth-modal');
-                if(modal) {
-                    modal.classList.remove('hidden');
-                    modal.style.display = 'block';
-                    console.log('✅ Login modal opened');
-                } else {
-                    console.error('❌ auth-modal not found in DOM!');
-                    alert('Login modal não encontrado. Recarregue a página.');
-                }
+                if(modal) modal.classList.remove('hidden');
                 const ws = document.getElementById('auth-ws-input');
                 const docid = document.getElementById('auth-docid-input');
                 const email = document.getElementById('auth-email-input');
@@ -4686,9 +4678,7 @@ ${period}
                 if(docid) docid.value = __getCloudDocId() || CLOUD_DOC_ID;
                 if(email && !email.value) email.focus();
                 try { lucide.createIcons(); } catch(e){}
-            }catch(e){
-                console.error('Error opening modal:', e);
-            }
+            }catch(e){}
         };
 
         window.closeAuthModal = function(){
@@ -8074,17 +8064,15 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
     };
   } else {
     document.addEventListener("DOMContentLoaded", () => {
-        // BYPASS: Hide loader after 3 seconds and show app
+        // === FIX: Hide loading screen after 3 seconds ===
         setTimeout(() => {
             try {
                 const loader = document.getElementById('app-loader');
                 if(loader) {
                     loader.style.display = 'none';
-                    console.log('✅ Loader hidden - app should be visible');
+                    console.log('✅ Loading screen hidden');
                 }
-            } catch(e) {
-                console.error('Bypass error:', e);
-            }
+            } catch(e) { console.error('Bypass error:', e); }
         }, 3000);
 
       setTimeout(() => {
@@ -8143,19 +8131,6 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
 
   // Run after DOM is ready
   document.addEventListener('DOMContentLoaded', () => {
-        // BYPASS: Hide loader after 3 seconds and show app
-        setTimeout(() => {
-            try {
-                const loader = document.getElementById('app-loader');
-                if(loader) {
-                    loader.style.display = 'none';
-                    console.log('✅ Loader hidden - app should be visible');
-                }
-            } catch(e) {
-                console.error('Bypass error:', e);
-            }
-        }, 3000);
-
     try { ensureTradovateVisible(); } catch(e){}
     try { hideNinjaTraderOnly(); } catch(e){}
     // Initialize dropzone after ensuring visible
@@ -8443,19 +8418,6 @@ We normalize daily buckets so:
 
   // Init after admin UI renders
   document.addEventListener('DOMContentLoaded', ()=>{
-        // BYPASS: Hide loader after 3 seconds and show app
-        setTimeout(() => {
-            try {
-                const loader = document.getElementById('app-loader');
-                if(loader) {
-                    loader.style.display = 'none';
-                    console.log('✅ Loader hidden - app should be visible');
-                }
-            } catch(e) {
-                console.error('Bypass error:', e);
-            }
-        }, 3000);
-
     setTimeout(()=>{ try{ window.initNinjaImportDropzone(); }catch(e){} }, 250);
   });
   const _r = window.refreshAdminUI;
@@ -8794,19 +8756,6 @@ We normalize daily buckets so:
   }
 
   document.addEventListener('DOMContentLoaded', ()=>{
-        // BYPASS: Hide loader after 3 seconds and show app
-        setTimeout(() => {
-            try {
-                const loader = document.getElementById('app-loader');
-                if(loader) {
-                    loader.style.display = 'none';
-                    console.log('✅ Loader hidden - app should be visible');
-                }
-            } catch(e) {
-                console.error('Bypass error:', e);
-            }
-        }, 3000);
-
     setTimeout(()=>{
       hardBind();
       renderFileList();
