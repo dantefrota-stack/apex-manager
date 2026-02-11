@@ -1213,10 +1213,8 @@ async function __loadFirebaseCompat(maxWaitMs = 45000){
             // Try multiple CDNs (some blockers target gstatic.com)
             const diag = window.__firebaseLoadDiag = window.__firebaseLoadDiag || { attempts: [], lastUrl: "", lastError: "" };
 
-            // Force fresh load - clear any partial/broken firebase object
-            try { if(window.firebase) delete window.firebase; } catch(e){}
-            if (false) {
-                // Disabled: don't trust cached firebase
+            if (window.firebase && firebase.initializeApp && firebase.firestore) {
+                // already available
             } else {
                 const candidates = [
                     { base: "https://www.gstatic.com/firebasejs/10.7.1/", files: ["firebase-app-compat.js","firebase-firestore-compat.js","firebase-auth-compat.js"] },
@@ -1291,8 +1289,6 @@ async function __loadFirebaseCompat(maxWaitMs = 45000){
 
 async function __initFirebaseIfPossible(){
             try{
-                // Force reset of Firebase ready flag to ensure fresh initialization
-                window.__dfFirebaseReady = false;
                 if (window.__dfFirebaseReady && initializeApp && getFirestore) return true;
                 await __loadFirebaseCompat(45000);
                 window.__dfFirebaseReady = true;
@@ -2345,7 +2341,7 @@ async function callOpenAI(question){
 
 
 <!-- Firebase Auth Modal (cloud sync gate) -->
-<div id="auth-modal" class="fixed inset-0 z-[99998]">
+<div id="auth-modal" class="fixed inset-0 z-[99998] hidden">
   <div class="absolute inset-0 bg-black/70"></div>
   <div class="relative w-full h-full flex items-center justify-center p-4">
     <div class="w-full max-w-md bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-5">
@@ -4670,11 +4666,19 @@ ${period}
         }
 
         window.openAuthModal = function(){
+            console.log('🔓 Opening login modal...');
             try{
                 __setAuthModalText();
                 __showAuthError('');
                 const modal = document.getElementById('auth-modal');
-                if(modal) modal.classList.remove('hidden');
+                if(modal) {
+                    modal.classList.remove('hidden');
+                    modal.style.display = 'block';
+                    console.log('✅ Login modal opened');
+                } else {
+                    console.error('❌ auth-modal not found in DOM!');
+                    alert('Login modal não encontrado. Recarregue a página.');
+                }
                 const ws = document.getElementById('auth-ws-input');
                 const docid = document.getElementById('auth-docid-input');
                 const email = document.getElementById('auth-email-input');
@@ -4682,7 +4686,9 @@ ${period}
                 if(docid) docid.value = __getCloudDocId() || CLOUD_DOC_ID;
                 if(email && !email.value) email.focus();
                 try { lucide.createIcons(); } catch(e){}
-            }catch(e){}
+            }catch(e){
+                console.error('Error opening modal:', e);
+            }
         };
 
         window.closeAuthModal = function(){
@@ -8068,6 +8074,19 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
     };
   } else {
     document.addEventListener("DOMContentLoaded", () => {
+        // BYPASS: Hide loader after 3 seconds and show app
+        setTimeout(() => {
+            try {
+                const loader = document.getElementById('app-loader');
+                if(loader) {
+                    loader.style.display = 'none';
+                    console.log('✅ Loader hidden - app should be visible');
+                }
+            } catch(e) {
+                console.error('Bypass error:', e);
+            }
+        }, 3000);
+
       setTimeout(() => {
         try { ensureCashImportVisible(); } catch(e){}
         try { window.initCashImportDropzone && window.initCashImportDropzone(); } catch(e){}
@@ -8124,6 +8143,19 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
 
   // Run after DOM is ready
   document.addEventListener('DOMContentLoaded', () => {
+        // BYPASS: Hide loader after 3 seconds and show app
+        setTimeout(() => {
+            try {
+                const loader = document.getElementById('app-loader');
+                if(loader) {
+                    loader.style.display = 'none';
+                    console.log('✅ Loader hidden - app should be visible');
+                }
+            } catch(e) {
+                console.error('Bypass error:', e);
+            }
+        }, 3000);
+
     try { ensureTradovateVisible(); } catch(e){}
     try { hideNinjaTraderOnly(); } catch(e){}
     // Initialize dropzone after ensuring visible
@@ -8411,6 +8443,19 @@ We normalize daily buckets so:
 
   // Init after admin UI renders
   document.addEventListener('DOMContentLoaded', ()=>{
+        // BYPASS: Hide loader after 3 seconds and show app
+        setTimeout(() => {
+            try {
+                const loader = document.getElementById('app-loader');
+                if(loader) {
+                    loader.style.display = 'none';
+                    console.log('✅ Loader hidden - app should be visible');
+                }
+            } catch(e) {
+                console.error('Bypass error:', e);
+            }
+        }, 3000);
+
     setTimeout(()=>{ try{ window.initNinjaImportDropzone(); }catch(e){} }, 250);
   });
   const _r = window.refreshAdminUI;
@@ -8749,6 +8794,19 @@ We normalize daily buckets so:
   }
 
   document.addEventListener('DOMContentLoaded', ()=>{
+        // BYPASS: Hide loader after 3 seconds and show app
+        setTimeout(() => {
+            try {
+                const loader = document.getElementById('app-loader');
+                if(loader) {
+                    loader.style.display = 'none';
+                    console.log('✅ Loader hidden - app should be visible');
+                }
+            } catch(e) {
+                console.error('Bypass error:', e);
+            }
+        }, 3000);
+
     setTimeout(()=>{
       hardBind();
       renderFileList();
