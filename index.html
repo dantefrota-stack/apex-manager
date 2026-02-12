@@ -1264,7 +1264,7 @@ body.dark .bg-white { background-color: #1e293b; }
                             renderSidebar();
                             renderDashboard();
                         }
-
+document.getElementById('status-text').textContent = "Online"; // <--- ADICIONE ISTO
                         // Remove o loader
                         const loader = document.getElementById('app-loader');
                         if(loader) loader.style.display = 'none';
@@ -1425,7 +1425,6 @@ Usuário administrador:`) || '';
     } catch(e){ return null; }
   }
 
-let store = { activeId: null, date: new Date(), accounts: {}, adminLogs: [] };
 
         // --- Build/Version guard (prevents stale cached builds from overwriting cloud) ---
         const APP_BUILD_ID = "2026-01-28-import-ui-unified-applyfix2";
