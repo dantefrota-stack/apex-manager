@@ -1242,6 +1242,8 @@ body.dark .bg-white { background-color: #1e293b; }
 
                         // Atualiza a memória do app
                         window.store = cloudStore;
+
+__cloudHydrated = true; // <--- A CHAVE MÁGICA
                         
                         // Restaura objetos Date
                         if (localDate instanceof Date) window.store.date = localDate;
@@ -1364,7 +1366,7 @@ document.getElementById('status-text').textContent = "Online"; // <--- ADICIONE 
 
         // SENHAS E SEGURANÇA (uso local — para segurança real, use Firebase Auth)
         const SECURITY = {
-            Dante:  { pass: '1996', role: 'super' },
+            Dante:  { pass: 'Apex1996', role: 'super' },
             Felipe: { pass: '1987', role: 'admin' }
         };
 
