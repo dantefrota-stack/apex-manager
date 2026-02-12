@@ -1214,30 +1214,167 @@ body.dark .bg-white { background-color: #1e293b; }
         }
     
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyCu5pQrMnrpSj45lto_GXKx9xIWq2kyDjg",
-            authDomain: "df-apex-manager.firebaseapp.com",
-            projectId: "df-apex-manager",
-            storageBucket: "df-apex-manager.firebasestorage.app",
-            messagingSenderId: "761037562102",
-            appId: "1:761037562102:web:a7622dca93a157dc21ccd7"
-        };
+        // --- NOVO BLOCO DE AUTENTICAÇÃO (Mantenha este no topo do script) ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyCu5pQrMnrpSj45lto_GXKx9xIWq2kyDjg",
+        authDomain: "df-apex-manager.firebaseapp.com",
+        projectId: "df-apex-manager",
+        storageBucket: "df-apex-manager.firebasestorage.app",
+        messagingSenderId: "761037562102",
+        appId: "1:761037562102:web:a7622dca93a157dc21ccd7"
+    };
 
-        let db; let chartInstance = null; 
-        let __firebaseApp = null;
-        async function __ensureFirebaseApp(){
-            try{
-                if(db) return true;
-                const ok = await __initFirebaseIfPossible();
-                if(!ok) return false;
-                __firebaseApp = initializeApp(firebaseConfig);
-                db = getFirestore(__firebaseApp);
-                return true;
-            }catch(e){
-                console.error("Firebase init failed:", e);
-                return false;
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    // Inicializa o Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+    
+    // EXPOR O BANCO DE DADOS GLOBALMENTE
+    // (Isso é crucial para que suas 8000 linhas de código funcionem sem alteração)
+    window.db = getFirestore(app); 
+    
+    // Variáveis globais de controle
+    let chartInstance = null; 
+    let db = window.db; // Atalho para o código legado
+
+    // --- MONITOR DE LOGIN ---
+    onAuthStateChanged(auth, (user) => {
+        const loader = document.getElementById('app-loader');
+        
+        if (user) {
+            // Verifica se é você ou o Felipe
+            if (user.email === 'dantefrota@gmail.com' || user.email === 'fellipemendonca87@gmail.com') {
+                console.log("Acesso autorizado:", user.email);
+                
+                // Atualiza a UI do loader
+                const statusEl = document.getElementById('loader-status');
+                if(statusEl) statusEl.textContent = "Sincronizando dados...";
+                
+                // Inicia o motor principal (que conecta no 'dante_data')
+                // A função startAppSync vai substituir a lógica antiga de load
+                startAppSync(); 
+            } else {
+                alert("Usuário não autorizado: " + user.email);
+                signOut(auth);
+            }
+        } else {
+            // SE NÃO ESTIVER LOGADO: Mostra botão de login no loader
+            if(loader) {
+                loader.innerHTML = `
+                    <div class="text-center p-8 bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl">
+                        <h2 class="text-xl font-bold mb-4 text-white">DF Strategic Manager</h2>
+                        <p class="text-sm text-slate-400 mb-6">Identifique-se para acessar os dados.</p>
+                        <button onclick="window.loginGoogle()" class="bg-white text-black px-6 py-3 rounded-lg font-bold flex items-center gap-2 mx-auto hover:bg-slate-200 transition-all">
+                            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+                            Entrar com Google
+                        </button>
+                    </div>
+                `;
             }
         }
+    });
+
+    // Função de Login Global
+    window.loginGoogle = () => {
+        signInWithPopup(auth, provider).catch(err => alert("Erro: " + err.message));
+    };
+
+    // --- FUNÇÃO DE SINCRONIZAÇÃO SEGURA ---
+    // Esta função substitui a lógica antiga de carregar dados soltos
+    async function startAppSync() {
+        const docRef = doc(db, "users", "dante_data");
+        
+        // Escuta em tempo real (Realtime)
+        onSnapshot(docRef, (snap) => {
+            if (snap.exists()) {
+                const data = snap.data();
+                if (data.store_json) {
+                    try {
+                        const cloudStore = JSON.parse(data.store_json);
+                        
+                        // Preserva preferências locais (data selecionada, conta ativa)
+                        const localDate = window.store?.date;
+                        const localActive = window.store?.activeId;
+
+                        // Atualiza a memória do app
+                        window.store = cloudStore;
+                        
+                        // Restaura objetos Date
+                        if (localDate instanceof Date) window.store.date = localDate;
+                        else window.store.date = new Date();
+
+                        // Se não tiver conta ativa, pega a primeira
+                        if (!window.store.activeId || !window.store.accounts[window.store.activeId]) {
+                            if (localActive && window.store.accounts[localActive]) {
+                                window.store.activeId = localActive;
+                            } else {
+                                const ids = Object.keys(window.store.accounts);
+                                if (ids.length > 0) window.store.activeId = ids[0];
+                            }
+                        }
+
+                        // === O PULO DO GATO ===
+                        // Chama as suas funções originais de renderização (que estão lá embaixo no código)
+                        if (typeof renderAll === 'function') renderAll();
+                        else if (typeof renderDashboard === 'function') {
+                            renderSidebar();
+                            renderDashboard();
+                        }
+
+                        // Remove o loader
+                        const loader = document.getElementById('app-loader');
+                        if(loader) loader.style.display = 'none';
+                        const main = document.getElementById('main-ui') || document.querySelector('.pb-12');
+                        if(main) main.classList.remove('hidden');
+
+                    } catch (e) {
+                        console.error("Erro ao processar JSON da nuvem:", e);
+                    }
+                }
+            } else {
+                console.log("Nenhum dado encontrado no documento dante_data.");
+                // Se for a primeira vez, chama a criação de conta do seu código original
+                if(typeof createNewStore === 'function') createNewStore();
+            }
+        });
+    }
+
+    // Sobrescreve a função de salvar para usar o caminho fixo 'dante_data'
+    // Mantendo a lógica de backup 'prev_store_json'
+    window.saveToCloud = async () => {
+        const docRef = doc(db, "users", "dante_data");
+        const statusEl = document.getElementById('status-text');
+        if(statusEl) statusEl.textContent = "Salvando...";
+
+        try {
+            const jsonStr = JSON.stringify(getPersistableStore()); // Usa sua função original de limpar dados
+            
+            await runTransaction(db, async (txn) => {
+                const sfDoc = await txn.get(docRef);
+                txn.set(docRef, {
+                    store_json: jsonStr,
+                    last_update_ms: Date.now(),
+                    prev_store_json: sfDoc.exists() ? sfDoc.data().store_json : null
+                }, { merge: true });
+            });
+
+            if(statusEl) {
+                statusEl.textContent = "Salvo";
+                statusEl.className = "text-green-500 font-bold";
+                setTimeout(()=> { statusEl.className = "text-slate-400"; statusEl.textContent = "Online"; }, 2000);
+            }
+        } catch (e) {
+            console.error("Erro ao salvar:", e);
+            if(statusEl) { statusEl.textContent = "Erro!"; statusEl.className = "text-red-500 font-bold"; }
+        }
+    };
+
+    // --- FIM DO BLOCO DE AUTENTICAÇÃO ---
+    // (Abaixo daqui deve continuar o seu código original: const RULES = ..., function calculateStats...)
 
         const RULES = {
             '25k': { start: 25000, drawdown: 1500, safetyThreshold: 26600 },
@@ -7535,12 +7672,7 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
             } catch(e){}
         }
 
-        // Start as soon as DOM is ready (do not wait for full window load)
-        (function(){
-            if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootstrapApp);
-            else bootstrapApp();
-        })();
-
+      
         // === Expose internal state/functions for patch modules (safe & idempotent) ===
         try{
             if(typeof store !== 'undefined' && !window.__EXPOSED_STORE__){
