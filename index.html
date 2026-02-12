@@ -1,20 +1,11 @@
 <!DOCTYPE html>
-<!--
-═══════════════════════════════════════════════
-  DF APEX MANAGER - v4.2 FIXED
-  DATE: 2026-02-11
-  FIXED: Login and Offline mode now work properly
-═══════════════════════════════════════════════
--->
-
-<!-- DF APEX MANAGER • STEP3 AUTH • BUILD 2026-02-10 23:51 UTC -->
 <html lang="pt-BR">
 <head>
 <!-- BUILD_ID: UNIFIED-LOADER-NOLOOP-2026-01-28-1635 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DF Apex Manager - Auth Fix</title>
+    <title>Performance Report - DF Strategic V9</title>
     
     <link rel="apple-touch-icon" sizes="180x180" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
     <link rel="icon" type="image/png" sizes="32x32" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
@@ -356,51 +347,7 @@ body.dark .bg-white { background-color: #1e293b; }
 </style>
 
 </head>
-<body style="margin:0;padding:0;" class="pb-12 transition-colors duration-300">
-
-<!-- LOGIN SCREEN v4.2 -->
-<div id="login-screen" class="fixed inset-0 z-[99999] bg-gradient-to-br from-indigo-900 via-slate-900 to-slate-900 flex items-center justify-center">
-  <div class="w-full max-w-md p-8">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 border border-slate-200 dark:border-slate-700">
-      <div class="text-center mb-8">
-        <h1 class="text-3xl font-extrabold text-slate-800 dark:text-white mb-2">DF Apex Manager</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400">Entre com seu email e senha</p>
-      </div>
-
-      <div class="space-y-4">
-        <div>
-          <label class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 block">Email</label>
-          <input id="login-email" type="email" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="seu@email.com" autocomplete="username">
-        </div>
-
-        <div>
-          <label class="text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 block">Senha</label>
-          <input id="login-password" type="password" class="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="••••••••" autocomplete="current-password">
-        </div>
-
-        <div id="login-error" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl text-sm font-medium"></div>
-
-        <button id="login-btn" type="button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition duration-200 flex items-center justify-center gap-2 shadow-lg">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
-          Entrar
-        </button>
-
-        <button id="offline-btn" type="button" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded-xl transition duration-200 flex items-center justify-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="2" x2="22" y2="22"></line><path d="M8.5 16.5a5 5 0 0 1 7 0"></path><path d="M2 8.82a15 15 0 0 1 4.17-2.65"></path><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.76"></path><path d="M16.85 11.25a10 10 0 0 1 2.22 1.68"></path><path d="M5 13a10 10 0 0 1 5.24-2.76"></path><circle cx="12" cy="20" r="1"></circle></svg>
-          Modo Offline
-        </button>
-      </div>
-
-      <p class="text-xs text-center text-slate-500 dark:text-slate-400 mt-6">
-        🔒 Autenticação segura via Firebase
-      </p>
-    </div>
-  </div>
-</div>
-
-<!-- Main App -->
-<div id="main-app" class="hidden">
-
+<body class="pb-12 transition-colors duration-300">
 
 <div id="d2InfoOverlay" class="d2-info-overlay" role="dialog" aria-modal="true" aria-hidden="true">
   <div class="d2-info-modal">
@@ -431,8 +378,6 @@ body.dark .bg-white { background-color: #1e293b; }
           if(!loader) return;
           var isHidden = (loader.style && loader.style.display === 'none');
           if(isHidden) return;
-          try{ if(window.__DF_BOOT_DONE__ || window.__DF_BOOT_OK__) return; }catch(e){}
-          try{ if(loader.getAttribute && loader.getAttribute('data-loader-lock')==='1') return; }catch(e){}
 
           // Keep it simple: replace loader content with actionable buttons.
           loader.innerHTML = `
@@ -969,16 +914,6 @@ body.dark .bg-white { background-color: #1e293b; }
             <div id="cloud-status" class="text-xs flex items-center gap-1 text-slate-400 font-medium">
                 <i data-lucide="cloud" class="w-3 h-3"></i> <span id="status-text">Conectando...</span>
             </div>
-            <div id="auth-area" class="hidden md:flex items-center gap-2">
-                <div id="auth-badge" class="hidden items-center gap-1 text-xs text-slate-300">
-                    <i data-lucide="user" class="w-3 h-3"></i>
-                    <span id="auth-email" class="max-w-[160px] truncate"></span>
-                </div>
-                <button id="auth-btn" onclick="window.openAuthModal && window.openAuthModal()" class="px-3 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-xs font-bold border border-slate-700">
-                    Login
-                </button>
-            </div>
-
             <div class="flex items-center gap-2 ml-1" id="lang-toggle">
                 <button type="button" id="lang-pt" onclick="window.setLanguage && window.setLanguage('pt')" class="w-7 h-5 rounded overflow-hidden border border-slate-600/40 hover:border-indigo-400 transition" title="Português">
                     <img src="https://flagcdn.com/24x18/br.png" class="w-full h-full object-cover" alt="PT">
@@ -1216,133 +1151,60 @@ body.dark .bg-white { background-color: #1e293b; }
     <div id="print-area"></div>
 
 
-    <script>
+    <script type="module">
                 // Firebase dynamic loader (prevents "stuck on Iniciando..." when module imports hang or are blocked)
         let initializeApp, getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, runTransaction;
-        // Compat fallback (works on file:// where ES module imports may be blocked)
-        async function __loadScriptTag(src){
-            return new Promise((resolve, reject) => {
-                try{
-                    window.__firebaseLoadDiag = window.__firebaseLoadDiag || { attempts: [], lastUrl: "", lastError: "" };
-                    const s = document.createElement('script');
-                    s.src = src;
-                    s.async = true;
-                    s.crossOrigin = "anonymous";
-                    
-                    try{ window.__firebaseLoadDiag.lastUrl = src; }catch(e){}
-const started = Date.now();
-                    s.onload = () => {
-                        try{
-                            window.__firebaseLoadDiag.attempts.push({ url: src, ok: true, ms: Date.now()-started });
-                        }catch(e){}
-                        resolve(true);
-                    };
-                    s.onerror = (ev) => {
-                        const err = new Error('Failed to load script: ' + src);
-                        try{
-                            window.__firebaseLoadDiag.lastUrl = src;
-                            window.__firebaseLoadDiag.lastError = (ev && ev.message) ? ev.message : 'script load error';
-                            window.__firebaseLoadDiag.attempts.push({ url: src, ok: false, ms: Date.now()-started });
-                        }catch(e){}
-                        reject(err);
-                    };
-                    document.head.appendChild(s);
-                }catch(e){
+        async function __loadFirebaseModules(maxWaitMs = 45000){
+            const appUrl = "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+            const fsUrl  = "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+            // If already loaded, skip
+            if (window.__dfFirebaseModulesLoaded && initializeApp && getFirestore) return true;
+
+            // Do NOT fail fast here. On some networks/CDNs the module import may take > 12s,
+            // and failing early causes unnecessary "Reload" loops. We'll only fail after maxWaitMs.
+            const importPromise = Promise.all([import(appUrl), import(fsUrl)]);
+
+            // After a few seconds, change the loader text to indicate slow connection (but keep loading).
+            let slowTimer = null;
+            try{
+                slowTimer = setTimeout(() => {
                     try{
-                        window.__firebaseLoadDiag = window.__firebaseLoadDiag || { attempts: [], lastUrl: "", lastError: "" };
-                        window.__firebaseLoadDiag.lastUrl = src;
-                        window.__firebaseLoadDiag.lastError = String(e && e.message || e);
-                        window.__firebaseLoadDiag.attempts.push({ url: src, ok: false, ms: 0 });
-                    }catch(_){}
-                    reject(e);
-                }
-            });
+                        const st = document.getElementById('status-text');
+                        if(!st) return;
+                        const lang = (window.CURRENT_LANG || localStorage.getItem('df_lang') || 'pt').toLowerCase();
+                        st.textContent = (lang.startsWith('en'))
+                            ? 'Loading modules... (slow connection)'
+                            : 'Carregando módulos... (conexão lenta)';
+                    }catch(e){}
+                }, 10000);
+            }catch(e){}
+
+            const timed = new Promise((_, rej) =>
+                setTimeout(() => rej(new Error("Timeout loading Firebase modules.")), maxWaitMs)
+            );
+
+            const [appMod, fsMod] = await Promise.race([importPromise, timed]);
+
+            try{ if(slowTimer) clearTimeout(slowTimer); }catch(e){}
+
+            initializeApp = appMod.initializeApp;
+            getFirestore  = fsMod.getFirestore;
+            doc           = fsMod.doc;
+            getDoc        = fsMod.getDoc;
+            setDoc        = fsMod.setDoc;
+            onSnapshot    = fsMod.onSnapshot;
+            updateDoc     = fsMod.updateDoc;
+                runTransaction = fsMod.runTransaction;
+
+            window.__dfFirebaseModulesLoaded = true;
+            return true;
         }
 
-
-        
-async function __loadFirebaseCompat(maxWaitMs = 45000){
-            // Try multiple CDNs (some blockers target gstatic.com)
-            const diag = window.__firebaseLoadDiag = window.__firebaseLoadDiag || { attempts: [], lastUrl: "", lastError: "" };
-
-            if (window.firebase && firebase.initializeApp && firebase.firestore) {
-                // already available
-            } else {
-                const candidates = [
-                    { base: "https://www.gstatic.com/firebasejs/10.7.1/", files: ["firebase-app-compat.js","firebase-firestore-compat.js","firebase-auth-compat.js"] },
-                    { base: "https://cdn.jsdelivr.net/npm/firebase@10.7.1/", files: ["firebase-app-compat.js","firebase-firestore-compat.js","firebase-auth-compat.js"] },
-                    { base: "https://unpkg.com/firebase@10.7.1/", files: ["firebase-app-compat.js","firebase-firestore-compat.js","firebase-auth-compat.js"] },
-                    { base: "https://cdnjs.cloudflare.com/ajax/libs/firebase/10.7.1/", files: ["firebase-app-compat.min.js","firebase-firestore-compat.min.js","firebase-auth-compat.min.js"] }
-                ];
-
-                const timed = (p) => Promise.race([
-                    p,
-                    new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout loading Firebase compat.")), maxWaitMs))
-                ]);
-
-                let loaded = false;
-                let lastErr = null;
-
-                for (const c of candidates){
-                    if (loaded) break;
-                    try{
-                        // Avoid re-adding same script tags if partially loaded
-                        for (const f of c.files){
-                            const url = c.base + f;
-                            diag.attempts.push({ url, ok: null, ms: null, trying: true });
-                            await timed(__loadScriptTag(url));
-                        }
-                        loaded = true;
-                    }catch(e){
-                        lastErr = e;
-                        try{
-                            diag.lastUrl = String((e && e.message || '')).replace('Failed to load script: ','');
-                            diag.lastError = String(e && e.message || e);
-                        }catch(_){}
-                        // Clean up: keep trying next CDN
-                    }
-                }
-
-                if(!loaded){
-                    throw (lastErr || new Error("Unable to load Firebase compat from all CDNs."));
-                }
-            }
-
-            if (!window.firebase || !firebase.initializeApp || !firebase.firestore) {
-                throw new Error("Firebase compat not available after load.");
-            }
-
-            // Map compat APIs to the modular names used in this app
-            initializeApp = (cfg) => {
-                if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(cfg);
-                return firebase.app();
-            };
-            getFirestore = () => firebase.firestore();
-
-            doc = (dbInst, ...segs) => dbInst.doc(segs.join('/'));
-            getDoc = (docRef) => docRef.get();
-            setDoc = (docRef, data, opts) => {
-                const merge = !!(opts && opts.merge);
-                return docRef.set(data, merge ? { merge: true } : undefined);
-            };
-            updateDoc = (docRef, data) => docRef.update(data);
-            onSnapshot = (docRef, cb, err) => docRef.onSnapshot(cb, err);
-            runTransaction = (dbInst, updateFn) => dbInst.runTransaction(updateFn);
-
-            // Auth
-            getAuth = () => firebase.auth();
-            onAuthStateChanged = (authInst, cb) => authInst.onAuthStateChanged(cb);
-            signInWithEmailAndPassword = (authInst, email, pass) => authInst.signInWithEmailAndPassword(email, pass);
-            signOut = (authInst) => authInst.signOut();
-            // Persistence (best-effort)
-            setPersistence = (authInst, persistence) => authInst.setPersistence(persistence);
-            browserLocalPersistence = firebase.auth.Auth.Persistence.LOCAL;
-        }
-
-async function __initFirebaseIfPossible(){
+        async function __initFirebaseIfPossible(){
             try{
                 if (window.__dfFirebaseReady && initializeApp && getFirestore) return true;
-                await __loadFirebaseCompat(45000);
+                await __loadFirebaseModules(45000);
                 window.__dfFirebaseReady = true;
                 return true;
             }catch(e){
@@ -1370,8 +1232,6 @@ async function __initFirebaseIfPossible(){
                 if(!ok) return false;
                 __firebaseApp = initializeApp(firebaseConfig);
                 db = getFirestore(__firebaseApp);
-                try { auth = getAuth(__firebaseApp); } catch(e) { auth = null; }
-                try { if(auth && setPersistence && browserLocalPersistence) await setPersistence(auth, browserLocalPersistence); } catch(e) {}
                 return true;
             }catch(e){
                 console.error("Firebase init failed:", e);
@@ -2355,7 +2215,7 @@ async function callOpenAI(question){
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DF Apex Manager - Auth Fix</title>
+<title>${title}</title>
 <style>
   :root { color-scheme: light; }
   body { font-family: Arial, Helvetica, sans-serif; margin: 24px; color: #111827; }
@@ -2390,194 +2250,6 @@ async function callOpenAI(question){
       <tbody>${rowsHtml}</tbody>
     </table>
   </div>
-
-
-<!-- Firebase Auth Modal (cloud sync gate) -->
-<div id="auth-modal" class="fixed inset-0 z-[99998]">
-  <div class="absolute inset-0 bg-black/70"></div>
-  <div class="relative w-full h-full flex items-center justify-center p-4">
-    <div class="w-full max-w-md bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-5">
-      <div class="flex items-start justify-between gap-3">
-        <div>
-          <h3 class="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-            <i data-lucide="shield" class="w-5 h-5 text-indigo-500"></i>
-            <span id="auth-title">Login</span>
-          </h3>
-          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" id="auth-subtitle">Entre para sincronizar com a nuvem.</p>
-        </div>
-        <button type="button" onclick="window.closeAuthModal && window.closeAuthModal()" class="text-slate-400 hover:text-slate-200">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="mt-4 space-y-3">
-        <div>
-          <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Email</label>
-          <input id="auth-email-input" type="email" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2" placeholder="you@email.com" autocomplete="username">
-        </div>
-        <div>
-          <label class="text-xs font-bold text-slate-600 dark:text-slate-300">Password</label>
-          <input id="auth-pass-input" type="password" class="w-full mt-1 rounded-xl border border-slate-200 dark:border-slate-700 px-3 py-2" placeholder="••••••••" autocomplete="current-password">
-        </div>
-
-        <div id="auth-error" class="hidden text-xs text-red-500 font-bold bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-2"></div>
-
-        <button id="auth-login-btn" type="button" onclick="window.dfAuthSignIn && window.dfAuthSignIn()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl font-extrabold transition">
-          Entrar
-        </button>
-
-        <button type="button" onclick="window.forceOfflineMode && window.forceOfflineMode(); window.__resolveAuthWait && window.__resolveAuthWait(null);" class="w-full bg-yellow-600 hover:bg-yellow-700 text-white py-2.5 rounded-xl font-extrabold transition flex items-center justify-center gap-2">
-          <i data-lucide="wifi-off" class="w-4 h-4"></i>
-          Modo Offline
-        </button>
-      </div>
-
-      <div class="mt-4 text-[11px] text-slate-500 dark:text-slate-400">
-        <span class="font-bold">Nota:</span> o usuário precisa estar na lista <span class="font-mono">allowedUids</span> no workspace definido nas rules do Firestore.
-      </div>
-    </div>
-  </div>
-</div>
-
-</div>
-
-<script>
-// ============================================================================
-// v4.2 FIXED - Proper App Integration
-// ============================================================================
-
-(function() {
-    console.log('[v4.2] 🚀 Login system initializing...');
-
-    // Wait for DOM
-    if(document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initLogin);
-    } else {
-        initLogin();
-    }
-
-    function initLogin() {
-        console.log('[v4.2] ✅ DOM ready, setting up login');
-
-        const loginBtn = document.getElementById('login-btn');
-        const offlineBtn = document.getElementById('offline-btn');
-        const emailInput = document.getElementById('login-email');
-        const passInput = document.getElementById('login-password');
-
-        if(loginBtn) {
-            loginBtn.onclick = handleLogin;
-            console.log('[v4.2] ✅ Login button connected');
-        }
-
-        if(offlineBtn) {
-            offlineBtn.onclick = handleOfflineMode;
-            console.log('[v4.2] ✅ Offline button connected');
-        }
-
-        // Enter key
-        if(emailInput) emailInput.addEventListener('keypress', e => { if(e.key === 'Enter') handleLogin(); });
-        if(passInput) passInput.addEventListener('keypress', e => { if(e.key === 'Enter') handleLogin(); });
-
-        console.log('[v4.2] ✅ Login screen ready');
-    }
-
-    window.handleLogin = async function() {
-        console.log('[v4.2] 🔐 Login attempt');
-
-        const email = document.getElementById('login-email').value.trim();
-        const password = document.getElementById('login-password').value;
-        const workspace = 'df_apex_manager';
-        const docid = 'df_apex_manager';
-
-        const errorDiv = document.getElementById('login-error');
-        const loginBtn = document.getElementById('login-btn');
-
-        if(!email || !password) {
-            showError('❌ Preencha email e senha');
-            return;
-        }
-
-        errorDiv.classList.add('hidden');
-        loginBtn.disabled = true;
-        loginBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
-
-        try {
-            console.log('[v4.2] Checking Firebase...');
-
-            if(!window.firebase || !firebase.auth) {
-                throw new Error('Firebase não inicializado');
-            }
-
-            console.log('[v4.2] Authenticating...');
-            const userCred = await firebase.auth().signInWithEmailAndPassword(email, password);
-
-            console.log('[v4.2] ✅ Auth success:', userCred.user.email);
-
-            // Store settings
-            localStorage.setItem('workspaceId', workspace);
-            localStorage.setItem('cloudDocId', docid);
-
-            // Switch to main app
-            switchToMainApp();
-
-        } catch(error) {
-            console.error('[v4.2] ❌ Login error:', error);
-
-            let msg = 'Erro: ';
-            if(error.code === 'auth/user-not-found') msg += 'Usuário não encontrado';
-            else if(error.code === 'auth/wrong-password') msg += 'Senha incorreta';
-            else if(error.code === 'auth/invalid-email') msg += 'Email inválido';
-            else if(error.code === 'auth/network-request-failed') msg += 'Sem conexão';
-            else msg += error.message;
-
-            showError(msg);
-
-            loginBtn.disabled = false;
-            loginBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> Entrar';
-        }
-    };
-
-    window.handleOfflineMode = function() {
-        console.log('[v4.2] 📴 Offline mode selected');
-        switchToMainApp();
-    };
-
-    function switchToMainApp() {
-        console.log('[v4.2] Switching to main app...');
-
-        const loginScreen = document.getElementById('login-screen');
-        const mainApp = document.getElementById('main-app');
-        const loader = document.getElementById('app-loader');
-
-        if(loginScreen) {
-            loginScreen.style.display = 'none';
-            console.log('[v4.2] ✅ Login screen hidden');
-        }
-
-        if(mainApp) {
-            mainApp.classList.remove('hidden');
-            mainApp.style.display = 'block';
-            console.log('[v4.2] ✅ Main app shown');
-        }
-
-        if(loader) {
-            loader.style.display = 'none';
-            console.log('[v4.2] ✅ Loader hidden');
-        }
-
-        console.log('[v4.2] ✅ Switched to main app successfully');
-    }
-
-    function showError(msg) {
-        const errorDiv = document.getElementById('login-error');
-        if(errorDiv) {
-            errorDiv.textContent = msg;
-            errorDiv.classList.remove('hidden');
-        }
-    }
-
-})();
-<\/script>
 
 </body>
 </html>`;
@@ -4692,7 +4364,7 @@ ${period}
                 try{
                     const w = window.open('', '_blank');
                     if(!w) throw new Error('Popup bloqueado');
-                    const html = `<!doctype html><html><head><meta charset="utf-8"><title>DF Apex Manager - Auth Fix</title>
+                    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Analise por Periodo</title>
                     <style>body{font-family:Arial,Helvetica,sans-serif;padding:24px}h1{margin:0 0 6px}p{margin:0 0 14px;color:#555}img{max-width:100%;height:auto;border:1px solid #ddd;border-radius:10px}table{margin-top:14px;width:100%;border-collapse:collapse}td{padding:8px;border-top:1px solid #eee}td:first-child{color:#666}</style></head>
                     <body><h1>Analise por Periodo</h1><p>${rangeText}</p>
                     ${chartDataUrl ? ("<img src=\""+chartDataUrl+"\"/>") : ""}
@@ -4716,17 +4388,714 @@ ${period}
 
 
                 // --- CLOUD (Realtime + Debounced Save; cloud-first) ---
-        const CLOUD_DOC_COL = "workspaces";
-        const CLOUD_DOC_ID = "df_apex_manager";
+        const CLOUD_DOC_COL = "users";
+        const CLOUD_DOC_ID  = "dante_data";
 
-        // --- AUTH + WORKSPACE (Firebase Auth gate for Firestore) ---
-        const DF_WS_KEY = "df_workspace_id";
-        const DF_DOCID_KEY = "df_cloud_doc_id";
-        function __getWorkspaceId(){
-            try{ return (localStorage.getItem(DF_WS_KEY) || "df_apex_manager").trim() || "df_apex_manager"; }catch(e){ return "df_apex_manager"; }
+        const CLIENT_ID_KEY = "df_client_id";
+        const CLIENT_ID = (() => {
+            try{
+                let id = (localStorage.getItem(CLIENT_ID_KEY) || '').trim();
+                if(!id){
+                    id = 'c_' + Math.random().toString(36).slice(2) + '_' + Date.now().toString(36);
+                    localStorage.setItem(CLIENT_ID_KEY, id);
+                }
+                return id;
+            }catch(e){
+                return 'c_' + Math.random().toString(36).slice(2) + '_' + Date.now().toString(36);
+            }
+        })();
+
+        let __cloudUnsub = null;
+        let __lastRemoteUpdateMs = 0;
+        let __lastLocalWriteMs  = 0;
+        let __lastCloudWriteMs = 0;
+
+        let __saveTimer = null;
+        let __saveInFlight = false;
+        let __saveAgain = false;
+        let __dirty = false;
+        let __cloudHydrated = false;
+        let __lastLoadedCloudLen = 0;
+        let __pendingSaveBeforeHydrate = false;
+        let __forceCloudSaveOnce = false;
+        let __lastLocalBackupJson = "";
+
+        let __cloudStatusTimer = null;
+
+
+        function _statusEl(){ return document.getElementById('status-text'); }
+        function setCloudStatus(mode, msg){
+            const el = _statusEl();
+            if(!el) return;
+            const txt = (typeof translateString === 'function') ? translateString(msg) : msg;
+            el.textContent = txt;
+
+            if(mode === 'saving') el.className = "status-saving font-bold";
+            else if(mode === 'saved') el.className = "status-saved";
+            else if(mode === 'error') el.className = "text-red-400 font-bold";
+            else if(mode === 'offline') el.className = "text-yellow-400 font-bold";
+            else if(mode === 'online') el.className = "text-slate-300";
+            else el.className = "text-slate-300";
         }
-        function __getCloudDocId(){ return "df_apex_manager"; }
-;
+
+        function setOnlineStatus(){
+            // Base status when connected and idle
+            if(isOffline){
+                setCloudStatus('offline', (CURRENT_LANG==='en' ? "Offline" : "Offline"));
+            }else{
+                setCloudStatus('online', "Online");
+            }
+        }
+
+        function flashSaved(){
+            if(__cloudStatusTimer) { try{ clearTimeout(__cloudStatusTimer); }catch(e){} __cloudStatusTimer = null; }
+            setCloudStatus('saved', (CURRENT_LANG==='en' ? "Saved" : "Salvo"));
+            __cloudStatusTimer = setTimeout(()=>{
+                __cloudStatusTimer = null;
+                if(!__dirty && !isOffline){
+                    setOnlineStatus();
+                }
+            }, 900);
+        }
+
+        // Remove estado de UI (linhas abertas/fechadas) e preferências de tela antes de salvar
+        function getPersistableStore(){
+            try{
+                const s = JSON.parse(JSON.stringify(store));
+                // preferências por-device (não sincronizar)
+                try{ delete s.date; }catch(e){}
+                try{ delete s.activeId; }catch(e){}
+                // estado de UI
+                try{ delete s.dayDetailsOpen; }catch(e){}
+                try{ delete s.tradeDetailsOpen; }catch(e){}
+                // recursos removidos
+                try{ delete s.apex_fee_rate; }catch(e){}
+                return s;
+            }catch(e){
+                // fallback (não ideal)
+                const clone = { ...store };
+                try{ delete clone.date; }catch(_){}
+                try{ delete clone.activeId; }catch(_){}
+                try{ delete clone.dayDetailsOpen; }catch(_){}
+                try{ delete clone.tradeDetailsOpen; }catch(_){}
+                try{ delete clone.apex_fee_rate; }catch(_){}
+                return clone;
+            }
+        }
+
+        async function loadFromCloud() {
+            const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+            const docSnap = await Promise.race([
+                getDoc(docRef),
+                new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout ao conectar no Firestore.")), 10000))
+            ]);
+
+            if (!docSnap.exists()) { __cloudHydrated = true; __lastLoadedCloudLen = 0; return; }
+
+            const data = docSnap.data() || {};
+            const ms = Number(data.last_update_ms || 0) || 0;
+            if(ms) __lastRemoteUpdateMs = ms;
+
+            if (!data.store_json) { __cloudHydrated = true; __lastLoadedCloudLen = 0; return; }
+
+            const parsed = JSON.parse(data.store_json);
+
+            // Proteção contra "rollback":
+            // Se o local estiver mais recente que o cloud, NÃO sobrescreve (mantém local).
+            const localMs = Number((store && store.last_update_ms) ? store.last_update_ms : 0) || 0;
+            if(localMs && ms && localMs > ms){
+                __cloudHydrated = true;
+                __lastLoadedCloudLen = (data.store_json || '').length;
+                // opcional: tenta enviar o local para o cloud em background (sem travar a UI)
+                try{ window.__D2_NEEDS_CLOUD_PUSH = true; }catch(e){}
+                return;
+            }
+
+
+            // manter data/conta ativa por-device
+            const localDate = (store && store.date) ? new Date(store.date) : new Date();
+            const lastLocalActive = (() => { try { return localStorage.getItem('df_last_activeId'); } catch (e) { return null; } })();
+
+            store = parsed || store;
+            store.date = localDate;
+
+            // UI state: sempre iniciar com detalhes fechados
+            try{ delete store.dayDetailsOpen; delete store.tradeDetailsOpen; }catch(e){}
+
+            // preferir última conta deste dispositivo
+            if (lastLocalActive && store.accounts && store.accounts[lastLocalActive]) {
+                store.activeId = lastLocalActive;
+            } else if (!store.activeId && store.accounts) {
+                store.activeId = Object.keys(store.accounts)[0] || null;
+            }
+
+            // Mark cloud as hydrated so saves can proceed
+            __cloudHydrated = true;
+            try { __lastLoadedCloudLen = (data.store_json || '').length; } catch(e) { __lastLoadedCloudLen = 0; }
+
+            // If the user made changes before the cloud finished loading, flush them now
+            if (__pendingSaveBeforeHydrate) {
+                __pendingSaveBeforeHydrate = false;
+                try { scheduleSaveToCloud(); } catch(e) { try { saveToCloudNow(); } catch(_){} }
+            }
+        saveStoreToLocal();
+      }
+
+async function saveToCloudNow() {
+            if (isOffline) {
+                setCloudStatus('offline', (CURRENT_LANG==='en' ? "Offline" : "Offline"));
+                return;
+            }
+            if (!__cloudHydrated) {
+                __pendingSaveBeforeHydrate = true;
+                setCloudStatus('saving', translateString(CURRENT_LANG==='en' ? 'Loading cloud...' : 'Carregando nuvem...'));
+                return;
+            }
+            if (!db || !doc || !setDoc) return;
+
+            if(__saveInFlight){
+                __saveAgain = true;
+                return;
+            }
+            __saveInFlight = true;
+
+            // one-shot "force save" (admin override)
+            const force = !!__forceCloudSaveOnce;
+            __forceCloudSaveOnce = false;
+
+            const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+            const nowMs = Date.now();
+            const nowIso = new Date(nowMs).toISOString();
+
+            // Persist only what should be synced to cloud
+            const persistable = getPersistableStore();
+            const jsonStr = JSON.stringify(persistable);
+            const newLen = (jsonStr || '').length;
+
+            // If nothing meaningful to save, bail
+            if (!jsonStr || newLen < 20) { __saveInFlight = false; return; }
+
+            setCloudStatus('saving', (CURRENT_LANG==='en' ? "Saving..." : "Salvando..."));
+
+            try {
+                // Preferred: transactional save with rollback fields (prevents catastrophic wipes)
+                if (runTransaction) {
+                    await runTransaction(db, async (txn) => {
+                        const snap = await txn.get(docRef);
+                        const cur = snap.exists() ? (snap.data() || {}) : {};
+                        const curJson = (typeof cur.store_json === 'string') ? cur.store_json : '';
+                        const curLen = curJson.length;
+                        const curMs = Number(cur.last_update_ms || 0) || 0;
+                        const curIso = (typeof cur.last_update_iso === 'string') ? cur.last_update_iso : null;
+
+                        // Safety guard: refuse to overwrite a much larger cloud dataset with a much smaller one
+                        // This is what causes "everything disappeared on all devices".
+                        if (!force && curLen > 2000) {
+                            const threshold = Math.max(900, Math.floor(curLen * 0.85));
+                            if (newLen < threshold) {
+                                throw new Error(
+                                    (CURRENT_LANG==='en'
+                                        ? "Cloud safety protection: refusing to overwrite cloud with a much smaller dataset. Use Admin Area → Force cloud save only if you are 100% sure."
+                                        : "Proteção de segurança da nuvem: recusando sobrescrever a nuvem com um conjunto de dados muito menor. Use Área Administrativa → Forçar salvar somente se tiver 100% de certeza."
+                                    )
+                                );
+                            }
+                        }
+
+                        txn.set(docRef, {
+                            store_json: jsonStr,
+                            last_update_ms: nowMs,
+                            last_update_iso: nowIso,
+                            source_client_id: CLIENT_ID,
+                            schema_version: 1,
+
+                            // rollback (previous cloud version)
+                            prev_store_json: curJson || null,
+                            prev_update_ms: curMs || null,
+                            prev_update_iso: curIso || null
+                        }, { merge: true });
+                    });
+                } else {
+                    // Fallback (no transaction): still keep a local backup, but less safe
+                    await setDoc(docRef, {
+                        store_json: jsonStr,
+                        last_update_ms: nowMs,
+                        last_update_iso: nowIso,
+                        source_client_id: CLIENT_ID,
+                        schema_version: 1
+                    }, { merge: true });
+                }
+
+                __dirty = false;
+                __lastLocalWriteMs = nowMs;
+                __lastCloudWriteMs = nowMs;
+                __lastLoadedCloudLen = newLen;
+
+                flashSaved();
+            } catch (err) {
+                console.error("Cloud save failed:", err);
+                setCloudStatus('error', (err && err.message) ? err.message : (CURRENT_LANG==='en' ? "Cloud save failed" : "Falha ao salvar na nuvem"));
+            } finally {
+                __saveInFlight = false;
+                // If any changes happened while saving, try again soon
+                if (__saveAgain) {
+                    __saveAgain = false;
+                    setTimeout(() => saveToCloudNow(), 900);
+                }
+            }
+        }
+
+        // ===== Cloud safety tools (rollback / force save / local backup download) =====
+        async function restorePrevCloudVersion(){
+            if(isOffline){
+                toast(translateString(CURRENT_LANG==='en' ? "Offline mode: can't restore from cloud." : "Modo offline: não é possível restaurar da nuvem."), 'warn');
+                return;
+            }
+            try{
+                await __initFirebaseIfPossible();
+                const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+
+                if(!runTransaction){
+                    toast(translateString(CURRENT_LANG==='en' ? "Restore unavailable (transaction module missing)." : "Restauração indisponível (módulo de transação ausente)."), 'error');
+                    return;
+                }
+
+                setCloudStatus('saving', (CURRENT_LANG==='en' ? "Restoring..." : "Restaurando..."));
+
+                await runTransaction(db, async (txn) => {
+                    const snap = await txn.get(docRef);
+                    if(!snap.exists()) throw new Error(CURRENT_LANG==='en' ? "No cloud document found." : "Documento na nuvem não encontrado.");
+                    const cur = snap.data() || {};
+                    const prevJson = (typeof cur.prev_store_json === 'string') ? cur.prev_store_json : '';
+                    const curJson  = (typeof cur.store_json === 'string') ? cur.store_json : '';
+                    if(!prevJson || prevJson.length < 20){
+                        throw new Error(CURRENT_LANG==='en'
+                            ? "No previous cloud version available yet."
+                            : "Ainda não existe uma versão anterior disponível."
+                        );
+                    }
+                    const nowMs = Date.now();
+                    const nowIso = new Date(nowMs).toISOString();
+                    txn.set(docRef, {
+                        store_json: prevJson,
+                        last_update_ms: nowMs,
+                        last_update_iso: nowIso,
+                        source_client_id: CLIENT_ID,
+
+                        // keep current as the new 'prev' so you can undo the restore if needed
+                        prev_store_json: curJson,
+                        prev_update_ms: Number(cur.last_update_ms || 0) || null,
+                        prev_update_iso: (typeof cur.last_update_iso === 'string') ? cur.last_update_iso : null
+                    }, { merge:true });
+                });
+
+                toast(translateString(CURRENT_LANG==='en' ? "Previous cloud version restored." : "Versão anterior restaurada."), 'ok');
+                const __local = loadStoreFromLocal();
+        if(__local){
+          // Merge local snapshot first; cloud sync will resolve by last_update_ms
+          store = Object.assign(store, __local);
+        }
+        await loadFromCloud();
+                renderAll();
+                setCloudStatus('saved', (CURRENT_LANG==='en' ? "Restored" : "Restaurado"));
+            }catch(err){
+                console.error(err);
+                setCloudStatus('error', (err && err.message) ? err.message : (CURRENT_LANG==='en' ? "Restore failed" : "Falha ao restaurar"));
+                toast((err && err.message) ? err.message : (CURRENT_LANG==='en' ? "Restore failed" : "Falha ao restaurar"), 'error');
+            }
+        }
+
+        function forceCloudSaveOnce(){
+            __forceCloudSaveOnce = true;
+            toast(translateString(CURRENT_LANG==='en'
+                ? "Force save armed. Next save will bypass the safety guard."
+                : "Forçar salvar ativado. O próximo salvamento vai ignorar a proteção."
+            ), 'warn');
+            scheduleSaveToCloud();
+        }
+
+        function downloadLocalBackupJson(){
+            try{
+                const jb = localStorage.getItem('df_backup_local') || JSON.stringify(getPersistableStore());
+                const blob = new Blob([jb], {type:'application/json'});
+                const a = document.createElement('a');
+                const ts = new Date().toISOString().replace(/[:.]/g,'-');
+                a.href = URL.createObjectURL(blob);
+                a.download = `df_performance_backup_${ts}.json`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 300);
+                toast(translateString(CURRENT_LANG==='en' ? "Local backup downloaded." : "Backup local baixado."), 'ok');
+            }catch(e){
+                toast(translateString(CURRENT_LANG==='en' ? "Failed to download backup." : "Falha ao baixar backup."), 'error');
+            }
+        }
+
+        window.restorePrevCloudVersion = restorePrevCloudVersion;
+        window.forceCloudSaveOnce = forceCloudSaveOnce;
+        window.downloadLocalBackupJson = downloadLocalBackupJson;
+
+
+        // Debounce para evitar perda de dados quando o usuário digita e sai sem "blur"
+        function scheduleSaveToCloud(){
+            // Local safety backup (per-device) – helps recover if something goes wrong
+            try{
+                const jb = JSON.stringify(getPersistableStore());
+                if(jb && jb !== __lastLocalBackupJson){
+                    __lastLocalBackupJson = jb;
+                    localStorage.setItem('df_backup_local', jb);
+                    localStorage.setItem('df_backup_local_ts', String(Date.now()));
+                }
+            }catch(e){}
+
+            if(!isOffline && !__cloudHydrated){
+                __pendingSaveBeforeHydrate = true;
+                // Wait until we hydrate from cloud before pushing anything (prevents wiping cloud with empty defaults)
+                setCloudStatus('saving', translateString(CURRENT_LANG==='en' ? 'Loading cloud...' : 'Carregando nuvem...'));
+                return;
+            }
+
+
+            __dirty = true;
+            if(isOffline){
+                setCloudStatus('offline', (CURRENT_LANG==='en' ? "Offline" : "Offline"));
+                return;
+            }
+            setCloudStatus('saving', (CURRENT_LANG==='en' ? "Saving..." : "Salvando..."));
+            if(__saveTimer) clearTimeout(__saveTimer);
+            __saveTimer = setTimeout(() => {
+                __saveTimer = null;
+                saveToCloudNow().catch(()=>{});
+            }, 650);
+        }
+
+        // Expor para usos existentes (lugares que chamam saveToCloud diretamente)
+        async function saveToCloud(){ return saveToCloudNow(); }
+
+        function startCloudRealtimeSync(){
+            try{
+                if(!db || !onSnapshot) return;
+                const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+                if(__cloudUnsub) { try{ __cloudUnsub(); }catch(e){} __cloudUnsub = null; }
+
+                __cloudUnsub = onSnapshot(docRef, (snap) => {
+                    if(!snap.exists()) return;
+                    const data = snap.data() || {};
+                    const ms = Number(data.last_update_ms || 0) || 0;
+                    if(!ms) return;
+
+                    const source = String(data.source_client_id || '');
+                    // ignore our own echo (most of the time)
+                    if(source === CLIENT_ID && ms <= __lastLocalWriteMs){
+                        __lastRemoteUpdateMs = Math.max(__lastRemoteUpdateMs, ms);
+                        return;
+                    }
+                    if(ms <= __lastRemoteUpdateMs) return;
+
+                    // Se temos mudanças locais ainda não confirmadas, não sobrescreva
+                    if(__dirty){
+                        console.warn("Atualização remota detectada, mas há mudanças locais pendentes. Ignorando para evitar perda.");
+                        return;
+                    }
+
+                    __lastRemoteUpdateMs = ms;
+
+                    if(!data.store_json) return;
+
+                    const remote = JSON.parse(data.store_json);
+
+                    const localDate = (store && store.date) ? new Date(store.date) : new Date();
+                    const lastLocalActive = (() => { try { return localStorage.getItem('df_last_activeId'); } catch (e) { return null; } })();
+
+                    store = remote || store;
+                    store.date = localDate;
+
+                    // UI state: sempre iniciar com detalhes fechados
+                    try{ delete store.dayDetailsOpen; delete store.tradeDetailsOpen; }catch(e){}
+
+                    // preferir última conta deste dispositivo
+                    if (lastLocalActive && store.accounts && store.accounts[lastLocalActive]) {
+                        store.activeId = lastLocalActive;
+                    } else if (!store.activeId && store.accounts) {
+                        store.activeId = Object.keys(store.accounts)[0] || null;
+                    }
+
+                    try{
+                        renderSidebar();
+                        if(store.activeId) loadAccount(store.activeId);
+                        syncDatesToView();
+                        setOnlineStatus();
+                    }catch(e){
+                        console.warn("Falha ao aplicar update remoto:", e);
+                    }
+                }, (err) => {
+                    console.warn("Realtime sync error:", err);
+                });
+            }catch(e){
+                console.warn("startCloudRealtimeSync failed:", e);
+            }
+        }
+
+        // Flush de mudanças ao sair (melhora a chance de gravar quando troca de app/dispositivo)
+        try{
+            window.addEventListener('visibilitychange', () => {
+                if(document.hidden && __dirty){
+                    try{ saveToCloudNow(); }catch(e){}
+                }
+            });
+            window.addEventListener('pagehide', () => {
+                if(__dirty){
+                    try{ saveToCloudNow(); }catch(e){}
+                }
+            });
+        }catch(e){}
+
+        // =========================
+        // i18n (Português / English) - Safe & Non-blocking
+        // =========================
+        const LANG_STORAGE_KEY = 'df_app_lang';
+
+        // Phrase dictionary (PT -> EN). Focus on UI strings.
+        const I18N_PT_EN = {
+            "Conectando...":"Connecting...",
+            "Carregando...":"Loading...",
+            "Iniciando...":"Starting...",
+            "Salvando...":"Saving...",
+            "Salvo (Local)":"Saved (Local)",
+            "Erro (Salvo Local)":"Error (Saved locally)",
+            "GRAVADO COM SUCESSO":"SAVED SUCCESSFULLY",
+            "Arraste e solte os arquivos CSV aqui":"Drag and drop CSV files here",
+            "ou clique para selecionar":"or click to browse",
+            "Limpar lista":"Clear list",
+            "Remover":"Remove",
+            "Nenhum arquivo na fila":"No files queued",
+            "arquivo(s) na fila":"file(s) queued",
+
+            "Área Administrativa":"Admin Area",
+            "Accounts Summary":"Accounts Summary",
+            "Nova Conta":"New Account",
+            "FAVORITAS":"FAVORITES",
+            "Favoritas":"Favorites",
+            "contas":"accounts",
+            "Conta":"Account",
+            "Contas":"Accounts",
+            "Grupo: tamanho":"Group: size",
+            "Buscar conta...":"Search account...",
+            "Buscar":"Search",
+            "Saldo:":"Balance:",
+            "Saldo Atual":"Current Balance",
+            "Saldo Atual:":"Current Balance:",
+            "Saldo":"Balance",
+            "Lucro":"Profit",
+            "Lucro:":"Profit:",
+            "TETO":"CAP",
+            "TETO 30% (HOJE)":"30% CAP (TODAY)",
+            "Limite sugerido p/ consistência.":"Suggested limit for consistency.",
+            "Gestão de Saques":"Withdrawal Management",
+            "Solicitar Saque":"Request Payout",
+            "Limite Segurança":"Safety Limit",
+            "Limite Segurança:":"Safety Limit:",
+            "Excedente Real":"Real Excess",
+            "Excedente Real:":"Real Excess:",
+            "Falta p/ $500":"Need for $500",
+            "Dias Operados":"Days Traded",
+            "Idade":"Age",
+            "Dica:":"Tip:",
+            "Ordenar:":"Sort:",
+            "Ordenar":"Sort",
+            "Mais próximas do saque":"Closest to payout",
+            "Filter:":"Filter:",
+            "Filtro":"Filter",
+            "Todas":"All",
+            "Mostrar/Esconder Gráfico":"Show/Hide Chart",
+            "Visão geral em uma página (Balance, progresso e days operados)":"Overview in one page (Balance, progress and days traded)",
+            "Resultado Período":"Period Result",
+            "Taxa de Acerto (Trades)":"Win Rate (Trades)",
+            "Melhor Dia":"Best Day",
+            "Pior Dia":"Worst Day",
+            "AI (PERGUNTAS)":"AI (QUESTIONS)",
+            "Pergunte sobre os números do painel, ciclos, médias, regras da Apex, ou conceitos de mercado/índices (sem dados ao vivo).":"Ask about the dashboard numbers, cycles, averages, Apex rules, or market/index concepts (no live data).",
+            "Configurar":"Configure",
+            "Perguntar":"Ask",
+            "Limpar":"Clear",
+            "Mês":"Month",
+            "Semana":"Week",
+            "Ciclo":"Cycle",
+            "dias":"days",
+            "Janeiro":"January",
+            "Fevereiro":"February",
+            "Março":"March",
+            "Abril":"April",
+            "Maio":"May",
+            "Junho":"June",
+            "Julho":"July",
+            "Agosto":"August",
+            "Setembro":"September",
+            "Outubro":"October",
+            "Novembro":"November",
+            "Dezembro":"December",
+            "Evolução da Performance":"Performance Evolution",
+            "Mês 1":"Month 1",
+            "Mês 1-3":"Month 1-3",
+            "Análise por Período":"Period Analysis",
+            "Saldo Atual (Equity)":"Current Balance (Equity)",
+            "SALDO ATUAL (EQUITY)":"CURRENT BALANCE (EQUITY)",
+            "Início":"Start",
+            "INÍCIO":"START",
+            "Meta":"Goal",
+            "META":"GOAL",
+            "Próxima Janela":"Next Window",
+            "PRÓXIMA JANELA":"NEXT WINDOW",
+            "Janela":"Window",
+            "JANELA":"WINDOW",
+            "SEMANA":"WEEK",
+            "Médias Diárias (Recentes)":"Daily Averages (Recent)",
+            "MÉDAYS DIÁRIAS (RECENTES)":"DAILY AVERAGES (RECENT)",
+            "Dias":"Days",
+            "DAYS":"DAYS",
+            "Lucro Acumulado":"Cumulative Profit",
+            "Fazer Gordura":"Build Cushion",
+            "Adição":"Add-on",
+            "Risco (pts)":"Risk (pts)",
+            "Viável?":"Viable?",
+            "Viável":"Viable",
+            "Inviável":"Not viable",
+            "Gerenciamento":"Management",
+            "GERENCIAMENTO":"MANAGEMENT",
+            "AI (Perguntas)":"AI (Questions)",
+            "Próximas do saque":"Closest to payout",
+            "valores usam a mesma lógica do app (equity Current e safety threshold por tamanho).":"Values follow the same app logic (Equity Current and safety threshold by size).",
+            "Operados":"Traded",
+            "Grupo:":"Group:",
+            "tamanho":"size",
+            "Próxima janela":"Next window",
+            "Início (":"Start (",
+            "A data final deve ser maior ou igual a data inicial.":"End date must be greater than or equal to start date.",
+            "Nao foi possivel gerar o PDF (verifique conexao/billing).":"Could not generate the PDF (check connection/billing).",
+            "Selecione a data inicial e final para gerar o PDF.":"Select a start and end date to generate the PDF.",
+            "Senha:":"Password:",
+            "Mensal (1 a 31)":"Monthly (1 to 31)",
+            "Mensal (1 à 31)":"Monthly (1 to 31)",
+            "PERFORMANCE (CICLOS ATUAIS)":"PERFORMANCE (CURRENT CYCLES)",
+            "Performance (CICLOS ATUAIS)":"Performance (CURRENT CYCLES)",
+            "CICLOS ATUAIS":"CURRENT CYCLES",
+            "Ciclos Atuais":"Current Cycles",
+            "CICLOS":"CYCLES",
+            "Ciclos":"Cycles",
+            "ATUAIS":"CURRENT",
+            "Atuais":"Current",
+            "Equity Atual":"Current Equity",
+            "EQUITY ATUAL":"CURRENT EQUITY",
+            "Disponível":"Available",
+            "DISPONÍVEL":"AVAILABLE",
+            "Acesso restrito":"Restricted access",
+            "Entre com seu usuário e senha de administrador.":"Sign in with your admin username and password.",
+            "Usuário":"Username",
+            "Senha":"Password",
+            "Dante ou Felipe":"Dante or Felipe",
+            "Entrar":"Sign in",
+            "Dica: credenciais são locais (GitHub Pages).":"Tip: credentials are local (GitHub Pages).",
+            "Visão geral em uma página (saldo, progress e days traded)":"Overview in one page (balance, progress and days traded)",
+            "Visão geral em uma página (saldo, progresso e days traded)":"Overview in one page (balance, progress and days traded)",
+            "Tip: valores usam a mesma lógica do app (equity atual e safety threshold por size).":"Tip: values use the same app logic (current equity and safety threshold by size).",
+            "Tip: valores usam a mesma lógica do app (equity atual e safety threshold por tamanho).":"Tip: values use the same app logic (current equity and safety threshold by size).",
+            "Visão geral em uma página (saldo, progresso e dias operados)":"Overview in one page (balance, progress and days traded)",
+            "valores usam a mesma lógica do app (equity atual e safety threshold por tamanho).":"values follow the same app logic (current equity and safety threshold by size).",
+            "Valores usam a mesma lógica do app (equity atual e safety threshold por tamanho).":"Values follow the same app logic (current equity and safety threshold by size).",
+            "Incluir gráfico":"Include chart",
+            "INÍCIO (":"START (",
+
+                    "DATA":"DATE",
+            "NOTA":"NOTE",
+            "Dias com trade:":"Days traded:",
+            "Days com trade:":"Days traded:",
+            "Feriados ignorados no total:":"Holidays ignored in total:",
+            "Feriados ignorados no total":"Holidays ignored in total",
+            "Visão geral em uma página (saldo, progresso e dias traded)":"Overview in one page (balance, progress and days traded)",
+
+            "Restaurar versão anterior (nuvem)":"Restore previous version (cloud)",
+            "Forçar salvar na nuvem":"Force cloud save",
+            "Baixar Backup Local":"Download Local Backup",
+            "Dica: agora cada salvamento na nuvem grava automaticamente uma cópia anterior (rollback). Assim, se algo der errado, é possível restaurar rapidamente.":"Tip: every cloud save now automatically stores a previous copy (rollback). If anything goes wrong, you can restore quickly.",
+            "Carregando nuvem...":"Loading cloud...",
+
+            "Segurança da Nuvem":"Cloud Safety",
+            "Importar Cash History (Tradovate)":"Import Cash History (Tradovate)",
+            "Selecione um ou mais arquivos CSV no formato:":"Select one or more CSV files in the format:",
+            "O app identifica a conta pelo sufixo do nome do arquivo e compara com a nuvem para evitar duplicidade.":"The app identifies the account from the filename suffix and checks the cloud to prevent duplicates.",
+            "Arquivos (CSV)":"Files (CSV)",
+            "Criar contas ausentes automaticamente":"Auto-create missing accounts",
+            "Atualizar saldo atual (Amount final do arquivo)":"Update current balance (last Amount in file)",
+            "Sobrescrever conflitos":"Overwrite conflicts",
+            "Nome do arquivo inválido. Use: Cash Historydf21.csv (ou Cash Historydfc213.csv).":"Invalid filename. Use: Cash Historydf21.csv (or Cash Historydfc213.csv).",
+            "Conta não encontrada no app. Ative 'Criar contas ausentes automaticamente' ou crie a conta manualmente.":"Account not found in the app. Enable 'Auto-create missing accounts' or create the account manually.",
+            "Aviso: o final do Account no CSV não bate com o número do nome do arquivo.":"Warning: the Account ending in the CSV doesn't match the number in the filename.",
+            "Arquivos":"Files",
+            "Erros":"Errors",
+            "Dias":"Days",
+            "Novos":"New",
+            "Já existiam":"Already exists",
+            "Conflitos":"Conflicts",
+            "linhas":"rows",
+            "Contas criadas automaticamente":"Auto-created accounts",
+            "Conflitos (não serão importados a menos que você marque 'Sobrescrever conflitos')":"Conflicts (will not be imported unless you check 'Overwrite conflicts')",
+            "App":"App",
+            "mais":"more",
+            "Regra do import: Trade 1 = soma 'Trade Paired' (Gross). Trade 2 = soma de fees/commission (negativo). Fund Transaction é ignorado.":"Import rule: Trade 1 = sum of 'Trade Paired' (Gross). Trade 2 = sum of fees/commission (negative). Fund Transaction is ignored.",
+            "Lendo arquivos...":"Reading files...",
+            "Pré-visualização pronta.":"Preview ready.",
+            "Nenhum arquivo selecionado.":"No files selected.",
+            "Falha ao pré-visualizar. Verifique os arquivos e tente novamente.":"Failed to preview. Check the files and try again.",
+            "Import concluído.":"Import completed.",
+            "Equity atualizado":"Equity updated",
+            "Falha ao importar/salvar. Tente novamente.":"Failed to import/save. Please try again.",
+            "Falha ao importar/salvar.":"Failed to import/save.",
+            "OK":"OK",
+            "Erro ao ler arquivo":"Failed to read file",
+
+            "Importar e Salvar":"Import & Save",
+            "Pré-visualizar":"Preview",
+
+
+
+
+            "Resumo de Contas":"Accounts Summary",
+            "Sort:":"Sort:",
+            "Filter:":"Filter:",
+            "Generated on:":"Generated on:",
+            "Conta selecionada:":"Selected account:",
+            "Conta ativa:":"Active account:",
+            "Logado como":"Logged in as",
+            "Histórico de Saques":"Withdrawal History",
+            "Mostra os registros da conta ativa.":"Shows records for the selected account.",
+            "Limpar Histórico":"Clear History",
+            "Total Sacado:":"Total Withdrawn:",
+            "Vazio.":"Empty.",
+            "Saques":"Withdrawals",
+            "Importe via Drag & Drop. Clique no (i) para ver formato e regras.":"Import via Drag & Drop. Click the (i) to see format and rules.",
+            "Gráfico:":"Chart:",
+            "Progresso até Safety (%)":"Progress to Safety (%)",
+            "Disponível p/ saque ($)":"Available for Withdrawal ($)",
+            "Falta p/ $500 ($)":"Need for $500 ($)",
+            "Equity líquido ($)":"Net Equity ($)",
+            "0% = no start • 100% = atingiu safety":"0% = not started • 100% = reached safety",
+            "Selecione um ou mais arquivos CSV no formato":"Select one or more CSV files in the format",
+            "O app identifica a conta pelo sufixo do nome do arquivo e compara com a nuvem para evitar duplicidade.":"The app identifies the account by the file name suffix and compares with the cloud to avoid duplicates.",
+            "Arquivos (CSV)":"Files (CSV)",
+            "Criar contas ausentes automaticamente":"Auto-create missing accounts",
+            "Sobrecrever conflitos":"Overwrite conflicts",
+            "Sobrescrever conflitos":"Overwrite conflicts",
+  "Sair": "Sign out",
+  "Conta selecionada (Admin)": "Selected account (Admin)",
+  "Pré-visualizar automaticamente": "Auto-preview",
+  "“Cancelar” marca o saque como cancelado (não apaga). “Apagar”/“Limpar” só aparece para Super Admin.": "“Cancel” marks the withdrawal as canceled (does not delete). “Delete”/“Clear” shows only for Super Admin.",
+  "\"Cancelar\" marca o saque como cancelado (não apaga). \"Apagar\"/\"Limpar\" só aparece para Super Admin.": "\"Cancel\" marks the withdrawal as canceled (does not delete). \"Delete\"/\"Clear\" shows only for Super Admin.",
+  "* “Days Traded” = business days with any record (Trade 1, Trade 2, or Total), excluding holidays marked in the app.": "* “Days Traded” = business days with any entry (Trade 1, Trade 2, or Total), excluding holidays marked in the app.",
+  "Esta área mostra e permite gerenciar informações (ex.: saques/histórico/ações) somente da conta selecionada. Isso evita misturar transações de todas as accounts em uma lista única, mantendo o admin limpo e fácil de auditar.": "This area shows and lets you manage info (e.g., withdrawals/history/actions) only for the selected account. This avoids mixing all accounts’ transactions in one list, keeping the admin clean and easy to audit.",
+  "Formato: Performance<X>.csv. O app identifica a conta pelo sufixo X (tudo após 'Performance' e antes de '.csv'). Usa a coluna 'pnl' por trade e agrupa por dia: T1 = primeiro trade do dia; T2 = soma do 2º trade em diante; Total = T1 + T2. X pode ser qualquer combinação de letras/números.": "Format: Performance<X>.csv. The app identifies the account by suffix X (everything after 'Performance' and before '.csv'). It uses the 'pnl' column per trade and groups by day: T1 = first trade of the day; T2 = sum of trade #2 onward; Total = T1 + T2. X can be any mix of letters/numbers.",
+  "Formato: Cash History<X>.csv. O app identifica a conta pelo sufixo X (tudo após 'Cash History' e antes de '.csv') e atualiza os days automaticamente. X pode ser qualquer combinação de letras/números.": "Format: Cash History<X>.csv. The app identifies the account by suffix X (everything after 'Cash History' and before '.csv') and updates the days automatically. X can be any mix of letters/numbers.",
+
+};
 
         const I18N_EN_PT = (() => {
             const out = {};
@@ -5191,16 +5560,10 @@ if(composed !== core) return lead + composed + trail;
                  }
             };
 
-            // Require login before touching Firestore (unless Offline mode)
-            try { await __waitForAuthOrOffline(); } catch(e) {}
-
-            // If still not authenticated and not offline, stop here (user will see login modal)
-            try{ if(!isOffline && (!auth || !auth.currentUser)) { return; } }catch(e){}
-
             try { await loadFromCloud(); } catch (e) { showFatalError("Erro de Conexão ou Permissão", e.message || "Falha ao baixar dados."); return; } 
 if (!store.activeId) {
                 try {
-                    const docRef = (__cloudDocRef || doc(db, "workspaces", __getWorkspaceId()));
+                    const docRef = doc(db, "users", "dante_data");
                 const docSnap = await Promise.race([
                     getDoc(docRef),
                     new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout ao conectar no Firestore.")), 8000))
@@ -7042,7 +7405,6 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
                 if(location && location.protocol === 'file:'){
                     const loader = document.getElementById('app-loader');
                     if(loader){
-                        try{ loader.setAttribute('data-loader-lock','1'); }catch(e){}
                         loader.innerHTML = `
                           <div class="text-center p-6 max-w-sm mx-auto">
                             <div class="text-yellow-400 mb-4 flex justify-center"><i data-lucide="alert-triangle" class="w-12 h-12"></i></div>
@@ -7083,7 +7445,6 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
             }catch(e){ __fbOk = false; }
 
             if(!__fbOk){
-                try{ const loader=document.getElementById('app-loader'); if(loader) loader.setAttribute('data-loader-lock','1'); }catch(e){}
                 const __lang = (window.CURRENT_LANG || localStorage.getItem('df_lang') || 'pt').toLowerCase();
                 const __en = __lang.startsWith('en');
                 const loader = document.getElementById('app-loader');
@@ -7096,16 +7457,7 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
                                 ${__en
                                     ? "Your browser couldn’t download the Firebase modules (network blocking, adblock, or slow connection).<br/>You can try again or continue in offline mode."
                                     : "O navegador não conseguiu baixar os módulos do Firebase (bloqueio de rede, adblock, ou conexão lenta).<br/>Você pode tentar recarregar ou continuar em modo offline."}
-                            
-</p>
-                            <details class="text-left text-xs text-slate-300/80 mb-5 bg-slate-900/40 p-3 rounded border border-slate-700">
-                              <summary class="cursor-pointer font-bold">${__en ? "Technical details" : "Detalhes técnicos"}</summary>
-                              <div class="mt-2 font-mono break-all">
-                                <div>${__en ? "Last URL" : "Última URL"}: <span class="text-slate-100">${(window.__firebaseLoadDiag&&window.__firebaseLoadDiag.lastUrl)||"?"}</span></div>
-                                <div>${__en ? "Last error" : "Último erro"}: <span class="text-slate-100">${(window.__firebaseLoadDiag&&window.__firebaseLoadDiag.lastError)||"?"}</span></div>
-                                <div class="mt-2 opacity-80">${__en ? "Tip: open the URL in a new tab. If it shows ERR_BLOCKED_BY_CLIENT, disable adblock/shields for this site." : "Dica: abra a URL em uma nova aba. Se aparecer ERR_BLOCKED_BY_CLIENT, desative AdBlock/Shields para este site."}</div>
-                              </div>
-                            </details>
+                            </p>
                             <div class="space-y-3">
                                 <button onclick="location.reload()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-6 rounded-full font-bold transition text-sm">
                                     Recarregar
@@ -7130,7 +7482,6 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
             const failsafe = setTimeout(() => {
                 if(bootDone) return;
                 const loader = document.getElementById('app-loader');
-                try{ if(loader && loader.getAttribute('data-loader-lock')==='1') return; }catch(e){}
                 if(loader){
                     loader.innerHTML = `
                         <div class="text-center p-6 max-w-sm mx-auto">
@@ -7156,16 +7507,10 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
 
             // Initialize app
             let _initOk = false;
-            try {
-                // Require Firebase Auth before accessing Firestore (unless Offline Mode)
-                try { await __waitForAuthOrOffline(); } catch(e) {}
-                if(!isOffline && auth && !auth.currentUser){ throw new Error("Login necessário"); }
-                await init(); _initOk = true;
-            } catch (e) {
+            try { await init(); _initOk = true; } catch (e) {
                 console.error('init failed:', e);
                 const loader = document.getElementById('app-loader');
                 if (loader) {
-                    try{ loader.setAttribute('data-loader-lock','1'); }catch(e){}
                     loader.innerHTML = '<div class="text-center p-6 max-w-sm mx-auto">' +
                         '<div class="text-red-500 mb-4">Falha ao iniciar</div>' +
                         '<div class="text-xs text-slate-400">Abra o Console para ver detalhes, ou tente recarregar.</div>' +
@@ -7175,23 +7520,12 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
             }
 
             bootDone = true;
-            try{ window.__DF_BOOT_DONE__ = true; }catch(e){}
             try { clearTimeout(failsafe); } catch(e){}
 
-            // Always release the boot watchdog so the UI can show (login first).
-            try{ window.__DF_BOOT_OK__ = true; }catch(e){}
-            try { hideAppLoader(); } catch (e) {}
+            if (_initOk) {
+                try{ window.__DF_BOOT_OK__ = true; }catch(e){}
 
-            if (!_initOk) {
-                try{
-                    const el = document.getElementById('auth-error');
-                    if (el) {
-                        el.classList.remove('hidden');
-                        el.textContent = 'Firebase não carregou. Desative AdBlock/Brave Shields para este site e recarregue (Ctrl+F5).';
-                    }
-                    const btn = document.getElementById('auth-login-btn');
-                    if (btn) btn.disabled = true;
-                }catch(e){}
+                try { hideAppLoader(); } catch (e) {}
             }
 
             // Re-apply language AFTER init() so freshly-rendered content is translated.
