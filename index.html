@@ -1152,67 +1152,7 @@ body.dark .bg-white { background-color: #1e293b; }
 
 
     <script type="module">
-                // Firebase dynamic loader (prevents "stuck on Iniciando..." when module imports hang or are blocked)
-        let initializeApp, getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, runTransaction;
-        async function __loadFirebaseModules(maxWaitMs = 45000){
-            const appUrl = "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-            const fsUrl  = "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-            // If already loaded, skip
-            if (window.__dfFirebaseModulesLoaded && initializeApp && getFirestore) return true;
-
-            // Do NOT fail fast here. On some networks/CDNs the module import may take > 12s,
-            // and failing early causes unnecessary "Reload" loops. We'll only fail after maxWaitMs.
-            const importPromise = Promise.all([import(appUrl), import(fsUrl)]);
-
-            // After a few seconds, change the loader text to indicate slow connection (but keep loading).
-            let slowTimer = null;
-            try{
-                slowTimer = setTimeout(() => {
-                    try{
-                        const st = document.getElementById('status-text');
-                        if(!st) return;
-                        const lang = (window.CURRENT_LANG || localStorage.getItem('df_lang') || 'pt').toLowerCase();
-                        st.textContent = (lang.startsWith('en'))
-                            ? 'Loading modules... (slow connection)'
-                            : 'Carregando módulos... (conexão lenta)';
-                    }catch(e){}
-                }, 10000);
-            }catch(e){}
-
-            const timed = new Promise((_, rej) =>
-                setTimeout(() => rej(new Error("Timeout loading Firebase modules.")), maxWaitMs)
-            );
-
-            const [appMod, fsMod] = await Promise.race([importPromise, timed]);
-
-            try{ if(slowTimer) clearTimeout(slowTimer); }catch(e){}
-
-            initializeApp = appMod.initializeApp;
-            getFirestore  = fsMod.getFirestore;
-            doc           = fsMod.doc;
-            getDoc        = fsMod.getDoc;
-            setDoc        = fsMod.setDoc;
-            onSnapshot    = fsMod.onSnapshot;
-            updateDoc     = fsMod.updateDoc;
-                runTransaction = fsMod.runTransaction;
-
-            window.__dfFirebaseModulesLoaded = true;
-            return true;
-        }
-
-        async function __initFirebaseIfPossible(){
-            try{
-                if (window.__dfFirebaseReady && initializeApp && getFirestore) return true;
-                await __loadFirebaseModules(45000);
-                window.__dfFirebaseReady = true;
-                return true;
-            }catch(e){
-                console.error("Firebase import failed:", e);
-                return false;
-            }
-        }
-    
+                    
 
         // --- NOVO BLOCO DE AUTENTICAÇÃO (Mantenha este no topo do script) ---
     const firebaseConfig = {
