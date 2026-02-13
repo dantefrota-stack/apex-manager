@@ -1290,42 +1290,34 @@ document.getElementById('status-text').textContent = "Online"; // <--- ADICIONE 
 
     // Sobrescreve a função de salvar para usar o caminho fixo 'dante_data'
     // Mantendo a lógica de backup 'prev_store_json'
-// --- PASSO 1: FUNÇÃO DE SALVAMENTO BLINDADA (SMART MERGE + BACKUP) ---
+// --- PASSO 1: FUNÇÃO DE SALVAMENTO (CORRIGIDA PARA NÃO TRAVAR O INÍCIO) ---
 window.saveToCloud = async () => {
-    // Trava de segurança: Só salva se estiver logado e se já tivermos baixado os dados da nuvem pelo menos uma vez
-    if (!auth.currentUser || !window.__cloudHydrated) {
-        // console.warn("Aguardando sincronização completa antes de salvar...");
-        return;
-    }
+    // CORREÇÃO: Removemos a verificação de 'cloudHydrated' que estava travando o app
+    if (!auth.currentUser) return;
 
     const docRef = doc(db, "users", "dante_data");
-    // Cria um arquivo de Backup separado com a data e hora exata (milissegundos)
     const backupRef = doc(db, "users_backups", `backup_${Date.now()}`); 
 
     const statusEl = document.getElementById('status-text');
     
-    // --- CORREÇÃO: Comentei a linha abaixo para não piscar na tela ---
-    // if(statusEl) statusEl.textContent = "Criando Backup e Salvando...";
+    // Sem texto piscando aqui
 
     try {
-        // runTransaction garante que ninguém "atropele" o salvamento do outro
         await runTransaction(db, async (txn) => {
-            // 1. LER O QUE ESTÁ NA NUVEM AGORA (A verdade absoluta)
             const sfDoc = await txn.get(docRef);
             
             let finalStore;
-            const localStore = getPersistableStore(); // Pega os dados da sua tela agora
+            const localStore = getPersistableStore(); 
 
             if (!sfDoc.exists()) {
                 finalStore = localStore;
             } else {
-                // 2. FUSÃO INTELIGENTE (SMART MERGE)
+                // FUSÃO INTELIGENTE
                 const cloudJson = sfDoc.data().store_json;
                 const cloudStore = cloudJson ? JSON.parse(cloudJson) : {};
                 
-                finalStore = { ...cloudStore }; // Começa com a cópia da nuvem
+                finalStore = { ...cloudStore }; 
 
-                // Atualiza as contas com cuidado
                 if (localStore.accounts) {
                     if (!finalStore.accounts) finalStore.accounts = {};
 
@@ -1334,36 +1326,30 @@ window.saveToCloud = async () => {
                         const cloudAcc = finalStore.accounts[accId];
 
                         if (!cloudAcc) {
-                            // Se a conta é nova e só você tem, adiciona
                             finalStore.accounts[accId] = localAcc;
                         } else {
-                            // Se a conta já existe, MISTURA OS DIAS
-                            // Isso impede que, se o seu PC não tiver os dados de ontem, você apague os dados de ontem da nuvem.
                             finalStore.accounts[accId] = {
-                                ...cloudAcc,      // Mantém configurações da nuvem
-                                ...localAcc,      // Atualiza com suas configurações locais
+                                ...cloudAcc,      
+                                ...localAcc,      
                                 data: {
-                                    ...cloudAcc.data, // PRESERVA dias antigos da nuvem (Proteção contra Cache Velho)
-                                    ...localAcc.data  // Atualiza/Adiciona os dias que você mexeu agora
+                                    ...cloudAcc.data, 
+                                    ...localAcc.data  
                                 }
                             };
                         }
                     });
                 }
-                // Garante que logs administrativos sejam preservados
                 if(localStore.adminLogs) finalStore.adminLogs = localStore.adminLogs;
             }
 
             const finalJson = JSON.stringify(finalStore);
 
-            // 3. GRAVA NO ARQUIVO PRINCIPAL (Completei esta parte que estava faltando)
             txn.set(docRef, {
                 store_json: finalJson,
                 last_update_ms: Date.now(),
                 user_email: auth.currentUser.email 
             }, { merge: true });
 
-            // 4. GRAVA O BACKUP DE SEGURANÇA (Completei esta parte também)
             txn.set(backupRef, {
                 store_json: finalJson,
                 backup_date: new Date().toISOString(),
@@ -1371,12 +1357,9 @@ window.saveToCloud = async () => {
             });
         });
 
-        // --- SUCESSO E LIMPEZA VISUAL ---
         if(statusEl) {
             statusEl.textContent = "Salvo";
             statusEl.className = "text-green-500 font-bold";
-            
-            // Correção: Limpa o texto após 2 segundos
             setTimeout(()=> { 
                 statusEl.className = "text-slate-400"; 
                 statusEl.textContent = ""; 
@@ -1390,7 +1373,7 @@ window.saveToCloud = async () => {
             statusEl.className = "text-red-500 font-bold"; 
         }
     }
-};            txn.set(docRef, {
+};          txn.set(docRef, {
                 store_json: finalJson,
                 last_update_ms: Date.now(),
                 updated_by: auth.currentUser.email
