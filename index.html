@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <!-- BUILD_ID: DF-STRATEGIC-V10-FINAL-FIX-2026 -->
+    <!-- BUILD_ID: DF-STRATEGIC-V10-RECOVERY-FINAL-2026 -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Performance Report - DF Strategic V10</title>
@@ -31,9 +31,6 @@
         .dashboard-card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; font-size: 14px; }
         body.dark .dashboard-card { background-color: #1e293b; border-color: #334155; color: #f1f5f9; }
         body.dark .bg-white { background-color: #1e293b; }
-        body.dark .text-slate-800 { color: #f1f5f9; }
-        body.dark .border-slate-200 { border-color: #334155; }
-        body.dark input, body.dark select { background-color: #334155; color: white; border-color: #475569; }
         
         .trade-input { text-align: center; font-weight: 600; transition: all 0.2s; font-size: 0.9rem; }
         .trade-input:focus { transform: scale(1.02); outline: none; border-color: #6366f1; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); }
@@ -59,15 +56,16 @@
 </head>
 <body class="pb-12 transition-colors duration-300">
 
-    <!-- Loader / Login Overlay -->
+    <!-- Loader Inexpugnável -->
     <div id="app-loader" class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col items-center justify-center text-white transition-opacity duration-500">
-        <div id="loader-content" class="flex flex-col items-center">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
-            <p id="loader-status" class="text-sm font-medium">Iniciando DF Strategic...</p>
+        <div id="loader-content" class="flex flex-col items-center max-w-sm px-6 text-center">
+            <div id="loader-spinner" class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
+            <p id="loader-status" class="text-sm font-medium tracking-tight">Verificando Credenciais...</p>
+            <p id="loader-detail" class="text-xs text-slate-500 mt-2">Aguardando resposta do servidor seguro...</p>
         </div>
     </div>
 
-    <!-- Header Principal -->
+    <!-- Header -->
     <div id="header-main" class="bg-slate-900 text-white py-2 px-4 shadow-md sticky top-0 z-40 flex justify-between items-center no-print">
         <div class="flex items-center gap-3">
             <button onclick="window.toggleSidebar()" class="p-1 hover:bg-slate-700 rounded text-slate-300"><i data-lucide="menu" class="w-6 h-6"></i></button>
@@ -81,17 +79,17 @@
                 <i data-lucide="moon" id="theme-icon" class="w-5 h-5"></i>
             </button>
             <div id="cloud-status" class="text-xs flex items-center gap-1 font-medium">
-                <i data-lucide="cloud" class="w-3 h-3"></i> <span id="status-text">Conectando...</span>
+                <i data-lucide="cloud" class="w-3 h-3"></i> <span id="status-text">Iniciando...</span>
             </div>
         </div>
     </div>
 
-    <!-- Título da Conta e Configurações -->
+    <!-- Seção Identificação da Conta -->
     <div class="bg-white border-b border-slate-200 shadow-sm sticky top-10 z-30 transition-colors dark:border-slate-700 dark:bg-slate-800">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div>
+            <div id="account-info-display">
                 <h1 id="active-account-name" class="font-bold text-lg leading-none text-slate-800 dark:text-white">...</h1>
-                <p id="active-account-config" class="text-xs text-slate-500 dark:text-slate-400 mt-1">Sincronizando dados...</p>
+                <p id="active-account-config" class="text-xs text-slate-500 dark:text-slate-400 mt-1">Carregando conta...</p>
             </div>
             <div class="flex gap-2 no-print">
                 <select id="config-size" onchange="window.updateConfig()" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200">
@@ -101,12 +99,12 @@
                     <option value="150k">150k</option>
                     <option value="300k">300k</option>
                 </select>
-                <button onclick="window.renameAccount()" class="p-1.5 bg-slate-100 hover:bg-indigo-100 text-slate-500 rounded dark:bg-slate-700 dark:text-slate-400"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                <button onclick="window.renameAccount()" class="p-1.5 bg-slate-100 hover:bg-indigo-100 text-slate-500 rounded dark:bg-slate-700 dark:text-slate-400" title="Renomear Conta"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
             </div>
         </div>
     </div>
 
-    <!-- Conteúdo Principal -->
+    <!-- Grid de Métricas -->
     <div class="container mx-auto px-4 py-6 space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="dashboard-card p-4 border-l-4 border-l-indigo-500">
@@ -118,19 +116,20 @@
                 </div>
             </div>
             <div class="dashboard-card p-4 border-l-4 border-l-green-500">
-                <p class="text-xs font-bold text-slate-400 uppercase">Teto 30% (Hoje)</p>
+                <p class="text-xs font-bold text-slate-400 uppercase">Teto 30% (Sessão)</p>
                 <h2 id="gain-cap" class="text-2xl font-bold text-green-600 mt-1">$0.00</h2>
             </div>
             <div class="dashboard-card p-4 border-l-4 border-l-yellow-500">
-                <p class="text-xs font-bold text-slate-400 uppercase">Disponível Saque</p>
+                <p class="text-xs font-bold text-slate-400 uppercase">Saque Disponível</p>
                 <h2 id="payout-available" class="text-2xl font-bold text-slate-800 dark:text-white mt-1">$0.00</h2>
             </div>
         </div>
 
-        <div class="lg:col-span-2 space-y-4">
+        <!-- Tabela Calendário -->
+        <div class="space-y-4">
             <div class="flex justify-between items-center dashboard-card p-3">
                 <button onclick="window.changeMonth(-1)" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"><i data-lucide="chevron-left"></i></button>
-                <h2 id="calendar-title" class="text-xl font-bold text-slate-700 dark:text-slate-200">...</h2>
+                <h2 id="calendar-title" class="text-xl font-bold text-slate-700 dark:text-slate-200">--</h2>
                 <button onclick="window.changeMonth(1)" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full"><i data-lucide="chevron-right"></i></button>
             </div>
             <div class="dashboard-card overflow-hidden">
@@ -139,9 +138,9 @@
                         <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs dark:bg-slate-800 dark:text-slate-400">
                             <tr>
                                 <th class="px-4 py-3">Dia</th>
-                                <th class="px-4 py-3 text-center">T1 | T2</th>
-                                <th class="px-4 py-3 text-right">Total</th>
-                                <th class="px-4 py-3 text-center">Nota</th>
+                                <th class="px-4 py-3 text-center">Trade 1 | Trade 2</th>
+                                <th class="px-4 py-3 text-right">Saldo do Dia</th>
+                                <th class="px-4 py-3 text-center">Status</th>
                             </tr>
                         </thead>
                         <tbody id="calendar-body" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
@@ -151,16 +150,21 @@
         </div>
     </div>
 
-    <!-- Sidebar de Contas -->
+    <!-- Sidebar Lateral -->
     <div id="sidebar-backdrop" class="fixed inset-0 bg-black/50 z-40 hidden backdrop-blur-sm" onclick="window.toggleSidebar()"></div>
     <div id="sidebar" class="fixed inset-y-0 left-0 w-80 bg-slate-900 text-white z-50 sidebar-closed shadow-2xl flex flex-col no-print">
         <div class="p-5 border-b border-slate-700 flex justify-between items-center">
-            <h2 class="font-bold text-xl">Contas</h2>
-            <button onclick="window.toggleSidebar()" class="text-slate-400"><i data-lucide="x"></i></button>
+            <div>
+                <h2 class="font-bold text-xl">Suas Contas</h2>
+                <p class="text-[10px] text-slate-400 uppercase tracking-widest">Multi-Account Management</p>
+            </div>
+            <button onclick="window.toggleSidebar()" class="text-slate-400 hover:text-white transition"><i data-lucide="x"></i></button>
         </div>
         <div class="flex-1 overflow-y-auto p-4 space-y-2" id="account-list"></div>
-        <div class="p-4 bg-slate-800">
-            <button onclick="window.createAccount()" class="w-full py-2.5 rounded-lg bg-indigo-600 font-bold">Nova Conta</button>
+        <div class="p-4 bg-slate-800/50">
+            <button onclick="window.createAccount()" class="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold flex items-center justify-center gap-2 transition-all">
+                <i data-lucide="plus-circle" class="w-5 h-5"></i> Nova Conta
+            </button>
         </div>
     </div>
 
@@ -176,23 +180,31 @@
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const provider = new GoogleAuthProvider();
 
+        // Estado Global Seguro
         window.store = { accounts: {}, activeId: localStorage.getItem('df_active_id'), date: new Date() };
         let __cloudHydrated = false;
         let __lastCloudMs = 0;
         let __isSaving = false;
+        let __loaderTimeout;
 
-        // --- AUTENTICAÇÃO E LOGIN FIX ---
+        // --- GESTÃO DE AUTENTICAÇÃO ---
         onAuthStateChanged(auth, (user) => {
+            clearTimeout(__loaderTimeout);
             if (user && (user.email === 'dantefrota@gmail.com' || user.email === 'fellipemendonca87@gmail.com')) {
-                document.getElementById('loader-status').textContent = "Conectando ao banco de dados...";
+                updateLoaderStatus("Conectando ao banco de dados...", "Sincronizando ambiente de trading...");
                 startSmartSync();
+                // Timeout de segurança: Se em 8s não carregar o banco, libera o loader (pode ser problema de rede)
+                __loaderTimeout = setTimeout(() => { if(!__cloudHydrated) hideLoader(); }, 8000);
+            } else if (user) {
+                alert("Acesso Negado para: " + user.email);
+                signOut(auth);
             } else {
                 showLoginUI();
             }
@@ -200,11 +212,11 @@
 
         window.login = async () => {
             try {
-                document.getElementById('loader-status').textContent = "Abrindo autenticação Google...";
+                updateLoaderStatus("Abrindo Google Login...", "Aguardando interação do usuário...");
                 await signInWithPopup(auth, provider);
             } catch (error) {
-                console.error("Erro no Login:", error);
-                alert("Falha na autenticação. Tente novamente.");
+                console.error("Auth Error:", error);
+                alert("Falha ao abrir login. Verifique se o seu navegador não bloqueou o pop-up.");
                 showLoginUI();
             }
         };
@@ -212,18 +224,23 @@
         function showLoginUI() {
             const content = document.getElementById('loader-content');
             content.innerHTML = `
-                <div class="text-center p-8 bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl">
-                    <h2 class="text-xl font-bold mb-4">Acesso DF Strategic</h2>
-                    <p class="text-xs text-slate-400 mb-6">Inicie sessão para gerir a sua performance.</p>
-                    <button onclick="window.login()" class="bg-white text-black px-6 py-3 rounded-lg font-bold flex items-center gap-3 mx-auto hover:bg-slate-200 transition-all scale-105">
-                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20">
+                <div class="animate-none flex flex-col items-center p-8 bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl ring-1 ring-white/10">
+                    <div class="bg-indigo-500/20 p-4 rounded-full mb-4">
+                        <i data-lucide="shield-check" class="w-8 h-8 text-indigo-400"></i>
+                    </div>
+                    <h2 class="text-xl font-bold mb-2">DF Strategic V10</h2>
+                    <p class="text-xs text-slate-400 mb-8 max-w-[200px]">Acesso restrito. Identifique-se para gerenciar seus dados.</p>
+                    <button onclick="window.login()" class="w-full bg-white text-slate-900 px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-slate-100 transition-all active:scale-95">
+                        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18">
                         Entrar com Google
                     </button>
                 </div>
             `;
+            lucide.createIcons();
+            hideSpinner();
         }
 
-        // --- SMART SYNC ENGINE ---
+        // --- MOTOR DE SINCRONIZAÇÃO INTELIGENTE ---
         function startSmartSync() {
             const docRef = doc(db, "users", "dante_data");
             
@@ -231,7 +248,7 @@
                 if (!snap.exists()) {
                     __cloudHydrated = true;
                     if (Object.keys(window.store.accounts).length === 0) {
-                        window.createAccount("Minha Primeira Conta");
+                        initializeFirstAccount();
                     }
                     hideLoader();
                     return;
@@ -240,11 +257,12 @@
                 const data = snap.data();
                 const remoteMs = data.last_update_ms || 0;
 
+                // Só processa se os dados na nuvem forem mais recentes (Segurança Absoluta)
                 if (remoteMs > __lastCloudMs) {
                     try {
                         const remoteStore = JSON.parse(data.store_json);
                         
-                        // Preserva edição ativa para não quebrar a digitação
+                        // Merge com preservação de foco
                         const activeEl = document.activeElement;
                         const isEditing = activeEl && activeEl.tagName === 'INPUT';
                         
@@ -259,10 +277,15 @@
                         window.renderAll(isEditing ? activeEl.id : null);
                         hideLoader();
                         updateStatus("Online", "status-saved");
-                    } catch(e) { console.error("Erro no Parse dos dados:", e); }
+                    } catch(e) { 
+                        console.error("Sync Error:", e);
+                        hideLoader();
+                    }
                 }
-            }, (error) => {
-                updateStatus("Erro de conexão", "status-error");
+            }, (err) => {
+                console.error("Firestore Err:", err);
+                updateStatus("Erro de Rede", "status-error");
+                hideLoader();
             });
         }
 
@@ -281,8 +304,9 @@
                     const snap = await txn.get(docRef);
                     const cloudMs = snap.exists() ? (snap.data().last_update_ms || 0) : 0;
 
+                    // Bloqueio de Conflito: Se alguém salvou enquanto você editava, o sistema impede a perda
                     if (cloudMs > __lastCloudMs) {
-                        throw new Error("CONFLITO_DETECTADO");
+                        throw new Error("CONFLITO_SESSAO");
                     }
 
                     txn.set(docRef, {
@@ -295,56 +319,62 @@
                 updateStatus("Sincronizado", "status-saved");
                 setTimeout(() => updateStatus("Online", ""), 2000);
             } catch (e) {
-                if (e.message === "CONFLITO_DETECTADO") {
-                    updateStatus("Conflito detetado!", "status-conflict");
+                if (e.message === "CONFLITO_SESSAO") {
+                    updateStatus("Conflito de Versão!", "status-conflict");
                 } else {
-                    updateStatus("Erro ao guardar", "status-error");
+                    updateStatus("Erro ao gravar", "status-error");
                 }
             } finally {
                 __isSaving = false;
             }
         }
 
-        function updateStatus(txt, cls) {
-            const el = document.getElementById('status-text');
-            if (el) { el.textContent = txt; el.className = cls; }
-        }
-
-        // --- FUNÇÕES DE INTERFACE (WINDOW GLOBAL) ---
+        // --- FUNÇÕES DE UI E RENDER ---
         window.renderAll = (skipId = null) => {
             const acc = window.store.accounts[window.store.activeId];
             if (!acc) return;
 
-            document.getElementById('active-account-name').textContent = acc.name;
-            document.getElementById('active-account-config').textContent = `${acc.size} • Gestão Ativa`;
+            // Correção Imediata de Nome
+            const nameEl = document.getElementById('active-account-name');
+            const configEl = document.getElementById('active-account-config');
+            if (nameEl) nameEl.textContent = acc.name;
+            if (configEl) configEl.textContent = `${acc.size} • Gestão Estratégica`;
+
+            document.getElementById('config-size').value = acc.size || '50k';
             
-            calculateStats(acc);
-            renderCalendar(acc, skipId);
-            renderSidebar();
+            calculateAndDisplayMetrics(acc);
+            renderCalendarTable(acc, skipId);
+            renderSidebarList();
             lucide.createIcons();
         };
 
-        function calculateStats(acc) {
+        function calculateAndDisplayMetrics(acc) {
             const sizes = { '25k': 25000, '50k': 50000, '100k': 100000, '150k': 150000, '300k': 300000 };
             const start = sizes[acc.size] || 50000;
             let profit = 0;
             Object.values(acc.data || {}).forEach(d => profit += (parseFloat(d.val) || 0));
             
-            document.getElementById('current-equity').textContent = `$${(start + profit).toLocaleString('en-US', {minimumFractionDigits:2})}`;
+            const currentEquity = start + profit;
+            document.getElementById('current-equity').textContent = `$${currentEquity.toLocaleString('en-US', {minimumFractionDigits:2})}`;
             document.getElementById('equity-diff').textContent = `Lucro Acumulado: $${profit.toLocaleString()}`;
             document.getElementById('gain-cap').textContent = `$${(profit > 0 ? profit * 0.30 : 0).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+            
+            // Progress Bar (Apex Safety target approx 6% of size)
+            const target = start * 1.06;
+            const prog = Math.min(100, Math.max(0, ((currentEquity - start) / (target - start)) * 100));
+            document.getElementById('equity-progress').style.width = `${prog}%`;
         }
 
-        function renderCalendar(acc, skipId) {
+        function renderCalendarTable(acc, skipId) {
             const y = window.store.date.getFullYear();
             const m = window.store.date.getMonth();
-            const days = new Date(y, m + 1, 0).getDate();
+            const daysInMonth = new Date(y, m + 1, 0).getDate();
             const body = document.getElementById('calendar-body');
             
             document.getElementById('calendar-title').textContent = `${new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(window.store.date)}`;
             
             body.innerHTML = '';
-            for (let d = 1; d <= days; d++) {
+            for (let d = 1; d <= daysInMonth; d++) {
                 const date = new Date(y, m, d);
                 if (date.getDay() === 0 || date.getDay() === 6) continue;
 
@@ -356,20 +386,26 @@
                 if (new Date().toDateString() === date.toDateString()) tr.className = 'today-row';
 
                 tr.innerHTML = `
-                    <td class="px-4 py-3 font-medium">${d}</td>
+                    <td class="px-4 py-3 font-semibold text-slate-500">${d}</td>
                     <td class="px-4 py-3">
                         <div class="flex gap-2 justify-center">
-                            <input id="in-${iso}-t1" type="number" step="0.01" class="trade-input w-20 bg-transparent border-b border-slate-200" value="${entry.t1}" onblur="window.updateDay('${iso}', 't1', this.value)">
-                            <input id="in-${iso}-t2" type="number" step="0.01" class="trade-input w-20 bg-transparent border-b border-slate-200" value="${entry.t2}" onblur="window.updateDay('${iso}', 't2', this.value)">
+                            <input id="in-${iso}-t1" type="number" step="0.01" class="trade-input w-24 bg-transparent border-b border-slate-200 dark:border-slate-700" value="${entry.t1}" onblur="window.updateDay('${iso}', 't1', this.value)">
+                            <div class="text-slate-300">|</div>
+                            <input id="in-${iso}-t2" type="number" step="0.01" class="trade-input w-24 bg-transparent border-b border-slate-200 dark:border-slate-700" value="${entry.t2}" onblur="window.updateDay('${iso}', 't2', this.value)">
                         </div>
                     </td>
-                    <td class="px-4 py-3 text-right font-bold ${val>=0?'text-green-500':'text-red-500'}">$${val.toFixed(2)}</td>
-                    <td class="px-4 py-3 text-center"><i data-lucide="plus" class="w-4 h-4 mx-auto text-slate-300"></i></td>
+                    <td class="px-4 py-3 text-right font-bold ${val>0?'text-green-500':(val<0?'text-red-500':'text-slate-400')}">
+                        $${val.toLocaleString(undefined, {minimumFractionDigits:2})}
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <div class="flex justify-center"><i data-lucide="${val !== 0 ? 'check-circle' : 'circle'}" class="w-4 h-4 ${val !== 0 ? 'text-indigo-500' : 'text-slate-200'}"></i></div>
+                    </td>
                 `;
                 body.appendChild(tr);
             }
         }
 
+        // --- HANDLERS GLOBAIS ---
         window.updateDay = (iso, field, val) => {
             const acc = window.store.accounts[window.store.activeId];
             if (!acc.data) acc.data = {};
@@ -387,19 +423,50 @@
             document.getElementById('sidebar-backdrop').classList.toggle('hidden');
         };
 
-        window.createAccount = (nameInput = null) => {
-            const name = nameInput || prompt("Nome da conta:");
+        window.createAccount = (initialName = null) => {
+            const name = initialName || prompt("Apelido da conta (ex: Apex Principal):");
             if (!name) return;
             const id = 'acc_' + Date.now();
             window.store.accounts[id] = { id, name, size: '50k', data: {} };
             window.store.activeId = id;
+            localStorage.setItem('df_active_id', id);
             saveCloud();
             window.renderAll();
         };
 
+        function initializeFirstAccount() {
+            const id = 'acc_default';
+            window.store.accounts[id] = { id, name: "Minha Conta", size: "50k", data: {} };
+            window.store.activeId = id;
+            saveCloud();
+        }
+
+        function renderSidebarList() {
+            const list = document.getElementById('account-list');
+            list.innerHTML = '';
+            Object.values(window.store.accounts).forEach(acc => {
+                const isActive = acc.id === window.store.activeId;
+                const div = document.createElement('div');
+                div.className = `p-4 rounded-xl cursor-pointer transition-all border ${isActive ? 'bg-indigo-600 border-indigo-400 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-800/50 border-slate-700 text-slate-400 hover:bg-slate-700'}`;
+                div.onclick = () => { 
+                    window.store.activeId = acc.id; 
+                    localStorage.setItem('df_active_id', acc.id); 
+                    window.renderAll(); 
+                    window.toggleSidebar(); 
+                };
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-bold text-sm">${acc.name}</span>
+                        <span class="text-[10px] uppercase font-black opacity-60">${acc.size}</span>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
         window.renameAccount = () => {
             const acc = window.store.accounts[window.store.activeId];
-            const name = prompt("Novo nome:", acc.name);
+            const name = prompt("Novo nome para a conta:", acc.name);
             if (name) { acc.name = name; saveCloud(); window.renderAll(); }
         };
 
@@ -423,13 +490,31 @@
             lucide.createIcons();
         };
 
+        // --- AUXILIARES ---
+        function updateLoaderStatus(status, detail) {
+            document.getElementById('loader-status').textContent = status;
+            document.getElementById('loader-detail').textContent = detail;
+        }
+
         function hideLoader() {
             const l = document.getElementById('app-loader');
             if (l) { l.classList.add('opacity-0'); setTimeout(() => l.style.display = 'none', 500); }
         }
 
-        // Inicialização de Tema
-        if (localStorage.getItem('df_theme') === 'dark') document.body.classList.add('dark');
+        function hideSpinner() {
+            const s = document.getElementById('loader-spinner');
+            if (s) s.style.display = 'none';
+        }
+
+        function updateStatus(txt, cls) {
+            const el = document.getElementById('status-text');
+            if (el) { el.textContent = txt; el.className = cls; }
+        }
+
+        if (localStorage.getItem('df_theme') === 'dark') {
+            document.body.classList.add('dark');
+            document.getElementById('theme-icon').setAttribute('data-lucide', 'sun');
+        }
     </script>
 </body>
 </html>
