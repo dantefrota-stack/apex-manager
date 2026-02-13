@@ -1295,39 +1295,39 @@ window.saveToCloud = async () => {
     // 1. Verificações de Segurança Básicas
     if (!auth.currentUser) return;
     
-    // Tenta pegar os dados locais. Se falhar, aborta silenciosamente para não travar o app.
+    // Tenta pegar os dados locais de forma segura
     let localStore;
     try {
         if (typeof getPersistableStore === 'function') {
             localStore = getPersistableStore();
         }
     } catch (err) {
-        console.warn("Ainda não há dados para salvar:", err);
+        // Se der erro ao pegar dados, apenas aborta sem quebrar o app
         return;
     }
 
-    // Se não houver dados locais válidos, não faz nada (evita salvar "vazio" por cima)
+    // Se não houver dados, não salva nada (evita salvar vazio)
     if (!localStore) return;
 
     const docRef = doc(db, "users", "dante_data");
     const backupRef = doc(db, "users_backups", `backup_${Date.now()}`); 
     const statusEl = document.getElementById('status-text');
 
-    // --- SEM AVISO VISUAL DE "SALVANDO..." (Evita o pisca-pisca) ---
+    // (Sem aviso visual aqui para não piscar)
 
     try {
         await runTransaction(db, async (txn) => {
             const sfDoc = await txn.get(docRef);
-            let finalStore = { ...localStore }; // Por padrão, usa o local
+            let finalStore = { ...localStore }; 
 
-            // Se já existe nuvem, tenta fazer a fusão (Smart Merge)
+            // Se já existe nuvem, faz a fusão (Smart Merge)
             if (sfDoc.exists()) {
                 const cloudJson = sfDoc.data().store_json;
                 if (cloudJson) {
                     const cloudStore = JSON.parse(cloudJson);
-                    finalStore = { ...cloudStore }; // Começa com a cópia da nuvem
+                    finalStore = { ...cloudStore }; 
 
-                    // Lógica de Fusão Protegida (com verificação de existência)
+                    // Fusão das contas
                     if (localStore.accounts) {
                         if (!finalStore.accounts) finalStore.accounts = {};
 
@@ -1338,7 +1338,6 @@ window.saveToCloud = async () => {
                             if (!cloudAcc) {
                                 finalStore.accounts[accId] = localAcc;
                             } else {
-                                // Fusão detalhada
                                 finalStore.accounts[accId] = {
                                     ...cloudAcc,
                                     ...localAcc,
@@ -1382,10 +1381,10 @@ window.saveToCloud = async () => {
         }
 
     } catch (e) {
-        console.error("Erro no salvamento (ignorado para não travar):", e);
-        // Não mostramos erro na tela para não assustar, apenas no console
+        console.error("Erro silencioso ao salvar:", e);
     }
-};          txn.set(docRef, {
+};
+         txn.set(docRef, {
                 store_json: finalJson,
                 last_update_ms: Date.now(),
                 updated_by: auth.currentUser.email
