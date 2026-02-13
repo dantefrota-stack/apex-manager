@@ -3746,90 +3746,88 @@ function calcCycle(acc, anchorDay) {
             els.totalWithdrawn.textContent = formatCurrency(t);
             lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions();
         }
-function renderCalendar(acc) { 
-    const y = store.date.getFullYear(); 
-    const m = store.date.getMonth(); 
+function renderCalendar(acc) {
+            const y = store.date.getFullYear();
+            const m = store.date.getMonth();
 
-    const monthsPt = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const monthsEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const months = (CURRENT_LANG === 'en') ? monthsEn : monthsPt;
-    els.calendarTitle.textContent = `${months[m]} ${y}`; 
-    els.calendarBody.innerHTML = ''; 
+            const monthsPt = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+            const monthsEn = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const months = (CURRENT_LANG === 'en') ? monthsEn : monthsPt;
+            els.calendarTitle.textContent = `${months[m]} ${y}`;
+            els.calendarBody.innerHTML = '';
 
-    const { rangeStart, rangeEnd } = getMonthWeekRange(y, m);
+            const { rangeStart, rangeEnd } = getMonthWeekRange(y, m);
 
-    let weekNum = 0;
+            let weekNum = 0;
 
-    // Estado UI: manter linhas "detalhes" abertas mesmo após salvar
-    if (!store.dayDetailsOpen) store.dayDetailsOpen = {};
-    if (!store.dayDetailsOpen[acc.id]) store.dayDetailsOpen[acc.id] = {};
+            // Estado UI: manter linhas "detalhes" abertas mesmo após salvar
+            if (!store.dayDetailsOpen) store.dayDetailsOpen = {};
+            if (!store.dayDetailsOpen[acc.id]) store.dayDetailsOpen[acc.id] = {};
 
-    if (!store.tradeDetailsOpen) store.tradeDetailsOpen = {};
-    if (!store.tradeDetailsOpen[acc.id]) store.tradeDetailsOpen[acc.id] = {};
+            if (!store.tradeDetailsOpen) store.tradeDetailsOpen = {};
+            if (!store.tradeDetailsOpen[acc.id]) store.tradeDetailsOpen[acc.id] = {};
 
-    for (let cur = new Date(rangeStart); cur <= rangeEnd; cur.setDate(cur.getDate() + 1)) {
-        const dayOfWeek = cur.getDay(); // 0=Dom ... 6=Sáb
+            for (let cur = new Date(rangeStart); cur <= rangeEnd; cur.setDate(cur.getDate() + 1)) {
+                const dayOfWeek = cur.getDay(); // 0=Dom ... 6=Sáb
 
-        // Mostrar somente dias úteis (Seg–Sex). Oculta Sábados e Domingos.
-        if (dayOfWeek === 0 || dayOfWeek === 6) continue;
+                // Mostrar somente dias úteis (Seg–Sex). Oculta Sábados e Domingos.
+                if (dayOfWeek === 0 || dayOfWeek === 6) continue;
 
-        // Barra de nova semana (Segunda-feira)
-        if (dayOfWeek === 1) {
-            weekNum++;
-            const sepTr = document.createElement('tr');
-            sepTr.className = "week-separator";
+                // Barra de nova semana (Segunda-feira)
+                if (dayOfWeek === 1) {
+                    weekNum++;
+                    const sepTr = document.createElement('tr');
+                    sepTr.className = "week-separator";
 
-            const dayStr = String(cur.getDate()).padStart(2, '0');
-            const monthStr = String(cur.getMonth() + 1).padStart(2, '0');
-            sepTr.innerHTML = `<td colspan=\"5\">${(CURRENT_LANG==='en'?'WEEK':'SEMANA')} ${weekNum} • ${(CURRENT_LANG==='en'?'START':'INÍCIO')} (${dayStr}.${monthStr})</td>`;
-            els.calendarBody.appendChild(sepTr);
-        }
+                    const dayStr = String(cur.getDate()).padStart(2, '0');
+                    const monthStr = String(cur.getMonth() + 1).padStart(2, '0');
+                    sepTr.innerHTML = `<td colspan=\"5\">${(CURRENT_LANG==='en'?'WEEK':'SEMANA')} ${weekNum} • ${(CURRENT_LANG==='en'?'START':'INÍCIO')} (${dayStr}.${monthStr})</td>`;
+                    els.calendarBody.appendChild(sepTr);
+                }
 
-        const iso = cur.toISOString().split('T')[0]; 
-        const entry = acc.data[iso] || { val: 0, t1: '', t2: '', note: '', holiday: false, add: false, targetPts: '', riskPts: '', viability: '' };
+                const iso = cur.toISOString().split('T')[0];
+                const entry = acc.data[iso] || { val: 0, t1: '', t2: '', note: '', holiday: false, add: false, targetPts: '', riskPts: '', viability: '' };
 
-        // Garantir estrutura de meta por trade
-        if (!entry.t1meta) entry.t1meta = { add:false, targetPts:0, riskPts:0, viability:'' };
-        if (!entry.t2meta) entry.t2meta = { add:false, targetPts:0, riskPts:0, viability:'' }; 
+                // Garantir estrutura de meta por trade
+                if (!entry.t1meta) entry.t1meta = { add:false, targetPts:0, riskPts:0, viability:'' };
+                if (!entry.t2meta) entry.t2meta = { add:false, targetPts:0, riskPts:0, viability:'' };
 
-        const isOutsideMonth = cur.getMonth() !== m;
-        const tr = document.createElement('tr'); 
-        const isToday = (iso === getTodayISO());
-        tr.className = `dark:border-slate-700 ${isOutsideMonth ? 'opacity-60 bg-slate-50 dark:bg-slate-800/40' : ''} ${isToday ? 'today-row' : ''}`;
-        const t1Num = (entry.t1 === undefined || entry.t1 === null || entry.t1 === '') ? '' : entry.t1;
-        const t2Num = (entry.t2 === undefined || entry.t2 === null || entry.t2 === '') ? '' : entry.t2;
+                const isOutsideMonth = cur.getMonth() !== m;
+                const tr = document.createElement('tr');
+                const isToday = (iso === getTodayISO());
+                tr.className = `dark:border-slate-700 ${isOutsideMonth ? 'opacity-60 bg-slate-50 dark:bg-slate-800/40' : ''} ${isToday ? 'today-row' : ''}`;
+                const t1Num = (entry.t1 === undefined || entry.t1 === null || entry.t1 === '') ? '' : entry.t1;
+                const t2Num = (entry.t2 === undefined || entry.t2 === null || entry.t2 === '') ? '' : entry.t2;
 
-        // Total do dia: preferir `entry.val` quando existir; senão calcular automaticamente por (T1 + T2).
-        // Isso evita que imports programáticos exibam "--" até o usuário clicar/validar o campo.
-        const hasStoredVal = !(entry.val === undefined || entry.val === null || entry.val === '');
-        const hasTrades = !(t1Num === '' && t2Num === '');
-        const t1Calc = parseFloat(t1Num) || 0;
-        const t2Calc = parseFloat(t2Num) || 0;
-        const displayVal = hasStoredVal ? (parseFloat(entry.val) || 0) : (hasTrades ? (t1Calc + t2Calc) : 0);
+                // Total do dia: preferir `entry.val` quando existir; senão calcular automaticamente por (T1 + T2).
+                const hasStoredVal = !(entry.val === undefined || entry.val === null || entry.val === '');
+                const hasTrades = !(t1Num === '' && t2Num === '');
+                const t1Calc = parseFloat(t1Num) || 0;
+                const t2Calc = parseFloat(t2Num) || 0;
+                const displayVal = hasStoredVal ? (parseFloat(entry.val) || 0) : (hasTrades ? (t1Calc + t2Calc) : 0);
 
-        let colorClass = 'val-zero'; 
-        if (displayVal > 0) colorClass = 'val-pos'; 
-        else if (displayVal < 0) colorClass = 'val-neg';
+                let colorClass = 'val-zero';
+                if (displayVal > 0) colorClass = 'val-pos';
+                else if (displayVal < 0) colorClass = 'val-neg';
 
-        const readOnlyDay = false; // allow editing also on cross-month days shown in the grid
-        const inputDisabledAttr = readOnlyDay ? 'disabled' : '';
-        const inputExtraClass = readOnlyDay ? ' opacity-60 cursor-not-allowed' : '';
-        const t1Handlers = readOnlyDay ? '' : `oninput="window.queueData('${iso}','t1',this.value)" onblur="window.updateData('${iso}','t1',this.value)"`;
-        const t2Handlers = readOnlyDay ? '' : `oninput="window.queueData('${iso}','t2',this.value)" onblur="window.updateData('${iso}','t2',this.value)"`;
+                const readOnlyDay = false; // allow editing also on cross-month days shown in the grid
+                const inputDisabledAttr = readOnlyDay ? 'disabled' : '';
+                const inputExtraClass = readOnlyDay ? ' opacity-60 cursor-not-allowed' : '';
+                
+                // --- CORREÇÃO AQUI: onblur e onkeydown no lugar de oninput ---
+                const t1Handlers = readOnlyDay ? '' : `onblur="window.updateData('${iso}','t1',this.value)" onkeydown="if(event.key==='Enter'){this.blur();}"`;
+                const t2Handlers = readOnlyDay ? '' : `onblur="window.updateData('${iso}','t2',this.value)" onkeydown="if(event.key==='Enter'){this.blur();}"`;
 
-        const inputsHtml = `
-            <div class="grid grid-cols-2 gap-2">
-                <input type="number" placeholder="T1"
-                       class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}"
-                       ${inputDisabledAttr} value="${t1Num}" ${t1Handlers}
-                       onkeydown="if(event.key==='Enter'){this.blur();}">
-                <input type="number" placeholder="T2"
-                       class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}"
-                       ${inputDisabledAttr} value="${t2Num}" ${t2Handlers}
-                       onkeydown="if(event.key==='Enter'){this.blur();}">
-            </div>
-        `;
-
+                const inputsHtml = `
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="number" placeholder="T1"
+                               class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}"
+                               ${inputDisabledAttr} value="${t1Num}" ${t1Handlers}>
+                        <input type="number" placeholder="T2"
+                               class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}"
+                               ${inputDisabledAttr} value="${t2Num}" ${t2Handlers}>
+                    </div>
+                `;
         const hasNote = entry.note && entry.note.trim().length > 0;
         const noteIcon = hasNote ? 'message-circle' : 'message-square';
         const noteBtnClass = hasNote 
