@@ -928,7 +928,7 @@ body.dark .bg-white { background-color: #1e293b; }
 
     <div class="bg-white border-b border-slate-200 shadow-sm sticky top-10 z-30 transition-colors dark:border-slate-700">
         <div class="container mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
-            <div><h1 id="active-account-name" class="font-bold text-lg leading-none text-slate-800 dark:text-white">Carregando...</h1><p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1"><span id="active-account-config">--</span></p></div>
+            <div><h1 id="active-account-name" class="font-bold text-lg leading-none text-slate-800 dark:text-white">A persistência leva ao sucesso !</h1><p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1"><span id="active-account-config">--</span></p></div>
             <div class="flex gap-2 text-sm no-print">
                 <select id="config-size" onchange="updateConfig()" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200"><option value="25k">25k</option><option value="50k">50k</option><option value="75k">75k</option><option value="100k">100k</option><option value="150k">150k</option><option value="250k">250k</option><option value="300k">300k</option></select>
                 <select id="config-month" onchange="updateConfig()" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200"><option value="1">Mês 1-3</option><option value="4">Mês 4+</option></select>
@@ -1290,11 +1290,11 @@ document.getElementById('status-text').textContent = "Online"; // <--- ADICIONE 
 
     // Sobrescreve a função de salvar para usar o caminho fixo 'dante_data'
     // Mantendo a lógica de backup 'prev_store_json'
-    // --- PASSO 1: FUNÇÃO DE SALVAMENTO BLINDADA (SMART MERGE + BACKUP) ---
+// --- PASSO 1: FUNÇÃO DE SALVAMENTO BLINDADA (SMART MERGE + BACKUP) ---
 window.saveToCloud = async () => {
     // Trava de segurança: Só salva se estiver logado e se já tivermos baixado os dados da nuvem pelo menos uma vez
     if (!auth.currentUser || !window.__cloudHydrated) {
-        console.warn("Aguardando sincronização completa antes de salvar...");
+        // console.warn("Aguardando sincronização completa antes de salvar...");
         return;
     }
 
@@ -1303,8 +1303,9 @@ window.saveToCloud = async () => {
     const backupRef = doc(db, "users_backups", `backup_${Date.now()}`); 
 
     const statusEl = document.getElementById('status-text');
-    // Muda o texto para você saber visualmente que o código novo está rodando
-    if(statusEl) statusEl.textContent = "Criando Backup e Salvando...";
+    
+    // --- CORREÇÃO: Comentei a linha abaixo para não piscar na tela ---
+    // if(statusEl) statusEl.textContent = "Criando Backup e Salvando...";
 
     try {
         // runTransaction garante que ninguém "atropele" o salvamento do outro
@@ -1320,7 +1321,7 @@ window.saveToCloud = async () => {
             } else {
                 // 2. FUSÃO INTELIGENTE (SMART MERGE)
                 const cloudJson = sfDoc.data().store_json;
-                const cloudStore = JSON.parse(cloudJson);
+                const cloudStore = cloudJson ? JSON.parse(cloudJson) : {};
                 
                 finalStore = { ...cloudStore }; // Começa com a cópia da nuvem
 
@@ -1355,8 +1356,41 @@ window.saveToCloud = async () => {
 
             const finalJson = JSON.stringify(finalStore);
 
-            // 3. GRAVA NO ARQUIVO PRINCIPAL
+            // 3. GRAVA NO ARQUIVO PRINCIPAL (Completei esta parte que estava faltando)
             txn.set(docRef, {
+                store_json: finalJson,
+                last_update_ms: Date.now(),
+                user_email: auth.currentUser.email 
+            }, { merge: true });
+
+            // 4. GRAVA O BACKUP DE SEGURANÇA (Completei esta parte também)
+            txn.set(backupRef, {
+                store_json: finalJson,
+                backup_date: new Date().toISOString(),
+                user_uid: auth.currentUser.uid
+            });
+        });
+
+        // --- SUCESSO E LIMPEZA VISUAL ---
+        if(statusEl) {
+            statusEl.textContent = "Salvo";
+            statusEl.className = "text-green-500 font-bold";
+            
+            // Correção: Limpa o texto após 2 segundos
+            setTimeout(()=> { 
+                statusEl.className = "text-slate-400"; 
+                statusEl.textContent = ""; 
+            }, 2000);
+        }
+
+    } catch (e) {
+        console.error("Erro ao salvar:", e);
+        if(statusEl) {
+            statusEl.textContent = "Erro!"; 
+            statusEl.className = "text-red-500 font-bold"; 
+        }
+    }
+};            txn.set(docRef, {
                 store_json: finalJson,
                 last_update_ms: Date.now(),
                 updated_by: auth.currentUser.email
