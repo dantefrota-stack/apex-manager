@@ -3818,16 +3818,18 @@ function renderCalendar(acc) {
                 const t1Handlers = readOnlyDay ? '' : `onblur="window.updateData('${iso}','t1',this.value)" onkeydown="if(event.key==='Enter'){this.blur();}"`;
                 const t2Handlers = readOnlyDay ? '' : `onblur="window.updateData('${iso}','t2',this.value)" onkeydown="if(event.key==='Enter'){this.blur();}"`;
 
+                // --- BLOCO CORRIGIDO PARA CELULAR (Mais espaço para números) ---
                 const inputsHtml = `
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-2 gap-1">
                         <input type="number" placeholder="T1"
-                               class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}"
+                               class="trade-input w-full py-1 px-0 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}"
                                ${inputDisabledAttr} value="${t1Num}" ${t1Handlers}>
                         <input type="number" placeholder="T2"
-                               class="trade-input w-full py-1 px-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}"
+                               class="trade-input w-full py-1 px-0 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}"
                                ${inputDisabledAttr} value="${t2Num}" ${t2Handlers}>
                     </div>
                 `;
+                // --- FIM DO BLOCO CORRIGIDO ---
         const hasNote = entry.note && entry.note.trim().length > 0;
         const noteIcon = hasNote ? 'message-circle' : 'message-square';
         const noteBtnClass = hasNote 
