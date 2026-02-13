@@ -1290,33 +1290,99 @@ document.getElementById('status-text').textContent = "Online"; // <--- ADICIONE 
 
     // Sobrescreve a função de salvar para usar o caminho fixo 'dante_data'
     // Mantendo a lógica de backup 'prev_store_json'
-    window.saveToCloud = async () => {
-        const docRef = doc(db, "users", "dante_data");
-        const statusEl = document.getElementById('status-text');
-        if(statusEl) statusEl.textContent = "Salvando...";
+    // --- PASSO 1: FUNÇÃO DE SALVAMENTO BLINDADA (SMART MERGE + BACKUP) ---
+window.saveToCloud = async () => {
+    // Trava de segurança: Só salva se estiver logado e se já tivermos baixado os dados da nuvem pelo menos uma vez
+    if (!auth.currentUser || !window.__cloudHydrated) {
+        console.warn("Aguardando sincronização completa antes de salvar...");
+        return;
+    }
 
-        try {
-            const jsonStr = JSON.stringify(getPersistableStore()); // Usa sua função original de limpar dados
+    const docRef = doc(db, "users", "dante_data");
+    // Cria um arquivo de Backup separado com a data e hora exata (milissegundos)
+    const backupRef = doc(db, "users_backups", `backup_${Date.now()}`); 
+
+    const statusEl = document.getElementById('status-text');
+    // Muda o texto para você saber visualmente que o código novo está rodando
+    if(statusEl) statusEl.textContent = "Criando Backup e Salvando...";
+
+    try {
+        // runTransaction garante que ninguém "atropele" o salvamento do outro
+        await runTransaction(db, async (txn) => {
+            // 1. LER O QUE ESTÁ NA NUVEM AGORA (A verdade absoluta)
+            const sfDoc = await txn.get(docRef);
             
-            await runTransaction(db, async (txn) => {
-                const sfDoc = await txn.get(docRef);
-                txn.set(docRef, {
-                    store_json: jsonStr,
-                    last_update_ms: Date.now(),
-                    prev_store_json: sfDoc.exists() ? sfDoc.data().store_json : null
-                }, { merge: true });
-            });
+            let finalStore;
+            const localStore = getPersistableStore(); // Pega os dados da sua tela agora
 
-            if(statusEl) {
-                statusEl.textContent = "Salvo";
-                statusEl.className = "text-green-500 font-bold";
-                setTimeout(()=> { statusEl.className = "text-slate-400"; statusEl.textContent = "Online"; }, 2000);
+            if (!sfDoc.exists()) {
+                finalStore = localStore;
+            } else {
+                // 2. FUSÃO INTELIGENTE (SMART MERGE)
+                const cloudJson = sfDoc.data().store_json;
+                const cloudStore = JSON.parse(cloudJson);
+                
+                finalStore = { ...cloudStore }; // Começa com a cópia da nuvem
+
+                // Atualiza as contas com cuidado
+                if (localStore.accounts) {
+                    if (!finalStore.accounts) finalStore.accounts = {};
+
+                    Object.keys(localStore.accounts).forEach(accId => {
+                        const localAcc = localStore.accounts[accId];
+                        const cloudAcc = finalStore.accounts[accId];
+
+                        if (!cloudAcc) {
+                            // Se a conta é nova e só você tem, adiciona
+                            finalStore.accounts[accId] = localAcc;
+                        } else {
+                            // Se a conta já existe, MISTURA OS DIAS
+                            // Isso impede que, se o seu PC não tiver os dados de ontem, você apague os dados de ontem da nuvem.
+                            finalStore.accounts[accId] = {
+                                ...cloudAcc,      // Mantém configurações da nuvem
+                                ...localAcc,      // Atualiza com suas configurações locais
+                                data: {
+                                    ...cloudAcc.data, // PRESERVA dias antigos da nuvem (Proteção contra Cache Velho)
+                                    ...localAcc.data  // Atualiza/Adiciona os dias que você mexeu agora
+                                }
+                            };
+                        }
+                    });
+                }
+                // Garante que logs administrativos sejam preservados
+                if(localStore.adminLogs) finalStore.adminLogs = localStore.adminLogs;
             }
-        } catch (e) {
-            console.error("Erro ao salvar:", e);
-            if(statusEl) { statusEl.textContent = "Erro!"; statusEl.className = "text-red-500 font-bold"; }
+
+            const finalJson = JSON.stringify(finalStore);
+
+            // 3. GRAVA NO ARQUIVO PRINCIPAL
+            txn.set(docRef, {
+                store_json: finalJson,
+                last_update_ms: Date.now(),
+                updated_by: auth.currentUser.email
+            }, { merge: true });
+
+            // 4. GRAVA O BACKUP DE SEGURANÇA (Histórico impossível de apagar)
+            txn.set(backupRef, {
+                store_json: finalJson,
+                saved_at: new Date().toISOString(),
+                user: auth.currentUser.email,
+                type: 'auto_backup'
+            });
+        });
+
+        if(statusEl) { 
+            statusEl.textContent = "Salvo e Seguro (Backup OK)"; 
+            setTimeout(()=> statusEl.textContent = "Online", 3000); 
         }
-    };
+
+    } catch (e) {
+        console.error("Erro CRÍTICO ao salvar:", e);
+        if(statusEl) statusEl.textContent = "Erro ao Salvar!";
+        alert("ERRO AO SALVAR: " + e.message);
+    }
+};
+// --- FIM DO PASSO 1 ---
 
     // --- FIM DO BLOCO DE AUTENTICAÇÃO ---
     // (Abaixo daqui deve continuar o seu código original: const RULES = ..., function calculateStats...)
