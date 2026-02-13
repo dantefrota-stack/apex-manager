@@ -1292,64 +1292,78 @@ document.getElementById('status-text').textContent = "Online"; // <--- ADICIONE 
     // Mantendo a lógica de backup 'prev_store_json'
 // --- PASSO 1: FUNÇÃO DE SALVAMENTO (CORRIGIDA PARA NÃO TRAVAR O INÍCIO) ---
 window.saveToCloud = async () => {
-    // CORREÇÃO: Removemos a verificação de 'cloudHydrated' que estava travando o app
+    // 1. Verificações de Segurança Básicas
     if (!auth.currentUser) return;
+    
+    // Tenta pegar os dados locais. Se falhar, aborta silenciosamente para não travar o app.
+    let localStore;
+    try {
+        if (typeof getPersistableStore === 'function') {
+            localStore = getPersistableStore();
+        }
+    } catch (err) {
+        console.warn("Ainda não há dados para salvar:", err);
+        return;
+    }
+
+    // Se não houver dados locais válidos, não faz nada (evita salvar "vazio" por cima)
+    if (!localStore) return;
 
     const docRef = doc(db, "users", "dante_data");
     const backupRef = doc(db, "users_backups", `backup_${Date.now()}`); 
-
     const statusEl = document.getElementById('status-text');
-    
-    // Sem texto piscando aqui
+
+    // --- SEM AVISO VISUAL DE "SALVANDO..." (Evita o pisca-pisca) ---
 
     try {
         await runTransaction(db, async (txn) => {
             const sfDoc = await txn.get(docRef);
-            
-            let finalStore;
-            const localStore = getPersistableStore(); 
+            let finalStore = { ...localStore }; // Por padrão, usa o local
 
-            if (!sfDoc.exists()) {
-                finalStore = localStore;
-            } else {
-                // FUSÃO INTELIGENTE
+            // Se já existe nuvem, tenta fazer a fusão (Smart Merge)
+            if (sfDoc.exists()) {
                 const cloudJson = sfDoc.data().store_json;
-                const cloudStore = cloudJson ? JSON.parse(cloudJson) : {};
-                
-                finalStore = { ...cloudStore }; 
+                if (cloudJson) {
+                    const cloudStore = JSON.parse(cloudJson);
+                    finalStore = { ...cloudStore }; // Começa com a cópia da nuvem
 
-                if (localStore.accounts) {
-                    if (!finalStore.accounts) finalStore.accounts = {};
+                    // Lógica de Fusão Protegida (com verificação de existência)
+                    if (localStore.accounts) {
+                        if (!finalStore.accounts) finalStore.accounts = {};
 
-                    Object.keys(localStore.accounts).forEach(accId => {
-                        const localAcc = localStore.accounts[accId];
-                        const cloudAcc = finalStore.accounts[accId];
+                        Object.keys(localStore.accounts).forEach(accId => {
+                            const localAcc = localStore.accounts[accId];
+                            const cloudAcc = finalStore.accounts[accId];
 
-                        if (!cloudAcc) {
-                            finalStore.accounts[accId] = localAcc;
-                        } else {
-                            finalStore.accounts[accId] = {
-                                ...cloudAcc,      
-                                ...localAcc,      
-                                data: {
-                                    ...cloudAcc.data, 
-                                    ...localAcc.data  
-                                }
-                            };
-                        }
-                    });
+                            if (!cloudAcc) {
+                                finalStore.accounts[accId] = localAcc;
+                            } else {
+                                // Fusão detalhada
+                                finalStore.accounts[accId] = {
+                                    ...cloudAcc,
+                                    ...localAcc,
+                                    data: {
+                                        ...(cloudAcc.data || {}), 
+                                        ...(localAcc.data || {})
+                                    }
+                                };
+                            }
+                        });
+                    }
+                    if(localStore.adminLogs) finalStore.adminLogs = localStore.adminLogs;
                 }
-                if(localStore.adminLogs) finalStore.adminLogs = localStore.adminLogs;
             }
 
             const finalJson = JSON.stringify(finalStore);
 
+            // Grava Principal
             txn.set(docRef, {
                 store_json: finalJson,
                 last_update_ms: Date.now(),
                 user_email: auth.currentUser.email 
             }, { merge: true });
 
+            // Grava Backup
             txn.set(backupRef, {
                 store_json: finalJson,
                 backup_date: new Date().toISOString(),
@@ -1357,6 +1371,7 @@ window.saveToCloud = async () => {
             });
         });
 
+        // --- SUCESSO VISUAL ---
         if(statusEl) {
             statusEl.textContent = "Salvo";
             statusEl.className = "text-green-500 font-bold";
@@ -1367,11 +1382,8 @@ window.saveToCloud = async () => {
         }
 
     } catch (e) {
-        console.error("Erro ao salvar:", e);
-        if(statusEl) {
-            statusEl.textContent = "Erro!"; 
-            statusEl.className = "text-red-500 font-bold"; 
-        }
+        console.error("Erro no salvamento (ignorado para não travar):", e);
+        // Não mostramos erro na tela para não assustar, apenas no console
     }
 };          txn.set(docRef, {
                 store_json: finalJson,
