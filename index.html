@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: UNIFIED-LOADER-NOLOOP-2026-01-28-1635 -->
+<!-- BUILD_ID: UNIFIED-LOADER-NOLOOP-STOREDEF-2026-02-14 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -378,9 +378,6 @@ body.dark .bg-white { background-color: #1e293b; }
           if(!loader) return;
           var isHidden = (loader.style && loader.style.display === 'none');
           if(isHidden) return;
-
-          // If login UI is already visible, do not replace it with an error screen.
-          try{ if(loader.querySelector && loader.querySelector('#login-container')) return; }catch(e){}
 
           // Keep it simple: replace loader content with actionable buttons.
           loader.innerHTML = `
@@ -1190,12 +1187,20 @@ body.dark .bg-white { background-color: #1e293b; }
     let chartInstance = null; 
     let db = window.db; // Atalho para o código legado
 
+
+    // Estado legado: várias rotinas referenciam `store` diretamente.
+    // Em módulos (type="module") isso precisa existir no escopo, senão gera ReferenceError.
+    let store = (window.store && typeof window.store === 'object') ? window.store : {};
+    // Normalizar timestamp para comparações (anti-wipe)
+    store.last_update_ms = Number(store.last_update_ms || 0) || 0;
+    // Expor no window para rotinas externas/console
+    try { window.store = store; } catch(e) {}
+
+
     // --- MONITOR DE LOGIN ---
     onAuthStateChanged(auth, (user) => {
         const loader = document.getElementById('app-loader');
         const __logoutBtn = document.getElementById('btn-logout');
-        try { window.__DF_BOOT_OK__ = true; } catch(e) {}
-
         if(__logoutBtn) __logoutBtn.classList.toggle('hidden', !user);
 
         
@@ -1221,7 +1226,7 @@ body.dark .bg-white { background-color: #1e293b; }
             // SE NÃO ESTIVER LOGADO: Mostra botão de login no loader
             if(loader) {
                 loader.innerHTML = `
-                    <div id="login-container" class="text-center p-8 bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl">
+                    <div class="text-center p-8 bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl">
                         <h2 class="text-xl font-bold mb-4 text-white">DF Strategic Manager</h2>
                         <p class="text-sm text-slate-400 mb-6">Identifique-se para acessar os dados.</p>
                         <button onclick="window.loginGoogle()" class="bg-white text-black px-6 py-3 rounded-lg font-bold flex items-center gap-2 mx-auto hover:bg-slate-200 transition-all">
@@ -4694,8 +4699,8 @@ async function saveToCloudNow() {
 
                         // Anti-wipe (timestamp): aborta se a nuvem estiver mais nova do que a versão local
                         // (permite force-save apenas quando explicitamente solicitado no Admin)
-                        const localMs = Number((persistable && persistable.last_update_ms) || (window.store && window.store.last_update_ms) || 0) || 0;
-                        if (!force && curMs > localMs) {
+                        const localKnownMs = Math.max(Number(__lastRemoteUpdateMs || 0) || 0, Number(__lastCloudWriteMs || 0) || 0);
+                        if (!force && localKnownMs && curMs > localKnownMs) {
                             throw new Error("CONFLITO");
                         }
 
