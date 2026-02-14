@@ -379,6 +379,9 @@ body.dark .bg-white { background-color: #1e293b; }
           var isHidden = (loader.style && loader.style.display === 'none');
           if(isHidden) return;
 
+          // If login UI is already visible, do not replace it with an error screen.
+          try{ if(loader.querySelector && loader.querySelector('#login-container')) return; }catch(e){}
+
           // Keep it simple: replace loader content with actionable buttons.
           loader.innerHTML = `
             <div class="text-center p-6 max-w-sm mx-auto">
@@ -1191,6 +1194,8 @@ body.dark .bg-white { background-color: #1e293b; }
     onAuthStateChanged(auth, (user) => {
         const loader = document.getElementById('app-loader');
         const __logoutBtn = document.getElementById('btn-logout');
+        try { window.__DF_BOOT_OK__ = true; } catch(e) {}
+
         if(__logoutBtn) __logoutBtn.classList.toggle('hidden', !user);
 
         
@@ -1216,7 +1221,7 @@ body.dark .bg-white { background-color: #1e293b; }
             // SE NÃO ESTIVER LOGADO: Mostra botão de login no loader
             if(loader) {
                 loader.innerHTML = `
-                    <div class="text-center p-8 bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl">
+                    <div id="login-container" class="text-center p-8 bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl">
                         <h2 class="text-xl font-bold mb-4 text-white">DF Strategic Manager</h2>
                         <p class="text-sm text-slate-400 mb-6">Identifique-se para acessar os dados.</p>
                         <button onclick="window.loginGoogle()" class="bg-white text-black px-6 py-3 rounded-lg font-bold flex items-center gap-2 mx-auto hover:bg-slate-200 transition-all">
@@ -4689,8 +4694,8 @@ async function saveToCloudNow() {
 
                         // Anti-wipe (timestamp): aborta se a nuvem estiver mais nova do que a versão local
                         // (permite force-save apenas quando explicitamente solicitado no Admin)
-                        const localKnownMs = Math.max(Number(__lastRemoteUpdateMs || 0) || 0, Number(__lastCloudWriteMs || 0) || 0);
-                        if (!force && localKnownMs && curMs > localKnownMs) {
+                        const localMs = Number((persistable && persistable.last_update_ms) || (window.store && window.store.last_update_ms) || 0) || 0;
+                        if (!force && curMs > localMs) {
                             throw new Error("CONFLITO");
                         }
 
