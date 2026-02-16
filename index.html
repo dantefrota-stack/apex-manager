@@ -845,6 +845,8 @@ body.dark .bg-white { background-color: #1e293b; }
                                 <option value="available">Disponível p/ saque ($)</option>
                                 <option value="missing">Falta p/ $500 ($)</option>
                                 <option value="equity">Equity líquido ($)</option>
+                                                                <option value="ddBuffer">Buffer de Drawdown ($)</option>
+                                <option value="ddPct">Risco de Drawdown (%)</option>
                                 <option value="timeline">Trajetória no Período (linhas)</option>
                             </select>
                             <div id="accounts-overview-timeline-controls" class="hidden ml-2 flex items-center gap-2 flex-wrap">
@@ -871,18 +873,17 @@ body.dark .bg-white { background-color: #1e293b; }
 
                 <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div id="accounts-overview-table-scroll" class="overflow-x-auto">
-                        <table class="min-w-[900px] w-full text-sm">
+                        <table class="min-w-[1100px] w-full text-sm">
                            <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs dark:bg-slate-800 dark:text-slate-400">
     <tr>
-        <th class="px-2 py-3 md:px-4 text-left">Data</th>
-        
-        <th class="px-1 py-3 md:px-4 text-center min-w-[150px]">Trades (T1 | T2)</th>
-        
-        <th class="px-2 py-3 md:px-4 text-right">Total</th>
-        
-        <th class="px-1 py-3 md:px-4 text-center w-10"><i data-lucide="message-square" class="w-3 h-3 mx-auto"></i></th>
-        
-        <th class="px-1 py-3 md:px-4 text-center w-8"><i data-lucide="coffee" class="w-3 h-3 mx-auto"></i></th>
+        <th class="px-4 py-3 text-left min-w-[220px]">Conta</th>
+        <th class="px-4 py-3 text-left min-w-[140px]">Plano</th>
+        <th class="px-4 py-3 text-right">Equity</th>
+        <th class="px-4 py-3 text-right">Disponível</th>
+        <th class="px-4 py-3 text-right">Falta p/ $500</th>
+        <th class="px-4 py-3 text-right min-w-[200px]">Buffer DD</th>
+        <th class="px-4 py-3 text-center">Dias</th>
+        <th class="px-4 py-3 text-center">Idade</th>
     </tr>
 </thead>
                             <tbody id="accounts-overview-table" class="divide-y divide-slate-200 dark:divide-slate-700"></tbody>
@@ -2262,31 +2263,89 @@ async function callOpenAI(question){
             }catch(e){}
         }
 
+        function _accountsOverviewDDMeta(buffer, drawdown, isEN){
+            const b = Number(buffer);
+            const dd = Math.max(1, Number(drawdown || 0) || 2000);
+            if(!Number.isFinite(b)){
+                return { pct: 0, risk: 'na', level: '', barClass: 'bg-slate-400', textClass: 'text-slate-500', buffer: 0, drawdown: dd };
+            }
+            const pct = Math.max(0, Math.min(100, (b / dd) * 100));
+            let risk = 'ok';
+            if(b <= 0) risk = 'violation';
+            else if(pct < 10) risk = 'critical';
+            else if(pct < 25) risk = 'alert';
+            else if(pct < 50) risk = 'caution';
+
+            const labels = {
+                violation: isEN ? 'VIOLATION' : 'VIOLAÇÃO',
+                critical:  isEN ? 'CRITICAL'  : 'CRÍTICO',
+                alert:     isEN ? 'ALERT'     : 'ALERTA',
+                caution:   isEN ? 'CAUTION'   : 'ATENÇÃO',
+                ok:        ''
+            };
+            const level = labels[risk] || '';
+
+            const classes = {
+                violation: { bar: 'bg-rose-600', text: 'text-rose-600' },
+                critical:  { bar: 'bg-rose-500', text: 'text-rose-600' },
+                alert:     { bar: 'bg-orange-500', text: 'text-orange-600' },
+                caution:   { bar: 'bg-yellow-400', text: 'text-yellow-600' },
+                ok:        { bar: 'bg-emerald-500', text: 'text-emerald-600' }
+            };
+            const cls = classes[risk] || classes.ok;
+            return { pct, risk, level, barClass: cls.bar, textClass: cls.text, buffer: b, drawdown: dd };
+        }
+
         function _accountsOverviewBuildTextSummary(list){
+            const isEN = ((localStorage.getItem(LANG_STORAGE_KEY) || window.CURRENT_LANG || document.documentElement.lang || 'pt').toString().toLowerCase().startsWith('en'));
             const lines = [];
-            lines.push('ACCOUNTS OVERVIEW');
-            lines.push('Generated: ' + new Date().toLocaleString());
+            lines.push(isEN ? 'ACCOUNTS OVERVIEW' : 'RESUMO DE CONTAS');
+            lines.push((isEN ? 'Generated: ' : 'Gerado: ') + new Date().toLocaleString());
             lines.push('---');
             for(const r of list){
-                const name = (r.name || r.id || 'Account').trim();
+                const name = (r.name || r.id || (isEN ? 'Account' : 'Conta')).trim();
                 const eq = formatCurrency(r.equity || 0);
                 const avail = formatCurrency(r.available || 0);
                 const miss = (r.missingTo500 <= 0) ? 'OK' : formatCurrency(r.missingTo500 || 0);
-                lines.push(`${name} (${r.size || '--'}) | Equity ${eq} | Avail ${avail} | Missing $500: ${miss} | Days ${r.daysOperated||0}`);
+
+                let ddTxt = '—';
+                if(Number.isFinite(r.ddBuffer)){
+                    const dd = _accountsOverviewDDMeta(r.ddBuffer, r.ddDrawdown || 0, isEN);
+                    ddTxt = `${formatCurrency(dd.buffer)} (${Math.round(dd.pct)}%)${dd.level ? ' ' + dd.level : ''}`;
+                }
+
+                lines.push(
+                    isEN
+                      ? `${name} (${r.size || '--'}) | Equity ${eq} | Available ${avail} | Need for $500: ${miss} | DD Buffer ${ddTxt} | Days ${r.daysOperated||0}`
+                      : `${name} (${r.size || '--'}) | Equity ${eq} | Disponível ${avail} | Falta p/ $500: ${miss} | Buffer DD ${ddTxt} | Dias ${r.daysOperated||0}`
+                );
             }
             return lines.join('\n');
-        }
+}
 
         function _accountsOverviewBuildPrintableHTML({ includeChart } = {}){
             const list = (window._accountsOverviewComputed || []).slice();
             const prefs = window.accountsOverviewPrefs || {};
-            const metricLabelMap = {
+            const isEN = ((localStorage.getItem(LANG_STORAGE_KEY) || window.CURRENT_LANG || document.documentElement.lang || 'pt').toString().toLowerCase().startsWith('en'));
+
+            const metricLabelMap = isEN ? {
                 progress: 'Progress to Safety (%)',
                 available: 'Available for Payout ($)',
-                missing: 'Missing to $500 ($)',
+                missing: 'Need for $500 ($)',
                 equity: 'Current Equity ($)',
+                ddBuffer: 'Drawdown Buffer ($)',
+                ddPct: 'Drawdown Risk (%)',
+                timeline: 'Performance Trajectory (lines)'
+            } : {
+                progress: 'Progresso até Safety (%)',
+                available: 'Disponível p/ saque ($)',
+                missing: 'Falta p/ $500 ($)',
+                equity: 'Equity líquido ($)',
+                ddBuffer: 'Buffer de Drawdown ($)',
+                ddPct: 'Risco de Drawdown (%)',
+                timeline: 'Trajetória no Período (linhas)'
             };
-            const metricLabel = metricLabelMap[prefs.chartMetric] || 'Progress';
+            const metricLabel = metricLabelMap[prefs.chartMetric] || (isEN ? 'Progress' : 'Progresso');
             const include = includeChart !== false;
 
             // Try capture chart image from the onscreen canvas
@@ -2301,25 +2360,36 @@ async function callOpenAI(question){
             const rowsHtml = list.map(r => {
                 const miss = (r.missingTo500 <= 0) ? 'OK' : formatCurrency(r.missingTo500 || 0);
                 const avail = formatCurrency(r.available || 0);
+
+                const planHtml = `${escapeHtml(r.size || '--')}<div class="sub">Safety: ${formatCurrency(r.safety || 0)}</div>`;
+
+                let ddTxt = '—';
+                let ddCls = '';
+                if(Number.isFinite(r.ddBuffer)){
+                    const dd = _accountsOverviewDDMeta(r.ddBuffer, r.ddDrawdown || 0, isEN);
+                    ddTxt = `${formatCurrency(dd.buffer)} (${Math.round(dd.pct)}%)${dd.level ? ' ' + dd.level : ''}`;
+                    ddCls = `risk-${dd.risk}`;
+                }
+
                 return `
                   <tr>
                     <td class="name">${escapeHtml(r.name || r.id || '')}</td>
-                    <td>${escapeHtml(r.size || '--')}</td>
+                    <td>${planHtml}</td>
                     <td class="num">${formatCurrency(r.equity || 0)}</td>
-                    <td class="num">${formatCurrency(r.safety || 0)}</td>
                     <td class="num">${avail}</td>
                     <td class="num ${r.missingTo500<=0?'ok':''}">${miss}</td>
+                    <td class="num ${ddCls}">${ddTxt}</td>
                     <td class="num">${r.daysOperated || 0}</td>
                     <td class="num">${r.ageDays || 0}</td>
                   </tr>
                 `;
             }).join('');
 
-            const isEN = ((localStorage.getItem(LANG_STORAGE_KEY) || window.CURRENT_LANG || document.documentElement.lang || 'pt').toString().toLowerCase().startsWith('en'));
-            const title = isEN ? 'Accounts Summary' : 'Accounts Summary';
+            const title = isEN ? 'Accounts Summary' : 'Resumo de Contas';
             const subtitle = isEN
                 ? `Sort: ${(prefs.sort||'closest')} | Filter: ${(prefs.size||'all')}`
-                : `Sort: ${(prefs.sort||'closest')} | Filter: ${(prefs.size||'all')}`;
+                : `Ordem: ${(prefs.sort||'closest')} | Filtro: ${(prefs.size||'all')}`;
+
             return `<!doctype html>
 <html>
 <head>
@@ -2339,13 +2409,17 @@ async function callOpenAI(question){
   th { text-align: left; font-size: 11px; color: #6b7280; letter-spacing: .02em; text-transform: uppercase; }
   td.num { text-align: right; white-space: nowrap; }
   td.name { font-weight: 700; }
+  .sub { font-size: 10px; color: #6b7280; margin-top: 2px; }
   .ok { font-weight:700; color:#059669; }
+  .risk-violation, .risk-critical { font-weight:700; color:#dc2626; }
+  .risk-alert { font-weight:700; color:#ea580c; }
+  .risk-caution { font-weight:700; color:#ca8a04; }
   @media print { body { margin: 0; } .box { border:none; } }
 </style>
 </head>
 <body>
   <h1>${title}</h1>
-  <div class="meta">${subtitle}<br>Generated on: ${new Date().toLocaleString()}</div>
+  <div class="meta">${subtitle}<br>${isEN ? 'Generated on:' : 'Gerado em:'} ${new Date().toLocaleString()}</div>
   <div class="box">
     ${include && chartDataUrl ? `<div class="chartWrap">
         <div class="chartTitle">${escapeHtml(metricLabel)}</div>
@@ -2354,7 +2428,14 @@ async function callOpenAI(question){
     <table>
       <thead>
         <tr>
-          <th>${isEN?'Account':'Conta'}</th><th>Size</th><th>Equity</th><th>Safety</th><th>${isEN?'Available':'Disponível'}</th><th>${isEN?'Need for $500':'Falta p/$500'}</th><th>${isEN?'Days':'Dias'}</th><th>${isEN?'Age':'Idade'}</th>
+          <th>${isEN?'Account':'Conta'}</th>
+          <th>${isEN?'Plan':'Plano'}</th>
+          <th>Equity</th>
+          <th>${isEN?'Available':'Disponível'}</th>
+          <th>${isEN?'Need for $500':'Falta p/ $500'}</th>
+          <th>${isEN?'DD Buffer':'Buffer DD'}</th>
+          <th>${isEN?'Days':'Dias'}</th>
+          <th>${isEN?'Age':'Idade'}</th>
         </tr>
       </thead>
       <tbody>${rowsHtml}</tbody>
@@ -2508,6 +2589,7 @@ async function callOpenAI(question){
 
             // compute row data first
             const computed = [];
+            const isEN = ((window.CURRENT_LANG || localStorage.getItem(LANG_STORAGE_KEY) || "pt").toString().toLowerCase().startsWith("en"));
             for(const acc of accounts){
                 if(!acc.createdAt){
                     const first = Object.keys(acc.data||{}).sort()[0];
@@ -2530,6 +2612,19 @@ async function callOpenAI(question){
                 const targetProfit = threshold - Number(rules.start || 0);
                 const pct = targetProfit > 0 ? Math.max(0, Math.min(100, (profit / targetProfit) * 100)) : 0;
 
+                // drawdown buffer (thermometer)
+                let ddBuffer = null, ddDrawdown = null, ddPct = null, ddRisk = '';
+                try{
+                    const dd = computeTrailingFloor(acc, stats);
+                    if(dd && dd.enabled){
+                        ddBuffer = Number(dd.buffer || 0);
+                        ddDrawdown = Number((dd.cfg && dd.cfg.drawdown) || (rules.drawdown || 0) || 0);
+                        const meta = _accountsOverviewDDMeta(ddBuffer, ddDrawdown, isEN);
+                        ddPct = meta.pct;
+                        ddRisk = meta.risk;
+                    }
+                }catch(e){}
+
                 computed.push({
                     acc,
                     equity,
@@ -2538,6 +2633,10 @@ async function callOpenAI(question){
                     missingTo500,
                     opDays,
                     ageDays,
+                    ddBuffer: (ddBuffer===null ? null : Number(ddBuffer)),
+                    ddDrawdown: (ddDrawdown===null ? null : Number(ddDrawdown)),
+                    ddPct: (ddPct===null ? null : Number(ddPct.toFixed(1))),
+                    ddRisk: ddRisk || '',
                     pct: Number(pct.toFixed(1))
                 });
             }
@@ -2571,10 +2670,15 @@ async function callOpenAI(question){
                     safety: Number(r.threshold || 0),
                     available: Number(r.availablePayout || 0),
                     missingTo500: Number(r.missingTo500 || 0),
+                    ddBuffer: (r.ddBuffer===null ? null : Number(r.ddBuffer || 0)),
+                    ddDrawdown: (r.ddDrawdown===null ? null : Number(r.ddDrawdown || 0)),
+                    ddPct: (r.ddPct===null ? null : Number(r.ddPct || 0)),
+                    ddRisk: r.ddRisk || '',
                     daysOperated: Number(r.opDays || 0),
                     ageDays: Number(r.ageDays || 0),
                     progressPct: Number(r.pct || 0),
-                }));                window._accountsOverviewComputedAt = Date.now();
+                }));
+                window._accountsOverviewComputedAt = Date.now();
             } catch(e){}
 // build table rows + chart arrays
             const rows = [];
@@ -2591,6 +2695,8 @@ async function callOpenAI(question){
                 if(prefs.chartMetric === 'available') v = row.availablePayout;
                 else if(prefs.chartMetric === 'missing') v = row.missingTo500;
                 else if(prefs.chartMetric === 'equity') v = row.equity;
+                else if(prefs.chartMetric === 'ddBuffer') v = (row.ddBuffer===null ? 0 : row.ddBuffer);
+                else if(prefs.chartMetric === 'ddPct') v = (row.ddPct===null ? 0 : row.ddPct);
                 else v = row.pct;
                 series.push(Number((typeof v === 'number' ? v : 0)));
 
@@ -2603,19 +2709,41 @@ async function callOpenAI(question){
                 const _rules = RULES[acc.size] || RULES['50k'];
                 const eqClass = (row.equity >= Number(_rules.start||0)) ? 'text-emerald-600' : 'text-rose-600';
 
+                let ddHtml = `<span class="text-slate-400">—</span>`;
+                try{
+                    if(row.ddBuffer !== null && Number.isFinite(row.ddBuffer)){
+                        const dd = _accountsOverviewDDMeta(row.ddBuffer, row.ddDrawdown || 0, isEN);
+                        const ddLabel = dd.level ? dd.level : `${Math.round(dd.pct)}%`;
+                        ddHtml = `
+                            <div class="flex flex-col items-end gap-1">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-24 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                                        <div class="h-2 ${dd.barClass}" style="width:${dd.pct}%"></div>
+                                    </div>
+                                    <span class="text-[10px] font-bold ${dd.textClass}">${ddLabel}</span>
+                                </div>
+                                <span class="text-xs font-bold ${dd.textClass}">${formatCurrency(dd.buffer)}</span>
+                            </div>
+                        `;
+                    }
+                }catch(e){}
+
                 rows.push(`
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
                         <td class="px-4 py-3 font-semibold text-slate-800 dark:text-white">${escapeHtml(acc.name || 'Sem nome')}</td>
-                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${escapeHtml(acc.size || '--')}</td>
-                        <td class="px-4 py-3 font-semibold ${eqClass}">${formatCurrency(row.equity)}</td>
-                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${formatCurrency(row.threshold)}</td>
-                        <td class="px-4 py-3 font-bold ${availClass}">${availLabel}</td>
-                        <td class="px-4 py-3 font-bold ${missClass}">${missLabel}</td>
-                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${row.opDays}</td>
-                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${row.ageDays} d</td>
+                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">
+                            <div class="font-semibold text-slate-800 dark:text-white">${escapeHtml(acc.size || '--')}</div>
+                            <div class="text-[11px] text-slate-400">Safety: ${formatCurrency(row.threshold)}</div>
+                        </td>
+                        <td class="px-4 py-3 font-semibold ${eqClass} text-right">${formatCurrency(row.equity)}</td>
+                        <td class="px-4 py-3 font-bold ${availClass} text-right">${availLabel}</td>
+                        <td class="px-4 py-3 font-bold ${missClass} text-right">${missLabel}</td>
+                        <td class="px-4 py-3 text-right">${ddHtml}</td>
+                        <td class="px-4 py-3 text-center text-slate-600 dark:text-slate-300">${row.opDays}</td>
+                        <td class="px-4 py-3 text-center text-slate-600 dark:text-slate-300">${row.ageDays} d</td>
                     </tr>
                 `);
-            }
+}
 
             tbody.innerHTML = rows.join('');
 
@@ -2624,17 +2752,31 @@ async function callOpenAI(question){
             const hint = document.getElementById('accounts-overview-chart-hint');
 
             if(hint){
-                if(prefs.chartMetric === 'available') hint.textContent = 'Mostra quanto já está disponível em saque (incrementos de $500), calculado com base no equity líquido.';
-                else if(prefs.chartMetric === 'missing') hint.textContent = 'Mostra quanto falta para atingir o primeiro $500 disponível, com base no equity líquido.';
-                else if(prefs.chartMetric === 'equity') hint.textContent = 'Mostra o equity (saldo atual) de cada conta.';
-                else hint.textContent = '0% = no start • 100% = atingiu safety';
+                if(prefs.chartMetric === 'available') hint.textContent = isEN
+                    ? 'Shows how much is currently available for payout (in $500 increments), based on net equity.'
+                    : 'Mostra quanto já está disponível em saque (incrementos de $500), calculado com base no equity líquido.';
+                else if(prefs.chartMetric === 'missing') hint.textContent = isEN
+                    ? 'Shows how much is missing to reach the first $500 available, based on net equity.'
+                    : 'Mostra quanto falta para atingir o primeiro $500 disponível, com base no equity líquido.';
+                else if(prefs.chartMetric === 'equity') hint.textContent = isEN
+                    ? 'Shows current net equity for each account.'
+                    : 'Mostra o equity (saldo atual) de cada conta.';
+                else if(prefs.chartMetric === 'ddBuffer') hint.textContent = isEN
+                    ? 'Shows the drawdown buffer ($) relative to the trailing drawdown rules.'
+                    : 'Mostra o buffer de drawdown ($) conforme a regra de trailing drawdown.';
+                else if(prefs.chartMetric === 'ddPct') hint.textContent = isEN
+                    ? 'Shows drawdown buffer as a percentage of the allowed trailing drawdown (higher is safer).'
+                    : 'Mostra o buffer de drawdown em percentual do limite (quanto maior, mais seguro).';
+                else hint.textContent = isEN
+                    ? '0% = at start • 100% = reached safety'
+                    : '0% = no start • 100% = atingiu safety';
             }
 
             if(!canvas || !wrap || wrap.classList.contains('hidden')) return;
             // timeline (multi-line) chart
             if(prefs.chartMetric === 'timeline'){
                 const hint = document.getElementById('accounts-overview-chart-hint');
-                if(hint) hint.textContent = 'Linhas por conta (lucro acumulado no período selecionado).';
+                if(hint) hint.textContent = isEN ? 'Lines per account (cumulative profit in the selected period).' : 'Linhas por conta (lucro acumulado no período selecionado).';
                 const tStartEl = document.getElementById('accounts-overview-timeline-start');
                 const tEndEl = document.getElementById('accounts-overview-timeline-end');
                 const startIso = (tStartEl && tStartEl.value) ? tStartEl.value : (window.accountsOverviewPrefs.timelineStart || '');
@@ -2751,19 +2893,27 @@ async function callOpenAI(question){
                 let datasetLabel = '';
                 let tooltipFmt = (v)=> `${v}`;
                 if(prefs.chartMetric === 'progress'){
-                    datasetLabel = 'Progresso (%)';
+                    datasetLabel = isEN ? 'Progress (%)' : 'Progresso (%)';
                     xScale = { min: 0, max: 100, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> v + '%' } };
                     tooltipFmt = (v)=> `${v}%`;
                 } else if(prefs.chartMetric === 'available'){
-                    datasetLabel = 'Disponível p/ saque ($)';
+                    datasetLabel = isEN ? 'Available for Payout ($)' : 'Disponível p/ saque ($)';
                     xScale = { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> '$' + Number(v).toLocaleString() } };
                     tooltipFmt = (v)=> formatCurrency(v);
                 } else if(prefs.chartMetric === 'missing'){
-                    datasetLabel = 'Falta p/ $500 ($)';
+                    datasetLabel = isEN ? 'Need for $500 ($)' : 'Falta p/ $500 ($)';
                     xScale = { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> '$' + Number(v).toLocaleString() } };
                     tooltipFmt = (v)=> formatCurrency(v);
+                } else if(prefs.chartMetric === 'ddBuffer'){
+                    datasetLabel = isEN ? 'Drawdown Buffer ($)' : 'Buffer de Drawdown ($)';
+                    xScale = { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> '$' + Number(v).toLocaleString() } };
+                    tooltipFmt = (v)=> formatCurrency(v);
+                } else if(prefs.chartMetric === 'ddPct'){
+                    datasetLabel = isEN ? 'Drawdown Risk (%)' : 'Risco de Drawdown (%)';
+                    xScale = { min: 0, max: 100, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> v + '%' } };
+                    tooltipFmt = (v)=> `${v}%`;
                 } else {
-                    datasetLabel = 'Equity líquido ($)';
+                    datasetLabel = isEN ? 'Current Equity ($)' : 'Equity líquido ($)';
                     xScale = { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> '$' + Number(v).toLocaleString() } };
                     tooltipFmt = (v)=> formatCurrency(v);
                 }
@@ -4608,7 +4758,29 @@ ${period}
 
             if (!data.store_json) { __cloudHydrated = true; __lastLoadedCloudLen = 0; return; }
 
-            const parsed = JSON.parse(data.store_json);
+            let parsed = null;
+            try { parsed = JSON.parse(data.store_json); } catch(e){
+                console.warn('[sync] invalid cloud JSON; ignoring remote state', e);
+                __cloudHydrated = true;
+                __lastLoadedCloudLen = (data.store_json || '').length;
+                return;
+            }
+            if(!parsed || typeof parsed !== 'object' || !parsed.accounts || typeof parsed.accounts !== 'object'){
+                console.warn('[sync] cloud state missing accounts; ignoring remote state');
+                __cloudHydrated = true;
+                __lastLoadedCloudLen = (data.store_json || '').length;
+                return;
+            }
+            try{
+                const localAccCount = Object.keys((store && store.accounts) || {}).length;
+                const remoteAccCount = Object.keys(parsed.accounts || {}).length;
+                if(localAccCount > 0 && remoteAccCount === 0){
+                    console.warn('[sync] cloud state has 0 accounts; ignoring remote state');
+                    __cloudHydrated = true;
+                    __lastLoadedCloudLen = (data.store_json || '').length;
+                    return;
+                }
+            }catch(e){}
 
             // Proteção contra "rollback":
             // Se o local estiver mais recente que o cloud, NÃO sobrescreve (mantém local).
@@ -4920,7 +5092,23 @@ async function saveToCloudNow() {
 
                     if(!data.store_json) return;
 
-                    const remote = JSON.parse(data.store_json);
+                    let remote = null;
+                try { remote = JSON.parse(data.store_json); } catch(e){
+                    console.warn('[sync] invalid cloud JSON from realtime; ignoring', e);
+                    return;
+                }
+                if(!remote || typeof remote !== 'object' || !remote.accounts || typeof remote.accounts !== 'object'){
+                    console.warn('[sync] cloud realtime state missing accounts; ignoring');
+                    return;
+                }
+                try{
+                    const localAccCount = Object.keys((store && store.accounts) || {}).length;
+                    const remoteAccCount = Object.keys(remote.accounts || {}).length;
+                    if(localAccCount > 0 && remoteAccCount === 0){
+                        console.warn('[sync] cloud realtime has 0 accounts; ignoring');
+                        return;
+                    }
+                }catch(e){}
 
                     const localDate = (store && store.date) ? new Date(store.date) : new Date();
                     const lastLocalActive = (() => { try { return localStorage.getItem('df_last_activeId'); } catch (e) { return null; } })();
