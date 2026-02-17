@@ -917,7 +917,7 @@ body.dark .bg-white { background-color: #1e293b; }
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-            <div class="dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 h-full flex flex-col">
+            <div id="period-analysis-card" class="dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 h-full flex flex-col">
                 <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2 dark:text-white"><i data-lucide="filter" class="w-4 h-4 text-indigo-600"></i> Análise por Período</h3>
                 <div class="flex gap-2 mb-4 no-print">
                     <input type="date" id="filter-start" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600">
@@ -967,7 +967,7 @@ body.dark .bg-white { background-color: #1e293b; }
                 </div>
             </div>
 
-            <div class="dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 lg:col-span-2 h-full flex flex-col">
+            <div id="global-insights-card" class="dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 lg:col-span-2 h-full flex flex-col overflow-hidden">
 <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
             <i data-lucide="activity" class="w-4 h-4 text-indigo-600"></i>
@@ -9409,6 +9409,72 @@ We normalize daily buckets so:
   }
 })();
 // ========== END BINDINGS ==========
+
+// ========== LAYOUT SYNC: MATCH GLOBAL INSIGHTS HEIGHT TO PERIOD ANALYSIS (DESKTOP) ==========
+(function layoutSyncPeriodAndInsights(){
+  if (window.__layoutSyncPeriodAndInsights) return;
+  window.__layoutSyncPeriodAndInsights = true;
+
+  const mq = window.matchMedia ? window.matchMedia('(min-width: 1024px)') : null;
+  let ro = null;
+  let raf = null;
+
+  function apply(){
+    if (raf) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const a = document.getElementById('period-analysis-card');
+      const b = document.getElementById('global-insights-card');
+      if (!a || !b) return;
+
+      const desktop = mq ? mq.matches : (window.innerWidth >= 1024);
+      if (!desktop){
+        b.style.height = '';
+        b.style.maxHeight = '';
+        return;
+      }
+
+      const h = Math.round(a.getBoundingClientRect().height);
+      if (h > 0){
+        b.style.height = h + 'px';
+        b.style.maxHeight = h + 'px';
+      }
+    });
+  }
+
+  function init(){
+    const a = document.getElementById('period-analysis-card');
+    if (!a) return;
+
+    apply();
+
+    // ResizeObserver for dynamic content changes (KPIs, translations, etc.)
+    if (typeof ResizeObserver !== 'undefined'){
+      if (ro) ro.disconnect();
+      ro = new ResizeObserver(() => apply());
+      ro.observe(a);
+    } else {
+      // Fallback: lightweight interval (only on desktop)
+      setInterval(() => {
+        const desktop = mq ? mq.matches : (window.innerWidth >= 1024);
+        if (desktop) apply();
+      }, 1000);
+    }
+
+    window.addEventListener('resize', apply, { passive: true });
+    if (mq){
+      if (mq.addEventListener) mq.addEventListener('change', apply);
+      else if (mq.addListener) mq.addListener(apply);
+    }
+
+    // Expose for manual calls after heavy re-renders
+    window.syncInsightsHeight = apply;
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+// ========== END LAYOUT SYNC ==========
+
 </script>
 
 
