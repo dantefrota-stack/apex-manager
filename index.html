@@ -916,8 +916,8 @@ body.dark .bg-white { background-color: #1e293b; }
                 <div class="relative h-64 w-full"><canvas id="equityChart"></canvas></div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <div class="dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+            <div class="dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 h-full flex flex-col">
                 <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2 dark:text-white"><i data-lucide="filter" class="w-4 h-4 text-indigo-600"></i> Análise por Período</h3>
                 <div class="flex gap-2 mb-4 no-print">
                     <input type="date" id="filter-start" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600">
@@ -930,14 +930,14 @@ body.dark .bg-white { background-color: #1e293b; }
                     <div class="flex justify-between border-b border-slate-200 pb-2 dark:border-slate-700"><span class="text-slate-500 dark:text-slate-400">Melhor Dia</span><span id="custom-best" class="font-bold text-green-600">--</span></div>
                     <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Pior Dia</span><span id="custom-worst" class="font-bold text-red-600">--</span></div>
                 </div>
-                <div class="grid grid-cols-3 gap-2 mt-4 no-print">
+                <div class="grid grid-cols-3 gap-2 no-print mt-auto pt-4">
                      <button onclick="shareReport()" class="col-span-1 py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400" title="WhatsApp"><i data-lucide="share-2" class="w-3 h-3"></i> Zap</button>
                      <button onclick="pdfFilteredReport()" class="col-span-1 py-2 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 flex justify-center items-center gap-1 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"><i data-lucide="printer" class="w-3 h-3"></i> PDF</button>
                      <button onclick="exportCSV()" class="col-span-1 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400"><i data-lucide="download" class="w-3 h-3"></i> CSV</button>
                 </div>
             </div>
 
-            <div class="dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 lg:col-span-2">
+            <div class="dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 lg:col-span-2 h-full flex flex-col">
 <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
             <i data-lucide="activity" class="w-4 h-4 text-indigo-600"></i>
