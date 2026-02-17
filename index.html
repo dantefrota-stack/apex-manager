@@ -4541,15 +4541,12 @@ function renderCalendar(acc) {
                 }else{
                     riskCountsEl.textContent = `Violação ${counts.violation} • Crítico ${counts.critical} • Alerta ${counts.alert} • Atenção ${counts.caution} • OK ${counts.ok}`;
                 }
-            }
-
-                        const TOP_N = 15; // list length inside small scroll boxes
+            } 
 
 // Top: closest to first $500 (missing > 0, smallest missing)
             const topPayout = rows
                 .filter(r => r.missingTo500 > 0)
-                .sort((a,b)=> (a.missingTo500 - b.missingTo500) || (a.name||'').localeCompare(b.name||'', undefined, {numeric:true, sensitivity:'base'}))
-                .slice(0, TOP_N);
+                .sort((a,b)=> (a.missingTo500 - b.missingTo500) || (a.name||'').localeCompare(b.name||'', undefined, {numeric:true, sensitivity:'base'}));
 
             if(!topPayout.length){
                 topPayoutEl.innerHTML = `<div class="text-[11px] text-slate-500 dark:text-slate-400">${isEN?'No pending accounts':'Nenhuma conta pendente'}</div>`;
@@ -4569,8 +4566,7 @@ function renderCalendar(acc) {
             // Top: highest DD risk (sorted by lowest pct first; show only non-ok and available dd)
             const topRisk = rows
                 .filter(r => r.ddMeta && r.ddMeta.risk && r.ddMeta.risk !== 'ok')
-                .sort((a,b)=> (a.ddMeta.pct - b.ddMeta.pct) || (a.name||'').localeCompare(b.name||'', undefined, {numeric:true, sensitivity:'base'}))
-                .slice(0, TOP_N);
+                .sort((a,b)=> (a.ddMeta.pct - b.ddMeta.pct) || (a.name||'').localeCompare(b.name||'', undefined, {numeric:true, sensitivity:'base'}));
 
             if(!topRisk.length){
                 topRiskEl.innerHTML = `<div class="text-[11px] text-slate-500 dark:text-slate-400">${isEN?'No alerts':'Sem alertas'}</div>`;
