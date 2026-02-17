@@ -63,16 +63,6 @@ body.dark .bg-white { background-color: #1e293b; }
         .val-neg { color: #ef4444; font-weight: 700; }
         .val-zero { color: #94a3b8; opacity: 0.5; }
 
-/* Visible scrollbars inside compact insight lists */
-.df-scroll{overflow-y:auto; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: rgba(100,116,139,.55) transparent;}
-.df-scroll::-webkit-scrollbar{width:8px;}
-.df-scroll::-webkit-scrollbar-track{background:transparent;}
-.df-scroll::-webkit-scrollbar-thumb{background: rgba(100,116,139,.45); border-radius: 999px;}
-.df-scroll:hover::-webkit-scrollbar-thumb{background: rgba(100,116,139,.65);}
-body.dark .df-scroll{scrollbar-color: rgba(148,163,184,.55) transparent;}
-body.dark .df-scroll::-webkit-scrollbar-thumb{background: rgba(148,163,184,.35);}
-body.dark .df-scroll:hover::-webkit-scrollbar-thumb{background: rgba(148,163,184,.55);}
-
         .dashboard-card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
         
         /* Trade Input Styling */
@@ -333,6 +323,22 @@ body.dark .df-scroll:hover::-webkit-scrollbar-thumb{background: rgba(148,163,184
 .day-details-row td{background:rgba(99,102,241,0.04);border-top:1px dashed rgba(148,163,184,0.6);}
 .dark .day-details-row td{background:rgba(99,102,241,0.08);border-top:1px dashed rgba(71,85,105,0.8);}
 
+
+/* Visible scrollbar for Global Insights lists */
+.global-scroll{
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100,116,139,.65) transparent;
+  scrollbar-gutter: stable;
+}
+.global-scroll::-webkit-scrollbar{ width: 10px; }
+.global-scroll::-webkit-scrollbar-track{ background: transparent; }
+.global-scroll::-webkit-scrollbar-thumb{
+  background-color: rgba(100,116,139,.55);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+.global-scroll::-webkit-scrollbar-thumb:hover{ background-color: rgba(100,116,139,.75); }
 </style>
 
 <style id="d2-info-modal-styles">
@@ -926,9 +932,8 @@ body.dark .df-scroll:hover::-webkit-scrollbar-thumb{background: rgba(148,163,184
                 <div class="relative h-64 w-full"><canvas id="equityChart"></canvas></div>
             </div>
 
-            <!-- Keep cards at natural height (no mutual stretching). Height match is handled by JS sync on desktop. -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <div id="period-analysis-card" class="dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 flex flex-col">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+            <div class="dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 h-full flex flex-col">
                 <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2 dark:text-white"><i data-lucide="filter" class="w-4 h-4 text-indigo-600"></i> Análise por Período</h3>
                 <div class="flex gap-2 mb-4 no-print">
                     <input type="date" id="filter-start" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600">
@@ -978,7 +983,7 @@ body.dark .df-scroll:hover::-webkit-scrollbar-thumb{background: rgba(148,163,184
                 </div>
             </div>
 
-            <div id="global-insights-card" class="dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 lg:col-span-2 flex flex-col overflow-hidden">
+            <div class="dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 lg:col-span-2 h-full flex flex-col">
 <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
             <i data-lucide="activity" class="w-4 h-4 text-indigo-600"></i>
@@ -1011,24 +1016,28 @@ body.dark .df-scroll:hover::-webkit-scrollbar-thumb{background: rgba(148,163,184
         </div>
     </div>
 
-    <div class="mt-3 flex-1 min-h-0 flex flex-col">
+    <div class="mt-3">
         <div class="flex items-center justify-between gap-2 mb-1">
             <div id="global-risk-label" class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">Risco de Drawdown</div>
             <div id="global-risk-counts" class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">—</div>
         </div>
         <div id="global-risk-bar" class="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex"></div>
 
-        <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 flex-1 min-h-0">
-            <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-2 h-full flex flex-col">
+        <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-2">
                 <div id="global-top-payout-label" class="text-[11px] uppercase tracking-wide text-slate-400 font-bold mb-1">Próximas do 1º $500</div>
-                <div id="global-top-payout" class="df-scroll space-y-1 flex-1 min-h-0 pr-1"></div>
+                <div id="global-top-payout" class="space-y-1 max-h-40 overflow-y-scroll pr-1 global-scroll"></div>
             </div>
-            <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-2 h-full flex flex-col">
+            <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-2">
                 <div id="global-top-risk-label" class="text-[11px] uppercase tracking-wide text-slate-400 font-bold mb-1">Mais risco de DD</div>
-                <div id="global-top-risk" class="df-scroll space-y-1 flex-1 min-h-0 pr-1"></div>
+                <div id="global-top-risk" class="space-y-1 max-h-40 overflow-y-scroll pr-1 global-scroll"></div>
             </div>
         </div>
-</div>
+
+        <div id="global-insights-footnote" class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
+            Resumo geral de todas as contas. Clique em um item para abrir a conta.
+        </div>
+    </div>
             </div>
             </div>
 
@@ -6904,7 +6913,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             }
 
             return { rows, total, tradedDays, holidayDays };
-        }
+        }}
 
         function openPeriodModal(opts){
             const { title, startISO, endISO } = opts;
@@ -9416,72 +9425,6 @@ We normalize daily buckets so:
   }
 })();
 // ========== END BINDINGS ==========
-
-// ========== LAYOUT SYNC: MATCH GLOBAL INSIGHTS HEIGHT TO PERIOD ANALYSIS (DESKTOP) ==========
-(function layoutSyncPeriodAndInsights(){
-  if (window.__layoutSyncPeriodAndInsights) return;
-  window.__layoutSyncPeriodAndInsights = true;
-
-  const mq = window.matchMedia ? window.matchMedia('(min-width: 1024px)') : null;
-  let ro = null;
-  let raf = null;
-
-  function apply(){
-    if (raf) cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => {
-      const a = document.getElementById('period-analysis-card');
-      const b = document.getElementById('global-insights-card');
-      if (!a || !b) return;
-
-      const desktop = mq ? mq.matches : (window.innerWidth >= 1024);
-      if (!desktop){
-        b.style.height = '';
-        b.style.maxHeight = '';
-        return;
-      }
-
-      const h = Math.round(a.getBoundingClientRect().height);
-      if (h > 0){
-        b.style.height = h + 'px';
-        b.style.maxHeight = h + 'px';
-      }
-    });
-  }
-
-  function init(){
-    const a = document.getElementById('period-analysis-card');
-    if (!a) return;
-
-    apply();
-
-    // ResizeObserver for dynamic content changes (KPIs, translations, etc.)
-    if (typeof ResizeObserver !== 'undefined'){
-      if (ro) ro.disconnect();
-      ro = new ResizeObserver(() => apply());
-      ro.observe(a);
-    } else {
-      // Fallback: lightweight interval (only on desktop)
-      setInterval(() => {
-        const desktop = mq ? mq.matches : (window.innerWidth >= 1024);
-        if (desktop) apply();
-      }, 1000);
-    }
-
-    window.addEventListener('resize', apply, { passive: true });
-    if (mq){
-      if (mq.addEventListener) mq.addEventListener('change', apply);
-      else if (mq.addListener) mq.addListener(apply);
-    }
-
-    // Expose for manual calls after heavy re-renders
-    window.syncInsightsHeight = apply;
-  }
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
-})();
-// ========== END LAYOUT SYNC ==========
-
 </script>
 
 
