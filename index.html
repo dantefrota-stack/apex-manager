@@ -977,11 +977,11 @@ body.dark .bg-white { background-color: #1e293b; }
         <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
             <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-2">
                 <div id="global-top-payout-label" class="text-[11px] uppercase tracking-wide text-slate-400 font-bold mb-1">Próximas do 1º $500</div>
-                <div id="global-top-payout" class="space-y-1"></div>
+                <div id="global-top-payout" class="space-y-1 max-h-40 overflow-y-auto pr-1"></div>
             </div>
             <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-2">
                 <div id="global-top-risk-label" class="text-[11px] uppercase tracking-wide text-slate-400 font-bold mb-1">Mais risco de DD</div>
-                <div id="global-top-risk" class="space-y-1"></div>
+                <div id="global-top-risk" class="space-y-1 max-h-40 overflow-y-auto pr-1"></div>
             </div>
         </div>
 
@@ -2349,130 +2349,355 @@ async function callOpenAI(question){
             return lines.join('\n');
 }
 
-        function _accountsOverviewBuildPrintableHTML({ includeChart } = {}){
-            const list = (window._accountsOverviewComputed || []).slice();
+        async function _accountsOverviewRenderChunkChartDataUrl({ metric, chunk, prefs, isEN }){
+            try{
+                if(typeof Chart === 'undefined') return '';
+                const isDark = document.documentElement.classList.contains('dark');
+                const gridColor = isDark ? '#334155' : '#e2e8f0';
+                const textColor = isDark ? '#cbd5e1' : '#334155';
+
+                const canvas = document.createElement('canvas');
+                canvas.width = 980;
+
+                // Size tuned for print legibility (<= 15 accounts per group)
+                if(metric === 'timeline'){
+                    canvas.height = 480;
+                }else{
+                    canvas.height = Math.max(280, (chunk.length * 26) + 90);
+                }
+
+                const ctx = canvas.getContext('2d');
+
+                // Metric config (matches the on-screen chart)
+                let xScale = {};
+                let datasetLabel = '';
+                let tooltipFmt = (v)=> `${v}`;
+                if(metric === 'progress'){
+                    datasetLabel = isEN ? 'Progress (%)' : 'Progresso (%)';
+                    xScale = { min: 0, max: 100, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> v + '%' } };
+                    tooltipFmt = (v)=> `${v}%`;
+                } else if(metric === 'available'){
+                    datasetLabel = isEN ? 'Available for Payout ($)' : 'Disponível p/ saque ($)';
+                    xScale = { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> '$' + Number(v).toLocaleString() } };
+                    tooltipFmt = (v)=> formatCurrency(v);
+                } else if(metric === 'missing'){
+                    datasetLabel = isEN ? 'Need for $500 ($)' : 'Falta p/ $500 ($)';
+                    xScale = { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> '$' + Number(v).toLocaleString() } };
+                    tooltipFmt = (v)=> formatCurrency(v);
+                } else if(metric === 'ddBuffer'){
+                    datasetLabel = isEN ? 'Drawdown Buffer ($)' : 'Buffer de Drawdown ($)';
+                    xScale = { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> '$' + Number(v).toLocaleString() } };
+                    tooltipFmt = (v)=> formatCurrency(v);
+                } else if(metric === 'ddPct'){
+                    datasetLabel = isEN ? 'Drawdown Risk (%)' : 'Risco de Drawdown (%)';
+                    xScale = { min: 0, max: 100, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> v + '%' } };
+                    tooltipFmt = (v)=> `${v}%`;
+                } else if(metric === 'equity'){
+                    datasetLabel = isEN ? 'Current Equity ($)' : 'Equity líquido ($)';
+                    xScale = { beginAtZero: true, grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> '$' + Number(v).toLocaleString() } };
+                    tooltipFmt = (v)=> formatCurrency(v);
+                }
+
+                // Timeline (line) chart (uses store.accounts data by id)
+                if(metric === 'timeline'){
+                    const tStart = (prefs && prefs.timelineStart) ? prefs.timelineStart : '';
+                    const tEnd = (prefs && prefs.timelineEnd) ? prefs.timelineEnd : '';
+                    const startDate = tStart ? parseISODateLocal(tStart) : new Date(store.date.getFullYear(), store.date.getMonth(), 1);
+                    const endDate = tEnd ? parseISODateLocal(tEnd) : new Date(store.date.getFullYear(), store.date.getMonth()+1, 0);
+
+                    const isoLabels = [];
+                    const labelsX = [];
+                    {
+                        const d0 = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+                        const d1 = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+                        for(let d = d0; d <= d1; d.setDate(d.getDate()+1)){
+                            const iso = toISODateLocal(d);
+                            isoLabels.push(iso);
+                            labelsX.push(formatMDShort(d));
+                        }
+                    }
+
+                    const colorFor = (name, i)=>{
+                        let h=0;
+                        const s=String(name||'') + '|' + i;
+                        for(let k=0;k<s.length;k++) h = (h*31 + s.charCodeAt(k)) % 360;
+                        return `hsl(${h}, 72%, ${isDark ? '62%' : '42%'})`;
+                    };
+
+                    const datasets = chunk.map((r, i)=>{
+                        const acc = (store.accounts || {})[r.id] || null;
+                        let cum = 0;
+                        const dataY = [];
+                        for(const iso of isoLabels){
+                            const entry = (acc && acc.data) ? (acc.data[iso] || {}) : {};
+                            const v = (entry && !entry.holiday) ? Number(entry.val || 0) : 0;
+                            if(v !== 0) cum += v;
+                            dataY.push(Number(cum.toFixed(2)));
+                        }
+                        const c = colorFor(r.name || r.id, i);
+                        return {
+                            label: r.name || r.id || ('Conta ' + (i+1)),
+                            data: dataY,
+                            borderColor: c,
+                            backgroundColor: 'transparent',
+                            borderWidth: 2.2,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            tension: 0.35,
+                            spanGaps: true
+                        };
+                    });
+
+                    const chart = new Chart(ctx, {
+                        type: 'line',
+                        data: { labels: labelsX, datasets },
+                        options: {
+                            responsive: false,
+                            maintainAspectRatio: false,
+                            animation: false,
+                            plugins: {
+                                legend: { display: true, position: 'bottom', labels: { color: textColor, boxWidth: 10, boxHeight: 10, usePointStyle: true } },
+                                tooltip: { callbacks: { label: (c)=> `${c.dataset.label}: ${formatCurrency(c.raw)}` } }
+                            },
+                            scales: {
+                                y: { grid: { color: gridColor }, ticks: { color: textColor, callback: (v)=> '$' + Number(v).toLocaleString() } },
+                                x: { grid: { display: false }, ticks: { color: textColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } }
+                            }
+                        }
+                    });
+
+                    await new Promise(res => requestAnimationFrame(()=>res()));
+                    let url = '';
+                    try { url = chart.toBase64Image(); } catch(e){ url = canvas.toDataURL('image/png', 1.0); }
+                    try{ chart.destroy(); }catch(e){}
+                    return url;
+                }
+
+                // Horizontal bar chart (default)
+                const labels = chunk.map(r => r.name || r.id || '');
+                const data = chunk.map(r => {
+                    if(metric === 'available') return Number(r.available || 0);
+                    if(metric === 'missing') return Number(r.missingTo500 || 0);
+                    if(metric === 'equity') return Number(r.equity || 0);
+                    if(metric === 'ddBuffer') return Number(r.ddBuffer || 0);
+                    if(metric === 'ddPct') return Number(r.ddPct || 0);
+                    return Number(r.progressPct || 0); // progress
+                });
+
+                const chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: { labels, datasets: [{ label: datasetLabel, data, borderWidth: 0, borderRadius: 8 }] },
+                    options: {
+                        responsive: false,
+                        animation: false,
+                        indexAxis: 'y',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: (c)=> tooltipFmt(c.raw) } }
+                        },
+                        scales: {
+                            x: xScale,
+                            y: { grid: { display: false }, ticks: { color: textColor } }
+                        }
+                    }
+                });
+
+                await new Promise(res => requestAnimationFrame(()=>res()));
+                let url = '';
+                try { url = chart.toBase64Image(); } catch(e){ url = canvas.toDataURL('image/png', 1.0); }
+                try{ chart.destroy(); }catch(e){}
+                return url;
+            }catch(e){
+                return '';
+            }
+        }
+
+        async function _accountsOverviewBuildPrintableHTML({ includeChart } = {}){
+            const listAll = (window._accountsOverviewComputedAll || window._accountsOverviewComputed || []).slice();
             const prefs = window.accountsOverviewPrefs || {};
             const isEN = ((localStorage.getItem(LANG_STORAGE_KEY) || window.CURRENT_LANG || document.documentElement.lang || 'pt').toString().toLowerCase().startsWith('en'));
-
-            const metricLabelMap = isEN ? {
-                progress: 'Progress to Safety (%)',
-                available: 'Available for Payout ($)',
-                missing: 'Need for $500 ($)',
-                equity: 'Current Equity ($)',
-                ddBuffer: 'Drawdown Buffer ($)',
-                ddPct: 'Drawdown Risk (%)',
-                timeline: 'Performance Trajectory (lines)'
-            } : {
-                progress: 'Progresso até Safety (%)',
-                available: 'Disponível p/ saque ($)',
-                missing: 'Falta p/ $500 ($)',
-                equity: 'Equity líquido ($)',
-                ddBuffer: 'Buffer de Drawdown ($)',
-                ddPct: 'Risco de Drawdown (%)',
-                timeline: 'Trajetória no Período (linhas)'
-            };
-            const metricLabel = metricLabelMap[prefs.chartMetric] || (isEN ? 'Progress' : 'Progresso');
             const include = includeChart !== false;
 
-            // Try capture chart image from the onscreen canvas
-            let chartDataUrl = '';
+            const pageSize = Math.max(1, Number(prefs.pageSize) || 15);
+            const total = listAll.length;
+
+            // Global summary (for print header)
+            let equitySum = 0;
+            let payoutSum = 0;
+            let eligible = 0;
+            const counts = { violation:0, critical:0, alert:0, caution:0, ok:0, na:0 };
+            for(const r of listAll){
+                equitySum += Number(r.equity || 0);
+                payoutSum += Number(r.available || 0);
+                if(Number(r.available || 0) >= 500) eligible++;
+                try{
+                    if(r.ddBuffer !== null && Number.isFinite(r.ddBuffer)){
+                        const dd = _accountsOverviewDDMeta(Number(r.ddBuffer||0), Number(r.ddDrawdown||0), isEN);
+                        const risk = dd && dd.risk ? dd.risk : 'na';
+                        if(counts[risk] === undefined) counts.na++; else counts[risk]++;
+                    }else{
+                        counts.na++;
+                    }
+                }catch(e){ counts.na++; }
+            }
+            const alerts = (counts.violation + counts.critical + counts.alert);
+
+            // Grouping (<= 15 per chart/page) for print legibility
+            const groups = [];
+            for(let i=0;i<total;i+=pageSize){
+                groups.push({
+                    idx: (i/pageSize)+1,
+                    from: i+1,
+                    to: Math.min(i+pageSize, total),
+                    rows: listAll.slice(i, i+pageSize)
+                });
+            }
+
+            // Build charts (one per group) before opening print window, so it prints reliably
+            const charts = [];
             if(include){
-                const canvas = document.getElementById('accounts-overview-chart');
-                if(canvas){
-                    try { chartDataUrl = canvas.toDataURL('image/png', 1.0); } catch(e){}
+                for(const g of groups){
+                    const url = await _accountsOverviewRenderChunkChartDataUrl({
+                        metric: (prefs.chartMetric || 'progress'),
+                        chunk: g.rows,
+                        prefs,
+                        isEN
+                    });
+                    charts.push(url);
                 }
             }
 
-            const rowsHtml = list.map(r => {
-                const miss = (r.missingTo500 <= 0) ? 'OK' : formatCurrency(r.missingTo500 || 0);
-                const avail = formatCurrency(r.available || 0);
+            const metricLabel = (() => {
+                const m = (prefs.chartMetric || 'progress');
+                if(m==='timeline') return isEN ? 'Timeline' : 'Linha do tempo';
+                if(m==='equity') return isEN ? 'Equity' : 'Equity';
+                if(m==='available') return isEN ? 'Available' : 'Disponível';
+                if(m==='missing') return isEN ? 'Missing' : 'Falta';
+                if(m==='ddBuffer') return isEN ? 'DD Buffer' : 'Buffer DD';
+                if(m==='ddPct') return isEN ? 'DD Risk %' : 'Risco DD %';
+                return isEN ? 'Progress %' : 'Progresso %';
+            })();
 
-                const planHtml = `${escapeHtml(r.size || '--')}<div class="sub">Safety: ${formatCurrency(r.safety || 0)}</div>`;
+            const groupsHtml = groups.map((g, gi) => {
+                const rowsHtml = g.rows.map(r=>{
+                    const ddHtml = (() => {
+                        try{
+                            if(r.ddBuffer === null || !Number.isFinite(r.ddBuffer)) return `<span class="muted">—</span>`;
+                            const dd = _accountsOverviewDDMeta(Number(r.ddBuffer||0), Number(r.ddDrawdown||0), isEN);
+                            const lbl = dd.level ? dd.level : `${Math.round(dd.pct)}%`;
+                            return `<span class="badge ${dd.risk||'na'}">${escapeHtml(lbl)} • ${escapeHtml(formatCurrency(dd.buffer))}</span>`;
+                        }catch(e){ return `<span class="muted">—</span>`; }
+                    })();
+                    return `
+        <tr>
+          <td class="name">${escapeHtml(r.name || '')}</td>
+          <td>${escapeHtml(r.size || '')}</td>
+          <td class="num">${formatCurrency(Number(r.equity||0))}</td>
+          <td class="num">${Number(r.available||0) >= 500 ? formatCurrency(Number(r.available||0)) : '—'}</td>
+          <td class="num">${Number(r.missingTo500||0) <= 0 ? 'OK' : formatCurrency(Number(r.missingTo500||0))}</td>
+          <td class="num">${ddHtml}</td>
+          <td class="num">${Number(r.daysOperated||0)}</td>
+          <td class="num">${Number(r.ageDays||0)} d</td>
+        </tr>`;
+                }).join('');
 
-                let ddTxt = '—';
-                let ddCls = '';
-                if(Number.isFinite(r.ddBuffer)){
-                    const dd = _accountsOverviewDDMeta(r.ddBuffer, r.ddDrawdown || 0, isEN);
-                    ddTxt = `${formatCurrency(dd.buffer)} (${Math.round(dd.pct)}%)${dd.level ? ' ' + dd.level : ''}`;
-                    ddCls = `risk-${dd.risk}`;
-                }
+                const chartHtml = (include && charts[gi]) ? `
+    <div class="chartWrap">
+      <div class="chartTitle">${isEN?'Chart':'Gráfico'} • ${escapeHtml(metricLabel)} • ${isEN?'Group':'Grupo'} ${g.idx} (${g.from}–${g.to}/${total})</div>
+      <img class="chartImg" src="${charts[gi]}" alt="chart ${g.idx}">
+    </div>` : '';
 
+                const isLast = (gi === groups.length - 1);
                 return `
-                  <tr>
-                    <td class="name">${escapeHtml(r.name || r.id || '')}</td>
-                    <td>${planHtml}</td>
-                    <td class="num">${formatCurrency(r.equity || 0)}</td>
-                    <td class="num">${avail}</td>
-                    <td class="num ${r.missingTo500<=0?'ok':''}">${miss}</td>
-                    <td class="num ${ddCls}">${ddTxt}</td>
-                    <td class="num">${r.daysOperated || 0}</td>
-                    <td class="num">${r.ageDays || 0}</td>
-                  </tr>
-                `;
-            }).join('');
+  <section class="group ${isLast ? 'last' : ''}">
+    ${chartHtml}
+    <div class="tableWrap">
+      <div class="tableTitle">${isEN?'Accounts':'Contas'} • ${isEN?'Group':'Grupo'} ${g.idx} (${g.from}–${g.to}/${total})</div>
+      <table>
+        <thead>
+          <tr>
+            <th>${isEN?'Account':'Conta'}</th>
+            <th>${isEN?'Size':'Tamanho'}</th>
+            <th class="num">${isEN?'Equity':'Equity'}</th>
+            <th class="num">${isEN?'Available':'Disponível'}</th>
+            <th class="num">${isEN?'Missing':'Falta'}</th>
+            <th class="num">${isEN?'DD':'DD'}</th>
+            <th class="num">${isEN?'Days':'Dias'}</th>
+            <th class="num">${isEN?'Age':'Idade'}</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+  </section>`;
+            }).join('\n');
 
-            const title = isEN ? 'Accounts Summary' : 'Resumo de Contas';
-            const subtitle = isEN
-                ? `Sort: ${(prefs.sort||'closest')} | Filter: ${(prefs.size||'all')}`
-                : `Ordem: ${(prefs.sort||'closest')} | Filtro: ${(prefs.size||'all')}`;
-
+            const nowStr = formatDateTimeShort(new Date());
             return `<!doctype html>
-<html>
+<html lang="${isEN?'en':'pt-BR'}">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${title}</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>${isEN?'Accounts Overview':'Resumo de Contas'}</title>
 <style>
-  :root { color-scheme: light; }
-  body { font-family: Arial, Helvetica, sans-serif; margin: 24px; color: #111827; }
-  h1 { margin: 0 0 4px 0; font-size: 18px; }
-  .meta { font-size: 12px; color: #6b7280; margin-bottom: 14px; }
-  .box { border:1px solid #e5e7eb; border-radius:12px; padding:16px; }
-  .chartWrap { margin: 12px 0 16px; }
-  .chartTitle { font-size:12px; color:#6b7280; margin:0 0 6px; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th, td { border-bottom: 1px solid #e5e7eb; padding: 8px 10px; vertical-align: top; }
-  th { text-align: left; font-size: 11px; color: #6b7280; letter-spacing: .02em; text-transform: uppercase; }
-  td.num { text-align: right; white-space: nowrap; }
-  td.name { font-weight: 700; }
-  .sub { font-size: 10px; color: #6b7280; margin-top: 2px; }
-  .ok { font-weight:700; color:#059669; }
-  .risk-violation, .risk-critical { font-weight:700; color:#dc2626; }
-  .risk-alert { font-weight:700; color:#ea580c; }
-  .risk-caution { font-weight:700; color:#ca8a04; }
-  @media print { body { margin: 0; } .box { border:none; } }
+  :root{ --text:#0f172a; --muted:#64748b; --line:#e2e8f0; --bg:#ffffff; }
+  body{ font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:0; padding:24px; color:var(--text); background:var(--bg); }
+  h1{ font-size:18px; margin:0 0 6px 0; }
+  .meta{ font-size:12px; color:var(--muted); margin-bottom:14px; display:flex; flex-wrap:wrap; gap:10px; }
+  .kpis{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:12px 0 16px 0; }
+  .kpi{ border:1px solid var(--line); border-radius:12px; padding:10px 12px; }
+  .kpi .lbl{ font-size:11px; color:var(--muted); font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+  .kpi .val{ margin-top:2px; font-size:16px; font-weight:900; }
+  .group{ margin-top:18px; }
+  .chartWrap{ border:1px solid var(--line); border-radius:14px; padding:12px; margin-bottom:12px; }
+  .chartTitle{ font-size:12px; font-weight:900; letter-spacing:.02em; margin-bottom:8px; color:#1e293b; }
+  .chartImg{ width:100%; height:auto; display:block; border-radius:10px; }
+  .tableWrap{ border:1px solid var(--line); border-radius:14px; padding:12px; }
+  .tableTitle{ font-size:12px; font-weight:900; letter-spacing:.02em; margin-bottom:8px; color:#1e293b; }
+  table{ width:100%; border-collapse:collapse; font-size:12px; }
+  thead th{ text-align:left; padding:8px; border-bottom:1px solid var(--line); color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.08em; }
+  tbody td{ padding:8px; border-bottom:1px solid #f1f5f9; vertical-align:top; }
+  td.num, th.num{ text-align:right; white-space:nowrap; }
+  td.name{ font-weight:800; }
+  .muted{ color:var(--muted); }
+  .badge{ display:inline-block; padding:2px 8px; border-radius:999px; font-weight:900; font-size:11px; border:1px solid var(--line); }
+  .badge.violation{ background:#ffe4e6; border-color:#fecdd3; color:#9f1239; }
+  .badge.critical{ background:#ffe4e6; border-color:#fecdd3; color:#be123c; }
+  .badge.alert{ background:#ffedd5; border-color:#fed7aa; color:#c2410c; }
+  .badge.caution{ background:#fef9c3; border-color:#fde68a; color:#a16207; }
+  .badge.ok{ background:#dcfce7; border-color:#bbf7d0; color:#166534; }
+  .badge.na{ background:#e2e8f0; border-color:#cbd5e1; color:#334155; }
+  @media print{
+    body{ padding:12mm; }
+    .group{ break-after: page; page-break-after: always; }
+    .group.last{ break-after:auto; page-break-after:auto; }
+    .chartWrap, .tableWrap{ break-inside: avoid; page-break-inside: avoid; }
+  }
 </style>
 </head>
 <body>
-  <h1>${title}</h1>
-  <div class="meta">${subtitle}<br>${isEN ? 'Generated on:' : 'Gerado em:'} ${new Date().toLocaleString()}</div>
-  <div class="box">
-    ${include && chartDataUrl ? `<div class="chartWrap">
-        <div class="chartTitle">${escapeHtml(metricLabel)}</div>
-        <img src="${chartDataUrl}" style="width:100%;max-height:360px;object-fit:contain;border:1px solid #e5e7eb;border-radius:10px;" />
-      </div>` : ``}
-    <table>
-      <thead>
-        <tr>
-          <th>${isEN?'Account':'Conta'}</th>
-          <th>${isEN?'Plan':'Plano'}</th>
-          <th>Equity</th>
-          <th>${isEN?'Available':'Disponível'}</th>
-          <th>${isEN?'Need for $500':'Falta p/ $500'}</th>
-          <th>${isEN?'DD Buffer':'Buffer DD'}</th>
-          <th>${isEN?'Days':'Dias'}</th>
-          <th>${isEN?'Age':'Idade'}</th>
-        </tr>
-      </thead>
-      <tbody>${rowsHtml}</tbody>
-    </table>
+
+  <h1>${isEN?'Accounts Overview':'Resumo de Contas'}</h1>
+  <div class="meta">
+    <div><strong>${isEN?'Generated':'Gerado'}:</strong> ${escapeHtml(nowStr)}</div>
+    <div><strong>${isEN?'Metric':'Métrica'}:</strong> ${escapeHtml(metricLabel)}</div>
+    <div><strong>${isEN?'Sort':'Ordenação'}:</strong> ${escapeHtml(prefs.sort || '')}</div>
+    <div><strong>${isEN?'Filter':'Filtro'}:</strong> ${escapeHtml(prefs.size || 'all')}</div>
   </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="lbl">${isEN?'Accounts':'Contas'}</div><div class="val">${total}</div></div>
+    <div class="kpi"><div class="lbl">${isEN?'Total Equity':'Equity Total'}</div><div class="val">${formatCurrency(equitySum)}</div></div>
+    <div class="kpi"><div class="lbl">${isEN?'Payout Available':'Saque Possível'}</div><div class="val">${formatCurrency(payoutSum)}</div></div>
+    <div class="kpi"><div class="lbl">${isEN?'DD Alerts':'Alertas DD'}</div><div class="val">${alerts} <span class="muted" style="font-size:12px; font-weight:800;">(${isEN?'Eligible':'Elegíveis'}: ${eligible})</span></div></div>
+  </div>
+
+  ${groupsHtml}
 
 </body>
 </html>`;
         }
-
-        function _openPrintWindow(htmlStr){
+function _openPrintWindow(htmlStr){
             // Try popup window first
             let w = null;
             try { w = window.open('', '_blank'); } catch(e){ w = null; }
@@ -2508,9 +2733,9 @@ async function callOpenAI(question){
             return false;
         }
 
-        function accountsOverviewPrint(){
+        async function accountsOverviewPrint(){
             const include = !!document.getElementById('accounts-overview-export-chart')?.checked;
-            const htmlStr = _accountsOverviewBuildPrintableHTML({ includeChart: include });
+            const htmlStr = await _accountsOverviewBuildPrintableHTML({ includeChart: include });
             _openPrintWindow(htmlStr);
         }
         function accountsOverviewPDF(){
@@ -2686,21 +2911,21 @@ async function callOpenAI(question){
             }
 
 
-            // Pagination (max 15 contas por página) — mantém a visualização legível com dezenas/centenas de contas
+            // Chart paging (max 15 contas por grupo) — mantém o gráfico legível sem “quebrar” a tabela completa
             const computedAll = computed.slice();
             const pageSize = Math.max(1, Number(prefs.pageSize) || 15);
             const totalPages = Math.max(1, Math.ceil(computedAll.length / pageSize));
             prefs.pageSize = pageSize;
             prefs.page = Math.max(1, Math.min(Number(prefs.page) || 1, totalPages));
 
-            const startI = (prefs.page - 1) * pageSize;
-            const endI = startI + pageSize;
-            computed = computedAll.slice(startI, endI);
+            const chartStartI = (prefs.page - 1) * pageSize;
+            const chartEndI = chartStartI + pageSize;
+            const chartSlice = computedAll.slice(chartStartI, chartEndI);
 
             window._accountsOverviewTotalPages = totalPages;
             window._accountsOverviewTotalCount = computedAll.length;
 
-            // Update pagination UI (range + buttons)
+            // Update pagination UI (Chart group range + buttons)
             try{
                 const pagWrap = document.getElementById('accounts-overview-pagination');
                 const prevBtn = document.getElementById('accounts-overview-prev');
@@ -2710,15 +2935,15 @@ async function callOpenAI(question){
                 const titleEl = document.getElementById('accounts-overview-page-title');
                 const sizeEl  = document.getElementById('accounts-overview-page-size');
 
-                if(titleEl) titleEl.textContent = isEN ? 'Page:' : 'Página:';
-                if(sizeEl) sizeEl.textContent = isEN ? `${pageSize}/page` : `${pageSize}/pg`;
+                if(titleEl) titleEl.textContent = isEN ? 'Chart:' : 'Gráfico:';
+                if(sizeEl) sizeEl.textContent = isEN ? `${pageSize} accts` : `${pageSize} contas`;
 
                 if(pagWrap) pagWrap.classList.toggle('hidden', totalPages <= 1);
                 if(labelEl) labelEl.textContent = `${prefs.page}/${totalPages}`;
 
                 if(rangeEl){
-                    const from = computedAll.length ? (startI + 1) : 0;
-                    const to = Math.min(endI, computedAll.length);
+                    const from = computedAll.length ? (chartStartI + 1) : 0;
+                    const to = Math.min(chartEndI, computedAll.length);
                     rangeEl.textContent = isEN ? `${from}–${to} of ${computedAll.length}` : `${from}–${to} de ${computedAll.length}`;
                 }
 
@@ -2733,10 +2958,10 @@ async function callOpenAI(question){
                     nextBtn.classList.toggle('pointer-events-none', nextBtn.disabled);
                 }
             }catch(e){}
-            
+
             // snapshot for exports (PDF/Print/Share)
             try {
-                window._accountsOverviewComputed = computed.map(r => ({
+                const mapRow = (r) => ({
                     id: r.acc.id || '',
                     name: r.acc.name || '',
                     size: r.acc.size || '',
@@ -2751,28 +2976,16 @@ async function callOpenAI(question){
                     daysOperated: Number(r.opDays || 0),
                     ageDays: Number(r.ageDays || 0),
                     progressPct: Number(r.pct || 0),
-                }));
+                });
+                window._accountsOverviewComputedAll = computedAll.map(mapRow);
+                window._accountsOverviewComputed = chartSlice.map(mapRow); // current chart group
                 window._accountsOverviewComputedAt = Date.now();
             } catch(e){}
-// build table rows + chart arrays
+// build table rows (ALL accounts) + chart arrays (current group of <= 15 accounts)
             const rows = [];
-            const labels = [];
-            const series = [];
 
-            for(const row of computed){
+            for(const row of computedAll){
                 const acc = row.acc;
-
-                labels.push(acc.name || acc.id);
-
-                // chart metric value
-                let v = 0;
-                if(prefs.chartMetric === 'available') v = row.availablePayout;
-                else if(prefs.chartMetric === 'missing') v = row.missingTo500;
-                else if(prefs.chartMetric === 'equity') v = row.equity;
-                else if(prefs.chartMetric === 'ddBuffer') v = (row.ddBuffer===null ? 0 : row.ddBuffer);
-                else if(prefs.chartMetric === 'ddPct') v = (row.ddPct===null ? 0 : row.ddPct);
-                else v = row.pct;
-                series.push(Number((typeof v === 'number' ? v : 0)));
 
                 const availClass = row.availablePayout >= 500 ? 'text-emerald-600' : 'text-slate-600 dark:text-slate-300';
                 const availLabel = row.availablePayout >= 500 ? formatCurrency(row.availablePayout) : '—';
@@ -2817,9 +3030,27 @@ async function callOpenAI(question){
                         <td class="px-4 py-3 text-center text-slate-600 dark:text-slate-300">${row.ageDays} d</td>
                     </tr>
                 `);
-}
+            }
 
             tbody.innerHTML = rows.join('');
+
+            // chart arrays (current group)
+            const labels = [];
+            const series = [];
+            for(const row of chartSlice){
+                const acc = row.acc;
+                labels.push(acc.name || acc.id);
+
+                // chart metric value
+                let v = 0;
+                if(prefs.chartMetric === 'available') v = row.availablePayout;
+                else if(prefs.chartMetric === 'missing') v = row.missingTo500;
+                else if(prefs.chartMetric === 'equity') v = row.equity;
+                else if(prefs.chartMetric === 'ddBuffer') v = (row.ddBuffer===null ? 0 : row.ddBuffer);
+                else if(prefs.chartMetric === 'ddPct') v = (row.ddPct===null ? 0 : row.ddPct);
+                else v = row.pct;
+                series.push(Number((typeof v === 'number' ? v : 0)));
+            }
 
             // chart
             const wrap = document.getElementById('accounts-overview-chart-wrap');
@@ -2870,7 +3101,7 @@ async function callOpenAI(question){
 
                 // build union date labels where any account traded within range
                 const labelSet = new Set();
-                for(const row of computed){
+                for(const row of chartSlice){
                     const acc = row.acc;
                     const dates = Object.keys(acc.data || {});
                     for(const iso of dates){
@@ -2904,7 +3135,7 @@ async function callOpenAI(question){
                         return `hsl(${h}, 72%, ${isDark ? '62%' : '42%'})`;
                     };
 
-                    const datasets = computed.map((row, i)=>{
+                    const datasets = chartSlice.map((row, i)=>{
                         const acc = row.acc;
                         let cum = 0;
                         const dataY = [];
@@ -4312,11 +4543,13 @@ function renderCalendar(acc) {
                 }
             }
 
-            // Top: closest to first $500 (missing > 0, smallest missing)
+                        const TOP_N = 15; // list length inside small scroll boxes
+
+// Top: closest to first $500 (missing > 0, smallest missing)
             const topPayout = rows
                 .filter(r => r.missingTo500 > 0)
                 .sort((a,b)=> (a.missingTo500 - b.missingTo500) || (a.name||'').localeCompare(b.name||'', undefined, {numeric:true, sensitivity:'base'}))
-                .slice(0, 5);
+                .slice(0, TOP_N);
 
             if(!topPayout.length){
                 topPayoutEl.innerHTML = `<div class="text-[11px] text-slate-500 dark:text-slate-400">${isEN?'No pending accounts':'Nenhuma conta pendente'}</div>`;
@@ -4337,7 +4570,7 @@ function renderCalendar(acc) {
             const topRisk = rows
                 .filter(r => r.ddMeta && r.ddMeta.risk && r.ddMeta.risk !== 'ok')
                 .sort((a,b)=> (a.ddMeta.pct - b.ddMeta.pct) || (a.name||'').localeCompare(b.name||'', undefined, {numeric:true, sensitivity:'base'}))
-                .slice(0, 5);
+                .slice(0, TOP_N);
 
             if(!topRisk.length){
                 topRiskEl.innerHTML = `<div class="text-[11px] text-slate-500 dark:text-slate-400">${isEN?'No alerts':'Sem alertas'}</div>`;
