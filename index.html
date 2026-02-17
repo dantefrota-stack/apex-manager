@@ -908,15 +908,16 @@ body.dark .bg-white { background-color: #1e293b; }
 
     <div class="container mx-auto px-4 py-6 space-y-6">
         
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <div class="lg:col-span-2 dashboard-card p-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start lg:auto-rows-min">
+            <!-- Prevent grid stretch: keep chart card height to its content so it doesn't create a blank area when the right column is taller -->
+            <div class="lg:col-span-2 dashboard-card p-6 self-start h-fit" style="align-self:start;height:fit-content;">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="bar-chart" class="w-4 h-4 text-indigo-600"></i> Evolução da Performance</h3>
                 </div>
                 <div class="relative h-64 w-full"><canvas id="equityChart"></canvas></div>
             </div>
 
-            <div class="lg:col-span-1 dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+            <div class="lg:col-span-1 lg:row-span-2 dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
                 <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2 dark:text-white"><i data-lucide="filter" class="w-4 h-4 text-indigo-600"></i> Análise por Período</h3>
                 <div class="flex gap-2 mb-4 no-print">
                     <input type="date" id="filter-start" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600">
@@ -992,9 +993,10 @@ body.dark .bg-white { background-color: #1e293b; }
 </div>
 
             </div>
-        </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Use the left-column space under the chart (on large screens) to avoid an empty area and keep the layout balanced -->
+            <div class="lg:col-span-2">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <div class="dashboard-card p-4 border-l-4 border-l-indigo-500">
         <p class="text-xs font-bold text-gray-400 uppercase">Saldo Atual (Equity)</p>
         <h2 id="current-equity" class="text-3xl font-extrabold text-slate-800 dark:text-white mt-1">$0.00</h2>
@@ -1045,7 +1047,9 @@ body.dark .bg-white { background-color: #1e293b; }
     </div>
 
     <div id="payout-manager-container" class="dashboard-card p-4 border-l-4 border-l-yellow-500 relative bg-white dark:bg-slate-800"></div>
-</div>
+                </div>
+            </div>
+        </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <div class="lg:col-span-2 space-y-4">
