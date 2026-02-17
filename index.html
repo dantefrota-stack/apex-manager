@@ -930,6 +930,36 @@ body.dark .bg-white { background-color: #1e293b; }
                     <div class="flex justify-between border-b border-slate-200 pb-2 dark:border-slate-700"><span class="text-slate-500 dark:text-slate-400">Melhor Dia</span><span id="custom-best" class="font-bold text-green-600">--</span></div>
                     <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Pior Dia</span><span id="custom-worst" class="font-bold text-red-600">--</span></div>
                 </div>
+                
+                <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+                    <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
+                        <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-indigo-600"></i>
+                        <span>KPIs do Período</span>
+                    </div>
+                    <div class="space-y-3 text-xs">
+                        <div class="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700">
+                            <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2">Trades</div>
+                            <div class="space-y-1">
+                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Total (W/L)</span><span id="kpi-trades" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Avg Trade</span><span id="kpi-avg-trade" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Avg Win / Avg Loss</span><span id="kpi-avg-winloss" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Profit Factor</span><span id="kpi-pf" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Expectancy</span><span id="kpi-expectancy" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                            </div>
+                        </div>
+
+                        <div class="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700">
+                            <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2">Dias</div>
+                            <div class="space-y-1">
+                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Dias operados</span><span id="kpi-days" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Dias verdes / vermelhos</span><span id="kpi-days-gr" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Avg por dia</span><span id="kpi-avg-day" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Max Drawdown</span><span id="kpi-maxdd" class="font-bold text-red-600">--</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-3 gap-2 no-print mt-auto pt-4">
                      <button onclick="shareReport()" class="col-span-1 py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400" title="WhatsApp"><i data-lucide="share-2" class="w-3 h-3"></i> Zap</button>
                      <button onclick="pdfFilteredReport()" class="col-span-1 py-2 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 flex justify-center items-center gap-1 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"><i data-lucide="printer" class="w-3 h-3"></i> PDF</button>
@@ -1497,6 +1527,8 @@ let isOffline = false;
             payoutHistory: document.getElementById('payout-history'), totalWithdrawn: document.getElementById('total-withdrawn'), 
             customResult: document.getElementById('custom-result'), customWinrate: document.getElementById('custom-winrate'),
             customBest: document.getElementById('custom-best'), customWorst: document.getElementById('custom-worst'),
+            kpiTrades: document.getElementById('kpi-trades'), kpiAvgTrade: document.getElementById('kpi-avg-trade'), kpiAvgWinLoss: document.getElementById('kpi-avg-winloss'), kpiPF: document.getElementById('kpi-pf'), kpiExpectancy: document.getElementById('kpi-expectancy'),
+            kpiDays: document.getElementById('kpi-days'), kpiDaysGR: document.getElementById('kpi-days-gr'), kpiAvgDay: document.getElementById('kpi-avg-day'), kpiMaxDD: document.getElementById('kpi-maxdd'),
             filterStart: document.getElementById('filter-start'), filterEnd: document.getElementById('filter-end'),
             themeIcon: document.getElementById('theme-icon'),
             adminModal: document.getElementById('admin-modal'),
@@ -3977,75 +4009,132 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const start = els.filterStart.value; const end = els.filterEnd.value;
             if(!start || !end) return;
             const acc = getActive();
-            // Métricas por período devem respeitar SOMENTE o intervalo selecionado.
-            // Contagem de trades: usa T1/T2 quando existirem; caso contrário, considera 1 trade (o TOTAL do dia).
-            // Melhor/Pior dia: usa o TOTAL do dia (val) quando presente; senão, soma T1+T2.
-            let sum = 0;
-            let wins = 0;
-            let totalTrades = 0;
-            let tradedDays = 0;
-            let best = -Infinity;
-            let worst = Infinity;
-            let chartLabels = [];
-            let chartData = [];
-            let cumSum = 0;
             
-            Object.keys(acc.data).sort().forEach(iso => {
-                if(iso >= start && iso <= end) {
-                    const e = acc.data[iso];
-                    const val = (parseFloat(e.val) || 0);
-                    const t1n = parseFloat(e.t1);
-                    const t2n = parseFloat(e.t2);
+// Métricas por período devem respeitar SOMENTE o intervalo selecionado.
+// Contagem de trades: usa T1/T2 quando existirem; caso contrário, considera 1 trade (o TOTAL do dia).
+// Melhor/Pior dia: usa o TOTAL do dia (val) quando presente; senão, soma T1+T2.
+let sum = 0;
+let wins = 0;
+let totalTrades = 0;
+let tradedDays = 0;
+let greenDays = 0;
+let redDays = 0;
 
-                    if(!e.holiday) {
-                        // Determina se há trades (T1/T2) válidos nesse dia
-                        const hasT1 = !isNaN(t1n) && t1n !== 0;
-                        const hasT2 = !isNaN(t2n) && t2n !== 0;
-                        let dayTrades = 0;
-                        let dayWins = 0;
+let grossWin = 0;
+let grossLoss = 0; // absoluto
+let winSum = 0;
+let lossSum = 0; // negativo
+let winCount = 0;
+let lossCount = 0;
 
-                        if (hasT1) { dayTrades++; if (t1n > 0) dayWins++; }
-                        if (hasT2) { dayTrades++; if (t2n > 0) dayWins++; }
+let best = -Infinity;
+let worst = Infinity;
 
-                        // Total do dia (para soma e melhor/pior)
-                        // Prioriza 'val' (TOTAL já calculado). Se não existir, usa soma de T1+T2.
-                        let dayTotal = 0;
-                        if (val !== 0) {
-                            dayTotal = val;
-                        } else if (hasT1 || hasT2) {
-                            dayTotal = (isNaN(t1n) ? 0 : t1n) + (isNaN(t2n) ? 0 : t2n);
-                        }
+let chartLabels = [];
+let chartData = [];
+let cumSum = 0;
 
-                        // Se não há T1/T2 mas há total do dia, assume 1 trade (o dia)
-                        if (dayTrades === 0 && dayTotal !== 0) {
-                            dayTrades = 1;
-                            if (dayTotal > 0) dayWins = 1;
-                        }
+// Max Drawdown (peak-to-trough) dentro do intervalo
+let peak = 0;
+let maxDD = 0; // positivo
 
-                        if (dayTotal !== 0) {
-                            tradedDays++;
-                            sum += dayTotal;
-                            if(dayTotal > best) best = dayTotal;
-                            if(dayTotal < worst) worst = dayTotal;
-                            cumSum += dayTotal;
+Object.keys(acc.data).sort().forEach(iso => {
+    if(iso >= start && iso <= end) {
+        const e = acc.data[iso];
+        const val = (parseFloat(e.val) || 0);
+        const t1n = parseFloat(e.t1);
+        const t2n = parseFloat(e.t2);
 
-                            // Gráfico: lucro acumulado apenas em dias operados
-                            chartLabels.push(formatDateShort(parseISODateLocal(iso)));
-                            chartData.push(cumSum);
-                        }
+        if(!e.holiday) {
+            const hasT1 = !isNaN(t1n) && t1n !== 0;
+            const hasT2 = !isNaN(t2n) && t2n !== 0;
 
-                        totalTrades += dayTrades;
-                        wins += dayWins;
-                    }
+            // Total do dia (para soma, melhor/pior e curva acumulada)
+            // Prioriza 'val' (TOTAL já calculado). Se não existir, usa soma de T1+T2.
+            let dayTotal = 0;
+            if (val !== 0) {
+                dayTotal = val;
+            } else if (hasT1 || hasT2) {
+                dayTotal = (isNaN(t1n) ? 0 : t1n) + (isNaN(t2n) ? 0 : t2n);
+            }
+
+            // Trade values (para KPIs de trades)
+            const tradeVals = [];
+            if (hasT1) tradeVals.push(t1n);
+            if (hasT2) tradeVals.push(t2n);
+            if (tradeVals.length === 0 && dayTotal !== 0) tradeVals.push(dayTotal);
+
+            tradeVals.forEach(tv => {
+                totalTrades += 1;
+                if (tv > 0) {
+                    wins += 1;
+                    grossWin += tv;
+                    winSum += tv;
+                    winCount += 1;
+                } else if (tv < 0) {
+                    grossLoss += Math.abs(tv);
+                    lossSum += tv;
+                    lossCount += 1;
                 }
             });
 
-            els.customResult.textContent = formatCurrency(sum); els.customResult.className = sum >= 0 ? "font-bold text-green-600" : "font-bold text-red-600";
-            const rate = totalTrades > 0 ? ((wins/totalTrades)*100).toFixed(0)+"%" : "0%";
-            els.customWinrate.textContent = `${rate} (${wins}/${totalTrades})`;
-            els.customBest.textContent = best > -Infinity ? formatCurrency(best) : "--";
-            els.customWorst.textContent = worst < Infinity ? formatCurrency(worst) : "--";
-            updateChart(chartLabels, chartData);
+            if (dayTotal !== 0) {
+                tradedDays++;
+                sum += dayTotal;
+
+                if (dayTotal > 0) greenDays++;
+                if (dayTotal < 0) redDays++;
+
+                if(dayTotal > best) best = dayTotal;
+                if(dayTotal < worst) worst = dayTotal;
+
+                cumSum += dayTotal;
+
+                if (cumSum > peak) peak = cumSum;
+                const dd = peak - cumSum;
+                if (dd > maxDD) maxDD = dd;
+
+                // Gráfico: lucro acumulado apenas em dias operados
+                chartLabels.push(formatDateShort(parseISODateLocal(iso)));
+                chartData.push(cumSum);
+            }
+        }
+    }
+});
+
+els.customResult.textContent = formatCurrency(sum); 
+els.customResult.className = sum >= 0 ? "font-bold text-green-600" : "font-bold text-red-600";
+
+const losses = Math.max(0, totalTrades - wins);
+const rate = totalTrades > 0 ? ((wins/totalTrades)*100).toFixed(0)+"%" : "0%";
+els.customWinrate.textContent = `${rate} (${wins}/${totalTrades})`;
+els.customBest.textContent = best > -Infinity ? formatCurrency(best) : "--";
+els.customWorst.textContent = worst < Infinity ? formatCurrency(worst) : "--";
+
+updateChart(chartLabels, chartData);
+
+// --- KPIs do Período (Trades + Dias) ---
+const avgTrade = totalTrades > 0 ? (sum / totalTrades) : 0;
+const avgWin = winCount > 0 ? (winSum / winCount) : 0;
+const avgLoss = lossCount > 0 ? (lossSum / lossCount) : 0; // negativo
+const pf = grossLoss > 0 ? (grossWin / grossLoss) : (grossWin > 0 ? Infinity : 0);
+
+const winRate = totalTrades > 0 ? (wins / totalTrades) : 0;
+const expectancy = totalTrades > 0 ? (winRate * avgWin + (1 - winRate) * avgLoss) : 0;
+
+const avgDay = tradedDays > 0 ? (sum / tradedDays) : 0;
+const maxDDNeg = -maxDD; // exibe como negativo
+
+if (els.kpiTrades) els.kpiTrades.textContent = totalTrades > 0 ? `${totalTrades} (${wins}/${losses})` : "0 (0/0)";
+if (els.kpiAvgTrade) els.kpiAvgTrade.textContent = totalTrades > 0 ? formatCurrency(avgTrade) : "--";
+if (els.kpiAvgWinLoss) els.kpiAvgWinLoss.textContent = (winCount || lossCount) ? `${formatCurrency(avgWin)} / ${formatCurrency(avgLoss)}` : "--";
+if (els.kpiPF) els.kpiPF.textContent = (pf === Infinity) ? "∞" : (grossLoss > 0 ? pf.toFixed(2) : "--");
+if (els.kpiExpectancy) els.kpiExpectancy.textContent = totalTrades > 0 ? formatCurrency(expectancy) : "--";
+
+if (els.kpiDays) els.kpiDays.textContent = tradedDays ? String(tradedDays) : "--";
+if (els.kpiDaysGR) els.kpiDaysGR.textContent = tradedDays ? `${greenDays} / ${redDays}` : "--";
+if (els.kpiAvgDay) els.kpiAvgDay.textContent = tradedDays ? formatCurrency(avgDay) : "--";
+if (els.kpiMaxDD) els.kpiMaxDD.textContent = tradedDays ? formatCurrency(maxDDNeg) : "--";
         }
 
         function updateChart(labels, data) {
@@ -4833,22 +4922,35 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             renderDashboard();
         }
 
-        function shareReportInternal() {
-            const acc = getActive(); 
-            const res = els.customResult.textContent;
-            const period = els.filterStart.value ? `(${new Date(els.filterStart.formatDateShort(value))} - ${new Date(els.filterEnd.formatDateShort(value))})` : "(Geral)";
-            const text = `*Performance Report - DF Strategic* 📊
-${period}
+                function shareReportInternal() {
+            const acc = getActive();
+            const res = (els.customResult?.textContent || '--').trim();
 
-` +
-                         `*Resultado:* ${res}
-` +
-                         `*Win Rate:* ${els.customWinrate.textContent}
-` +
-                         `*Melhor Dia:* ${els.customBest.textContent}`; 
-            
-            if (navigator.share) { navigator.share({ title: 'Performance Report', text: text }).catch(console.error); } 
-            else { navigator.clipboard.writeText(text).then(() => alert(translateString("Resumo copiado!"))); }
+            const hasRange = !!(els.filterStart?.value && els.filterEnd?.value);
+            const period = hasRange
+                ? `(${formatDateShort(parseISODateLocal(els.filterStart.value))} - ${formatDateShort(parseISODateLocal(els.filterEnd.value))})`
+                : "(Geral)";
+
+            const kpiTrades = (els.kpiTrades?.textContent || '--').trim();
+            const kpiPF = (els.kpiPF?.textContent || '--').trim();
+            const kpiMaxDD = (els.kpiMaxDD?.textContent || '--').trim();
+
+            const text =
+`*Performance Report - DF Strategic* 📊
+${period} • ${(acc?.name || 'Conta')}
+
+*Resultado:* ${res}
+*Win Rate:* ${(els.customWinrate?.textContent || '--').trim()}
+*Melhor Dia:* ${(els.customBest?.textContent || '--').trim()}
+*Pior Dia:* ${(els.customWorst?.textContent || '--').trim()}
+
+*KPIs:* Trades ${kpiTrades} • PF ${kpiPF} • MaxDD ${kpiMaxDD}`;
+
+            if (navigator.share) {
+                navigator.share({ title: 'Performance Report', text: text }).catch(console.error);
+            } else {
+                navigator.clipboard.writeText(text).then(() => alert(translateString("Resumo copiado!")));
+            }
         }
 
         function pdfFilteredReportInternal() {
@@ -4873,6 +4975,15 @@ ${period}
             const metricWin = (els.customWinrate?.textContent || '--').trim();
             const metricBest = (els.customBest?.textContent || '--').trim();
             const metricWorst = (els.customWorst?.textContent || '--').trim();
+            const kpiTrades = (els.kpiTrades?.textContent || '--').trim();
+            const kpiAvgTrade = (els.kpiAvgTrade?.textContent || '--').trim();
+            const kpiAvgWinLoss = (els.kpiAvgWinLoss?.textContent || '--').trim();
+            const kpiPF = (els.kpiPF?.textContent || '--').trim();
+            const kpiExp = (els.kpiExpectancy?.textContent || '--').trim();
+            const kpiDays = (els.kpiDays?.textContent || '--').trim();
+            const kpiDaysGR = (els.kpiDaysGR?.textContent || '--').trim();
+            const kpiAvgDay = (els.kpiAvgDay?.textContent || '--').trim();
+            const kpiMaxDD = (els.kpiMaxDD?.textContent || '--').trim();
 
             const ensureJsPDF = () => new Promise((resolve, reject)=>{
                 try{
@@ -4915,16 +5026,25 @@ ${period}
                     let cumSum = 0;
 
                     Object.keys(acc.data).sort().forEach(iso => {
-                        if (iso >= start && iso <= end) {
-                            const e = acc.data[iso];
-                            const val = parseFloat(e.val) || 0;
-                            if (!e.holiday && val !== 0) {
-                                cumSum += val;
-                                chartLabels.push(formatDateShort(parseISODateLocal(iso)));
-                                chartData.push(cumSum);
-                            }
-                        }
-                    });
+    if (iso >= start && iso <= end) {
+        const e = acc.data[iso];
+        const val = parseFloat(e.val) || 0;
+        const t1n = parseFloat(e.t1);
+        const t2n = parseFloat(e.t2);
+        const hasT1 = !isNaN(t1n) && t1n !== 0;
+        const hasT2 = !isNaN(t2n) && t2n !== 0;
+
+        let dayTotal = 0;
+        if (val !== 0) dayTotal = val;
+        else if (hasT1 || hasT2) dayTotal = (isNaN(t1n) ? 0 : t1n) + (isNaN(t2n) ? 0 : t2n);
+
+        if (!e.holiday && dayTotal !== 0) {
+            cumSum += dayTotal;
+            chartLabels.push(formatDateShort(parseISODateLocal(iso)));
+            chartData.push(cumSum);
+        }
+    }
+});
 
                     if (!chartLabels.length) return null;
 
@@ -5040,7 +5160,7 @@ ${period}
                 // Metrics box
                 const boxX = margin;
                 const boxW = contentW;
-                const boxH = 130;
+                const boxH = 350;
                 if(y + boxH > pageH - margin) y = pageH - margin - boxH;
 
                 doc.setDrawColor(210);
@@ -5078,6 +5198,52 @@ ${period}
                 label('Pior Dia', rightX, yy);
                 value(metricWorst, rightX, yy + 16);
 
+                // KPIs
+                yy += 44;
+                doc.setFont('helvetica','bold');
+                doc.setFontSize(10);
+                doc.setTextColor(55);
+                doc.text('KPIs do Periodo', leftX, yy);
+                yy += 16;
+
+                const kLabel = (txt, x, yPos)=>{ doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(110); doc.text(txt, x, yPos); };
+                const kVal   = (txt, x, yPos)=>{ doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(25); doc.text(txt, x, yPos); };
+
+                // Left column (Trades)
+                kLabel('Trades (W/L)', leftX, yy);
+                kVal(kpiTrades, leftX, yy + 14);
+
+                kLabel('Avg Trade', leftX, yy + 32);
+                kVal(kpiAvgTrade, leftX, yy + 46);
+
+                kLabel('Avg Win / Avg Loss', leftX, yy + 64);
+                kVal(kpiAvgWinLoss, leftX, yy + 78);
+
+                // Right column (Dias)
+                kLabel('Dias operados', rightX, yy);
+                kVal(kpiDays, rightX, yy + 14);
+
+                kLabel('Dias verdes / vermelhos', rightX, yy + 32);
+                kVal(kpiDaysGR, rightX, yy + 46);
+
+                kLabel('Avg por dia', rightX, yy + 64);
+                kVal(kpiAvgDay, rightX, yy + 78);
+
+                // Bottom row
+                kLabel('Profit Factor', leftX, yy + 96);
+                kVal(kpiPF, leftX, yy + 110);
+
+                kLabel('Expectancy', rightX, yy + 96);
+                kVal(kpiExp, rightX, yy + 110);
+
+                kLabel('Max Drawdown', leftX, yy + 128);
+                doc.setTextColor(200, 30, 30);
+                doc.setFont('helvetica','bold');
+                doc.setFontSize(10);
+                doc.text(kpiMaxDD, leftX, yy + 142);
+                doc.setTextColor(25);
+
+
                 // Footer
                 doc.setFont('helvetica','normal');
                 doc.setFontSize(8);
@@ -5100,6 +5266,16 @@ ${period}
                       <tr><td><b>Taxa de Acerto</b></td><td>${metricWin}</td></tr>
                       <tr><td><b>Melhor Dia</b></td><td>${metricBest}</td></tr>
                       <tr><td><b>Pior Dia</b></td><td>${metricWorst}</td></tr>
+                      <tr><td colspan="2" style="padding-top:10px"><b>KPIs do Período</b></td></tr>
+                      <tr><td><b>Trades (W/L)</b></td><td>${kpiTrades}</td></tr>
+                      <tr><td><b>Avg Trade</b></td><td>${kpiAvgTrade}</td></tr>
+                      <tr><td><b>Avg Win / Avg Loss</b></td><td>${kpiAvgWinLoss}</td></tr>
+                      <tr><td><b>Profit Factor</b></td><td>${kpiPF}</td></tr>
+                      <tr><td><b>Expectancy</b></td><td>${kpiExp}</td></tr>
+                      <tr><td><b>Dias operados</b></td><td>${kpiDays}</td></tr>
+                      <tr><td><b>Dias verdes / vermelhos</b></td><td>${kpiDaysGR}</td></tr>
+                      <tr><td><b>Avg por dia</b></td><td>${kpiAvgDay}</td></tr>
+                      <tr><td><b>Max Drawdown</b></td><td>${kpiMaxDD}</td></tr>
                     </table>
 
                     </body></html>`;
