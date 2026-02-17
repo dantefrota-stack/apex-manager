@@ -72,6 +72,14 @@ body.dark .bg-white { background-color: #1e293b; }
 body.dark .df-scroll{scrollbar-color: rgba(148,163,184,.55) transparent;}
 body.dark .df-scroll::-webkit-scrollbar-thumb{background: rgba(148,163,184,.35);}
 body.dark .df-scroll:hover::-webkit-scrollbar-thumb{background: rgba(148,163,184,.55);}
+.df-scroll-always{overflow-y:scroll; scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: rgba(100,116,139,.55) transparent;}
+.df-scroll-always::-webkit-scrollbar{width:8px;}
+.df-scroll-always::-webkit-scrollbar-track{background:transparent;}
+.df-scroll-always::-webkit-scrollbar-thumb{background: rgba(100,116,139,.45); border-radius: 999px;}
+.df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(100,116,139,.65);}
+body.dark .df-scroll-always{scrollbar-color: rgba(148,163,184,.55) transparent;}
+body.dark .df-scroll-always::-webkit-scrollbar-thumb{background: rgba(148,163,184,.35);}
+body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,163,184,.55);}
 
         .dashboard-card { background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
         
@@ -1020,11 +1028,11 @@ body.dark .df-scroll:hover::-webkit-scrollbar-thumb{background: rgba(148,163,184
         <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 flex-1 min-h-0">
             <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-2 h-full flex flex-col">
                 <div id="global-top-payout-label" class="text-[11px] uppercase tracking-wide text-slate-400 font-bold mb-1">Próximas do 1º $500</div>
-                <div id="global-top-payout" class="df-scroll space-y-1 flex-1 min-h-0 pr-1"></div>
+                <div id="global-top-payout" class="df-scroll-always space-y-1 flex-1 min-h-0 pr-1"></div>
             </div>
             <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-2 h-full flex flex-col">
                 <div id="global-top-risk-label" class="text-[11px] uppercase tracking-wide text-slate-400 font-bold mb-1">Mais risco de DD</div>
-                <div id="global-top-risk" class="df-scroll space-y-1 flex-1 min-h-0 pr-1"></div>
+                <div id="global-top-risk" class="df-scroll-always space-y-1 flex-1 min-h-0 pr-1"></div>
             </div>
         </div>
 </div>
