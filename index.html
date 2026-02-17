@@ -944,7 +944,7 @@ body.dark .bg-white { background-color: #1e293b; }
                                 <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Avg Trade</span><span id="kpi-avg-trade" class="font-bold text-slate-800 dark:text-white">--</span></div>
                                 <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Avg Win / Avg Loss</span><span id="kpi-avg-winloss" class="font-bold text-slate-800 dark:text-white">--</span></div>
                                 <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Profit Factor</span><span id="kpi-pf" class="font-bold text-slate-800 dark:text-white">--</span></div>
-                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Expectancy</span><span id="kpi-expectancy" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Payoff Ratio</span><span id="kpi-expectancy" class="font-bold text-slate-800 dark:text-white">--</span></div>
                             </div>
                         </div>
 
@@ -4107,7 +4107,7 @@ els.customResult.className = sum >= 0 ? "font-bold text-green-600" : "font-bold 
 
 const losses = Math.max(0, totalTrades - wins);
 const rate = totalTrades > 0 ? ((wins/totalTrades)*100).toFixed(0)+"%" : "0%";
-els.customWinrate.textContent = `${rate} (${wins}/${totalTrades})`;
+els.customWinrate.textContent = `${rate}`;
 els.customBest.textContent = best > -Infinity ? formatCurrency(best) : "--";
 els.customWorst.textContent = worst < Infinity ? formatCurrency(worst) : "--";
 
@@ -4120,7 +4120,8 @@ const avgLoss = lossCount > 0 ? (lossSum / lossCount) : 0; // negativo
 const pf = grossLoss > 0 ? (grossWin / grossLoss) : (grossWin > 0 ? Infinity : 0);
 
 const winRate = totalTrades > 0 ? (wins / totalTrades) : 0;
-const expectancy = totalTrades > 0 ? (winRate * avgWin + (1 - winRate) * avgLoss) : 0;
+// Payoff Ratio = Avg Win / |Avg Loss| (evita redundância com Avg Trade/Expectancy em $)
+const payoffRatio = (lossCount > 0 && avgLoss !== 0) ? (avgWin / Math.abs(avgLoss)) : (avgWin > 0 ? Infinity : 0);
 
 const avgDay = tradedDays > 0 ? (sum / tradedDays) : 0;
 const maxDDNeg = -maxDD; // exibe como negativo
@@ -4129,7 +4130,7 @@ if (els.kpiTrades) els.kpiTrades.textContent = totalTrades > 0 ? `${totalTrades}
 if (els.kpiAvgTrade) els.kpiAvgTrade.textContent = totalTrades > 0 ? formatCurrency(avgTrade) : "--";
 if (els.kpiAvgWinLoss) els.kpiAvgWinLoss.textContent = (winCount || lossCount) ? `${formatCurrency(avgWin)} / ${formatCurrency(avgLoss)}` : "--";
 if (els.kpiPF) els.kpiPF.textContent = (pf === Infinity) ? "∞" : (grossLoss > 0 ? pf.toFixed(2) : "--");
-if (els.kpiExpectancy) els.kpiExpectancy.textContent = totalTrades > 0 ? formatCurrency(expectancy) : "--";
+if (els.kpiExpectancy) els.kpiExpectancy.textContent = (payoffRatio === Infinity) ? "∞" : (lossCount > 0 ? payoffRatio.toFixed(2) : "--");
 
 if (els.kpiDays) els.kpiDays.textContent = tradedDays ? String(tradedDays) : "--";
 if (els.kpiDaysGR) els.kpiDaysGR.textContent = tradedDays ? `${greenDays} / ${redDays}` : "--";
@@ -5233,7 +5234,7 @@ ${period} • ${(acc?.name || 'Conta')}
                 kLabel('Profit Factor', leftX, yy + 96);
                 kVal(kpiPF, leftX, yy + 110);
 
-                kLabel('Expectancy', rightX, yy + 96);
+                kLabel('Payoff Ratio', rightX, yy + 96);
                 kVal(kpiExp, rightX, yy + 110);
 
                 kLabel('Max Drawdown', leftX, yy + 128);
@@ -5271,7 +5272,7 @@ ${period} • ${(acc?.name || 'Conta')}
                       <tr><td><b>Avg Trade</b></td><td>${kpiAvgTrade}</td></tr>
                       <tr><td><b>Avg Win / Avg Loss</b></td><td>${kpiAvgWinLoss}</td></tr>
                       <tr><td><b>Profit Factor</b></td><td>${kpiPF}</td></tr>
-                      <tr><td><b>Expectancy</b></td><td>${kpiExp}</td></tr>
+                      <tr><td><b>Payoff Ratio</b></td><td>${kpiExp}</td></tr>
                       <tr><td><b>Dias operados</b></td><td>${kpiDays}</td></tr>
                       <tr><td><b>Dias verdes / vermelhos</b></td><td>${kpiDaysGR}</td></tr>
                       <tr><td><b>Avg por dia</b></td><td>${kpiAvgDay}</td></tr>
