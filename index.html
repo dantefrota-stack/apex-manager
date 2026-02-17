@@ -1093,9 +1093,9 @@ body.dark .bg-white { background-color: #1e293b; }
                     <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs dark:bg-slate-800 dark:text-slate-400">
                         <tr>
                             <th class="px-2 py-3 md:px-4">Data</th>
-                            
-                            <th class="px-0 py-3 text-center min-w-[160px]">Trade 1 <span class="text-slate-300 mx-1">|</span> Trade 2</th>
-                            
+                            <th class="px-1 py-3 text-center min-w-[90px]">Abertura</th>
+                            <th class="px-1 py-3 text-center min-w-[90px]">Trade 1</th>
+                            <th class="px-1 py-3 text-center min-w-[90px]">Trade 2</th>
                             <th class="px-2 py-3 md:px-4 text-right">Total</th>
                             <th class="px-1 py-3 text-center w-10">Nota</th>
                             <th class="px-1 py-3 text-center w-10"><i data-lucide="coffee" class="w-3 h-3 mx-auto"></i></th>
@@ -1165,6 +1165,7 @@ body.dark .bg-white { background-color: #1e293b; }
                         <thead>
                             <tr>
                                 <th>Data</th>
+                                <th>Abertura</th>
                                 <th>Trade 1</th>
                                 <th>Trade 2</th>
                                 <th>Total</th>
@@ -3772,17 +3773,36 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
         window.exportCSV = () => {
             const acc = getActive();
-            let csvContent = "data:text/csv;charset=utf-8,Data,Trade 1,Trade 2,Total Dia,Notas\n";
+            let csvContent = "data:text/csv;charset=utf-8,Data,Abertura,Trade 1,Trade 2,Total Dia,Notas\n";
             const dates = Object.keys(acc.data).sort();
             dates.forEach(iso => {
-                const d = acc.data[iso];
+                const d = acc.data[iso] || {};
                 const dateStr = formatDateShort(parseISODateLocal(iso));
-                const t1 = (parseFloat(d.t1) || 0).toFixed(2);
-                const t2 = (parseFloat(d.t2) || 0).toFixed(2);
-                const val = (parseFloat(d.val) || 0).toFixed(2);
+
+                // Compat: versões antigas tinham apenas t1/t2 (sem t0)
+                let t0 = parseFloat(d.t0);
+                let t1 = parseFloat(d.t1);
+                let t2 = parseFloat(d.t2);
+                if(d.t0 === undefined && (d.t1 !== undefined || d.t2 !== undefined)){
+                    t0 = parseFloat(d.t1);
+                    t1 = parseFloat(d.t2);
+                    t2 = 0;
+                }
+
+                const v0 = (isNaN(t0) ? 0 : t0);
+                const v1 = (isNaN(t1) ? 0 : t1);
+                const v2 = (isNaN(t2) ? 0 : t2);
+
+                const valNum = (d.val !== undefined && d.val !== null && d.val !== '') ? (parseFloat(d.val) || 0) : (v0 + v1 + v2);
+
+                const t0s = v0.toFixed(2);
+                const t1s = v1.toFixed(2);
+                const t2s = v2.toFixed(2);
+                const vals = valNum.toFixed(2);
+
                 const note = (d.note || '').replace(/[\r\n]+/g, " ").replace(/,/g, ";");
-                if (parseFloat(val) !== 0 || note !== '') {
-                    csvContent += `${dateStr},${t1},${t2},${val},${note}\n`;
+                if (parseFloat(vals) !== 0 || note !== '') {
+                    csvContent += `${dateStr},${t0s},${t1s},${t2s},${vals},${note}\n`;
                 }
             });
             const encodedUri = encodeURI(csvContent);
@@ -3792,7 +3812,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        };
+        };};
 
 /* ===== App Loader helpers (avoid startup loop) ===== */
 (function(){
@@ -4366,7 +4386,7 @@ function renderCalendar(acc) {
 
                     const dayStr = String(cur.getDate()).padStart(2, '0');
                     const monthStr = String(cur.getMonth() + 1).padStart(2, '0');
-                    sepTr.innerHTML = `<td colspan=\"5\">${(CURRENT_LANG==='en'?'WEEK':'SEMANA')} ${weekNum} • ${(CURRENT_LANG==='en'?'START':'INÍCIO')} (${dayStr}.${monthStr})</td>`;
+                    sepTr.innerHTML = `<td colspan=\"7\">${(CURRENT_LANG==='en'?'WEEK':'SEMANA')} ${weekNum} • ${(CURRENT_LANG==='en'?'START':'INÍCIO')} (${dayStr}.${monthStr})</td>`;
                     els.calendarBody.appendChild(sepTr);
                 }
 
@@ -4410,16 +4430,13 @@ function renderCalendar(acc) {
                 const t2Num = (entry.t2 === undefined || entry.t2 === null || entry.t2 === '') ? '' : entry.t2;
 
                 // Totais (apresentação):
-                // T1 (linha verde) = Trade de abertura (t0)
-                // T2 (linha verde) = Trade 1 + Trade 2 (t1 + t2)
+                // Linha verde: Abertura (t0), Trade 1 (t1), Trade 2 (t2)
                 // Total do dia = t0 + t1 + t2
                 const hasStoredVal = !(entry.val === undefined || entry.val === null || entry.val === '');
                 const hasTrades = !(t0Num === '' && t1Num === '' && t2Num === '');
                 const t0Calc = parseFloat(t0Num) || 0;
                 const t1Calc = parseFloat(t1Num) || 0;
                 const t2Calc = parseFloat(t2Num) || 0;
-
-                const t2AggDisplay = (t1Num === '' && t2Num === '') ? '' : (t1Calc + t2Calc);
 
                 // Preferir trades quando existirem; caso contrário, usar `val` (compatível com entradas antigas/total manual).
                 const displayVal = hasTrades ? (t0Calc + t1Calc + t2Calc) : (hasStoredVal ? (parseFloat(entry.val) || 0) : 0);
@@ -4431,21 +4448,17 @@ function renderCalendar(acc) {
                 const readOnlyDay = false; // allow editing also on cross-month days shown in the grid
                 const inputDisabledAttr = readOnlyDay ? 'disabled' : '';
                 const inputExtraClass = readOnlyDay ? ' opacity-60 cursor-not-allowed' : '';
-                
-                // --- CORREÇÃO AQUI: onblur e onkeydown no lugar de oninput ---
-                const t0Handlers = readOnlyDay ? '' : `onblur="window.updateData('${iso}','t0',this.value)" onkeydown="if(event.key==='Enter'){this.blur();}"`;
 
-                // T2 é calculado (Trade 1 + Trade 2) — edição ocorre nos detalhes do dia (Trade 1 / Trade 2).
-                const inputsHtml = `
-                    <div class="grid grid-cols-2 gap-1">
-                        <input type="number" placeholder="T1"
-                               class="trade-input w-full py-1 px-0 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}"
-                               ${inputDisabledAttr} value="${t0Num}" ${t0Handlers}>
-                        <input type="number" placeholder="T2"
-                               class="trade-input w-full py-1 px-0 text-center bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 rounded text-slate-600 dark:text-slate-300 focus:border-indigo-500${inputExtraClass} opacity-90 cursor-not-allowed"
-                               value="${(t2AggDisplay === '' ? '' : t2AggDisplay)}" readonly aria-readonly="true" tabindex="-1" title="T2 = Trade 1 + Trade 2">
-                    </div>
-                `;
+                // Handlers (salva no blur / Enter)
+                const t0Handlers = readOnlyDay ? '' : `onblur="window.updateData('${iso}','t0',this.value)" onkeydown="if(event.key==='Enter'){this.blur();}"`;
+                const t1Handlers = readOnlyDay ? '' : `onblur="window.updateData('${iso}','t1',this.value)" onkeydown="if(event.key==='Enter'){this.blur();}"`;
+                const t2Handlers = readOnlyDay ? '' : `onblur="window.updateData('${iso}','t2',this.value)" onkeydown="if(event.key==='Enter'){this.blur();}"`;
+
+                const tradeInputBaseClass = `trade-input w-full py-1 px-0 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}`;
+
+                const t0InputHtml = `<input type="number" placeholder="0" class="${tradeInputBaseClass}" ${inputDisabledAttr} value="${t0Num}" ${t0Handlers}>`;
+                const t1InputHtml = `<input type="number" placeholder="0" class="${tradeInputBaseClass}" ${inputDisabledAttr} value="${t1Num}" ${t1Handlers}>`;
+                const t2InputHtml = `<input type="number" placeholder="0" class="${tradeInputBaseClass}" ${inputDisabledAttr} value="${t2Num}" ${t2Handlers}>`;
                 // --- FIM DO BLOCO CORRIGIDO ---
         const hasNote = entry.note && entry.note.trim().length > 0;
         const noteIcon = hasNote ? 'message-circle' : 'message-square';
@@ -4467,7 +4480,9 @@ function renderCalendar(acc) {
                     </button>
                 </div>
             </td>
-            <td class="px-4 py-2 w-48">${inputsHtml}</td>
+            <td class="px-2 py-2 text-center w-28">${t0InputHtml}</td>
+            <td class="px-2 py-2 text-center w-28">${t1InputHtml}</td>
+            <td class="px-2 py-2 text-center w-28">${t2InputHtml}</td>
             <td class="px-4 py-2 text-right"><span class="font-bold text-sm ${colorClass}">${(hasTrades || hasStoredVal) ? formatCurrency(displayVal) : '--'}</span></td>
             <td class="px-4 py-2 text-center w-16">
                 <button onclick="openNoteModal('${iso}', false)" class="p-1.5 rounded-lg border transition ${noteBtnClass}" title="Editar Nota">
@@ -4497,45 +4512,12 @@ function renderCalendar(acc) {
         const v = entry.viability || '';
 
                 detailsTr.innerHTML = `
-            <td colspan="5" class="px-4 py-3">
+            <td colspan="7" class="px-4 py-3">
                 <div class="space-y-4">
-                    <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="text-xs font-semibold text-slate-600 dark:text-slate-300">Trade de abertura</div>
-                            <div class="flex items-center gap-2 text-[11px]">
-                                <span class="text-slate-500 whitespace-nowrap">Resultado ($)</span>
-                                <input type="number" placeholder="0" class="w-28 py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 text-right focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t0Num}" ${readOnlyDay ? '' : `onblur=\"window.updateData('${iso}','t0',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                            <label class="flex items-center gap-2">
-                                <span class="text-slate-500 whitespace-nowrap">Target (pts)</span>
-                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t0m.targetPts ?? ''}" ${readOnlyDay ? '' : `oninput=\"window.queueData('${iso}','t0m_targetPts',this.value)\" onblur=\"window.updateData('${iso}','t0m_targetPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
-                            </label>
-                            <label class="flex items-center gap-2">
-                                <span class="text-slate-500 whitespace-nowrap">Risco (pts)</span>
-                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t0m.riskPts ?? ''}" ${readOnlyDay ? '' : `oninput=\"window.queueData('${iso}','t0m_riskPts',this.value)\" onblur=\"window.updateData('${iso}','t0m_riskPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
-                            </label>
-                            <label class="flex items-center gap-2">
-                                <span class="text-slate-500 whitespace-nowrap">Viável?</span>
-                                <select class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','t0m_viability',this.value)\"`}>
-                                    <option value="" ${(!t0m.viability) ? 'selected' : ''}>-</option>
-                                    <option value="viable" ${(t0m.viability==='viable') ? 'selected' : ''}>Viável</option>
-                                    <option value="inviable" ${(t0m.viability==='inviable') ? 'selected' : ''}>Inviável</option>
-                                </select>
-                            </label>
-                        </div>
-                    </div>
 
-                    <div class="border-t border-slate-200 dark:border-slate-700 pt-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="text-xs font-semibold text-slate-600 dark:text-slate-300">Trade 1</div>
-                            <div class="flex items-center gap-2 text-[11px]">
-                                <span class="text-slate-500 whitespace-nowrap">Resultado ($)</span>
-                                <input type="number" placeholder="0" class="w-28 py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 text-right focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t1Num}" ${readOnlyDay ? '' : `onblur=\"window.updateData('${iso}','t1',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
-                            </div>
-                        </div>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div>
+                        <div class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">Trade 1</div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" ${t1m.add ? 'checked' : ''} ${readOnlyDay ? 'disabled' : ''} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','t1m_add',this.checked)\"`}>
                                 <span class="text-slate-600 dark:text-slate-300">Adição</span>
@@ -4548,26 +4530,12 @@ function renderCalendar(acc) {
                                 <span class="text-slate-500 whitespace-nowrap">Risco (pts)</span>
                                 <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t1m.riskPts ?? ''}" ${readOnlyDay ? '' : `oninput=\"window.queueData('${iso}','t1m_riskPts',this.value)\" onblur=\"window.updateData('${iso}','t1m_riskPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
                             </label>
-                            <label class="flex items-center gap-2">
-                                <span class="text-slate-500 whitespace-nowrap">Viável?</span>
-                                <select class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','t1m_viability',this.value)\"`}>
-                                    <option value="" ${(!t1m.viability) ? 'selected' : ''}>-</option>
-                                    <option value="viable" ${(t1m.viability==='viable') ? 'selected' : ''}>Viável</option>
-                                    <option value="inviable" ${(t1m.viability==='inviable') ? 'selected' : ''}>Inviável</option>
-                                </select>
-                            </label>
                         </div>
                     </div>
 
                     <div class="border-t border-slate-200 dark:border-slate-700 pt-4">
-                        <div class="flex items-center justify-between mb-2">
-                        <div class="text-xs font-semibold text-slate-600 dark:text-slate-300">Trade 2</div>
-                        <div class="flex items-center gap-2 text-[11px]">
-                            <span class="text-slate-500 whitespace-nowrap">Resultado ($)</span>
-                            <input type="number" placeholder="0" class="w-28 py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 text-right focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t2Num}" ${readOnlyDay ? '' : `onblur="window.updateData('${iso}','t2',this.value)"`} onkeydown="if(event.key==='Enter'){this.blur();}">
-                        </div>
-                    </div>
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                        <div class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">Trade 2</div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                             <label class="flex items-center gap-2">
                                 <input type="checkbox" ${t2m.add ? 'checked' : ''} ${readOnlyDay ? 'disabled' : ''} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','t2m_add',this.checked)\"`}>
                                 <span class="text-slate-600 dark:text-slate-300">Adição</span>
@@ -4579,14 +4547,6 @@ function renderCalendar(acc) {
                             <label class="flex items-center gap-2">
                                 <span class="text-slate-500 whitespace-nowrap">Risco (pts)</span>
                                 <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t2m.riskPts ?? ''}" ${readOnlyDay ? '' : `oninput=\"window.queueData('${iso}','t2m_riskPts',this.value)\" onblur=\"window.updateData('${iso}','t2m_riskPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
-                            </label>
-                            <label class="flex items-center gap-2">
-                                <span class="text-slate-500 whitespace-nowrap">Viável?</span>
-                                <select class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','t2m_viability',this.value)\"`}>
-                                    <option value="" ${(!t2m.viability) ? 'selected' : ''}>-</option>
-                                    <option value="viable" ${(t2m.viability==='viable') ? 'selected' : ''}>Viável</option>
-                                    <option value="inviable" ${(t2m.viability==='inviable') ? 'selected' : ''}>Inviável</option>
-                                </select>
                             </label>
                         </div>
                     </div>
@@ -6909,26 +6869,35 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
                 const iso = toISODateLocal(d);
                 const e = (acc.data && acc.data[iso]) ? acc.data[iso] : {};
-                const t1 = Number(e.t1 || 0);
-                const t2 = Number(e.t2 || 0);
-                const val = (e.val !== undefined && e.val !== null) ? Number(e.val || 0) : (t1 + t2);
+
+                // Compat: versões antigas tinham apenas t1/t2 (sem t0).
+                let t0 = Number(e.t0 || 0);
+                let t1 = Number(e.t1 || 0);
+                let t2 = Number(e.t2 || 0);
+                if(e.t0 === undefined && (e.t1 !== undefined || e.t2 !== undefined)){
+                    t0 = Number(e.t1 || 0); // vira Abertura
+                    t1 = Number(e.t2 || 0); // vira Trade 1
+                    t2 = 0;                 // Trade 2 inexistente
+                }
+
+                const val = (e.val !== undefined && e.val !== null) ? Number(e.val || 0) : (t0 + t1 + t2);
                 const note = (e.note || '').toString();
 
                 const isHoliday = !!e.holiday;
                 if(isHoliday) holidayDays += 1;
 
                 if(!isHoliday) total += val;
-                if((t1 !== 0) || (t2 !== 0) || (val !== 0)) tradedDays += 1;
+                if((t0 !== 0) || (t1 !== 0) || (t2 !== 0) || (val !== 0)) tradedDays += 1;
 
                 rows.push({
                     iso,
-                    t1, t2, val,
+                    t0, t1, t2, val,
                     note: isHoliday ? (note ? `Feriado • ${note}` : "Feriado") : note
                 });
             }
 
             return { rows, total, tradedDays, holidayDays };
-        }
+        }}
 
         function openPeriodModal(opts){
             const { title, startISO, endISO } = opts;
@@ -6955,6 +6924,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${_formatDM(r.iso)} (${r.iso})</td>
+                    <td>${formatCurrency(r.t0)}</td>
                     <td>${formatCurrency(r.t1)}</td>
                     <td>${formatCurrency(r.t2)}</td>
                     <td><span class="${r.val>=0?'val-pos':'val-neg'}">${formatCurrency(r.val)}</span></td>
@@ -7051,17 +7021,19 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
                     // Colunas numéricas (Nota vai em bloco abaixo)
                     const colDate = marginL;
-                    const colT1   = marginL + 170;
-                    const colT2   = marginL + 270;
-                    const colTot  = marginL + 370;
+                    const colT0   = marginL + 260;
+                    const colT1   = marginL + 350;
+                    const colT2   = marginL + 440;
+                    const colTot  = marginL + contentW;
 
                     const drawTableHeader = ()=>{
                         doc.setFont('helvetica','bold');
                         doc.setFontSize(10);
-                        doc.text('Data', colDate, y);
-                        doc.text('Trade 1', colT1, y, { align:'right' });
-                        doc.text('Trade 2', colT2, y, { align:'right' });
-                        doc.text('Total',  colTot, y, { align:'right' });
+                        doc.text('Data',     colDate, y);
+                        doc.text('Abertura', colT0,   y, { align:'right' });
+                        doc.text('Trade 1',  colT1,   y, { align:'right' });
+                        doc.text('Trade 2',  colT2,   y, { align:'right' });
+                        doc.text('Total',    colTot,  y, { align:'right' });
                         y += 10;
                         doc.setLineWidth(0.5);
                         doc.line(marginL, y, marginL + contentW, y);
@@ -7093,6 +7065,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
                     for(const r of res.rows){
                         const day = _formatDM(r.iso); // dd/mm
+                        const t0 = formatCurrency(r.t0);
                         const t1 = formatCurrency(r.t1);
                         const t2 = formatCurrency(r.t2);
                         const tt = formatCurrency(r.val);
@@ -7116,6 +7089,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                         doc.setFont('helvetica','normal');
                         doc.setFontSize(9);
                         doc.text(day, colDate, y);
+                        doc.text(t0, colT0, y, { align:'right' });
                         doc.text(t1, colT1, y, { align:'right' });
                         doc.text(t2, colT2, y, { align:'right' });
                         doc.setFont('helvetica','bold');
@@ -7172,6 +7146,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             let rowsHtml = res.rows.map(r=>`
                 <tr>
                     <td>${_formatDM(r.iso)} (${r.iso})</td>
+                    <td style="text-align:right;">${formatCurrency(r.t0)}</td>
                     <td style="text-align:right;">${formatCurrency(r.t1)}</td>
                     <td style="text-align:right;">${formatCurrency(r.t2)}</td>
                     <td style="text-align:right;">${formatCurrency(r.val)}</td>
@@ -7199,6 +7174,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                         <thead>
                             <tr>
                                 <th style="text-align:left;border-bottom:1px solid #ccc;padding:6px;">Data</th>
+                                <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">Abertura</th>
                                 <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">Trade 1</th>
                                 <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">Trade 2</th>
                                 <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">Total</th>
