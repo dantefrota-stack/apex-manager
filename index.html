@@ -782,10 +782,10 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
                         <div class="flex items-center gap-2">
                             <span class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Ordenar:</span>
                             <select id="accounts-overview-sort" onchange="onAccountsOverviewControlsChange()" class="px-2 py-2 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
-                                <option value="closest" selected>Mais próximas do saque</option>
+                                <option value="closest">Mais próximas do saque</option>
                                 <option value="name">Nome (A→Z)</option>
                                 <option value="equityDesc">Equity (maior→menor)</option>
-                                <option value="progressDesc">Progresso (maior→menor)</option>
+                                <option value="progressDesc" selected>Progresso (maior→menor)</option>
                             </select>
                         </div>
 
@@ -818,18 +818,18 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
                     </div>
                 </div>
 
-                <div id="accounts-overview-chart-wrap" class="hidden bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+                <div id="accounts-overview-chart-wrap" class="bg-slate-50 dark:bg-slate-900/40 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
                     <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
                         <div class="flex items-center gap-2">
                             <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">Gráfico:</p>
                             <select id="accounts-overview-chart-metric" onchange="onAccountsOverviewControlsChange()" class="px-2 py-1.5 text-xs rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
-                                <option value="progress" selected>Progresso até Safety (%)</option>
+                                <option value="progress">Progresso até Safety (%)</option>
                                 <option value="available">Disponível p/ saque ($)</option>
                                 <option value="missing">Falta p/ $500 ($)</option>
                                 <option value="equity">Equity líquido ($)</option>
                                                                 <option value="ddBuffer">Buffer de Drawdown ($)</option>
                                 <option value="ddPct">Risco de Drawdown (%)</option>
-                                <option value="timeline">Trajetória no Período (linhas)</option>
+                                <option value="timeline" selected>Trajetória no Período (linhas)</option>
                             </select>
                             <div id="accounts-overview-timeline-controls" class="hidden ml-2 flex items-center gap-2 flex-wrap">
                                 <div class="flex items-center gap-1">
@@ -2114,7 +2114,7 @@ async function callOpenAI(question){
         }
 
                 function onAccountsOverviewControlsChange(){
-            window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'closest', size: 'all', chartMetric: 'progress', page: 1, pageSize: 15 };
+            window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'progressDesc', size: 'all', chartMetric: 'timeline', page: 1, pageSize: 15, timelineStart: '', timelineEnd: '' };
             const prefs = window.accountsOverviewPrefs;
 
             const sortSel = document.getElementById('accounts-overview-sort');
@@ -2170,7 +2170,7 @@ async function callOpenAI(question){
 
 
         function applyAccountsOverviewTimeline(){
-            window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'closest', size: 'all', chartMetric: 'progress', page: 1, pageSize: 15 };
+            window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'progressDesc', size: 'all', chartMetric: 'timeline', page: 1, pageSize: 15, timelineStart: '', timelineEnd: '' };
             const prefs = window.accountsOverviewPrefs;
             const tStart = document.getElementById('accounts-overview-timeline-start');
             const tEnd = document.getElementById('accounts-overview-timeline-end');
@@ -2219,7 +2219,7 @@ async function callOpenAI(question){
             const debouncedApply = _dfDebounce(()=>{
                 try{
                     // keep prefs in sync
-                    window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'closest', size: 'all', chartMetric: 'progress', page: 1, pageSize: 15 };
+                    window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'progressDesc', size: 'all', chartMetric: 'timeline', page: 1, pageSize: 15, timelineStart: '', timelineEnd: '' };
                     const prefs = window.accountsOverviewPrefs;
                     if(tStart) prefs.timelineStart = tStart.value || '';
                     if(tEnd) prefs.timelineEnd = tEnd.value || '';
@@ -2234,10 +2234,12 @@ async function callOpenAI(question){
         }
 
 
-        function openAccountsOverview(){
+                function openAccountsOverview(){
             const modal = document.getElementById('accounts-overview-modal');
             if(!modal) return;
+
             modal.classList.remove('hidden');
+
             // reset scroll positions so table never opens “cortada”
             const body = document.getElementById('accounts-overview-body');
             if(body) body.scrollTop = 0;
@@ -2245,15 +2247,38 @@ async function callOpenAI(question){
             if(tscroll) tscroll.scrollLeft = 0;
             const cscroll = document.getElementById('accounts-overview-chart-scroll');
             if(cscroll) cscroll.scrollLeft = 0;
-            // apply last used prefs (in-memory) before render
-            window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'closest', size: 'all', chartMetric: 'progress', page: 1, pageSize: 15 };
-            const prefs = window.accountsOverviewPrefs;
+
+            // Always start with a print-ready standard model (users can change options afterwards)
+            const prefs = { sort: 'progressDesc', size: 'all', chartMetric: 'timeline', page: 1, pageSize: 15, timelineStart: '', timelineEnd: '' };
+
+            // Default timeline range = current month (based on store.date)
+            try{
+                const base = (store && store.date) ? new Date(store.date) : new Date();
+                prefs.timelineStart = toISODateLocal(new Date(base.getFullYear(), base.getMonth(), 1));
+                prefs.timelineEnd   = toISODateLocal(new Date(base.getFullYear(), base.getMonth()+1, 0));
+            }catch(e){}
+
+            window.accountsOverviewPrefs = prefs;
+
+            // Controls
             const sortSel = document.getElementById('accounts-overview-sort');
             const sizeSel = document.getElementById('accounts-overview-size');
             const metricSel = document.getElementById('accounts-overview-chart-metric');
-            if(sortSel) sortSel.value = prefs.sort || 'closest';
-            if(sizeSel) sizeSel.value = prefs.size || 'all';
-            if(metricSel) metricSel.value = prefs.chartMetric || 'progress';
+            const tStart = document.getElementById('accounts-overview-timeline-start');
+            const tEnd = document.getElementById('accounts-overview-timeline-end');
+            const exportChart = document.getElementById('accounts-overview-export-chart');
+
+            if(sortSel) sortSel.value = prefs.sort;
+            if(sizeSel) sizeSel.value = prefs.size;
+            if(metricSel) metricSel.value = prefs.chartMetric;
+            if(tStart) tStart.value = prefs.timelineStart || tStart.value || '';
+            if(tEnd) tEnd.value = prefs.timelineEnd || tEnd.value || '';
+            if(exportChart) exportChart.checked = true;
+
+            // Ensure chart is visible by default (standard model)
+            const wrap = document.getElementById('accounts-overview-chart-wrap');
+            if(wrap) wrap.classList.remove('hidden');
+
             onAccountsOverviewControlsChange();
             try { bindAccountsOverviewExportButtons(); } catch(e){}
             try { lucide.createIcons(); } catch(e){}
@@ -2267,7 +2292,7 @@ async function callOpenAI(question){
         }
 
         window.accountsOverviewPrevPage = () => {
-            window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'closest', size: 'all', chartMetric: 'progress', page: 1, pageSize: 15 };
+            window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'progressDesc', size: 'all', chartMetric: 'timeline', page: 1, pageSize: 15, timelineStart: '', timelineEnd: '' };
             const prefs = window.accountsOverviewPrefs;
             prefs.page = Math.max(1, (Number(prefs.page) || 1) - 1);
             renderAccountsOverview();
@@ -2276,7 +2301,7 @@ async function callOpenAI(question){
         };
 
         window.accountsOverviewNextPage = () => {
-            window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'closest', size: 'all', chartMetric: 'progress', page: 1, pageSize: 15 };
+            window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'progressDesc', size: 'all', chartMetric: 'timeline', page: 1, pageSize: 15, timelineStart: '', timelineEnd: '' };
             const prefs = window.accountsOverviewPrefs;
             prefs.page = (Number(prefs.page) || 1) + 1;
             renderAccountsOverview();
@@ -2860,7 +2885,7 @@ function _openPrintWindow(htmlStr){
             if(!tbody) return;
 
             // prefs
-            window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'closest', size: 'all', chartMetric: 'progress', page: 1, pageSize: 15 };
+            window.accountsOverviewPrefs = window.accountsOverviewPrefs || { sort: 'progressDesc', size: 'all', chartMetric: 'timeline', page: 1, pageSize: 15, timelineStart: '', timelineEnd: '' };
             const prefs = window.accountsOverviewPrefs;
 
             const sortSel = document.getElementById('accounts-overview-sort');
