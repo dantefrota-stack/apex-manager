@@ -2408,7 +2408,7 @@ async function callOpenAI(question){
                 const canvas = document.createElement('canvas');
                 canvas.width = 980;
 
-                // Size tuned for print legibility (<= 15 accounts per group)
+                // Size tuned for print legibility (<= 10 accounts per group)
                 if(metric === 'timeline'){
                     canvas.height = 480;
                 }else{
@@ -2567,8 +2567,9 @@ async function callOpenAI(question){
             const isEN = ((localStorage.getItem(LANG_STORAGE_KEY) || window.CURRENT_LANG || document.documentElement.lang || 'pt').toString().toLowerCase().startsWith('en'));
             const include = includeChart !== false;
 
-            const pageSize = Math.max(1, Number(prefs.pageSize) || 15);
-            const total = listAll.length;
+            const pageSize = 10; // print grouping: 10 accounts per page (with or without chart)
+
+const total = listAll.length;
 
             // Global summary (for print header)
             let equitySum = 0;
@@ -2591,7 +2592,7 @@ async function callOpenAI(question){
             }
             const alerts = (counts.violation + counts.critical + counts.alert);
 
-            // Grouping (<= 15 per chart/page) for print legibility
+            // Grouping (<= 10 per chart/page) for print legibility
             const groups = [];
             for(let i=0;i<total;i+=pageSize){
                 groups.push({
