@@ -3793,14 +3793,14 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 const d = acc.data[iso] || {};
                 const dateStr = formatDateShort(parseISODateLocal(iso));
 
-                // Compat: versões antigas tinham apenas t1/t2 (sem t0)
+                // Compat: versões antigas tinham apenas t1/t2 (sem t0). Agora t0 (Abertura) fica vazio por padrão.
                 let t0 = parseFloat(d.t0);
                 let t1 = parseFloat(d.t1);
                 let t2 = parseFloat(d.t2);
                 if(d.t0 === undefined && (d.t1 !== undefined || d.t2 !== undefined)){
-                    t0 = parseFloat(d.t1);
-                    t1 = parseFloat(d.t2);
-                    t2 = 0;
+                    t0 = 0;
+                    t1 = parseFloat(d.t1);
+                    t2 = parseFloat(d.t2);
                 }
 
                 const v0 = (isNaN(t0) ? 0 : t0);
@@ -4412,36 +4412,64 @@ function renderCalendar(acc) {
                 if (!entry.t2meta) entry.t2meta = { add:false, targetPts:0, riskPts:0, viability:'' };
                 if (!entry.t0meta) entry.t0meta = { targetPts:0, riskPts:0, viability:'' };
 
-                // Migração compatível (versões antigas): t1/t2 -> t0 (abertura) + t1 (trade 1), t2 vazio
-                if ((entry.t0 === undefined || entry.t0 === null) && (entry.t1 || entry.t2)) {
-                    const _oldT1 = entry.t1;
-                    const _oldT2 = entry.t2;
-                    const _oldT1m = entry.t1meta;
-                    const _oldT2m = entry.t2meta;
+                // Compat / Correção:
+                // - Versões antigas: existiam apenas Trade 1 (t1) e Trade 2 (t2). Agora existe Abertura (t0), mas ela deve iniciar vazia.
+                // - Correção de migração anterior: alguns dados antigos foram deslocados para Abertura (t0) e Trade 1 (t1). Se detectado, devolvemos para Trade 1/2 e limpamos Abertura.
+                (function(){
+                    const _isEmpty = (v) => (v === undefined || v === null || String(v).trim() === '');
+                    const _isZeroish = (v) => {
+                        if (_isEmpty(v)) return true;
+                        const n = Number(String(v).trim());
+                        return !isNaN(n) && n === 0;
+                    };
 
-                    entry.t0 = (_oldT1 === undefined || _oldT1 === null) ? '' : _oldT1;
-                    entry.t1 = (_oldT2 === undefined || _oldT2 === null) ? '' : _oldT2;
-                    entry.t2 = '';
+                    // 1) Se t0 não existir (versão antiga), apenas inicializa vazio (não desloca t1/t2).
+                    if (entry.t0 === undefined || entry.t0 === null) {
+                        entry.t0 = '';
+                    }
 
-                    // metas: Trade 1 antigo vira Abertura; Trade 2 antigo vira Trade 1
-                    entry.t0meta = _oldT1m ? JSON.parse(JSON.stringify(_oldT1m)) : (entry.t0meta || { targetPts:0, riskPts:0, viability:'' });
-                    entry.t1meta = _oldT2m ? JSON.parse(JSON.stringify(_oldT2m)) : (entry.t1meta || { add:false, targetPts:0, riskPts:0, viability:'' });
-                    entry.t2meta = { add:false, targetPts:0, riskPts:0, viability:'' };
+                    // 2) Se detectar deslocamento antigo, desfaz:
+                    //    assinatura: t0meta contendo a chave "add" (era o meta do Trade 1 antigo).
+                    const _hasMigrationSignature = entry.t0meta && Object.prototype.hasOwnProperty.call(entry.t0meta, 'add');
+                    const _t0Has = !_isEmpty(entry.t0) && !_isZeroish(entry.t0);
+                    const _t1Has = !_isEmpty(entry.t1) && !_isZeroish(entry.t1);
+                    const _t2Empty = _isEmpty(entry.t2) || _isZeroish(entry.t2);
 
-                    const _n0 = parseFloat(entry.t0) || 0;
-                    const _n1 = parseFloat(entry.t1) || 0;
-                    const _n2 = parseFloat(entry.t2) || 0;
-                    entry.val = _n0 + _n1 + _n2;
-                }
+                    if (_hasMigrationSignature && _t0Has && _t2Empty) {
+                        const _old0 = entry.t0;
+                        const _old1 = entry.t1;
+                        const _old0m = entry.t0meta;
+                        const _old1m = entry.t1meta;
+
+                        // mover de volta: t0 -> t1, t1 -> t2, limpar t0
+                        entry.t0 = '';
+                        entry.t1 = (_old0 === undefined || _old0 === null) ? '' : _old0;
+                        entry.t2 = (_old1 === undefined || _old1 === null || String(_old1).trim() === '' || (!isNaN(Number(String(_old1).trim())) && Number(String(_old1).trim()) === 0)) ? '' : _old1;
+
+                        // metas: t0meta era do Trade 1; t1meta era do Trade 2
+                        entry.t1meta = _old0m ? JSON.parse(JSON.stringify(_old0m)) : (entry.t1meta || { add:false, targetPts:0, riskPts:0, viability:'' });
+                        entry.t2meta = _old1m ? JSON.parse(JSON.stringify(_old1m)) : (entry.t2meta || { add:false, targetPts:0, riskPts:0, viability:'' });
+
+                        // resetar t0meta para formato de Abertura (sem 'add')
+                        entry.t0meta = { targetPts:0, riskPts:0, viability:'' };
+
+                        const _n0 = parseFloat(entry.t0) || 0;
+                        const _n1 = parseFloat(entry.t1) || 0;
+                        const _n2 = parseFloat(entry.t2) || 0;
+                        entry.val = _n0 + _n1 + _n2;
+
+                        window.__needsOpenShiftSave = true;
+                    }
+                })();
 
 
                 const isOutsideMonth = cur.getMonth() !== m;
                 const tr = document.createElement('tr');
                 const isToday = (iso === getTodayISO());
                 tr.className = `dark:border-slate-700 ${isOutsideMonth ? 'opacity-60 bg-slate-50 dark:bg-slate-800/40' : ''} ${isToday ? 'today-row' : ''}`;
-                const t0Num = (entry.t0 === undefined || entry.t0 === null || entry.t0 === '') ? '' : entry.t0;
-                const t1Num = (entry.t1 === undefined || entry.t1 === null || entry.t1 === '') ? '' : entry.t1;
-                const t2Num = (entry.t2 === undefined || entry.t2 === null || entry.t2 === '') ? '' : entry.t2;
+                const t0Num = (entry.t0 === undefined || entry.t0 === null || entry.t0 === '' || (String(entry.t0).trim() !== '' && !isNaN(Number(entry.t0)) && Number(entry.t0) === 0)) ? '' : entry.t0;
+                const t1Num = (entry.t1 === undefined || entry.t1 === null || entry.t1 === '' || (String(entry.t1).trim() !== '' && !isNaN(Number(entry.t1)) && Number(entry.t1) === 0)) ? '' : entry.t1;
+                const t2Num = (entry.t2 === undefined || entry.t2 === null || entry.t2 === '' || (String(entry.t2).trim() !== '' && !isNaN(Number(entry.t2)) && Number(entry.t2) === 0)) ? '' : entry.t2;
 
                 // Totais (apresentação):
                 // Linha verde: Abertura (t0), Trade 1 (t1), Trade 2 (t2)
@@ -4470,9 +4498,9 @@ function renderCalendar(acc) {
 
                 const tradeInputBaseClass = `trade-input w-full py-1 px-0 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}`;
 
-                const t0InputHtml = `<input type="number" placeholder="0" class="${tradeInputBaseClass}" ${inputDisabledAttr} value="${t0Num}" ${t0Handlers}>`;
-                const t1InputHtml = `<input type="number" placeholder="0" class="${tradeInputBaseClass}" ${inputDisabledAttr} value="${t1Num}" ${t1Handlers}>`;
-                const t2InputHtml = `<input type="number" placeholder="0" class="${tradeInputBaseClass}" ${inputDisabledAttr} value="${t2Num}" ${t2Handlers}>`;
+                const t0InputHtml = `<input type="number" placeholder="TA" class="${tradeInputBaseClass}" ${inputDisabledAttr} value="${t0Num}" ${t0Handlers}>`;
+                const t1InputHtml = `<input type="number" placeholder="T1" class="${tradeInputBaseClass}" ${inputDisabledAttr} value="${t1Num}" ${t1Handlers}>`;
+                const t2InputHtml = `<input type="number" placeholder="T2" class="${tradeInputBaseClass}" ${inputDisabledAttr} value="${t2Num}" ${t2Handlers}>`;
                 // --- FIM DO BLOCO CORRIGIDO ---
         const hasNote = entry.note && entry.note.trim().length > 0;
         const noteIcon = hasNote ? 'message-circle' : 'message-square';
@@ -4574,6 +4602,11 @@ function renderCalendar(acc) {
         `;
 
         els.calendarBody.appendChild(detailsTr);
+    }
+
+    if (window.__needsOpenShiftSave) {
+        window.__needsOpenShiftSave = false;
+        try { scheduleSaveToCloud(); } catch (e) {}
     }
 }
 
@@ -6895,9 +6928,9 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                 let t1 = Number(e.t1 || 0);
                 let t2 = Number(e.t2 || 0);
                 if(e.t0 === undefined && (e.t1 !== undefined || e.t2 !== undefined)){
-                    t0 = Number(e.t1 || 0); // vira Abertura
-                    t1 = Number(e.t2 || 0); // vira Trade 1
-                    t2 = 0;                 // Trade 2 inexistente
+                    t0 = 0;
+                    t1 = Number(e.t1 || 0);
+                    t2 = Number(e.t2 || 0);
                 }
 
                 const val = (e.val !== undefined && e.val !== null) ? Number(e.val || 0) : (t0 + t1 + t2);
