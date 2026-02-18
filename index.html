@@ -2722,6 +2722,8 @@ const total = listAll.length;
     .group{ break-after: page; page-break-after: always; }
     .group.last{ break-after:auto; page-break-after:auto; }
     .chartWrap, .tableWrap{ break-inside: avoid; page-break-inside: avoid; }
+    /* Keep chart compact so chart + 10-row table fits on one page */
+    .chartImg{ width:100% !important; height:85mm !important; max-height:85mm !important; object-fit:contain; }
   }
 </style>
 </head>
