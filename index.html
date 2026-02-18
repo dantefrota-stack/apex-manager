@@ -1648,8 +1648,8 @@ let isOffline = false;
                     const total = hasVal ? (parseFloat(e.val) || 0) : (t1 + t2);
                     const note = (e.note || '').toString();
                     const holiday = !!e.holiday;
-                    const t1meta = e.t1meta || { add:false, targetPts:0, riskPts:0, viability:'' };
-                    const t2meta = e.t2meta || { add:false, targetPts:0, riskPts:0, viability:'' };
+                    const t1meta = e.t1meta || { add:false, targetPts:0, riskPts:0, viability:'', exit2r:'', breakeven:'', above2rPts:0, retraceAfter2rPts:0 };
+                    const t2meta = e.t2meta || { add:false, targetPts:0, riskPts:0, viability:'', exit2r:'', breakeven:'', above2rPts:0, retraceAfter2rPts:0 };
 
                     const hasMeta =
                         !!(t1meta && (t1meta.add || Number(t1meta.targetPts) || Number(t1meta.riskPts) || (t1meta.viability||'').trim())) ||
@@ -3600,9 +3600,13 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 const metaKey = isT0 ? 't0meta' : (isT1 ? 't1meta' : 't2meta');
                 const field = type.replace(isT0 ? 't0m_' : (isT1 ? 't1m_' : 't2m_'), '');
 
-                if (!acc.data[iso][metaKey]) acc.data[iso][metaKey] = { add:false, targetPts:0, riskPts:0, viability:'' };
+                if (!acc.data[iso][metaKey]) {
+                    acc.data[iso][metaKey] = isT0
+                        ? { targetPts:0, riskPts:0, viability:'' }
+                        : { add:false, targetPts:0, riskPts:0, viability:'', exit2r:'', breakeven:'', above2rPts:0, retraceAfter2rPts:0 };
+                }
 
-                if (['targetPts','riskPts'].includes(field)) {
+                if (['targetPts','riskPts','above2rPts','retraceAfter2rPts'].includes(field)) {
                     if(val === '' || val === null) val = 0;
                     else if(typeof val === 'string') val = parseFloat(val.replace(',', '.')) || 0;
                 }
@@ -4421,8 +4425,8 @@ function renderCalendar(acc) {
                 const entry = acc.data[iso] || { val: 0, t0: '', t1: '', t2: '', note: '', holiday: false, add: false, targetPts: '', riskPts: '', viability: '' };
 
                 // Garantir estrutura de meta por trade
-                if (!entry.t1meta) entry.t1meta = { add:false, targetPts:0, riskPts:0, viability:'' };
-                if (!entry.t2meta) entry.t2meta = { add:false, targetPts:0, riskPts:0, viability:'' };
+                if (!entry.t1meta) entry.t1meta = { add:false, targetPts:0, riskPts:0, viability:'', exit2r:'', breakeven:'', above2rPts:0, retraceAfter2rPts:0 };
+                if (!entry.t2meta) entry.t2meta = { add:false, targetPts:0, riskPts:0, viability:'', exit2r:'', breakeven:'', above2rPts:0, retraceAfter2rPts:0 };
                 if (!entry.t0meta) entry.t0meta = { targetPts:0, riskPts:0, viability:'' };
 
                 // Compat / Correção:
@@ -4460,8 +4464,8 @@ function renderCalendar(acc) {
                         entry.t2 = (_old1 === undefined || _old1 === null || String(_old1).trim() === '' || (!isNaN(Number(String(_old1).trim())) && Number(String(_old1).trim()) === 0)) ? '' : _old1;
 
                         // metas: t0meta era do Trade 1; t1meta era do Trade 2
-                        entry.t1meta = _old0m ? JSON.parse(JSON.stringify(_old0m)) : (entry.t1meta || { add:false, targetPts:0, riskPts:0, viability:'' });
-                        entry.t2meta = _old1m ? JSON.parse(JSON.stringify(_old1m)) : (entry.t2meta || { add:false, targetPts:0, riskPts:0, viability:'' });
+                        entry.t1meta = _old0m ? JSON.parse(JSON.stringify(_old0m)) : (entry.t1meta || { add:false, targetPts:0, riskPts:0, viability:'', exit2r:'', breakeven:'', above2rPts:0, retraceAfter2rPts:0 });
+                        entry.t2meta = _old1m ? JSON.parse(JSON.stringify(_old1m)) : (entry.t2meta || { add:false, targetPts:0, riskPts:0, viability:'', exit2r:'', breakeven:'', above2rPts:0, retraceAfter2rPts:0 });
 
                         // resetar t0meta para formato de Abertura (sem 'add')
                         entry.t0meta = { targetPts:0, riskPts:0, viability:'' };
@@ -4558,9 +4562,17 @@ function renderCalendar(acc) {
         const t1Open = !!(store.tradeDetailsOpen[acc.id] && store.tradeDetailsOpen[acc.id][iso] && store.tradeDetailsOpen[acc.id][iso].t1);
         const t2Open = !!(store.tradeDetailsOpen[acc.id] && store.tradeDetailsOpen[acc.id][iso] && store.tradeDetailsOpen[acc.id][iso].t2);
 
-        const t1m = entry.t1meta || { add:false, targetPts:0, riskPts:0, viability:'' };
-        const t2m = entry.t2meta || { add:false, targetPts:0, riskPts:0, viability:'' };
+        const t1m = entry.t1meta || { add:false, targetPts:0, riskPts:0, viability:'', exit2r:'', breakeven:'', above2rPts:0, retraceAfter2rPts:0 };
+        const t2m = entry.t2meta || { add:false, targetPts:0, riskPts:0, viability:'', exit2r:'', breakeven:'', above2rPts:0, retraceAfter2rPts:0 };
         const t0m = entry.t0meta || { targetPts:0, riskPts:0, viability:'' };
+        const t1Exit2r = _normText(t1m.exit2r || '');
+        const t1Breakeven = _normText(t1m.breakeven || '');
+        const t2Exit2r = _normText(t2m.exit2r || '');
+        const t2Breakeven = _normText(t2m.breakeven || '');
+        const t1Above2r = ((Number(t1m.above2rPts) || 0) === 0) ? '' : t1m.above2rPts;
+        const t1Retrace2r = ((Number(t1m.retraceAfter2rPts) || 0) === 0) ? '' : t1m.retraceAfter2rPts;
+        const t2Above2r = ((Number(t2m.above2rPts) || 0) === 0) ? '' : t2m.above2rPts;
+        const t2Retrace2r = ((Number(t2m.retraceAfter2rPts) || 0) === 0) ? '' : t2m.retraceAfter2rPts;
 
 
         const addChecked = entry.add ? 'checked' : '';
@@ -4572,43 +4584,62 @@ function renderCalendar(acc) {
 
                     <div>
                         <div class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">Trade 1</div>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                            <label class="flex items-center gap-2">
-                                <input type="checkbox" ${t1m.add ? 'checked' : ''} ${readOnlyDay ? 'disabled' : ''} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','t1m_add',this.checked)\"`}>
-                                <span class="text-slate-600 dark:text-slate-300">Adição</span>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                            <label class="flex flex-col gap-1">
+                                <span class="text-slate-500 whitespace-nowrap">Saída 2R</span>
+                                <select class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${readOnlyDay ? 'disabled' : ''} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','t1m_exit2r',this.value)\"`}>
+                                    <option value="">-</option>
+                                    <option value="viavel" ${(t1Exit2r==='viavel') ? 'selected' : ''}>Viável</option>
+                                    <option value="inviavel" ${(t1Exit2r==='inviavel') ? 'selected' : ''}>Inviável</option>
+                                </select>
                             </label>
-                            <label class="flex items-center gap-2">
-                                <span class="text-slate-500 whitespace-nowrap">Target (pts)</span>
-                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t1m.targetPts ?? ''}" ${readOnlyDay ? '' : `oninput=\"window.queueData('${iso}','t1m_targetPts',this.value)\" onblur=\"window.updateData('${iso}','t1m_targetPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                            <label class="flex flex-col gap-1">
+                                <span class="text-slate-500 whitespace-nowrap">Breakeven</span>
+                                <select class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${readOnlyDay ? 'disabled' : ''} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','t1m_breakeven',this.value)\"`}>
+                                    <option value="">-</option>
+                                    <option value="viavel" ${(t1Breakeven==='viavel') ? 'selected' : ''}>Viável</option>
+                                    <option value="inviavel" ${(t1Breakeven==='inviavel') ? 'selected' : ''}>Inviável</option>
+                                </select>
                             </label>
-                            <label class="flex items-center gap-2">
-                                <span class="text-slate-500 whitespace-nowrap">Risco (pts)</span>
-                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t1m.riskPts ?? ''}" ${readOnlyDay ? '' : `oninput=\"window.queueData('${iso}','t1m_riskPts',this.value)\" onblur=\"window.updateData('${iso}','t1m_riskPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                            <label class="flex flex-col gap-1">
+                                <span class="text-slate-500 whitespace-nowrap">Superior a 2R (pts)</span>
+                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t1Above2r}" ${readOnlyDay ? '' : `oninput=\"window.queueData('${iso}','t1m_above2rPts',this.value)\" onblur=\"window.updateData('${iso}','t1m_above2rPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                            </label>
+                            <label class="flex flex-col gap-1">
+                                <span class="text-slate-500 whitespace-nowrap">Retração após 2R (pts)</span>
+                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t1Retrace2r}" ${readOnlyDay ? '' : `oninput=\"window.queueData('${iso}','t1m_retraceAfter2rPts',this.value)\" onblur=\"window.updateData('${iso}','t1m_retraceAfter2rPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
                             </label>
                         </div>
                     </div>
 
                     <div class="border-t border-slate-200 dark:border-slate-700 pt-4">
                         <div class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">Trade 2</div>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-                            <label class="flex items-center gap-2">
-                                <input type="checkbox" ${t2m.add ? 'checked' : ''} ${readOnlyDay ? 'disabled' : ''} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','t2m_add',this.checked)\"`}>
-                                <span class="text-slate-600 dark:text-slate-300">Adição</span>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                            <label class="flex flex-col gap-1">
+                                <span class="text-slate-500 whitespace-nowrap">Saída 2R</span>
+                                <select class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${readOnlyDay ? 'disabled' : ''} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','t2m_exit2r',this.value)\"`}>
+                                    <option value="">-</option>
+                                    <option value="viavel" ${(t2Exit2r==='viavel') ? 'selected' : ''}>Viável</option>
+                                    <option value="inviavel" ${(t2Exit2r==='inviavel') ? 'selected' : ''}>Inviável</option>
+                                </select>
                             </label>
-                            <label class="flex items-center gap-2">
-                                <span class="text-slate-500 whitespace-nowrap">Target (pts)</span>
-                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t2m.targetPts ?? ''}" ${readOnlyDay ? '' : `oninput=\"window.queueData('${iso}','t2m_targetPts',this.value)\" onblur=\"window.updateData('${iso}','t2m_targetPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                            <label class="flex flex-col gap-1">
+                                <span class="text-slate-500 whitespace-nowrap">Breakeven</span>
+                                <select class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${readOnlyDay ? 'disabled' : ''} ${readOnlyDay ? '' : `onchange=\"window.updateData('${iso}','t2m_breakeven',this.value)\"`}>
+                                    <option value="">-</option>
+                                    <option value="viavel" ${(t2Breakeven==='viavel') ? 'selected' : ''}>Viável</option>
+                                    <option value="inviavel" ${(t2Breakeven==='inviavel') ? 'selected' : ''}>Inviável</option>
+                                </select>
                             </label>
-                            <label class="flex items-center gap-2">
-                                <span class="text-slate-500 whitespace-nowrap">Risco (pts)</span>
-                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t2m.riskPts ?? ''}" ${readOnlyDay ? '' : `oninput=\"window.queueData('${iso}','t2m_riskPts',this.value)\" onblur=\"window.updateData('${iso}','t2m_riskPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                            <label class="flex flex-col gap-1">
+                                <span class="text-slate-500 whitespace-nowrap">Superior a 2R (pts)</span>
+                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t2Above2r}" ${readOnlyDay ? '' : `oninput=\"window.queueData('${iso}','t2m_above2rPts',this.value)\" onblur=\"window.updateData('${iso}','t2m_above2rPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
+                            </label>
+                            <label class="flex flex-col gap-1">
+                                <span class="text-slate-500 whitespace-nowrap">Retração após 2R (pts)</span>
+                                <input type="number" placeholder="0" class="w-full py-1 px-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:border-indigo-500${inputExtraClass}" ${inputDisabledAttr} value="${t2Retrace2r}" ${readOnlyDay ? '' : `oninput=\"window.queueData('${iso}','t2m_retraceAfter2rPts',this.value)\" onblur=\"window.updateData('${iso}','t2m_retraceAfter2rPts',this.value)\"`} onkeydown="if(event.key==='Enter'){this.blur();}">
                             </label>
                         </div>
-                    </div>
-
-                    <div class="border-t border-slate-200 dark:border-slate-700 pt-3 flex justify-end items-center text-xs">
-                        <span class="text-slate-500 mr-2">Total do dia</span>
-                        <span class="font-semibold ${displayVal>=0?'text-green-600':'text-red-600'}">${formatCurrency(displayVal)}</span>
                     </div>
                 </div>
             </td>
