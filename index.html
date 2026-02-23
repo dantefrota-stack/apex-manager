@@ -171,67 +171,29 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
         }
     
         /* --- Help (i) / Popover --- */
-        .info-i{
+        .info-i, .help-icon{
+            width:22px;height:22px;
             display:inline-flex;
             align-items:center;
             justify-content:center;
-            width:18px;height:18px;
-            border-radius:999px;
             border:1px solid rgba(148,163,184,.9);
-            color:#64748b;
+            border-radius:9999px;
+            background:#fff;
+            color:#334155;
             font-size:12px;
-            font-weight:800;
-            margin-left:8px;
-            cursor:pointer;
-            user-select:none;
-            background:rgba(255,255,255,.6);
-        }
-
-        /* Make legacy buttons match the same (i) style */
-        .info-icon-btn{
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-            width:18px;height:18px;
-            border-radius:999px;
-            border:1px solid rgba(148,163,184,.9);
-            color:#64748b;
-            font-size:12px;
-            font-weight:800;
-            margin-left:8px;
-            cursor:pointer;
-            user-select:none;
-            background:transparent;
-            padding:0;
             line-height:1;
-        }
-        .info-icon-btn:hover{ background:rgba(99,102,241,.08); border-color:rgba(99,102,241,.35); color:#4338ca; }
-        body.dark .info-icon-btn{ border-color:rgba(148,163,184,.35); color:#cbd5e1; }
-        body.dark .info-icon-btn:hover{ background:rgba(99,102,241,.18); border-color:rgba(99,102,241,.35); color:#e0e7ff; }
-        .help-icon{
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
-            width:18px;height:18px;
-            border-radius:999px;
-            border:1px solid rgba(148,163,184,.9);
-            color:#64748b;
-            font-size:12px;
-            font-weight:800;
+            font-weight:700;
             margin-left:8px;
             cursor:pointer;
             user-select:none;
-            background:transparent;
             padding:0;
-            line-height:1;
         }
-        .help-icon:hover{ background:rgba(99,102,241,.08); border-color:rgba(99,102,241,.35); color:#4338ca; }
-        body.dark .help-icon{ border-color:rgba(148,163,184,.35); color:#cbd5e1; }
-        body.dark .help-icon:hover{ background:rgba(99,102,241,.18); border-color:rgba(99,102,241,.35); color:#e0e7ff; }
+        .info-i:hover, .help-icon:hover{ background:rgba(248,250,252,1); }
+        body.dark .info-i, body.dark .help-icon{ background:rgba(15,23,42,.35); border-color:rgba(148,163,184,.35); color:#cbd5e1; }
+        body.dark .info-i:hover, body.dark .help-icon:hover{ background:rgba(15,23,42,.55); }
+        body.dark .info-icon-btn{ background:rgba(15,23,42,.35); border-color:rgba(148,163,184,.35); color:#cbd5e1; }
+        body.dark .info-icon-btn:hover{ background:rgba(15,23,42,.55); }
 
-
-        body.dark .info-i{ border-color:#475569; color:#cbd5e1; background:rgba(30,41,59,.6); }
-        .info-i:hover{ transform: translateY(-1px); }
 
         #help-popover{
             position:fixed;
@@ -6893,7 +6855,7 @@ if (!store.activeId) {
         function ensureInfoIcons(){
             const cards = document.querySelectorAll('.dashboard-card');
             cards.forEach(card=>{
-                if(card.querySelector('.info-i')) return;
+                if(card.querySelector('.info-icon-btn, .help-icon, .info-i')) return;
                 // Try to find a title element inside the card
                 const titleEl =
                     card.querySelector('p.text-xs.font-bold') ||
@@ -6906,126 +6868,91 @@ if (!store.activeId) {
                 const rawTitle = (titleEl.textContent || '').trim();
                 if(!rawTitle) return;
 
-                const btn = document.createElement('span');
-                btn.className = 'info-i';
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'info-icon-btn ml-2';
                 btn.textContent = 'i';
-                btn.setAttribute('tabindex','0');
-                btn.setAttribute('role','button');
                 btn.setAttribute('aria-label', `Ajuda: ${rawTitle}`);
                 btn.dataset.helpTitle = rawTitle;
-
                 titleEl.appendChild(btn);
             });
         }
 
+        
         function bindHelpPopover(){
             if(window.__helpPopoverBound) return;
             window.__helpPopoverBound = true;
-            const pop = document.getElementById('help-popover');
-            const titleEl = document.getElementById('help-title');
-            const bodyEl = document.getElementById('help-body');
-            const linkEl = document.getElementById('help-link');
-            const closeBtn = document.getElementById('help-close');
-            if(!pop || !titleEl || !bodyEl || !linkEl || !closeBtn) return;
 
-            let hideTimer = null;
+            const overlay = document.getElementById('d2InfoOverlay');
+            const titleEl = document.getElementById('d2InfoTitle');
+            const bodyEl  = document.getElementById('d2InfoBody');
+            const closeBtn = document.getElementById('d2InfoClose');
+            if(!overlay || !titleEl || !bodyEl || !closeBtn) return;
 
-            function placePopover(anchor){
-                const rect = anchor.getBoundingClientRect();
-                const pad = 10;
-                const desiredTop = rect.bottom + 10;
-                const maxLeft = window.innerWidth - pop.offsetWidth - pad;
-                const left = Math.max(pad, Math.min(rect.left, maxLeft));
-                let top = desiredTop;
-                // if overflowing bottom, place above
-                if(top + pop.offsetHeight + pad > window.innerHeight){
-                    top = Math.max(pad, rect.top - pop.offsetHeight - 10);
+            function close(){
+                overlay.classList.remove('open');
+                overlay.setAttribute('aria-hidden','true');
+            }
+            function open(title, body, link){
+                titleEl.textContent = title || (CURRENT_LANG==='en' ? 'Info' : 'Informações');
+                const safeBody = (body || '').toString();
+                const parts = [];
+                parts.push(`<div>${escapeHtml(safeBody).replace(/\n/g,'<br>')}</div>`);
+                if(link){
+                    parts.push(`<div class="mt-3"><a class="inline-flex items-center gap-2 font-bold text-indigo-600 hover:underline" href="${escapeHtml(link)}" target="_blank" rel="noopener">Apex Reference</a></div>`);
                 }
-                pop.style.left = `${left}px`;
-                pop.style.top = `${top}px`;
+                bodyEl.innerHTML = parts.join('');
+                overlay.classList.add('open');
+                overlay.setAttribute('aria-hidden','false');
             }
 
-            function show(anchor){
-                let rawTitle = anchor.dataset.helpTitle || anchor.dataset.helpTitle || anchor.dataset.helpTitle || '';
-                if(!rawTitle && anchor.dataset && anchor.dataset.infoKey){
-                    const k = String(anchor.dataset.infoKey);
-                    if(k==='ninja') rawTitle = 'Importar Performance (NinjaTrader)';
-                    else if(k==='tradovate') rawTitle = 'Importar Cash History (Tradovate)';
-                    else if(k==='selectedAccount') rawTitle = 'Conta selecionada (Admin)';
+            // Close interactions
+            closeBtn.addEventListener('click', close);
+            overlay.addEventListener('click', (e)=>{
+                if(e.target === overlay) close();
+            });
+            document.addEventListener('keydown', (e)=>{ if(e && e.key==='Escape') close(); });
+
+            // Capture clicks on any info icon BEFORE other handlers run
+            document.addEventListener('click', (e)=>{
+                const tgt = (e.target && e.target.closest) ? e.target.closest('.info-icon-btn, .help-icon, .info-i, [data-help], [data-info-key], [data-help-title]') : null;
+                if(!tgt) return;
+
+                // prevent parent buttons/cards from swallowing the click
+                try{ e.preventDefault(); }catch(_){}
+                try{ e.stopPropagation(); }catch(_){}
+                try{ e.stopImmediatePropagation(); }catch(_){}
+
+                let rawTitle = '';
+                if(tgt.dataset){
+                    rawTitle = tgt.dataset.helpTitle || '';
+                    if(!rawTitle && tgt.dataset.infoKey){
+                        const k = String(tgt.dataset.infoKey);
+                        if(k==='ninja') rawTitle = 'Importar Performance (NinjaTrader)';
+                        else if(k==='tradovate') rawTitle = 'Importar Cash History (Tradovate)';
+                        else if(k==='selectedAccount') rawTitle = 'Conta selecionada (Admin)';
+                    }
                 }
-                if(!rawTitle) rawTitle = 'Ajuda';
-                const helpKey = (anchor.dataset && anchor.dataset.help) ? String(anchor.dataset.help) : '';
+                if(!rawTitle){
+                    rawTitle = (tgt.getAttribute('aria-label') || tgt.getAttribute('title') || '').replace(/^Ajuda:\s*/,'').trim();
+                }
+                if(!rawTitle){
+                    // try nearest heading text
+                    const h = tgt.closest('.dashboard-card, .card, section, div');
+                    rawTitle = h ? ((h.querySelector('h3,h2,p')||{}).textContent||'').trim() : '';
+                }
+                if(!rawTitle) rawTitle = (CURRENT_LANG==='en' ? 'Info' : 'Informações');
+
+                const helpKey = (tgt.dataset && tgt.dataset.help) ? String(tgt.dataset.help) :
+                                (tgt.dataset && tgt.dataset.infoKey) ? String(tgt.dataset.infoKey) : '';
+
                 const h = helpKey ? _helpForKey(helpKey, rawTitle) : _helpForTitle(rawTitle);
                 const finalTitle = (typeof translateString==='function') ? translateString(h.title || rawTitle) : (h.title || rawTitle);
                 const finalBody  = (typeof translateString==='function') ? translateString(h.body || '') : (h.body || '');
-                titleEl.textContent = finalTitle;
-                bodyEl.textContent  = finalBody;
-                if(h.link){
-                    linkEl.href = h.link;
-                    linkEl.style.display = 'inline-flex';
-                }else{
-                    linkEl.style.display = 'none';
-                }
-                pop.classList.remove('hidden');
-                // Need layout to compute size
-                requestAnimationFrame(()=>placePopover(anchor));
-            }
-
-            function hide(){
-                pop.classList.add('hidden');
-            }
-
-            closeBtn.addEventListener('click', hide);
-                        document.addEventListener('keydown', (e)=>{ if(e && e.key==='Escape') hide(); });
-
-document.addEventListener('click', (e)=>{
-                const icon = (e.target && e.target.closest) ? e.target.closest('.info-i, .info-icon-btn, .help-icon') : null;
-                if(icon){
-                    // toggle (per-icon)
-                    if(!pop.classList.contains('hidden') && window.__helpPopoverAnchor===icon){
-                        window.__helpPopoverAnchor = null;
-                        hide();
-                    }else{
-                        window.__helpPopoverAnchor = icon;
-                        show(icon);
-                    }
-                    return;
-                }
-                if(pop.contains(e.target)) return;
-                window.__helpPopoverAnchor = null;
-                hide();
-            });
-
-            document.addEventListener('mouseover', (e)=>{
-                return; // hover disabled (use click)
-
-                const tgt = e.target;
-                if(tgt && tgt.classList && tgt.classList.contains('info-i')){
-                    clearTimeout(hideTimer);
-                    show(tgt);
-                }
-            });
-
-            document.addEventListener('mouseout', (e)=>{
-                return; // hover disabled (use click)
-
-                const tgt = e.target;
-                if(tgt && tgt.classList && tgt.classList.contains('info-i')){
-                    clearTimeout(hideTimer);
-                    hideTimer = setTimeout(()=>hide(), 500);
-                }
-            });
-
-            
-            // Keep the popover visible when moving from the (i) icon to the popover
-            pop.addEventListener('mouseenter', ()=>{ clearTimeout(hideTimer); });
-            pop.addEventListener('mouseleave', ()=>{ /* keep open; close only on click outside / X / ESC */ });
-            // If user clicks/taps inside the popover (e.g., the Apex link), don't auto-hide
-            pop.addEventListener('pointerdown', ()=>{ clearTimeout(hideTimer); });
-
-window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hide(); }, { passive:true });
-            window.addEventListener('resize', ()=>{ if(!pop.classList.contains('hidden')) hide(); }, { passive:true });
+                open(finalTitle, finalBody, h.link || null);
+            }, true);
         }
+
 
         /* =========================
            Period Details + PDF
