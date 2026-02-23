@@ -6745,14 +6745,16 @@ if (!store.activeId) {
         }
 
         
-        /* =========================
+                /* =========================
            Help popover (i)
         ========================= */
         function _normalizeText(s){
             return (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
         }
+
         function _helpForTitle(rawTitle){
-            const t=_normalizeText(rawTitle);
+            const t = _normalizeText(rawTitle);
+
             // Official Apex links (kept as plain URLs inside code)
             const LINKS = {
                 paRules: "https://support.apextraderfunding.com/hc/en-us/articles/40463003786267-Performance-Account-PA-Trading-Rules",
@@ -6765,39 +6767,37 @@ if (!store.activeId) {
             // Defaults (métricas internas)
             const generic = {
                 title: rawTitle || "Ajuda",
-                body: "Este card é um resumo calculado a partir do seu registro diário (Trade 1 + Trade 2). Ele ajuda a acompanhar sua evolução e reduzir erros antes de solicitar payout.",
+                body: "Este card é um resumo calculado a partir do seu registro diário. Ele ajuda a acompanhar evolução, consistência e risco (DD), reduzindo erros antes de solicitar payout.",
                 link: LINKS.paRules
             };
 
-
-            // Import & Admin help (no Apex links)
+            // Import & Admin help (sem link)
             if(t.includes("importar performance") || t.includes("ninjatrader") || t.includes("ninja")){
                 return {
                     title: "Importar Performance (NinjaTrader)",
-                    body: "Formato: Performance<X>.csv. O app identifica a conta pelo sufixo X (tudo após 'Performance' e antes de '.csv'). Usa a coluna 'pnl' por trade e agrupa por dia: T1 = primeiro trade do dia; T2 = soma do 2º trade em diante; Total = T1 + T2. X pode ser qualquer combinação de letras/números.",
+                    body: "Formato: Performance<X>.csv. O app identifica a conta pelo sufixo X (após 'Performance' e antes de '.csv'). Agrupa por dia: Abertura = 1º trade do dia; Trade 1 = 2º trade; Trade 2 = 3º trade (se houver); Total = soma do dia.",
                     link: null
                 };
             }
             if(t.includes("importar cash history") || t.includes("tradovate") || t.includes("cash history")){
                 return {
                     title: "Importar Cash History (Tradovate)",
-                    body: "Formato: Cash History<X>.csv. O app identifica a conta pelo sufixo X (tudo após 'Cash History' e antes de '.csv') e atualiza os dias automaticamente. X pode ser qualquer combinação de letras/números.",
+                    body: "Formato: Cash History<X>.csv. O app identifica a conta pelo sufixo X (após 'Cash History' e antes de '.csv') e atualiza os dias automaticamente.",
                     link: null
                 };
             }
             if(t.includes("conta selecionada") || t.includes("selectedaccount") || t.includes("admin")){
                 return {
                     title: "Conta selecionada (Admin)",
-                    body: "Esta área mostra e permite gerenciar informações (ex.: saques/histórico/ações) somente da conta selecionada. Isso evita misturar transações de todas as contas em uma lista única, mantendo o admin limpo e fácil de auditar.",
+                    body: "Mostra e gerencia informações somente da conta selecionada, evitando misturar transações de múltiplas contas e mantendo auditoria simples.",
                     link: null
                 };
             }
 
-
             if(t.includes("teto 30")){
                 return {
                     title: "Teto 30% (Consistency / Windfall)",
-                    body: "Regra da Apex no payout: o seu MAIOR dia de lucro não pode representar mais de 30% do lucro total acumulado naquele momento. Aqui mostramos quanto ainda ‘cabe’ hoje: (lucro_total × 0,30) − maior_dia. Se ficar negativo, você precisa diluir com mais dias positivos antes do payout.",
+                    body: "Regra da Apex no payout: o maior dia de lucro não pode representar mais de 30% do lucro total acumulado naquele momento. Se exceder, você precisa diluir com mais dias positivos.",
                     link: LINKS.windfall30
                 };
             }
@@ -6805,7 +6805,7 @@ if (!store.activeId) {
             if(t.includes("saldo atual") || t.includes("equity")){
                 return {
                     title: "Saldo Atual (Equity)",
-                    body: "Mostra seu saldo atual (equity) com base no seu registro diário/import (ex.: NinjaTrader). O progresso considera o ponto em que o drawdown/trailing tende a parar (start + drawdown + $100), que a Apex chama de ‘threshold stop/safety net’.",
+                    body: "Mostra seu equity atual com base no registro diário/import. O buffer de DD é calculado a partir do trailing/safety net para evitar violação.",
                     link: LINKS.trailing
                 };
             }
@@ -6813,7 +6813,7 @@ if (!store.activeId) {
             if(t.includes("gestao de saques") || t.includes("payout") || t.includes("saque")){
                 return {
                     title: "Gestão de Saques (Payout)",
-                    body: "Ajuda a acompanhar requisitos típicos de payout da Apex (ex.: mínimo de dias operados, dias com lucro mínimo e respeito ao safety net). As regras podem mudar — confira o link oficial antes de enviar o pedido.",
+                    body: "Ajuda a acompanhar requisitos de payout (dias mínimos, lucro mínimo por dia, safety net, consistência). Regras podem mudar — confirme no link oficial antes de solicitar.",
                     link: LINKS.payoutParams
                 };
             }
@@ -6821,7 +6821,7 @@ if (!store.activeId) {
             if(t.includes("performance") || t.includes("ciclos")){
                 return {
                     title: "Performance (Ciclos / Semana / Mensal)",
-                    body: "Cálculos feitos somando Trade 1 + Trade 2 por dia (dias úteis). ‘Mensal’ soma o mês. ‘Ciclo 10/15/20 a …’ soma do dia N do mês anterior até dia N do mês atual. As semanas seguem a divisão Seg–Dom usada no resumo.",
+                    body: "Cálculos feitos a partir dos resultados diários. ‘Mensal’ soma o mês. ‘Ciclo’ soma do dia N do mês anterior até o mesmo dia N do mês atual.",
                     link: LINKS.paRules
                 };
             }
@@ -6829,25 +6829,26 @@ if (!store.activeId) {
             if(t.includes("media") || t.includes("médias")){
                 return {
                     title: "Médias",
-                    body: "Média dos seus resultados diários (Trade 1 + Trade 2) nos últimos X dias operados. É uma métrica interna para consistência — não substitui a checagem de regras de payout/consistência da Apex.",
+                    body: "Médias internas de consistência calculadas a partir dos dias operados no período selecionado.",
                     link: LINKS.paRules
                 };
             }
 
             if(t.includes("calend")){
                 return {
-                    title: "Calendário / Relatório",
-                    body: "Registro diário do seu resultado. O app usa esses dados para calcular mês, semanas e ciclos. Dias marcados como ‘feriado’ são ignorados em alguns totais (ex.: total do mês).",
+                    title: "Calendário / Diário",
+                    body: "Registro diário do resultado. O app usa esses dados para calcular semanas, mês e ciclos.",
                     link: LINKS.paRules
                 };
             }
 
-            
+            return generic;
+        }
+
         function _helpForKey(key, fallbackTitle){
             const k = String(key || '').trim().toLowerCase();
-            // Official links (same ones used in help mapping)
             const LINKS = {
-                paRules: "https://support.apextraderfunding.com/hc/en-us",
+                paRules: "https://support.apextraderfunding.com/hc/en-us/articles/40463003786267-Performance-Account-PA-Trading-Rules",
                 windfall30: "https://support.apextraderfunding.com/hc/en-us/articles/40463260337819-30-Consistency-Rule-Windfall",
                 payoutParams: "https://support.apextraderfunding.com/hc/en-us/articles/40507212951451-PA-Payout-Parameters",
                 safetyNet: "https://support.apextraderfunding.com/hc/en-us/articles/40463578114715-Safety-Net-Requirement-Rule",
@@ -6857,28 +6858,28 @@ if (!store.activeId) {
             if(k === 'trailing'){
                 return {
                     title: "Trailing Drawdown (Apex)",
-                    body: "Regra do Trailing Drawdown: o limite acompanha seu pico de equity (sobe com novos highs e não desce). Aqui exibimos um piso estimado e seu buffer para evitar violação. Confirme sempre no link oficial antes de tomar decisões.",
+                    body: "O limite acompanha seu pico de equity (sobe com novos highs e não desce). Use o buffer exibido no app para evitar violação. Confirme no link oficial antes de agir.",
                     link: LINKS.trailing
                 };
             }
             if(k === 'windfall30' || k === '30' || k === 'consistency'){
                 return {
                     title: "Teto 30% (Consistency / Windfall)",
-                    body: "Regra da Apex no payout: o maior dia de lucro não pode representar mais de 30% do lucro total acumulado naquele momento. Se exceder, você precisa diluir com mais dias positivos antes do payout.",
+                    body: "O maior dia de lucro não pode representar mais de 30% do lucro total acumulado naquele momento. Se exceder, dilua com mais dias positivos.",
                     link: LINKS.windfall30
                 };
             }
             if(k === 'payout' || k === 'payoutparams' || k === 'payout_parameters'){
                 return {
                     title: "Payout Parameters (Apex)",
-                    body: "Parâmetros de payout podem mudar (dias mínimos, lucro mínimo por dia, safety net, consistência, etc.). Use este atalho para conferir as regras oficiais antes de solicitar.",
+                    body: "Parâmetros de payout podem mudar (dias mínimos, lucro mínimo por dia, safety net, consistência). Confirme no link oficial antes de solicitar.",
                     link: LINKS.payoutParams
                 };
             }
             if(k === 'safetynet' || k === 'safety_net'){
                 return {
                     title: "Safety Net Requirement (Apex)",
-                    body: "A Apex exige que você mantenha uma folga mínima acima do safety net no momento do payout. Use este link para confirmar o requisito atualizado.",
+                    body: "A Apex exige manter uma folga mínima acima do safety net no momento do payout. Confirme o requisito atualizado no link oficial.",
                     link: LINKS.safetyNet
                 };
             }
@@ -6887,8 +6888,7 @@ if (!store.activeId) {
             return _helpForTitle(fallbackTitle || k || 'Ajuda');
         }
 
-return generic;
-        }
+
 
         function ensureInfoIcons(){
             const cards = document.querySelectorAll('.dashboard-card');
