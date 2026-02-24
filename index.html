@@ -6881,7 +6881,6 @@ if (!store.activeId) {
         
         function bindHelpPopover(){
             if(window.__helpPopoverBound) return;
-            window.__helpPopoverBound = true;
 
             const overlay = document.getElementById('d2InfoOverlay');
             const titleEl = document.getElementById('d2InfoTitle');
@@ -6889,7 +6888,9 @@ if (!store.activeId) {
             const closeBtn = document.getElementById('d2InfoClose');
             if(!overlay || !titleEl || !bodyEl || !closeBtn) return;
 
-            function close(){
+            
+            window.__helpPopoverBound = true;
+function close(){
                 overlay.classList.remove('open');
                 overlay.setAttribute('aria-hidden','true');
             }
@@ -6946,10 +6947,17 @@ if (!store.activeId) {
                 const helpKey = (tgt.dataset && tgt.dataset.help) ? String(tgt.dataset.help) :
                                 (tgt.dataset && tgt.dataset.infoKey) ? String(tgt.dataset.infoKey) : '';
 
+                try{
                 const h = helpKey ? _helpForKey(helpKey, rawTitle) : _helpForTitle(rawTitle);
                 const finalTitle = (typeof translateString==='function') ? translateString(h.title || rawTitle) : (h.title || rawTitle);
                 const finalBody  = (typeof translateString==='function') ? translateString(h.body || '') : (h.body || '');
                 open(finalTitle, finalBody, h.link || null);
+            }catch(err){
+                try{ console.error('help popover error:', err); }catch(_){}
+                open(rawTitle || (CURRENT_LANG==='en' ? 'Info' : 'Informações'),
+                     (CURRENT_LANG==='en' ? 'No help text available for this item.' : 'Sem texto de ajuda disponível para este item.'),
+                     null);
+            }
             }, true);
         }
 
@@ -8670,6 +8678,8 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
                 const lang = (() => { try { return localStorage.getItem('df_lang') || 'pt'; } catch(e){ return 'pt'; } })();
                 if (typeof window.setLanguage === 'function') window.setLanguage(lang);
             } catch(e){}
+            // Ensure info/help icons are bound (idempotent)
+            try { bindHelpPopover(); } catch(e) {}
         }
 
       
