@@ -361,7 +361,138 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
 </div>
 
 
-    <div id="app-loader" class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col items-center justify-center text-white transition-opacity duration-700">
+    
+<script>
+/* DF Info Icons - robust, early capture hook (window) */
+(function(){
+  if (window.__DF_INFO_HOOK_INSTALLED__) return;
+  window.__DF_INFO_HOOK_INSTALLED__ = true;
+
+  function _esc(s){
+    return String(s ?? '').replace(/[&<>"']/g, function(ch){
+      return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]) || ch;
+    });
+  }
+
+  function _ensureModal(){
+    const overlay = document.getElementById('d2InfoOverlay');
+    const titleEl = document.getElementById('d2InfoTitle');
+    const bodyEl  = document.getElementById('d2InfoBody');
+    const closeBtn = document.getElementById('d2InfoClose');
+    if(!overlay || !titleEl || !bodyEl || !closeBtn) return null;
+
+    function close(){
+      overlay.classList.remove('open');
+      overlay.setAttribute('aria-hidden','true');
+    }
+    function open(title, body, link){
+      titleEl.textContent = title || 'Informações';
+      const parts = [];
+      const safeBody = (body ?? '').toString();
+      parts.push('<div>' + _esc(safeBody).replace(/\n/g,'<br>') + '</div>');
+      if(link){
+        parts.push('<div class="mt-3"><a class="inline-flex items-center gap-2 font-bold text-indigo-600 hover:underline" href="' + _esc(link) + '" target="_blank" rel="noopener">Apex Reference</a></div>');
+      }
+      bodyEl.innerHTML = parts.join('');
+      overlay.classList.add('open');
+      overlay.setAttribute('aria-hidden','false');
+    }
+
+    // Bind once
+    if(!window.__DF_INFO_MODAL_BOUND__){
+      window.__DF_INFO_MODAL_BOUND__ = true;
+      closeBtn.addEventListener('click', close);
+      overlay.addEventListener('click', function(e){ if(e && e.target === overlay) close(); });
+      window.addEventListener('keydown', function(e){ if(e && e.key === 'Escape') close(); });
+    }
+
+    return { open, close, overlay };
+  }
+
+  // Expose base modal opener early (can be used before module loads)
+  window.__DF_OPEN_INFO_MODAL__ = function(title, body, link){
+    const m = _ensureModal();
+    if(!m){ try{ alert((title||'Informações') + '\n\n' + (body||'')); }catch(e){} return; }
+    m.open(title, body, link);
+  };
+
+  function _closestInfoEl(e){
+    const t = e && e.target;
+    if(!t) return null;
+    // composedPath handles svg/path clicks better
+    const path = (typeof e.composedPath === 'function') ? e.composedPath() : null;
+    const sel = '.info-icon-btn, .help-icon, .info-i, [data-help], [data-info-key], [data-help-title]';
+    if(path && path.length){
+      for(const node of path){
+        if(!node || !node.matches) continue;
+        if(node.matches(sel)) return node;
+        if(node.closest) {
+          const c = node.closest(sel);
+          if(c) return c;
+        }
+      }
+    }
+    return (t.closest ? t.closest(sel) : null);
+  }
+
+  function _extractTitle(el){
+    if(!el) return 'Informações';
+    let title = '';
+    const ds = el.dataset || {};
+    title = (ds.helpTitle || ds.helpKeyTitle || '').trim();
+    if(!title){
+      title = (el.getAttribute('aria-label') || el.getAttribute('title') || '').replace(/^Ajuda:\s*/,'').trim();
+    }
+    if(!title){
+      // try nearest visible header text
+      const container = el.closest('.dashboard-card, .card, section, article, div');
+      if(container){
+        const h = container.querySelector('h1,h2,h3,h4,.card-title,.title');
+        if(h && h.textContent) title = h.textContent.trim();
+      }
+    }
+    return title || 'Informações';
+  }
+
+  function _extractKey(el){
+    if(!el) return '';
+    const ds = el.dataset || {};
+    return (ds.help || ds.infoKey || ds.helpKey || '').trim();
+  }
+
+  let __dfInfoLastOpenAt = 0;
+  function __dfHandleInfoEvent(e){
+    const el = _closestInfoEl(e);
+    if(!el) return;
+
+    // Debounce (avoid double open from pointer+click)
+    const now = Date.now();
+    if(now - __dfInfoLastOpenAt < 350) return;
+    __dfInfoLastOpenAt = now;
+
+    // Block any parent/card click handlers that swallow the event
+    try{ e.preventDefault(); }catch(_){}
+    try{ e.stopPropagation(); }catch(_){}
+    try{ e.stopImmediatePropagation(); }catch(_){}
+
+    const title = _extractTitle(el);
+    const key = _extractKey(el);
+
+    // Prefer full resolver when available
+    if(typeof window.__DF_SHOW_INFO__ === 'function'){
+      try { window.__DF_SHOW_INFO__(key, title); return; } catch(err){}
+    }
+
+    // Fallback
+    window.__DF_OPEN_INFO_MODAL__(title, 'Sem texto de ajuda disponível para este item.', null);
+  }
+
+  // Some UI code swallows click events; pointerup is more reliable.
+  window.addEventListener('pointerup', __dfHandleInfoEvent, true);
+  window.addEventListener('click', __dfHandleInfoEvent, true);
+})();
+</script>
+<div id="app-loader" class="fixed inset-0 bg-slate-900 z-[9999] flex flex-col items-center justify-center text-white transition-opacity duration-700">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-500 mb-4"></div>
         <p class="text-sm animate-pulse">Iniciando...</p>
     </div>
@@ -8692,6 +8823,29 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
             } catch(e){}
             // Ensure info/help icons are bound (idempotent)
             try { bindHelpPopover(); } catch(e) {}
+
+            // Global help entrypoint (used by early window-capture hook)
+            try{
+                window.__DF_SHOW_INFO__ = function(key, fallbackTitle){
+                    const ft = (fallbackTitle || (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG==='en' ? 'Info' : 'Informações')) + '';
+                    let h = null;
+                    try{
+                        if(key && typeof _helpForKey === 'function') h = _helpForKey(String(key), ft);
+                        else if(typeof _helpForTitle === 'function') h = _helpForTitle(ft);
+                    }catch(e){ h = null; }
+
+                    const title = (h && h.title) ? h.title : ft;
+                    const body  = (h && h.body)  ? h.body  : (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG==='en'
+                                        ? 'No help text available for this item.'
+                                        : 'Sem texto de ajuda disponível para este item.');
+                    const link  = (h && h.link) ? h.link : null;
+
+                    if(typeof window.__DF_OPEN_INFO_MODAL__ === 'function'){
+                        window.__DF_OPEN_INFO_MODAL__(title, body, link);
+                    }
+                };
+            }catch(e){}
+
         }
 
       
