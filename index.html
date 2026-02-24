@@ -368,6 +368,18 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
   if (window.__DF_INFO_HOOK_INSTALLED__) return;
   window.__DF_INFO_HOOK_INSTALLED__ = true;
 
+
+  function _getLang(){
+    try{
+      const raw = (localStorage.getItem('df_lang') || '').toLowerCase();
+      if(raw.startsWith('en')) return 'en';
+      if(raw.startsWith('pt')) return 'pt';
+    }catch(e){}
+    const docLang = (document.documentElement.getAttribute('lang') || '').toLowerCase();
+    if(docLang.startsWith('en')) return 'en';
+    return 'pt';
+  }
+
   function _esc(s){
     return String(s ?? '').replace(/[&<>"']/g, function(ch){
       return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]) || ch;
@@ -386,7 +398,7 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
       overlay.setAttribute('aria-hidden','true');
     }
     function open(title, body, link){
-      const __en = (CURRENT_LANG === 'en');
+      const __en = (_getLang() === 'en');
       titleEl.textContent = title || (__en ? 'Info' : 'Informações');
       const parts = [];
       const safeBody = (body ?? '').toString();
@@ -417,6 +429,125 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
     if(!m){ try{ alert((title||'Informações') + '\n\n' + (body||'')); }catch(e){} return; }
     m.open(title, body, link);
   };
+
+  // ---- Help content (bilingual) + resolver (runs even if module scope variables are unavailable)
+  const HELP_CONTENT = {
+    generic: {
+      pt: { title: 'Ajuda', body: 'Este ícone (i) mostra uma explicação rápida do card/relatório.' },
+      en: { title: 'Help', body: 'This (i) icon shows a quick explanation of the card/report.' }
+    },
+    performanceEvolution: {
+      pt: { title: 'Evolução da Performance', body: 'Gráfico diário do resultado ao longo do tempo. Use para enxergar tendência, picos e quedas. Passe o mouse para ver valores por data.' },
+      en: { title: 'Performance Evolution', body: 'Daily results over time. Use it to see trend, peaks and drawdowns. Hover to view values by date.' }
+    },
+    periodAnalysis: {
+      pt: { title: 'Análise por Período', body: 'Selecione um intervalo e pesquise. Calcula resultado do período, taxa de acerto, melhor/pior dia e KPIs (médias, Profit Factor, Payoff Ratio e Max Drawdown do período).' },
+      en: { title: 'Period Analysis', body: 'Select a date range and search. Computes period result, win rate, best/worst day and KPIs (averages, Profit Factor, Payoff Ratio and period max drawdown).' }
+    },
+    equityCard: {
+      pt: { title: 'Saldo Atual (Equity)', body: 'Mostra o equity atual e o lucro vs início. Use o Buffer (folga) para acompanhar distância até o Safety/Trailing e evitar violação.' },
+      en: { title: 'Current Balance (Equity)', body: 'Shows current equity and profit vs start. Use the Buffer to track distance to Safety/Trailing and avoid violations.' }
+    },
+    drawdownReal: {
+      pt: { title: 'Drawdown Real (Apex)', body: 'Mostra o limite de queda (Trailing/Safety) e a folga (Buffer). Se o buffer ficar baixo, a conta está em risco.' },
+      en: { title: 'Real Drawdown (Apex)', body: 'Shows the Trailing/Safety limit and the remaining buffer. Low buffer means higher risk.' }
+    },
+    teto30: {
+      pt: { title: 'Teto 30% (Hoje)', body: 'Indicador de consistência: limita quanto do lucro pode ser feito em um único dia (regra 30% quando aplicável). Ajuda a planejar execução e evitar concentração de ganhos.' },
+      en: { title: '30% Cap (Today)', body: 'Consistency indicator: limits how much profit can be made in a single day (30% rule when applicable). Helps planning and avoiding concentrated gains.' }
+    },
+    payoutMgmt: {
+      pt: { title: 'Gestão de Saques', body: 'Mostra saldo atual, limite de segurança e excedente real disponível para saque. “Próxima janela” indica quando o saque pode ser solicitado.' },
+      en: { title: 'Payout Management', body: 'Shows current balance, safety limit and real excess available for payout. “Next window” indicates when you can request it.' }
+    },
+    cyclesCurrent: {
+      pt: { title: 'Performance (Ciclos Atuais)', body: 'Resumo do desempenho por ciclo (mensal e/ou por janela). Útil para entender consistência e evolução recente.' },
+      en: { title: 'Performance (Current Cycles)', body: 'Cycle-based performance summary (monthly and/or windows). Useful to understand consistency and recent evolution.' }
+    },
+    insightsGlobal: {
+      pt: { title: 'Insights Globais', body: 'Resumo de todas as contas: total, equity total, alertas de drawdown e listas de prioridade (mais próximas do 1º $500 e maior risco de DD). Clique em uma conta para abrir.' },
+      en: { title: 'Global Insights', body: 'All-accounts summary: totals, total equity, drawdown alerts and priority lists (closest to first $500 and highest DD risk). Click an account to open it.' }
+    },
+    accountsSummary: {
+      pt: { title: 'Resumo de Contas', body: 'Relatório consolidado com gráfico e tabela. Pode ser impresso em PDF/Print. Os grupos são paginados para manter legibilidade.' },
+      en: { title: 'Accounts Summary', body: 'Consolidated report with chart and table. Can be printed to PDF/Print. Groups are paged to keep readability.' }
+    },
+    tradesDaily: {
+      pt: { title: 'Diário de Trades', body: 'Registro diário (Abertura, Trade 1, Trade 2 e Total). Expanda a linha para preencher os campos de análise (2R, Breakeven, MAE, etc.).' },
+      en: { title: 'Daily Trade Log', body: 'Daily log (Open, Trade 1, Trade 2 and Total). Expand the row to fill analysis fields (2R, Breakeven, MAE, etc.).' }
+    }
+  };
+
+  const HELP_KEY_ALIASES = {
+    'performance': 'performanceEvolution',
+    'evolucao': 'performanceEvolution',
+    'evolução': 'performanceEvolution',
+    'periodo': 'periodAnalysis',
+    'period': 'periodAnalysis',
+    'equity': 'equityCard',
+    'saldo': 'equityCard',
+    'trailing': 'drawdownReal',
+    'drawdown': 'drawdownReal',
+    'dd': 'drawdownReal',
+    '30': 'teto30',
+    'teto30': 'teto30',
+    'saques': 'payoutMgmt',
+    'payout': 'payoutMgmt',
+    'cycles': 'cyclesCurrent',
+    'insights': 'insightsGlobal',
+    'resumoContas': 'accountsSummary',
+    'accountsSummary': 'accountsSummary',
+    'diario': 'tradesDaily'
+  };
+
+  function _norm(s){
+    return String(s || '')
+      .toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .replace(/[^a-z0-9 ]+/g,' ')
+      .replace(/\s+/g,' ')
+      .trim();
+  }
+
+  function _inferKeyFromTitle(title){
+    const t = _norm(title);
+    if(!t) return '';
+    if(t.includes('evolucao da performance') || t.includes('performance evolution') || (t.includes('evolucao') && t.includes('performance'))) return 'performanceEvolution';
+    if(t.includes('analise por periodo') || t.includes('period analysis')) return 'periodAnalysis';
+    if(t.includes('saldo atual') || (t.includes('current') && t.includes('equity'))) return 'equityCard';
+    if(t.includes('drawdown real') || (t.includes('drawdown') && t.includes('apex'))) return 'drawdownReal';
+    if(t.includes('teto 30') || t.includes('30 cap') || t.includes('consistency')) return 'teto30';
+    if(t.includes('gestao de saques') || t.includes('payout')) return 'payoutMgmt';
+    if(t.includes('ciclos atuais') || t.includes('current cycles')) return 'cyclesCurrent';
+    if(t.includes('insights globais') || t.includes('global insights')) return 'insightsGlobal';
+    if(t.includes('resumo de contas') || t.includes('accounts summary')) return 'accountsSummary';
+    if(t.includes('diario') || t.includes('daily') || t.includes('trades')) return 'tradesDaily';
+    return '';
+  }
+
+  function _resolveHelp(key, title){
+    const lang = _getLang();
+    const rawK = _norm(key);
+    const alias = rawK ? (HELP_KEY_ALIASES[rawK] || rawK) : '';
+    const fromKey = (alias && HELP_CONTENT[alias]) ? alias : '';
+    const fromTitle = (!fromKey) ? _inferKeyFromTitle(title) : '';
+    const useKey = fromKey || fromTitle || 'generic';
+    const item = HELP_CONTENT[useKey] || HELP_CONTENT.generic;
+    const payload = item[lang] || item.pt || item.en || HELP_CONTENT.generic[lang];
+    return { title: payload.title, body: payload.body, link: item.link || null };
+  }
+
+  // Provide the full resolver to the event hook (used by pointerup/click capture)
+  window.__DF_SHOW_INFO__ = function(key, title){
+    try{
+      const h = _resolveHelp(key, title || '');
+      window.__DF_OPEN_INFO_MODAL__(h.title || (title||'Info'), h.body || '', h.link || null);
+    }catch(_e){
+      window.__DF_OPEN_INFO_MODAL__(title || (_getLang()==='en' ? 'Info' : 'Informações'),
+        (_getLang()==='en' ? 'No help text available for this item.' : 'Sem texto de ajuda disponível para este item.'), null);
+    }
+  };
+
 
   function _closestInfoEl(e){
     const t = e && e.target;
@@ -486,7 +617,7 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
     }
 
     // Fallback
-    window.__DF_OPEN_INFO_MODAL__(title, 'Sem texto de ajuda disponível para este item.', null);
+    window.__DF_OPEN_INFO_MODAL__(title, (_getLang()==='en' ? 'No help text available for this item.' : 'Sem texto de ajuda disponível para este item.'), null);
   }
 
   // Some UI code swallows click events; pointerup is more reliable.
@@ -8968,7 +9099,8 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
 
             // Global help entrypoint (used by early window-capture hook)
             try{
-                window.__DF_SHOW_INFO__ = function(key, fallbackTitle){
+                if(typeof window.__DF_SHOW_INFO__ !== 'function' || !window.__DF_SHOW_INFO__.__dfHelp){
+                    window.__DF_SHOW_INFO__ = function(key, fallbackTitle){
                     const ft = (fallbackTitle || (typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG==='en' ? 'Info' : 'Informações')) + '';
                     let h = null;
                     try{
@@ -8986,6 +9118,8 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
                         window.__DF_OPEN_INFO_MODAL__(title, body, link);
                     }
                 };
+                    window.__DF_SHOW_INFO__.__dfHelp = true;
+                }
             }catch(e){}
 
         }
