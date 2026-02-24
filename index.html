@@ -1186,6 +1186,18 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
 
 
     <script type="module">
+
+        // HTML escaping helper (used by info/help modals and exports)
+        function escapeHtml(input){
+            const s = (input === null || input === undefined) ? '' : String(input);
+            return s
+                .replace(/&/g,'&amp;')
+                .replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;')
+                .replace(/"/g,'&quot;')
+                .replace(/'/g,'&#39;');
+        }
+
                     
 
         // --- NOVO BLOCO DE AUTENTICAÇÃO (Mantenha este no topo do script) ---
