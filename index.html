@@ -386,12 +386,14 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
       overlay.setAttribute('aria-hidden','true');
     }
     function open(title, body, link){
-      titleEl.textContent = title || 'Informações';
+      const __en = (CURRENT_LANG === 'en');
+      titleEl.textContent = title || (__en ? 'Info' : 'Informações');
       const parts = [];
       const safeBody = (body ?? '').toString();
       parts.push('<div>' + _esc(safeBody).replace(/\n/g,'<br>') + '</div>');
       if(link){
-        parts.push('<div class="mt-3"><a class="inline-flex items-center gap-2 font-bold text-indigo-600 hover:underline" href="' + _esc(link) + '" target="_blank" rel="noopener">Apex Reference</a></div>');
+        const lbl = __en ? 'Apex Reference' : 'Referência Apex';
+        parts.push('<div class="mt-3"><a class="inline-flex items-center gap-2 font-bold text-indigo-600 hover:underline" href="' + _esc(link) + '" target="_blank" rel="noopener">' + _esc(lbl) + '</a></div>');
       }
       bodyEl.innerHTML = parts.join('');
       overlay.classList.add('open');
@@ -6857,143 +6859,279 @@ if (!store.activeId) {
             return (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
         }
 
-        function _helpForTitle(rawTitle){
-            const t = _normalizeText(rawTitle);
+        // Official Apex links (kept as plain URLs inside code)
+        const HELP_LINKS = {
+            paRules: "https://support.apextraderfunding.com/hc/en-us/articles/40463003786267-Performance-Account-PA-Trading-Rules",
+            windfall30: "https://support.apextraderfunding.com/hc/en-us/articles/40463260337819-30-Consistency-Rule-Windfall",
+            payoutParams: "https://support.apextraderfunding.com/hc/en-us/articles/40507212951451-PA-Payout-Parameters",
+            safetyNet: "https://support.apextraderfunding.com/hc/en-us/articles/40463578114715-Safety-Net-Requirement-Rule",
+            trailing: "https://support.apextraderfunding.com/hc/en-us/articles/40463582041371-Trailing-Drawdown-Rule"
+        };
 
-            // Official Apex links (kept as plain URLs inside code)
-            const LINKS = {
-                paRules: "https://support.apextraderfunding.com/hc/en-us/articles/40463003786267-Performance-Account-PA-Trading-Rules",
-                windfall30: "https://support.apextraderfunding.com/hc/en-us/articles/40463260337819-30-Consistency-Rule-Windfall",
-                payoutParams: "https://support.apextraderfunding.com/hc/en-us/articles/40507212951451-PA-Payout-Parameters",
-                safetyNet: "https://support.apextraderfunding.com/hc/en-us/articles/40463578114715-Safety-Net-Requirement-Rule",
-                trailing: "https://support.apextraderfunding.com/hc/en-us/articles/40463582041371-Trailing-Drawdown-Rule"
-            };
+        // Central help catalog (PT-BR + EN-US). Keep it concise and practical.
+        const HELP_CONTENT = {
+            generic: {
+                pt: {
+                    title: "Ajuda",
+                    body: "Este ícone (i) mostra uma explicação rápida do card/relatório. Os números são calculados a partir do diário (Abertura/Trade 1/Trade 2/Total) e das regras do plano (Safety/Trailing/30%)."
+                },
+                en: {
+                    title: "Help",
+                    body: "This (i) icon shows a quick explanation of the card/report. Metrics are computed from the daily log (Open/Trade 1/Trade 2/Total) and the plan rules (Safety/Trailing/30%)."
+                }
+            },
 
-            // Defaults (métricas internas)
-            const generic = {
-                title: rawTitle || "Ajuda",
-                body: "Este card é um resumo calculado a partir do seu registro diário. Ele ajuda a acompanhar evolução, consistência e risco (DD), reduzindo erros antes de solicitar payout.",
-                link: LINKS.paRules
-            };
+            performanceEvolution: {
+                pt: {
+                    title: "Evolução da Performance",
+                    body: "Gráfico de linha do resultado ao longo do tempo (diário). Use para enxergar tendência, picos e quedas. Passe o mouse para ver valores por data."
+                },
+                en: {
+                    title: "Performance Evolution",
+                    body: "Line chart of results over time (daily). Use it to see trend, peaks and drawdowns. Hover to view values by date."
+                }
+            },
 
-            // Import & Admin help (sem link)
-            if(t.includes("importar performance") || t.includes("ninjatrader") || t.includes("ninja")){
-                return {
-                    title: "Importar Performance (NinjaTrader)",
-                    body: "Formato: Performance<X>.csv. O app identifica a conta pelo sufixo X (após 'Performance' e antes de '.csv'). Agrupa por dia: Abertura = 1º trade do dia; Trade 1 = 2º trade; Trade 2 = 3º trade (se houver); Total = soma do dia.",
-                    link: null
-                };
-            }
-            if(t.includes("importar cash history") || t.includes("tradovate") || t.includes("cash history")){
-                return {
-                    title: "Importar Cash History (Tradovate)",
-                    body: "Formato: Cash History<X>.csv. O app identifica a conta pelo sufixo X (após 'Cash History' e antes de '.csv') e atualiza os dias automaticamente.",
-                    link: null
-                };
-            }
-            if(t.includes("conta selecionada") || t.includes("selectedaccount") || t.includes("admin")){
-                return {
-                    title: "Conta selecionada (Admin)",
-                    body: "Mostra e gerencia informações somente da conta selecionada, evitando misturar transações de múltiplas contas e mantendo auditoria simples.",
-                    link: null
-                };
-            }
+            periodAnalysis: {
+                pt: {
+                    title: "Análise por Período",
+                    body: "Selecione um intervalo e clique em pesquisar. O app calcula: Resultado do Período, taxa de acerto, melhor/pior dia e KPIs (médias, Profit Factor, Payoff Ratio e Max Drawdown do período)."
+                },
+                en: {
+                    title: "Period Analysis",
+                    body: "Pick a date range and click search. The app computes: Period Result, win rate, best/worst day and KPIs (averages, Profit Factor, Payoff Ratio and period Max Drawdown)."
+                }
+            },
 
-            if(t.includes("teto 30")){
-                return {
-                    title: "Teto 30% (Consistency / Windfall)",
-                    body: "Regra da Apex no payout: o maior dia de lucro não pode representar mais de 30% do lucro total acumulado naquele momento. Se exceder, você precisa diluir com mais dias positivos.",
-                    link: LINKS.windfall30
-                };
-            }
-
-            if(t.includes("saldo atual") || t.includes("equity")){
-                return {
+            equityCard: {
+                pt: {
                     title: "Saldo Atual (Equity)",
-                    body: "Mostra seu equity atual com base no registro diário/import. O buffer de DD é calculado a partir do trailing/safety net para evitar violação.",
-                    link: LINKS.trailing
-                };
-            }
+                    body: "Mostra o equity atual da conta e o progresso até a meta. O ‘Lucro’ é a diferença entre equity atual e o início. O app também calcula o buffer contra o trailing/safety para evitar violação."
+                },
+                en: {
+                    title: "Current Balance (Equity)",
+                    body: "Shows the current account equity and progress to the goal. ‘Profit’ is the difference between current equity and the start. The app also computes the buffer to trailing/safety to avoid violations."
+                },
+                link: HELP_LINKS.trailing
+            },
 
-            if(t.includes("gestao de saques") || t.includes("payout") || t.includes("saque")){
-                return {
+            drawdownReal: {
+                pt: {
+                    title: "Drawdown Real (Apex)",
+                    body: "O trailing/safety limita o quanto o equity pode cair. O app mostra o ‘Buffer’ (folga) para você saber o quanto ainda pode cair sem violar a regra."
+                },
+                en: {
+                    title: "Real Drawdown (Apex)",
+                    body: "Trailing/safety rules limit how far equity can drop. The app shows the ‘Buffer’ so you know how much room is left before a violation."
+                },
+                link: HELP_LINKS.trailing
+            },
+
+            windfall30: {
+                pt: {
+                    title: "Teto 30% (Consistency / Windfall)",
+                    body: "Regra de consistência: o maior dia de lucro não pode representar mais de 30% do lucro acumulado no momento. Se exceder, ‘dilua’ com mais dias positivos."
+                },
+                en: {
+                    title: "30% Cap (Consistency / Windfall)",
+                    body: "Consistency rule: your best profit day cannot exceed 30% of total accumulated profit at that moment. If exceeded, ‘dilute’ with additional green days."
+                },
+                link: HELP_LINKS.windfall30
+            },
+
+            payoutManagement: {
+                pt: {
                     title: "Gestão de Saques (Payout)",
-                    body: "Ajuda a acompanhar requisitos de payout (dias mínimos, lucro mínimo por dia, safety net, consistência). Regras podem mudar — confirme no link oficial antes de solicitar.",
-                    link: LINKS.payoutParams
-                };
-            }
+                    body: "Resumo do que está disponível, do limite de segurança (Safety Net) e da próxima janela. Use para checar rapidamente se a conta está elegível e evitar solicitar em condição de risco."
+                },
+                en: {
+                    title: "Payout Management",
+                    body: "Summary of what is available, the Safety Net limit and the next window. Use it to quickly check eligibility and avoid requesting while in risky conditions."
+                },
+                link: HELP_LINKS.payoutParams
+            },
 
-            if(t.includes("performance") || t.includes("ciclos")){
-                return {
-                    title: "Performance (Ciclos / Semana / Mensal)",
-                    body: "Cálculos feitos a partir dos resultados diários. ‘Mensal’ soma o mês. ‘Ciclo’ soma do dia N do mês anterior até o mesmo dia N do mês atual.",
-                    link: LINKS.paRules
-                };
-            }
+            cyclesPerformance: {
+                pt: {
+                    title: "Performance (Ciclos Atuais)",
+                    body: "Indicadores calculados a partir dos resultados diários (semana/mês/ciclo). ‘Mensal’ soma o mês atual. ‘Ciclo’ considera a janela do ciclo conforme a configuração do app."
+                },
+                en: {
+                    title: "Performance (Current Cycles)",
+                    body: "Indicators computed from daily results (week/month/cycle). ‘Monthly’ sums the current month. ‘Cycle’ uses the cycle window configured in the app."
+                },
+                link: HELP_LINKS.paRules
+            },
 
-            if(t.includes("media") || t.includes("médias")){
-                return {
-                    title: "Médias",
-                    body: "Médias internas de consistência calculadas a partir dos dias operados no período selecionado.",
-                    link: LINKS.paRules
-                };
-            }
+            accountsSummary: {
+                pt: {
+                    title: "Resumo de Contas",
+                    body: "Visão geral em uma página com KPIs e tabela das contas. Ordene e filtre. No PDF/Print o relatório sai padronizado em grupos de 10 contas por página (com ou sem gráfico)."
+                },
+                en: {
+                    title: "Accounts Summary",
+                    body: "One-page overview with KPIs and an accounts table. Sort and filter. In PDF/Print the report is standardized into groups of 10 accounts per page (with or without chart)."
+                }
+            },
 
-            if(t.includes("calend")){
-                return {
-                    title: "Calendário / Diário",
-                    body: "Registro diário do resultado. O app usa esses dados para calcular semanas, mês e ciclos.",
-                    link: LINKS.paRules
-                };
-            }
+            globalInsights: {
+                pt: {
+                    title: "Insights Globais",
+                    body: "Resumo consolidado de todas as contas: total de contas, equity total, saque possível, alertas de drawdown e listas de ‘mais próximas do 1º $500’ e ‘mais risco de DD’ (com scroll)."
+                },
+                en: {
+                    title: "Global Insights",
+                    body: "Consolidated overview across accounts: total accounts, total equity, potential withdrawal, drawdown alerts, and the ‘closest to 1st $500’ and ‘highest DD risk’ lists (scrollable)."
+                }
+            },
 
-            return generic;
+            dailyLog: {
+                pt: {
+                    title: "Diário (Trades por Dia)",
+                    body: "Tabela diária: Data, Abertura (TA), Trade 1 (T1), Trade 2 (T2) e Total. O Total é a soma do dia. Expanda a linha para ver índices do Trade 1/2 (2R, breakeven, retração, MAE etc.)."
+                },
+                en: {
+                    title: "Daily Log (Trades per Day)",
+                    body: "Daily table: Date, Open (TA), Trade 1 (T1), Trade 2 (T2) and Total. Total is the day sum. Expand a row to see Trade 1/2 indices (2R, breakeven, retracement, MAE, etc.)."
+                }
+            },
+
+            importNinja: {
+                pt: {
+                    title: "Importar Performance (NinjaTrader)",
+                    body: "Formato: Performance<X>.csv. A conta é identificada pelo sufixo X no nome do arquivo. O app usa a coluna 'pnl' e agrupa por dia. Verifique o (i) do formato se tiver dúvidas."
+                },
+                en: {
+                    title: "Import Performance (NinjaTrader)",
+                    body: "Format: Performance<X>.csv. The account is identified by suffix X in the file name. The app uses the 'pnl' column and groups by day. See the format (i) if needed."
+                }
+            },
+
+            importTradovate: {
+                pt: {
+                    title: "Importar Cash History (Tradovate)",
+                    body: "Formato: Cash History<X>.csv. A conta é identificada pelo sufixo X no nome do arquivo. O app atualiza automaticamente os dias e históricos conforme o arquivo."
+                },
+                en: {
+                    title: "Import Cash History (Tradovate)",
+                    body: "Format: Cash History<X>.csv. The account is identified by suffix X in the file name. The app auto-updates days and history from the file."
+                }
+            },
+
+            adminSelectedAccount: {
+                pt: {
+                    title: "Conta Selecionada (Admin)",
+                    body: "Esta área mostra e permite gerenciar informações apenas da conta selecionada (ex.: saques/histórico/ações), mantendo auditoria simples e evitando misturar transações."
+                },
+                en: {
+                    title: "Selected Account (Admin)",
+                    body: "This area shows and manages information only for the selected account (e.g., withdrawals/history/actions), keeping auditing simple and avoiding mixed transactions."
+                }
+            }
+        };
+
+        const HELP_KEY_ALIASES = {
+            trailing: 'drawdownReal',
+            windfall30: 'windfall30',
+            '30': 'windfall30',
+            consistency: 'windfall30',
+            payout: 'payoutManagement',
+            payoutparams: 'payoutManagement',
+            payout_parameters: 'payoutManagement',
+            safetynet: 'payoutManagement',
+            safety_net: 'payoutManagement',
+
+            ninja: 'importNinja',
+            tradovate: 'importTradovate',
+            selectedaccount: 'adminSelectedAccount',
+
+            accounts: 'accountsSummary',
+            accountssummary: 'accountsSummary',
+            insights: 'globalInsights',
+            globalinsights: 'globalInsights',
+            diary: 'dailyLog',
+            diario: 'dailyLog',
+            period: 'periodAnalysis'
+        };
+
+        const TITLE_TO_HELP_KEY = {
+            // PT
+            "evolucao da performance": "performanceEvolution",
+            "analise por periodo": "periodAnalysis",
+            "kpis do periodo": "periodAnalysis",
+            "saldo atual (equity)": "equityCard",
+            "drawdown real (apex)": "drawdownReal",
+            "teto 30% (hoje)": "windfall30",
+            "gestao de saques": "payoutManagement",
+            "performance (ciclos atuais)": "cyclesPerformance",
+            "insights globais": "globalInsights",
+            "resumo de contas": "accountsSummary",
+            "diario": "dailyLog",
+            "calendario": "dailyLog",
+
+            // EN
+            "performance evolution": "performanceEvolution",
+            "period analysis": "periodAnalysis",
+            "period kpis": "periodAnalysis",
+            "current balance (equity)": "equityCard",
+            "real drawdown (apex)": "drawdownReal",
+            "30% cap (consistency / windfall)": "windfall30",
+            "payout management": "payoutManagement",
+            "performance (current cycles)": "cyclesPerformance",
+            "global insights": "globalInsights",
+            "accounts summary": "accountsSummary",
+            "daily log (trades per day)": "dailyLog",
+            "daily log": "dailyLog"
+        };
+
+        function _inferHelpKeyFromTitle(rawTitle){
+            const t = _normalizeText(rawTitle);
+            if(!t) return '';
+
+            if(TITLE_TO_HELP_KEY[t]) return TITLE_TO_HELP_KEY[t];
+
+            // fuzzy mapping for variants
+            if(t.includes('evolucao') && t.includes('performance')) return 'performanceEvolution';
+            if(t.includes('analysis') && t.includes('period')) return 'periodAnalysis';
+            if(t.includes('analise') && t.includes('periodo')) return 'periodAnalysis';
+            if(t.includes('saldo') && t.includes('equity')) return 'equityCard';
+            if(t.includes('drawdown') && (t.includes('real') || t.includes('trailing'))) return 'drawdownReal';
+            if(t.includes('teto') && t.includes('30')) return 'windfall30';
+            if(t.includes('payout') || t.includes('saque') || t.includes('saques')) return 'payoutManagement';
+            if(t.includes('ciclos') || t.includes('cycles')) return 'cyclesPerformance';
+            if(t.includes('insights')) return 'globalInsights';
+            if(t.includes('resumo') && t.includes('contas')) return 'accountsSummary';
+            if(t.includes('diario') || t.includes('calend')) return 'dailyLog';
+
+            return '';
+        }
+
+        function _helpFromKeyOrTitle(helpKey, rawTitle){
+            const rawK = String(helpKey || '').trim().toLowerCase();
+            const alias = rawK ? (HELP_KEY_ALIASES[rawK] || rawK) : '';
+            const fromKey = alias && HELP_CONTENT[alias] ? alias : '';
+            const fromTitle = (!fromKey) ? _inferHelpKeyFromTitle(rawTitle || '') : '';
+
+            const key = fromKey || fromTitle || 'generic';
+            const item = HELP_CONTENT[key] || HELP_CONTENT.generic;
+
+            const lang = (CURRENT_LANG === 'en') ? 'en' : 'pt';
+            const payload = item[lang] || item.pt || item.en || HELP_CONTENT.generic[lang];
+
+            return {
+                title: payload.title || ((lang === 'en') ? 'Info' : 'Informações'),
+                body: payload.body || ((lang === 'en') ? 'No help text available for this item.' : 'Sem texto de ajuda disponível para este item.'),
+                link: item.link || null
+            };
+        }
+
+        function _helpForTitle(rawTitle){
+            return _helpFromKeyOrTitle('', rawTitle);
         }
 
         function _helpForKey(key, fallbackTitle){
-            const k = String(key || '').trim().toLowerCase();
-            const LINKS = {
-                paRules: "https://support.apextraderfunding.com/hc/en-us/articles/40463003786267-Performance-Account-PA-Trading-Rules",
-                windfall30: "https://support.apextraderfunding.com/hc/en-us/articles/40463260337819-30-Consistency-Rule-Windfall",
-                payoutParams: "https://support.apextraderfunding.com/hc/en-us/articles/40507212951451-PA-Payout-Parameters",
-                safetyNet: "https://support.apextraderfunding.com/hc/en-us/articles/40463578114715-Safety-Net-Requirement-Rule",
-                trailing: "https://support.apextraderfunding.com/hc/en-us/articles/40463582041371-Trailing-Drawdown-Rule"
-            };
-
-            if(k === 'trailing'){
-                return {
-                    title: "Trailing Drawdown (Apex)",
-                    body: "O limite acompanha seu pico de equity (sobe com novos highs e não desce). Use o buffer exibido no app para evitar violação. Confirme no link oficial antes de agir.",
-                    link: LINKS.trailing
-                };
-            }
-            if(k === 'windfall30' || k === '30' || k === 'consistency'){
-                return {
-                    title: "Teto 30% (Consistency / Windfall)",
-                    body: "O maior dia de lucro não pode representar mais de 30% do lucro total acumulado naquele momento. Se exceder, dilua com mais dias positivos.",
-                    link: LINKS.windfall30
-                };
-            }
-            if(k === 'payout' || k === 'payoutparams' || k === 'payout_parameters'){
-                return {
-                    title: "Payout Parameters (Apex)",
-                    body: "Parâmetros de payout podem mudar (dias mínimos, lucro mínimo por dia, safety net, consistência). Confirme no link oficial antes de solicitar.",
-                    link: LINKS.payoutParams
-                };
-            }
-            if(k === 'safetynet' || k === 'safety_net'){
-                return {
-                    title: "Safety Net Requirement (Apex)",
-                    body: "A Apex exige manter uma folga mínima acima do safety net no momento do payout. Confirme o requisito atualizado no link oficial.",
-                    link: LINKS.safetyNet
-                };
-            }
-
-            // fallback: try title-based help
-            return _helpForTitle(fallbackTitle || k || 'Ajuda');
+            return _helpFromKeyOrTitle(key, fallbackTitle);
         }
-
-
 
         function ensureInfoIcons(){
             const cards = document.querySelectorAll('.dashboard-card');
@@ -7017,6 +7155,10 @@ if (!store.activeId) {
                 btn.textContent = 'i';
                 btn.setAttribute('aria-label', `Ajuda: ${rawTitle}`);
                 btn.dataset.helpTitle = rawTitle;
+                try{
+                    const hk = _inferHelpKeyFromTitle(rawTitle);
+                    if(hk) btn.dataset.help = hk;
+                }catch(e){}
                 titleEl.appendChild(btn);
             });
         }
@@ -7092,9 +7234,9 @@ function close(){
 
                 try{
                 const h = helpKey ? _helpForKey(helpKey, rawTitle) : _helpForTitle(rawTitle);
-                const finalTitle = (typeof translateString==='function') ? translateString(h.title || rawTitle) : (h.title || rawTitle);
-                const finalBody  = (typeof translateString==='function') ? translateString(h.body || '') : (h.body || '');
-                open(finalTitle, finalBody, h.link || null);
+                const tt = (h && h.title) ? h.title : rawTitle;
+                const bb = (h && h.body) ? h.body : ((CURRENT_LANG==='en') ? 'No help text available for this item.' : 'Sem texto de ajuda disponível para este item.');
+                open(tt, bb, (h && h.link) ? h.link : null);
             }catch(err){
                 try{ console.error('help popover error:', err); }catch(_){}
                 open(rawTitle || (CURRENT_LANG==='en' ? 'Info' : 'Informações'),
