@@ -228,13 +228,27 @@
 
 <!-- Modal de Edição de Pagamentos -->
 <div id="edit-payment-modal" class="modal-overlay">
-    <div class="modal-content animate-fade-in">
-        <h3 class="text-2xl font-black text-gold mb-6" data-i18n="modal_pay_title">Gerenciar Pagamentos (Vendedor)</h3>
-        <div id="payment-edit-summary" class="mb-6"></div>
-        <div id="payment-edit-list" class="space-y-4 mb-6"></div>
-        <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-white/10">
-            <button onclick="window.closeEditPaymentModal()" class="px-6 py-3 bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-600 transition-colors" data-i18n="cancel">Cancelar</button>
-            <button onclick="window.saveEditedPayments()" class="px-8 py-3 bg-slate-800 text-white force-white-text border border-gold/30 font-black rounded-xl hover:bg-slate-700 transition-colors shadow-lg" data-i18n="btn_save_changes">Salvar Alterações</button>
+    <div class="modal-content animate-fade-in max-w-3xl !p-0 overflow-hidden">
+        <div class="px-8 pt-8 pb-6 border-b border-white/10 bg-gradient-to-r from-slate-900 via-slate-900 to-black/90">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <p class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500 mb-2">Resumo Financeiro</p>
+                    <h3 class="text-2xl font-black text-gold" data-i18n="modal_pay_title">Gerenciar Pagamentos (Vendedor)</h3>
+                    <p class="text-sm text-slate-400 mt-2">Confira o saldo exato antes de salvar qualquer ajuste.</p>
+                </div>
+                <div class="inline-flex items-center gap-2 self-start rounded-2xl border border-gold/20 bg-gold/10 px-4 py-3 text-gold text-[11px] font-black uppercase tracking-widest">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i>
+                    Controle preciso
+                </div>
+            </div>
+        </div>
+        <div class="px-8 py-7">
+            <div id="payment-edit-summary" class="mb-6"></div>
+            <div id="payment-edit-list" class="space-y-4 mb-6"></div>
+            <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-white/10">
+                <button onclick="window.closeEditPaymentModal()" class="px-6 py-3 bg-slate-700 text-white rounded-xl font-bold hover:bg-slate-600 transition-colors" data-i18n="cancel">Cancelar</button>
+                <button onclick="window.saveEditedPayments()" class="px-8 py-3 bg-slate-800 text-white force-white-text border border-gold/30 font-black rounded-xl hover:bg-slate-700 transition-colors shadow-lg" data-i18n="btn_save_changes">Salvar Alterações</button>
+            </div>
         </div>
     </div>
 </div>
@@ -1022,46 +1036,156 @@
         const summaryEl = document.getElementById('payment-edit-summary');
         if (!container || !state.editingPayments) return;
 
+        const project = state.projects.find(x => x.id === state.editingPayments.projectId);
         const summary = getPaymentDraftSummary(state.editingPayments.projectId, state.editingPayments.payments);
         if (!summary) return;
 
+        const isPT = state.lang === 'pt';
         const isSettled = summary.commLiberada > 0 && summary.remainingToPay <= 0.009;
         const noReleasedCommission = summary.commLiberada <= 0.009;
+        const hasPayments = state.editingPayments.payments.length > 0;
+        const projectName = project?.nomeObra || (isPT ? 'Projeto sem nome' : 'Untitled project');
+        const sellerName = project?.vendedor || '-';
 
-        const alertBox = summary.overpaidAmount > 0.009
-            ? `<div class="rounded-2xl border border-red-500/30 bg-red-500/10 px-5 py-4"><p class="text-xs font-black uppercase tracking-widest text-red-300 mb-1">${window.t('pay_overpaid_title')}</p><p class="text-sm text-red-200">${window.t('pay_overpaid_msg')}</p></div>`
-            : isSettled
-                ? `<div class="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-4"><p class="text-xs font-black uppercase tracking-widest text-emerald-300 mb-1">${window.t('pay_no_due_title')}</p><p class="text-sm text-emerald-100">${window.t('pay_no_due_msg')}</p><p class="text-xs text-emerald-200/80 mt-2">${window.t('pay_edit_note')}</p></div>`
-                : noReleasedCommission
-                    ? `<div class="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-5 py-4"><p class="text-xs font-black uppercase tracking-widest text-amber-300 mb-1">${window.t('pay_no_release_title')}</p><p class="text-sm text-amber-100">${window.t('pay_no_release_msg')}</p></div>`
-                    : `<div class="rounded-2xl border border-gold/30 bg-gold/10 px-5 py-4"><p class="text-xs font-black uppercase tracking-widest text-gold mb-1">${window.t('pay_exact_due')}</p><p class="text-sm text-slate-200">${formatCurr(summary.remainingToPay)}</p></div>`;
+        let statusTitle = '';
+        let statusDesc = '';
+        let statusChipClass = '';
+        let statusDotClass = '';
+        let statusTextClass = '';
+        let nextValueLabel = '';
+        let nextValueDisplay = '';
+        let helperStateText = '';
+
+        if (summary.overpaidAmount > 0.009) {
+            statusTitle = window.t('pay_overpaid_title');
+            statusDesc = window.t('pay_overpaid_msg');
+            statusChipClass = 'border-blue-500/30 bg-blue-500/10';
+            statusDotClass = 'bg-blue-400';
+            statusTextClass = 'text-blue-300';
+            nextValueLabel = isPT ? 'Excesso lançado' : 'Over recorded';
+            nextValueDisplay = '+ ' + formatCurr(summary.overpaidAmount);
+            helperStateText = isPT ? 'Revise os lançamentos abaixo antes de salvar para evitar pagamento indevido.' : 'Review the entries below before saving to avoid an incorrect payment.';
+        } else if (isSettled) {
+            statusTitle = window.t('pay_no_due_title');
+            statusDesc = window.t('pay_no_due_msg');
+            statusChipClass = 'border-emerald-500/30 bg-emerald-500/10';
+            statusDotClass = 'bg-emerald-400';
+            statusTextClass = 'text-emerald-300';
+            nextValueLabel = isPT ? 'Saldo final' : 'Final balance';
+            nextValueDisplay = formatCurr(0);
+            helperStateText = window.t('pay_edit_note');
+        } else if (noReleasedCommission) {
+            statusTitle = window.t('pay_no_release_title');
+            statusDesc = window.t('pay_no_release_msg');
+            statusChipClass = 'border-amber-500/30 bg-amber-500/10';
+            statusDotClass = 'bg-amber-400';
+            statusTextClass = 'text-amber-300';
+            nextValueLabel = isPT ? 'Liberação atual' : 'Current release';
+            nextValueDisplay = formatCurr(summary.commLiberada);
+            helperStateText = isPT ? 'Assim que houver comissão liberada, o valor exato aparecerá aqui para pagamento.' : 'As soon as commission is released, the exact payable amount will appear here.';
+        } else {
+            statusTitle = isPT ? 'Pagamento disponível' : 'Payment available';
+            statusDesc = isPT ? 'Use o saldo exato abaixo para quitar apenas a comissão elegível do vendedor.' : 'Use the exact balance below to settle only the seller's eligible commission.';
+            statusChipClass = 'border-gold/30 bg-gold/10';
+            statusDotClass = 'bg-gold';
+            statusTextClass = 'text-gold';
+            nextValueLabel = isPT ? 'Próximo pagamento' : 'Next payment';
+            nextValueDisplay = formatCurr(summary.remainingToPay);
+            helperStateText = isPT ? 'O sistema usa a comissão liberada como limite e impede salvar valores acima do permitido.' : 'The system uses released commission as the limit and prevents saving amounts above the allowed value.';
+        }
 
         summaryEl.innerHTML = `
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <div class="rounded-2xl border border-white/10 bg-white/5 p-4"><p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">${window.t('comm_projected')}</p><p class="text-lg font-black text-slate-100">${formatCurr(summary.commTotalProjetada)}</p></div>
-                <div class="rounded-2xl border border-white/10 bg-white/5 p-4"><p class="text-[10px] font-black uppercase tracking-widest text-emerald-400/80 mb-1">${window.t('comm_released')}</p><p class="text-lg font-black text-emerald-400">${formatCurr(summary.commLiberada)}</p></div>
-                <div class="rounded-2xl border border-white/10 bg-white/5 p-4"><p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">${window.t('pay_summary_paid')}</p><p class="text-lg font-black text-slate-100">${formatCurr(summary.draftTotalPaid)}</p></div>
-                <div class="rounded-2xl border ${summary.overpaidAmount > 0.009 ? 'border-blue-500/30 bg-blue-500/10' : 'border-gold/20 bg-gold/10'} p-4"><p class="text-[10px] font-black uppercase tracking-widest ${summary.overpaidAmount > 0.009 ? 'text-blue-300' : 'text-gold'} mb-1">${window.t('pay_exact_due')}</p><p class="text-lg font-black ${summary.overpaidAmount > 0.009 ? 'text-blue-300' : 'text-gold'}">${summary.overpaidAmount > 0.009 ? '+ ' + formatCurr(summary.overpaidAmount) : formatCurr(summary.remainingToPay)}</p></div>
+            <div class="rounded-[28px] border border-white/10 bg-gradient-to-br from-slate-900 via-slate-900 to-black/90 p-5 sm:p-6 shadow-[0_20px_60px_-30px_rgba(0,0,0,0.75)]">
+                <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between mb-5">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.28em] text-slate-500 mb-2">${isPT ? 'Resumo executivo do pagamento' : 'Executive payment summary'}</p>
+                        <h4 class="text-xl sm:text-2xl font-black text-white force-white-text leading-tight">${projectName}</h4>
+                        <p class="text-xs text-slate-400 mt-2">${isPT ? 'Vendedor responsável' : 'Responsible seller'}: <span class="text-slate-200 font-bold">${sellerName}</span></p>
+                    </div>
+                    <div class="inline-flex items-center gap-3 self-start rounded-2xl border ${statusChipClass} px-4 py-3 min-w-[220px]">
+                        <div class="w-2.5 h-2.5 rounded-full ${statusDotClass}"></div>
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">${isPT ? 'Situação atual' : 'Current status'}</p>
+                            <p class="text-sm font-black ${statusTextClass}">${statusTitle}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                    <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">${window.t('comm_projected')}</p>
+                        <p class="text-xl font-black text-slate-100">${formatCurr(summary.commTotalProjetada)}</p>
+                    </div>
+                    <div class="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-emerald-300/80 mb-1">${window.t('comm_released')}</p>
+                        <p class="text-xl font-black text-emerald-400">${formatCurr(summary.commLiberada)}</p>
+                    </div>
+                    <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">${window.t('pay_summary_paid')}</p>
+                        <p class="text-xl font-black text-slate-100">${formatCurr(summary.draftTotalPaid)}</p>
+                    </div>
+                    <div class="rounded-2xl border ${summary.overpaidAmount > 0.009 ? 'border-blue-500/30 bg-blue-500/10' : 'border-gold/20 bg-gold/10'} p-4">
+                        <p class="text-[10px] font-black uppercase tracking-widest ${summary.overpaidAmount > 0.009 ? 'text-blue-300' : 'text-gold'} mb-1">${window.t('pay_exact_due')}</p>
+                        <p class="text-xl font-black ${summary.overpaidAmount > 0.009 ? 'text-blue-300' : 'text-gold'}">${summary.overpaidAmount > 0.009 ? '+ ' + formatCurr(summary.overpaidAmount) : formatCurr(summary.remainingToPay)}</p>
+                    </div>
+                </div>
+
+                <div class="mt-4 rounded-2xl border ${statusChipClass} px-4 py-4">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">${isPT ? 'Leitura recomendada' : 'Recommended reading'}</p>
+                            <p class="text-sm ${statusTextClass}">${statusDesc}</p>
+                        </div>
+                        <div class="rounded-xl border border-white/10 bg-black/20 px-4 py-3 min-w-[170px]">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">${nextValueLabel}</p>
+                            <p class="text-xl font-black ${statusTextClass}">${nextValueDisplay}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            ${alertBox}
         `;
 
-        const paymentsHtml = state.editingPayments.payments.map((pay, i) => `
-            <div class="flex items-center gap-4 p-4 bg-white/5 rounded-xl border border-white/10">
-                <input type="date" value="${pay.data || ''}" onchange="window.updatePaymentField(${i}, 'data', this.value)" class="modern-input relative text-sm flex-1">
-                <input type="number" step="0.01" value="${(pay.valor ?? 0)}" onchange="window.updatePaymentField(${i}, 'valor', this.value)" class="modern-input text-sm flex-1">
-                <button onclick="window.removePaymentFromEdit(${i})" class="p-4 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"><i data-lucide="trash-2" class="w-5 h-5"></i></button>
-            </div>
-        `).join('');
+        const paymentsHtml = hasPayments
+            ? state.editingPayments.payments.map((pay, i) => `
+                <div class="rounded-2xl border border-white/10 bg-white/5 p-4 shadow-inner">
+                    <div class="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-4 items-end">
+                        <label class="block">
+                            <span class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">${isPT ? 'Data do pagamento' : 'Payment date'}</span>
+                            <input type="date" value="${pay.data || ''}" onchange="window.updatePaymentField(${i}, 'data', this.value)" class="modern-input relative text-sm w-full">
+                        </label>
+                        <label class="block">
+                            <span class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 block">${isPT ? 'Valor lançado' : 'Recorded amount'}</span>
+                            <input type="number" step="0.01" value="${(pay.valor ?? 0)}" onchange="window.updatePaymentField(${i}, 'valor', this.value)" class="modern-input text-sm w-full">
+                        </label>
+                        <button onclick="window.removePaymentFromEdit(${i})" class="h-[52px] px-4 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30 transition-colors flex items-center justify-center">
+                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('')
+            : `
+                <div class="rounded-2xl border border-dashed border-white/10 bg-black/20 px-5 py-8 text-center">
+                    <p class="text-sm font-black uppercase tracking-widest text-slate-400 mb-2">${window.t('no_payments')}</p>
+                    <p class="text-sm text-slate-500">${isPT ? 'Nenhum pagamento foi lançado ainda no gerenciador deste vendedor.' : 'No payments have been entered in this seller manager yet.'}</p>
+                </div>
+            `;
 
         const canAddPayment = !noReleasedCommission && summary.remainingToPay > 0.009;
         const addButton = canAddPayment
-            ? `<button onclick="window.addNewPaymentToEdit()" class="w-full p-4 mt-2 border-2 border-dashed border-gold/30 rounded-xl text-gold font-bold hover:bg-gold/10 transition-all">+ ${window.t('pay_add_remaining')}</button>`
-            : '';
+            ? `<button onclick="window.addNewPaymentToEdit()" class="w-full p-4 mt-2 rounded-2xl border border-gold/30 bg-gold/10 text-gold font-black uppercase tracking-widest hover:bg-gold/15 hover:border-gold/50 transition-all shadow-[0_12px_30px_-18px_rgba(251,191,36,0.7)]">+ ${window.t('pay_add_remaining')}</button>`
+            : `<div class="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-center text-sm text-slate-400">${isSettled ? (isPT ? 'Nenhum pagamento adicional disponível. Comissão já quitada.' : 'No additional payment available. Commission is already settled.') : noReleasedCommission ? (isPT ? 'Aguardando liberação de comissão para habilitar novos pagamentos.' : 'Waiting for commission release to enable new payments.') : summary.overpaidAmount > 0.009 ? (isPT ? 'Corrija o excesso lançado antes de adicionar um novo pagamento.' : 'Correct the over recorded amount before adding a new payment.') : (isPT ? 'Nenhum novo pagamento sugerido no momento.' : 'No new payment suggested at this time.')}</div>`;
 
-        container.innerHTML = paymentsHtml + addButton;
+        const helperBox = `
+            <div class="rounded-2xl border border-white/10 bg-black/20 px-4 py-4 text-sm text-slate-400">
+                <p class="font-bold text-slate-300 mb-1">${isPT ? 'Controle automático ativo' : 'Automatic control active'}</p>
+                <p>${helperStateText}</p>
+            </div>
+        `;
+
+        container.innerHTML = paymentsHtml + `<div class="space-y-4 mt-4">${addButton}${helperBox}</div>`;
         try { lucide.createIcons(); } catch {}
     };
+
     window.updatePaymentField = (index, field, value) => {
         if (!state.editingPayments) return;
         if (field === 'data') state.editingPayments.payments[index].data = value;
