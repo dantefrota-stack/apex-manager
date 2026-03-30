@@ -505,60 +505,73 @@ body.dark .df-layout-item-handle{background:#0b1220;border-color:#334155;color:#
 @media(min-width:900px){.df-layout-body{grid-template-columns:1fr 1fr;}}
 @media(min-width:1200px){.df-layout-body{grid-template-columns:1fr 1fr 1fr;}}
 
-/* v4 structural fixes */
-:root{--df-bottom-card-height:430px;}
+/* v5 structural fixes */
+:root{
+  --df-card-radius:18px;
+  --df-bottom-gap:24px;
+  --df-balance-height:370px;
+  --df-cycles-height:540px;
+  --df-gain-height:370px;
+  --df-payout-height:370px;
+  --df-insights-height:560px;
+}
 #df-dashboard-top-zone,#df-dashboard-center-zone,#df-dashboard-bottom-zone{min-width:0;}
 #df-dashboard-center-zone{display:flex;flex-direction:column;gap:24px;}
 #df-dashboard-bottom-zone{
   display:grid !important;
-  grid-template-columns:repeat(auto-fit,minmax(280px,1fr)) !important;
-  gap:24px;
+  grid-template-columns:minmax(0,1fr) !important;
+  gap:var(--df-bottom-gap);
   align-items:start !important;
 }
 #df-dashboard-bottom-zone .df-layout-card{
   min-width:0;
   width:100%;
-  min-height:var(--df-bottom-card-height);
-  max-height:var(--df-bottom-card-height);
-  height:var(--df-bottom-card-height);
   display:flex;
   flex-direction:column;
   overflow:hidden;
+  border-radius:var(--df-card-radius);
 }
 #df-dashboard-bottom-zone .df-layout-card > .df-card-scroll,
-#df-dashboard-bottom-zone .df-layout-card .df-card-scroll{
-  flex:1;
-  min-height:0;
-  overflow:auto;
-  padding-right:4px;
-  scrollbar-gutter:stable;
-}
-#df-dashboard-bottom-zone #payout-manager-container{
-  overflow:auto !important;
-}
-#balance-card{
-  min-height:var(--df-bottom-card-height);
-  max-height:var(--df-bottom-card-height);
-}
-#balance-card .mt-1{
-  flex:1;
-  min-height:0;
-  overflow:auto;
-  padding-right:4px;
-  scrollbar-gutter:stable;
-}
-#cycles-card{
-  display:flex;
-  flex-direction:column;
-  min-height:430px;
-}
-#cycles-card > .space-y-3{flex:0 0 auto;}
+#df-dashboard-bottom-zone .df-layout-card .df-card-scroll,
+#balance-card .mt-1,
+#cycles-card .df-card-scroll,
 #weekly-list{
   flex:1;
   min-height:0;
   overflow:auto;
-  padding-right:4px;
+  padding-right:6px;
   scrollbar-gutter:stable;
+}
+#balance-card{
+  min-height:var(--df-balance-height);
+  height:var(--df-balance-height);
+  max-height:var(--df-balance-height);
+}
+#gain-cap-card{
+  min-height:var(--df-gain-height);
+  height:var(--df-gain-height);
+  max-height:var(--df-gain-height);
+}
+#payout-manager-container{
+  min-height:var(--df-payout-height);
+  height:var(--df-payout-height);
+  max-height:var(--df-payout-height);
+  overflow:hidden !important;
+}
+#cycles-card{
+  min-height:var(--df-cycles-height);
+  height:var(--df-cycles-height);
+  max-height:var(--df-cycles-height);
+}
+#cycles-card > .space-y-3{flex:0 0 auto;}
+#cycles-card .df-card-header{margin-bottom:16px;}
+#cycles-card .df-card-title{font-size:17px;line-height:1.2;max-width:18ch;}
+#cycles-card .df-card-subtitle{font-size:12px;line-height:1.45;max-width:28ch;}
+#cycles-card .flex.justify-between.items-center{gap:16px;align-items:flex-start;}
+#cycles-card .period-link{display:block;line-height:1.4;padding-right:12px;white-space:normal;word-break:break-word;}
+#cycles-card .flex.justify-between.items-center > span:last-child,
+#cycles-card .flex.justify-between.items-center > button + span{flex-shrink:0;text-align:right;min-width:108px;}
+#weekly-list{
   border-top:1px solid rgba(226,232,240,1);
   margin-top:16px !important;
   padding-top:16px;
@@ -566,34 +579,116 @@ body.dark .df-layout-item-handle{background:#0b1220;border-color:#334155;color:#
 body.dark #weekly-list{border-top-color:#334155;}
 .df-avg-grid{
   display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-columns:repeat(3,minmax(0,1fr));
   gap:12px;
 }
-@media(min-width:768px){
-  .df-avg-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
-}
 .df-avg-item{
-  min-height:78px;
+  min-height:84px;
   padding:12px 10px;
 }
 .df-avg-item .lbl{
   font-size:12px;
-  font-weight:700;
-  margin-bottom:6px;
+  font-weight:800;
+  line-height:1.25;
+  margin-bottom:8px;
 }
 .df-avg-item .val{
-  font-size:20px;
-  line-height:1.15;
+  font-size:22px;
+  line-height:1.1;
   font-weight:900;
 }
-#global-insights-card .grid.grid-cols-2{
-  gap:10px;
+#global-insights-card{
+  min-height:var(--df-insights-height);
+  height:var(--df-insights-height);
+  max-height:var(--df-insights-height);
 }
-#global-top-payout,#global-top-risk{
-  min-height:0;
+#global-insights-card .df-card-header{margin-bottom:16px;}
+#global-insights-card #global-insights-kpis{
+  gap:12px;
 }
-@media(max-width:1023px){
-  :root{--df-bottom-card-height:400px;}
+#global-insights-card .grid.grid-cols-2{gap:12px;}
+#global-insights-card #global-insights-kpis > div{padding:14px;}
+#global-insights-card #global-insights-kpis .text-base{font-size:1.9rem;line-height:1.05;}
+#global-top-payout,#global-top-risk{min-height:0;}
+#global-top-payout .text-[11px],#global-top-risk .text-[11px],
+#global-top-payout .text-xs,#global-top-risk .text-xs{font-size:12px !important;line-height:1.45;}
+#global-top-payout > *,#global-top-risk > *{padding-top:2px;padding-bottom:2px;}
+#payout-manager-container .df-card-header,
+#gain-cap-card .df-card-header,
+#balance-card .df-card-header{margin-bottom:14px;}
+#payout-manager-container .text-2xl,
+#payout-manager-container .text-3xl,
+#gain-cap-card .text-2xl,
+#gain-cap-card .text-3xl,
+#balance-card .text-2xl,
+#balance-card .text-3xl{line-height:1.05;}
+#payout-manager-container .text-xs,
+#gain-cap-card .text-xs,
+#balance-card .text-xs{line-height:1.45;}
+
+@media(min-width:768px){
+  #df-dashboard-bottom-zone{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+  #cycles-card,
+  #payout-manager-container,
+  #global-insights-card{grid-column:1 / -1;}
+}
+@media(min-width:1280px){
+  #df-dashboard-bottom-zone{
+    grid-template-columns:repeat(12,minmax(0,1fr)) !important;
+  }
+  #balance-card{grid-column:span 3;}
+  #cycles-card{grid-column:span 4;}
+  #gain-cap-card{grid-column:span 2;}
+  #payout-manager-container{grid-column:span 3;}
+  #global-insights-card{grid-column:1 / -1;}
+  #global-insights-card #global-insights-kpis{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+  #global-insights-card .mt-3.grid.grid-cols-1.md\:grid-cols-2.md\:grid-rows-1.auto-rows-fr.gap-3.flex-1.min-h-0{
+    grid-template-columns:1.15fr .85fr;
+  }
+}
+@media(max-width:1279px){
+  :root{
+    --df-balance-height:390px;
+    --df-cycles-height:520px;
+    --df-gain-height:340px;
+    --df-payout-height:420px;
+    --df-insights-height:620px;
+  }
+}
+@media(max-width:767px){
+  :root{
+    --df-bottom-gap:18px;
+    --df-balance-height:auto;
+    --df-cycles-height:auto;
+    --df-gain-height:auto;
+    --df-payout-height:auto;
+    --df-insights-height:auto;
+  }
+  #df-dashboard-bottom-zone{
+    grid-template-columns:minmax(0,1fr) !important;
+    gap:18px;
+  }
+  #df-dashboard-bottom-zone .df-layout-card{
+    height:auto !important;
+    max-height:none !important;
+    min-height:auto !important;
+  }
+  #df-dashboard-bottom-zone .df-layout-card > .df-card-scroll,
+  #df-dashboard-bottom-zone .df-layout-card .df-card-scroll,
+  #balance-card .mt-1,
+  #cycles-card .df-card-scroll,
+  #weekly-list{
+    overflow:visible;
+    padding-right:0;
+  }
+  .df-avg-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .df-avg-item .val{font-size:18px;}
+  #cycles-card .df-card-title{max-width:none;}
+  #global-insights-card #global-insights-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
 
 </style></head>
