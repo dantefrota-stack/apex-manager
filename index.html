@@ -476,7 +476,28 @@ body.dark #calendar-card .df-card-header{border-bottom-color:#334155;}
 }
 .df-month-nav-btn:hover{background:#f8fafc;}
 body.dark .df-month-nav-btn{background:#0f172a; color:#f8fafc; border-color:#334155;}
-#df-dashboard-bottom-zone{grid-template-columns:repeat(1,minmax(0,1fr));}
+#df-dashboard-bottom-zone{grid-template-columns:repeat(1,minmax(0,1fr));align-items:stretch;}
+#df-dashboard-bottom-zone .df-layout-card{display:flex;flex-direction:column;min-height:420px;max-height:420px;overflow:hidden;}
+#df-dashboard-bottom-zone .df-layout-card.df-scroll-card{overflow:hidden;}
+#df-dashboard-bottom-zone .df-layout-card.df-scroll-card > .df-card-scroll{flex:1;min-height:0;overflow:auto;padding-right:4px;scrollbar-gutter:stable;}
+#df-dashboard-bottom-zone .df-layout-card.df-compact-card{min-height:420px;max-height:420px;}
+#balance-card .df-balance-body{flex:1;min-height:0;overflow:auto;padding-right:4px;scrollbar-gutter:stable;}
+#cycles-card .df-card-scroll{flex:1;min-height:0;overflow:auto;padding-right:4px;scrollbar-gutter:stable;}
+.df-avg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+@media(min-width:900px){.df-avg-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
+.df-avg-item{padding:10px 8px;border-radius:12px;background:rgba(255,255,255,.78);border:1px solid rgba(99,102,241,.10);}
+body.dark .df-avg-item{background:rgba(15,23,42,.45);border-color:#334155;}
+.df-avg-item .lbl{font-size:11px;color:#64748b;display:block;margin-bottom:4px;}
+body.dark .df-avg-item .lbl{color:#94a3b8;}
+.df-avg-item .val{font-size:18px;line-height:1.1;font-weight:800;color:#0f172a;display:block;word-break:break-word;}
+body.dark .df-avg-item .val{color:#e2e8f0;}
+.df-layout-item{cursor:grab;}
+.df-layout-item.dragging{opacity:.45;transform:scale(.98);}
+.df-layout-item.drag-over{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.14) inset;}
+.df-layout-item-handle{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;border:1px solid rgba(226,232,240,1);background:#fff;color:#64748b;font-size:16px;font-weight:900;cursor:grab;flex:0 0 auto;}
+body.dark .df-layout-item-handle{background:#0b1220;border-color:#334155;color:#cbd5e1;}
+.df-layout-item-main label{flex:1;}
+
 @media(min-width:1280px){
   #df-dashboard-bottom-zone.xl\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr));}
 }
@@ -992,7 +1013,8 @@ body.dark .df-month-nav-btn{background:#0f172a; color:#f8fafc; border-color:#334
 <input class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600" id="filter-end" type="date"/>
 <button class="bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700" onclick="filterReport()"><i class="w-4 h-4" data-lucide="search"></i></button>
 </div>
-<div class="space-y-3 text-sm">
+<div class="df-card-scroll">
+    <div class="space-y-3 text-sm">
 <div class="flex justify-between border-b border-slate-200 pb-2 dark:border-slate-700"><span class="text-slate-500 dark:text-slate-400">Resultado Período</span><span class="font-bold text-slate-800 dark:text-white" id="custom-result">--</span></div>
 <div class="flex justify-between border-b border-slate-200 pb-2 dark:border-slate-700"><span class="text-slate-500 dark:text-slate-400">Taxa de Acerto (Trades)</span><span class="font-bold text-indigo-600" id="custom-winrate">--</span></div>
 <div class="flex justify-between border-b border-slate-200 pb-2 dark:border-slate-700"><span class="text-slate-500 dark:text-slate-400">Melhor Dia</span><span class="font-bold text-green-600" id="custom-best">--</span></div>
@@ -1030,7 +1052,7 @@ body.dark .df-month-nav-btn{background:#0f172a; color:#f8fafc; border-color:#334
 <button class="col-span-1 py-2 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 flex justify-center items-center gap-1 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" onclick="pdfFilteredReport()"><i class="w-3 h-3" data-lucide="printer"></i> PDF</button>
 <button class="col-span-1 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400" onclick="exportCSV()"><i class="w-3 h-3" data-lucide="download"></i> CSV</button>
 </div>
-</div><div class="dashboard-card p-5 border-l-4 border-l-indigo-500 df-layout-card h-full" id="balance-card">
+</div><div class="dashboard-card p-5 border-l-4 border-l-indigo-500 df-layout-card h-full df-scroll-card" id="balance-card">
 <div class="df-card-header">
   <div class="df-card-header-main">
     <div class="df-card-icon"><i data-lucide="wallet" class="w-5 h-5"></i></div>
@@ -1114,7 +1136,7 @@ body.dark .df-month-nav-btn{background:#0f172a; color:#f8fafc; border-color:#334
     </div>
   </div>
 
-  <div class="dashboard-card p-5 df-layout-card h-full" id="cycles-card">
+  <div class="dashboard-card p-5 df-layout-card h-full df-scroll-card" id="cycles-card">
     <div class="df-card-header">
       <div class="df-card-header-main">
         <div class="df-card-icon"><i data-lucide="calendar-check" class="w-5 h-5"></i></div>
@@ -1136,17 +1158,18 @@ body.dark .df-month-nav-btn{background:#0f172a; color:#f8fafc; border-color:#334
 
       <div class="mt-4 pt-2 bg-indigo-50 dark:bg-slate-800 p-3 rounded-lg border border-indigo-100 dark:border-slate-700">
         <h4 class="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase mb-2 text-center">Médias Diárias (Recentes)</h4>
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-center">
-          <div><span class="text-[10px] text-slate-500 block">5 Dias</span><span id="stats-avg-5" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
-          <div><span class="text-[10px] text-slate-500 block">10 Dias</span><span id="stats-avg-10" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
-          <div><span class="text-[10px] text-slate-500 block">15 Dias</span><span id="stats-avg-15" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
-          <div><span class="text-[10px] text-slate-500 block">20 Dias</span><span id="stats-avg-20" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
-          <div><span class="text-[10px] text-slate-500 block">25 Dias</span><span id="stats-avg-25" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
-          <div><span class="text-[10px] text-slate-500 block">30 Dias</span><span id="stats-avg-30" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
+        <div class="df-avg-grid text-center">
+          <div class="df-avg-item"><span class="lbl">5 Dias</span><span id="stats-avg-5" class="val">--</span></div>
+          <div class="df-avg-item"><span class="lbl">10 Dias</span><span id="stats-avg-10" class="val">--</span></div>
+          <div class="df-avg-item"><span class="lbl">15 Dias</span><span id="stats-avg-15" class="val">--</span></div>
+          <div class="df-avg-item"><span class="lbl">20 Dias</span><span id="stats-avg-20" class="val">--</span></div>
+          <div class="df-avg-item"><span class="lbl">25 Dias</span><span id="stats-avg-25" class="val">--</span></div>
+          <div class="df-avg-item"><span class="lbl">30 Dias</span><span id="stats-avg-30" class="val">--</span></div>
         </div>
       </div>
     </div>
     <div id="weekly-list" class="mt-4 space-y-3 text-sm text-slate-500"></div>
+    </div>
   </div>
 </div>
 <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start" id="df-dashboard-bottom-zone"><div class="dashboard-card p-5 border-l-4 border-l-green-500 relative overflow-hidden df-layout-card h-full" id="gain-cap-card">
@@ -1160,7 +1183,7 @@ body.dark .df-month-nav-btn{background:#0f172a; color:#f8fafc; border-color:#334
       </div>
     </div>
   </div>
-</div><div class="dashboard-card p-4 border-l-4 border-l-yellow-500 relative bg-white dark:bg-slate-800 df-layout-card h-full" id="payout-manager-container"></div><div class="dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 flex flex-col overflow-hidden df-layout-card h-full" id="global-insights-card">
+</div><div class="dashboard-card p-4 border-l-4 border-l-yellow-500 relative bg-white dark:bg-slate-800 df-layout-card h-full df-scroll-card" id="payout-manager-container"></div><div class="dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 flex flex-col overflow-hidden df-layout-card h-full df-scroll-card" id="global-insights-card">
 <div class="df-card-header">
 <div class="df-card-header-main">
 <div class="df-card-icon"><i class="w-5 h-5" data-lucide="activity"></i></div>
@@ -1174,6 +1197,7 @@ body.dark .df-month-nav-btn{background:#0f172a; color:#f8fafc; border-color:#334
             Resumo
         </button>
 </div>
+<div class="df-card-scroll">
 <div class="grid grid-cols-2 gap-2 text-xs" id="global-insights-kpis">
 <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-2">
 <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold" id="global-kpi-accounts-label">Contas</div>
@@ -9701,9 +9725,9 @@ We normalize daily buckets so:
   };
 
   const DEFAULT_LAYOUT = {
-    topOrder: ['performance', 'period', 'balance'],
+    topOrder: ['performance', 'period'],
     centerOrder: ['calendar'],
-    bottomOrder: ['cycles', 'gaincap', 'payout', 'insights'],
+    bottomOrder: ['balance', 'cycles', 'gaincap', 'payout', 'insights'],
     visible: {
       performance: true,
       period: true,
@@ -9865,8 +9889,12 @@ We normalize daily buckets so:
       const meta = LABELS[key];
       const item = document.createElement('div');
       item.className = 'df-layout-item';
+      item.draggable = true;
+      item.setAttribute('data-layout-item', key);
+      item.setAttribute('data-layout-order', orderKey);
       item.innerHTML = `
         <div class="df-layout-item-main">
+          <span class="df-layout-item-handle" title="Arrastar">⋮⋮</span>
           <label>
             <input type="checkbox" data-layout-toggle="${key}" ${layout.visible[key] ? 'checked' : ''}>
             <span class="df-layout-item-text">
@@ -9888,6 +9916,17 @@ We normalize daily buckets so:
     renderGroup(document.getElementById('df-layout-top-list'), 'topOrder');
     renderGroup(document.getElementById('df-layout-center-list'), 'centerOrder');
     renderGroup(document.getElementById('df-layout-bottom-list'), 'bottomOrder');
+  }
+
+
+  function reorderWithin(order, fromKey, toKey){
+    const next = order.slice();
+    const fromIndex = next.indexOf(fromKey);
+    const toIndex = next.indexOf(toKey);
+    if(fromIndex === -1 || toIndex === -1 || fromIndex === toIndex) return next;
+    const [moved] = next.splice(fromIndex, 1);
+    next.splice(toIndex, 0, moved);
+    return next;
   }
 
   function openModal(){
