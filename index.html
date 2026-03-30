@@ -505,6 +505,97 @@ body.dark .df-layout-item-handle{background:#0b1220;border-color:#334155;color:#
 @media(min-width:900px){.df-layout-body{grid-template-columns:1fr 1fr;}}
 @media(min-width:1200px){.df-layout-body{grid-template-columns:1fr 1fr 1fr;}}
 
+/* v4 structural fixes */
+:root{--df-bottom-card-height:430px;}
+#df-dashboard-top-zone,#df-dashboard-center-zone,#df-dashboard-bottom-zone{min-width:0;}
+#df-dashboard-center-zone{display:flex;flex-direction:column;gap:24px;}
+#df-dashboard-bottom-zone{
+  display:grid !important;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr)) !important;
+  gap:24px;
+  align-items:start !important;
+}
+#df-dashboard-bottom-zone .df-layout-card{
+  min-width:0;
+  width:100%;
+  min-height:var(--df-bottom-card-height);
+  max-height:var(--df-bottom-card-height);
+  height:var(--df-bottom-card-height);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+#df-dashboard-bottom-zone .df-layout-card > .df-card-scroll,
+#df-dashboard-bottom-zone .df-layout-card .df-card-scroll{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  padding-right:4px;
+  scrollbar-gutter:stable;
+}
+#df-dashboard-bottom-zone #payout-manager-container{
+  overflow:auto !important;
+}
+#balance-card{
+  min-height:var(--df-bottom-card-height);
+  max-height:var(--df-bottom-card-height);
+}
+#balance-card .mt-1{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  padding-right:4px;
+  scrollbar-gutter:stable;
+}
+#cycles-card{
+  display:flex;
+  flex-direction:column;
+  min-height:430px;
+}
+#cycles-card > .space-y-3{flex:0 0 auto;}
+#weekly-list{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  padding-right:4px;
+  scrollbar-gutter:stable;
+  border-top:1px solid rgba(226,232,240,1);
+  margin-top:16px !important;
+  padding-top:16px;
+}
+body.dark #weekly-list{border-top-color:#334155;}
+.df-avg-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+@media(min-width:768px){
+  .df-avg-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+}
+.df-avg-item{
+  min-height:78px;
+  padding:12px 10px;
+}
+.df-avg-item .lbl{
+  font-size:12px;
+  font-weight:700;
+  margin-bottom:6px;
+}
+.df-avg-item .val{
+  font-size:20px;
+  line-height:1.15;
+  font-weight:900;
+}
+#global-insights-card .grid.grid-cols-2{
+  gap:10px;
+}
+#global-top-payout,#global-top-risk{
+  min-height:0;
+}
+@media(max-width:1023px){
+  :root{--df-bottom-card-height:400px;}
+}
+
 </style></head>
 <body class="pb-12 transition-colors duration-300">
 <div aria-hidden="true" aria-modal="true" class="d2-info-overlay" id="d2InfoOverlay" role="dialog">
@@ -1172,7 +1263,7 @@ body.dark .df-layout-item-handle{background:#0b1220;border-color:#334155;color:#
     </div>
   </div>
 </div>
-<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start" id="df-dashboard-bottom-zone"><div class="dashboard-card p-5 border-l-4 border-l-green-500 relative overflow-hidden df-layout-card h-full" id="gain-cap-card">
+<div class="grid grid-cols-1 gap-6 items-start" id="df-dashboard-bottom-zone"><div class="dashboard-card p-5 border-l-4 border-l-green-500 relative overflow-hidden df-layout-card h-full" id="gain-cap-card">
   <div class="df-card-header mb-0">
     <div class="df-card-header-main">
       <div class="df-card-icon"><i data-lucide="target" class="w-5 h-5"></i></div>
@@ -9711,7 +9802,7 @@ We normalize daily buckets so:
 </script>
 </div><script>
 (function(){
-  const STORAGE_KEY = 'df_dashboard_layout_v2';
+  const STORAGE_KEY = 'df_dashboard_layout_v3';
 
   const LABELS = {
     performance: { title: 'Evolução de Performance', desc: 'Gráfico principal de evolução' },
