@@ -510,10 +510,10 @@ body.dark .df-layout-item-handle{background:#0b1220;border-color:#334155;color:#
   --df-card-radius:18px;
   --df-bottom-gap:24px;
   --df-balance-height:370px;
-  --df-cycles-height:660px;
-  --df-gain-height:370px;
-  --df-payout-height:430px;
-  --df-insights-height:560px;
+  --df-cycles-height:760px;
+  --df-gain-height:320px;
+  --df-payout-height:520px;
+  --df-insights-height:640px;
 }
 #df-dashboard-top-zone,#df-dashboard-center-zone,#df-dashboard-bottom-zone{min-width:0;}
 #df-dashboard-center-zone{display:flex;flex-direction:column;gap:24px;}
@@ -571,19 +571,19 @@ body.dark #balance-card .df-balance-body::-webkit-scrollbar-thumb{background:rgb
 }
 #payout-manager-container{
   min-height:var(--df-payout-height);
-  height:var(--df-payout-height);
-  max-height:var(--df-payout-height);
-  overflow:hidden !important;
+  height:auto;
+  max-height:none;
+  overflow:visible !important;
 }
 #payout-manager-container{padding:18px !important;}
-#payout-manager-container .df-card-header{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:14px;}
+#payout-manager-container .df-card-header{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:14px;}
 #payout-manager-container .df-card-header .df-card-copy{padding-right:6px;}
 #payout-manager-container .df-card-title{font-size:18px;line-height:1.05;}
-#payout-manager-container .df-payout-body{display:flex;flex-direction:column;gap:14px;height:100%;min-height:0;}
-#payout-manager-container .df-payout-window{display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-start;gap:4px;min-width:124px;padding:10px 12px;border-radius:14px;background:rgba(79,70,229,.08);border:1px solid rgba(99,102,241,.14);}
-#payout-manager-container .df-payout-window-label{font-size:11px;font-weight:900;line-height:1.15;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;text-align:right;}
-#payout-manager-container .df-payout-window-value{font-size:18px;font-weight:900;line-height:1.1;color:#4f46e5;text-align:right;word-break:keep-all;}
-#payout-manager-container .df-payout-window-info{display:inline-flex;align-items:center;gap:6px;justify-content:flex-end;}
+#payout-manager-container .df-payout-body{display:flex;flex-direction:column;gap:16px;height:100%;min-height:0;}
+#payout-manager-container .df-payout-window{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px 14px;width:100%;padding:12px 14px;border-radius:14px;background:rgba(79,70,229,.08);border:1px solid rgba(99,102,241,.14);}
+#payout-manager-container .df-payout-window-label{font-size:11px;font-weight:900;line-height:1.15;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;text-align:left;}
+#payout-manager-container .df-payout-window-value{font-size:20px;font-weight:900;line-height:1.1;color:#4f46e5;text-align:right;word-break:keep-all;white-space:nowrap;}
+#payout-manager-container .df-payout-window-info{display:inline-flex;align-items:center;gap:6px;justify-content:flex-start;}
 #payout-manager-container .df-payout-summary{background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:12px 12px 10px;}
 body.dark #payout-manager-container .df-payout-summary{background:rgba(15,23,42,.55);border-color:#475569;}
 #payout-manager-container .df-payout-summary-row{display:flex;justify-content:space-between;gap:16px;font-size:12px;line-height:1.45;padding:3px 0;}
@@ -591,6 +591,7 @@ body.dark #payout-manager-container .df-payout-summary{background:rgba(15,23,42,
 #payout-manager-container .df-payout-summary-row.is-total{border-top:1px solid #fde68a;margin-top:6px;padding-top:8px;}
 body.dark #payout-manager-container .df-payout-summary-row.is-total{border-top-color:#475569;}
 #payout-manager-container #payout-form-area{margin-top:auto;}
+#payout-manager-container .df-card-scroll{overflow:visible !important;padding-right:0 !important;}
 @media(max-width:1279px){
   #payout-manager-container .df-card-header{grid-template-columns:1fr;}
   #payout-manager-container .df-payout-window{align-items:flex-start;text-align:left;min-width:0;width:100%;}
@@ -600,14 +601,20 @@ body.dark #payout-manager-container .df-payout-summary-row.is-total{border-top-c
 }
 #cycles-card{
   min-height:var(--df-cycles-height);
-  height:var(--df-cycles-height);
-  max-height:var(--df-cycles-height);
+  height:auto;
+  max-height:none;
+  overflow:auto !important;
+  scrollbar-gutter:stable;
+  scrollbar-width:thin;
 }
 #cycles-card > .space-y-3{flex:0 0 auto;}
 #cycles-card{padding-bottom:16px;}
 #cycles-card .space-y-3.text-sm{display:flex;flex-direction:column;gap:14px;}
 #cycles-card .space-y-3.text-sm > div{margin-top:0 !important;}
-#cycles-card .df-card-scroll{padding-bottom:10px;}
+#cycles-card .df-card-scroll{padding-bottom:10px;overflow:visible !important;}
+#cycles-card::-webkit-scrollbar{width:10px;}
+#cycles-card::-webkit-scrollbar-thumb{background:rgba(148,163,184,.55);border-radius:999px;}
+body.dark #cycles-card::-webkit-scrollbar-thumb{background:rgba(148,163,184,.35);}
 #cycles-card .df-card-header{margin-bottom:16px;}
 #cycles-card .df-card-title{font-size:17px;line-height:1.2;max-width:none;}
 #cycles-card .df-card-subtitle{font-size:12px;line-height:1.45;max-width:none;}
@@ -619,6 +626,7 @@ body.dark #payout-manager-container .df-payout-summary-row.is-total{border-top-c
   border-top:1px solid rgba(226,232,240,1);
   margin-top:16px !important;
   padding-top:16px;
+  overflow:visible !important;
 }
 body.dark #weekly-list{border-top-color:#334155;}
 .df-avg-grid{
@@ -674,9 +682,8 @@ body.dark #weekly-list{border-top-color:#334155;}
   #df-dashboard-bottom-zone{
     grid-template-columns:repeat(2,minmax(0,1fr)) !important;
   }
-  #cycles-card,
-  #payout-manager-container,
-  #global-insights-card{grid-column:1 / -1;}
+  #balance-card,#gain-cap-card{grid-column:span 1;}
+  #cycles-card,#payout-manager-container,#global-insights-card{grid-column:1 / -1;}
 }
 @media(min-width:1280px){
   #df-dashboard-bottom-zone{
@@ -684,9 +691,9 @@ body.dark #weekly-list{border-top-color:#334155;}
   }
   #balance-card{grid-column:span 3;}
   #cycles-card{grid-column:span 5;}
-  #gain-cap-card{grid-column:span 2;}
-  #payout-manager-container{grid-column:span 2;}
-  #global-insights-card{grid-column:1 / -1;}
+  #payout-manager-container{grid-column:span 4;}
+  #gain-cap-card{grid-column:span 3;}
+  #global-insights-card{grid-column:span 9;}
   #global-insights-card #global-insights-kpis{
     grid-template-columns:repeat(4,minmax(0,1fr));
   }
@@ -697,9 +704,9 @@ body.dark #weekly-list{border-top-color:#334155;}
 @media(max-width:1279px){
   :root{
     --df-balance-height:390px;
-    --df-cycles-height:520px;
-    --df-gain-height:340px;
-    --df-payout-height:420px;
+    --df-cycles-height:620px;
+    --df-gain-height:300px;
+    --df-payout-height:460px;
     --df-insights-height:620px;
   }
 }
@@ -9948,7 +9955,7 @@ We normalize daily buckets so:
 </script>
 </div><script>
 (function(){
-  const STORAGE_KEY = 'df_dashboard_layout_v3';
+  const STORAGE_KEY = 'df_dashboard_layout_v4';
 
   const LABELS = {
     performance: { title: 'Evolução de Performance', desc: 'Gráfico principal de evolução' },
