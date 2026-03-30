@@ -439,6 +439,51 @@ body.dark .df-layout-actions button{background:#1e293b;color:#f8fafc;}
 .df-layout-reset{background:#e2e8f0;color:#0f172a;}
 .df-layout-done{background:#4f46e5;color:#fff;margin-left:auto;}
 body.dark .df-layout-reset{background:#1e293b;color:#f8fafc;}
+
+.df-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
+.df-card-header-main{display:flex;align-items:flex-start;gap:12px;min-width:0;}
+.df-card-icon{
+  width:40px;height:40px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;
+  background:rgba(79,70,229,.10); color:#4f46e5; flex-shrink:0;
+}
+body.dark .df-card-icon{background:rgba(99,102,241,.14); color:#c7d2fe;}
+.df-card-copy{min-width:0;}
+.df-card-kicker{
+  display:block; font-size:11px; font-weight:900; text-transform:uppercase; letter-spacing:.08em;
+  color:#94a3b8; line-height:1.2;
+}
+.df-card-title{
+  display:block; margin-top:3px; font-size:22px; font-weight:900; line-height:1.1; color:#0f172a;
+}
+.df-card-title.sm{font-size:16px; line-height:1.2;}
+.df-card-subtitle{
+  display:block; margin-top:5px; font-size:12px; color:#64748b; line-height:1.45;
+}
+body.dark .df-card-title{color:#f8fafc;}
+body.dark .df-card-subtitle{color:#94a3b8;}
+.df-card-header-actions{display:flex; align-items:center; gap:8px; flex-shrink:0;}
+#df-dashboard-center-zone .df-layout-card,
+#df-dashboard-bottom-zone .df-layout-card,
+#df-dashboard-top-secondary .df-layout-card{align-self:stretch;}
+#df-dashboard-center-zone{display:flex; flex-direction:column; gap:24px;}
+#calendar-card .df-card-header{padding:20px 20px 16px; margin-bottom:0; border-bottom:1px solid rgba(226,232,240,1);}
+body.dark #calendar-card .df-card-header{border-bottom-color:#334155;}
+#calendar-card .df-card-title{font-size:18px;}
+#calendar-card table thead{position:sticky; top:0; z-index:1;}
+.df-month-nav-btn{
+  width:40px; height:40px; border-radius:9999px; border:1px solid rgba(226,232,240,1); background:#fff; color:#0f172a;
+  display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+}
+.df-month-nav-btn:hover{background:#f8fafc;}
+body.dark .df-month-nav-btn{background:#0f172a; color:#f8fafc; border-color:#334155;}
+#df-dashboard-bottom-zone{grid-template-columns:repeat(1,minmax(0,1fr));}
+@media(min-width:1280px){
+  #df-dashboard-bottom-zone.xl\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr));}
+}
+.df-layout-body{grid-template-columns:1fr;}
+@media(min-width:900px){.df-layout-body{grid-template-columns:1fr 1fr;}}
+@media(min-width:1200px){.df-layout-body{grid-template-columns:1fr 1fr 1fr;}}
+
 </style></head>
 <body class="pb-12 transition-colors duration-300">
 <div aria-hidden="true" aria-modal="true" class="d2-info-overlay" id="d2InfoOverlay" role="dialog">
@@ -985,10 +1030,18 @@ body.dark .df-layout-reset{background:#1e293b;color:#f8fafc;}
 <button class="col-span-1 py-2 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 flex justify-center items-center gap-1 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200" onclick="pdfFilteredReport()"><i class="w-3 h-3" data-lucide="printer"></i> PDF</button>
 <button class="col-span-1 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400" onclick="exportCSV()"><i class="w-3 h-3" data-lucide="download"></i> CSV</button>
 </div>
-</div><div class="dashboard-card p-4 border-l-4 border-l-indigo-500 df-layout-card h-full" id="balance-card">
-<p class="text-xs font-bold text-gray-400 uppercase">Saldo Atual (Equity)</p>
-<h2 class="text-3xl font-extrabold text-slate-800 dark:text-white mt-1" id="current-equity">$0.00</h2>
-<div class="mt-3">
+</div><div class="dashboard-card p-5 border-l-4 border-l-indigo-500 df-layout-card h-full" id="balance-card">
+<div class="df-card-header">
+  <div class="df-card-header-main">
+    <div class="df-card-icon"><i data-lucide="wallet" class="w-5 h-5"></i></div>
+    <div class="df-card-copy">
+      <span class="df-card-kicker">Saldo Atual</span>
+      <span class="df-card-title" id="current-equity">$0.00</span>
+      <span class="df-card-subtitle">Equity atual, progresso e buffer do drawdown.</span>
+    </div>
+  </div>
+</div>
+<div class="mt-1">
 <div class="flex justify-between text-[10px] uppercase font-bold text-slate-400 mb-1">
 <span>Início</span>
 <span>Meta</span>
@@ -1026,63 +1079,96 @@ body.dark .df-layout-reset{background:#1e293b;color:#f8fafc;}
 </div>
 </div>
 </div></div></div>
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-<div class="lg:col-span-2 space-y-4">
-<div class="flex justify-between items-center dashboard-card p-3">
-<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full no-print" onclick="changeMonth(-1)"><i data-lucide="chevron-left"></i></button>
-<h2 class="text-xl font-bold text-slate-700 dark:text-slate-200" id="calendar-title">--</h2>
-<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full no-print" onclick="changeMonth(1)"><i data-lucide="chevron-right"></i></button>
+
+<div class="space-y-6" id="df-dashboard-center-zone">
+  <div class="dashboard-card overflow-hidden df-layout-card" id="calendar-card">
+    <div class="df-card-header">
+      <div class="df-card-header-main">
+        <div class="df-card-icon"><i data-lucide="calendar-days" class="w-5 h-5"></i></div>
+        <div class="df-card-copy">
+          <span class="df-card-kicker">Calendário de Trades</span>
+          <span class="df-card-title sm" id="calendar-title">--</span>
+          <span class="df-card-subtitle">Lançamentos diários, notas e marcações operacionais.</span>
+        </div>
+      </div>
+      <div class="df-card-header-actions no-print">
+        <button class="df-month-nav-btn" onclick="changeMonth(-1)" type="button" aria-label="Mês anterior"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
+        <button class="df-month-nav-btn" onclick="changeMonth(1)" type="button" aria-label="Próximo mês"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm text-left">
+        <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs dark:bg-slate-800 dark:text-slate-400">
+          <tr>
+            <th class="px-2 py-3 md:px-4">Data</th>
+            <th class="px-1 py-3 text-center min-w-[90px]">Abertura</th>
+            <th class="px-1 py-3 text-center min-w-[90px]">Trade 1</th>
+            <th class="px-1 py-3 text-center min-w-[90px]">Trade 2</th>
+            <th class="px-2 py-3 md:px-4 text-right">Total</th>
+            <th class="px-1 py-3 text-center w-10">Nota</th>
+            <th class="px-1 py-3 text-center w-10"><i data-lucide="coffee" class="w-3 h-3 mx-auto"></i></th>
+          </tr>
+        </thead>
+        <tbody id="calendar-body" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="dashboard-card p-5 df-layout-card h-full" id="cycles-card">
+    <div class="df-card-header">
+      <div class="df-card-header-main">
+        <div class="df-card-icon"><i data-lucide="calendar-check" class="w-5 h-5"></i></div>
+        <div class="df-card-copy">
+          <span class="df-card-kicker">Ciclos Atuais</span>
+          <span class="df-card-title sm">Performance por Janela</span>
+          <span class="df-card-subtitle">Resumo mensal, ciclos e médias diárias recentes.</span>
+        </div>
+      </div>
+      <div class="df-card-header-actions">
+        <button type="button" class="info-icon-btn" data-info-key="selectedAccount" aria-label="Info">i</button>
+      </div>
+    </div>
+    <div class="space-y-3 text-sm">
+      <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button type="button" id="label-month" class="period-link text-slate-500 font-medium" title="Ver detalhes do período">Mensal (1 a 31)</button><span id="stats-month" class="font-bold text-slate-800 dark:text-slate-200">$0.00</span></div>
+      <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button type="button" id="label-c10" class="period-link text-slate-500" title="Ver detalhes do período">Ciclo 10 a 10</button><span id="stats-c10" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
+      <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button type="button" id="label-c15" class="period-link text-slate-500" title="Ver detalhes do período">Ciclo 15 a 15</button><span id="stats-c15" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
+      <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button type="button" id="label-c20" class="period-link text-slate-500" title="Ver detalhes do período">Ciclo 20 a 20</button><span id="stats-c20" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
+
+      <div class="mt-4 pt-2 bg-indigo-50 dark:bg-slate-800 p-3 rounded-lg border border-indigo-100 dark:border-slate-700">
+        <h4 class="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase mb-2 text-center">Médias Diárias (Recentes)</h4>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-center">
+          <div><span class="text-[10px] text-slate-500 block">5 Dias</span><span id="stats-avg-5" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
+          <div><span class="text-[10px] text-slate-500 block">10 Dias</span><span id="stats-avg-10" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
+          <div><span class="text-[10px] text-slate-500 block">15 Dias</span><span id="stats-avg-15" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
+          <div><span class="text-[10px] text-slate-500 block">20 Dias</span><span id="stats-avg-20" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
+          <div><span class="text-[10px] text-slate-500 block">25 Dias</span><span id="stats-avg-25" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
+          <div><span class="text-[10px] text-slate-500 block">30 Dias</span><span id="stats-avg-30" class="font-bold text-sm text-slate-700 dark:text-slate-300">--</span></div>
+        </div>
+      </div>
+    </div>
+    <div id="weekly-list" class="mt-4 space-y-3 text-sm text-slate-500"></div>
+  </div>
 </div>
-<div class="dashboard-card overflow-hidden">
-<div class="overflow-x-auto">
-<table class="w-full text-sm text-left">
-<thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs dark:bg-slate-800 dark:text-slate-400">
-<tr>
-<th class="px-2 py-3 md:px-4">Data</th>
-<th class="px-1 py-3 text-center min-w-[90px]">Abertura</th>
-<th class="px-1 py-3 text-center min-w-[90px]">Trade 1</th>
-<th class="px-1 py-3 text-center min-w-[90px]">Trade 2</th>
-<th class="px-2 py-3 md:px-4 text-right">Total</th>
-<th class="px-1 py-3 text-center w-10">Nota</th>
-<th class="px-1 py-3 text-center w-10"><i class="w-3 h-3 mx-auto" data-lucide="coffee"></i></th>
-</tr>
-</thead>
-<tbody class="divide-y divide-slate-100 dark:divide-slate-700" id="calendar-body"></tbody>
-</table>
-</div>
-</div>
-</div>
-<div class="lg:col-span-1 space-y-4">
-<div class="dashboard-card p-5">
-<h3 class="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wide flex items-center gap-2 dark:text-white"><i class="w-4 h-4" data-lucide="calendar-check"></i> Performance (Ciclos Atuais)</h3>
-<div class="space-y-3 text-sm">
-<div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button class="period-link text-slate-500 font-medium" id="label-month" title="Ver detalhes do período" type="button">Mensal (1 a 31)</button><span class="font-bold text-slate-800 dark:text-slate-200" id="stats-month">$0.00</span></div>
-<div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button class="period-link text-slate-500" id="label-c10" title="Ver detalhes do período" type="button">Ciclo 10 a 10</button><span class="font-bold text-slate-700 dark:text-slate-300" id="stats-c10">$0.00</span></div>
-<div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button class="period-link text-slate-500" id="label-c15" title="Ver detalhes do período" type="button">Ciclo 15 a 15</button><span class="font-bold text-slate-700 dark:text-slate-300" id="stats-c15">$0.00</span></div>
-<div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button class="period-link text-slate-500" id="label-c20" title="Ver detalhes do período" type="button">Ciclo 20 a 20</button><span class="font-bold text-slate-700 dark:text-slate-300" id="stats-c20">$0.00</span></div>
-<div class="mt-4 pt-2 bg-indigo-50 dark:bg-slate-800 p-3 rounded-lg border border-indigo-100 dark:border-slate-700">
-<h4 class="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase mb-2 text-center">Médias Diárias (Recentes)</h4>
-<div class="grid grid-cols-3 gap-2 text-center">
-<div><span class="text-[10px] text-slate-500 block">5 Dias</span><span class="font-bold text-sm text-slate-700 dark:text-slate-300" id="stats-avg-5">--</span></div>
-<div><span class="text-[10px] text-slate-500 block">10 Dias</span><span class="font-bold text-sm text-slate-700 dark:text-slate-300" id="stats-avg-10">--</span></div>
-<div><span class="text-[10px] text-slate-500 block">15 Dias</span><span class="font-bold text-sm text-slate-700 dark:text-slate-300" id="stats-avg-15">--</span></div>
-<div><span class="text-[10px] text-slate-500 block">20 Dias</span><span class="font-bold text-sm text-slate-700 dark:text-slate-300" id="stats-avg-20">--</span></div>
-<div><span class="text-[10px] text-slate-500 block">25 Dias</span><span class="font-bold text-sm text-slate-700 dark:text-slate-300" id="stats-avg-25">--</span></div>
-<div><span class="text-[10px] text-slate-500 block">30 Dias</span><span class="font-bold text-sm text-slate-700 dark:text-slate-300" id="stats-avg-30">--</span></div>
-</div>
-</div>
-</div>
-<div class="mt-4 space-y-3 text-sm text-slate-500" id="weekly-list"></div>
-</div>
-</div>
-</div><div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start" id="df-dashboard-bottom-zone"><div class="dashboard-card p-4 border-l-4 border-l-green-500 relative overflow-hidden df-layout-card h-full" id="gain-cap-card">
-<div class="flex justify-between items-start"><div><p class="text-xs font-bold text-green-900 uppercase flex items-center gap-1 dark:text-green-400"><i class="w-3 h-3" data-lucide="target"></i> Teto 30% (Hoje)</p><h2 class="text-2xl font-bold text-green-600 mt-1" id="gain-cap">$0.00</h2></div></div>
-<p class="text-xs text-gray-500 mt-1 dark:text-slate-400">Limite sugerido p/ consistência.</p>
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start" id="df-dashboard-bottom-zone"><div class="dashboard-card p-5 border-l-4 border-l-green-500 relative overflow-hidden df-layout-card h-full" id="gain-cap-card">
+  <div class="df-card-header mb-0">
+    <div class="df-card-header-main">
+      <div class="df-card-icon"><i data-lucide="target" class="w-5 h-5"></i></div>
+      <div class="df-card-copy">
+        <span class="df-card-kicker">Teto 30% (Hoje)</span>
+        <span class="df-card-title text-green-600" id="gain-cap">$0.00</span>
+        <span class="df-card-subtitle">Limite sugerido para consistência operacional no dia.</span>
+      </div>
+    </div>
+  </div>
 </div><div class="dashboard-card p-4 border-l-4 border-l-yellow-500 relative bg-white dark:bg-slate-800 df-layout-card h-full" id="payout-manager-container"></div><div class="dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 flex flex-col overflow-hidden df-layout-card h-full" id="global-insights-card">
-<div class="flex items-center justify-between mb-3">
-<div class="flex items-center gap-2">
-<i class="w-4 h-4 text-indigo-600" data-lucide="activity"></i>
-<span class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase" id="global-insights-title">Insights Globais</span>
+<div class="df-card-header">
+<div class="df-card-header-main">
+<div class="df-card-icon"><i class="w-5 h-5" data-lucide="activity"></i></div>
+<div class="df-card-copy">
+<span class="df-card-kicker" id="global-insights-title">Insights Globais</span>
+<span class="df-card-title sm">Visão Consolidada</span>
+<span class="df-card-subtitle">Leitura global entre contas, risco de DD e proximidade de saque.</span>
+</div>
 </div>
 <button class="px-2.5 py-1.5 rounded-md bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-200 text-[11px] font-bold" onclick="openAccountsOverview()" type="button">
             Resumo
@@ -1128,14 +1214,14 @@ body.dark .df-layout-reset{background:#1e293b;color:#f8fafc;}
 </div>
 </div></div>
 <!-- Help Popover -->
-<div class="fixed bottom-5 right-5 z-[70] no-print" id="df-layout-controls"><button class="df-layout-toggle-btn" id="df-layout-toggle" type="button">Layout</button></div>
+<div class="fixed bottom-5 right-5 z-[70] no-print" id="df-layout-controls"><button class="df-layout-toggle-btn" id="df-layout-toggle" type="button">Layout do Painel</button></div>
 <div aria-hidden="true" class="df-layout-modal hidden no-print" id="df-layout-modal">
 <div class="df-layout-backdrop" data-close-layout="1"></div>
 <div class="df-layout-panel">
 <div class="df-layout-header">
 <div>
 <h3>Layout do Painel</h3>
-<p>Escolha quais cards ficam visíveis e ajuste a ordem sem afetar as funções do sistema.</p>
+<p>Escolha quais blocos ficam visíveis e ajuste a ordem sem afetar as funções do sistema.</p>
 </div>
 <button aria-label="Fechar" class="df-layout-close" id="df-layout-close" type="button">×</button>
 </div>
@@ -1143,6 +1229,10 @@ body.dark .df-layout-reset{background:#1e293b;color:#f8fafc;}
 <div class="df-layout-group">
 <div class="df-layout-group-title">Parte Superior</div>
 <div class="df-layout-list" id="df-layout-top-list"></div>
+</div>
+<div class="df-layout-group">
+<div class="df-layout-group-title">Área Central</div>
+<div class="df-layout-list" id="df-layout-center-list"></div>
 </div>
 <div class="df-layout-group">
 <div class="df-layout-group-title">Abaixo do Calendário</div>
@@ -3969,9 +4059,19 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const btnAction = canRequest ? "togglePayoutForm()" : "";
 
             const html = `
-                <div class="flex justify-between items-start mb-2">
-                    <div><p class="text-xs font-bold text-yellow-700 dark:text-yellow-500 uppercase tracking-wider">Gestão de Saques</p><div class="flex items-baseline gap-1 mt-1"><span class="text-2xl font-extrabold text-slate-800 dark:text-white">${formatCurrency(availablePayout)}</span><span class="text-xs font-medium text-slate-500">Disponível</span></div></div>
-                    <div class="text-right"><p class="text-[10px] font-bold text-slate-400 uppercase">Próxima Janela</p><p class="text-sm font-bold text-indigo-600 dark:text-indigo-400">${getNextWindow()}</p></div>
+                <div class="df-card-header">
+                    <div class="df-card-header-main">
+                        <div class="df-card-icon"><i data-lucide="wallet" class="w-5 h-5"></i></div>
+                        <div class="df-card-copy">
+                            <span class="df-card-kicker">Gestão de Saques</span>
+                            <span class="df-card-title">${formatCurrency(availablePayout)}</span>
+                            <span class="df-card-subtitle">Valor liberado no momento para nova solicitação.</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">Próxima Janela</p>
+                        <p class="text-sm font-bold text-indigo-600 dark:text-indigo-400">${getNextWindow()}</p>
+                    </div>
                 </div>
                 <div class="bg-yellow-50 dark:bg-slate-800 rounded border border-yellow-100 dark:border-slate-700 p-2 mb-3">
                     <div class="flex justify-between text-xs mb-1"><span class="text-slate-500">Saldo Atual:</span><span class="font-mono font-bold text-slate-700 dark:text-slate-300">${formatCurrency(currentEquity)}</span></div>
@@ -9587,12 +9687,14 @@ We normalize daily buckets so:
 </script>
 </div><script>
 (function(){
-  const STORAGE_KEY = 'df_dashboard_layout_v1';
+  const STORAGE_KEY = 'df_dashboard_layout_v2';
 
   const LABELS = {
     performance: { title: 'Evolução de Performance', desc: 'Gráfico principal de evolução' },
     period: { title: 'Análise por Período', desc: 'Filtros, KPIs e exportações' },
     balance: { title: 'Saldo Atual', desc: 'Equity atual e drawdown' },
+    calendar: { title: 'Calendário de Trades', desc: 'Lançamentos diários e notas' },
+    cycles: { title: 'Performance por Janela', desc: 'Ciclos atuais e médias recentes' },
     gaincap: { title: 'Teto de Hoje', desc: 'Limite sugerido de consistência' },
     payout: { title: 'Gestão de Saques', desc: 'Controle de pedidos e histórico' },
     insights: { title: 'Insights Globais', desc: 'Visão consolidada entre contas' }
@@ -9600,11 +9702,14 @@ We normalize daily buckets so:
 
   const DEFAULT_LAYOUT = {
     topOrder: ['performance', 'period', 'balance'],
-    bottomOrder: ['gaincap', 'payout', 'insights'],
+    centerOrder: ['calendar'],
+    bottomOrder: ['cycles', 'gaincap', 'payout', 'insights'],
     visible: {
       performance: true,
       period: true,
       balance: true,
+      calendar: true,
+      cycles: true,
       gaincap: true,
       payout: true,
       insights: true
@@ -9615,6 +9720,8 @@ We normalize daily buckets so:
     performance: 'performance-chart-card',
     period: 'period-analysis-card',
     balance: 'balance-card',
+    calendar: 'calendar-card',
+    cycles: 'cycles-card',
     gaincap: 'gain-cap-card',
     payout: 'payout-manager-container',
     insights: 'global-insights-card'
@@ -9628,9 +9735,9 @@ We normalize daily buckets so:
     const base = cloneDefault();
     if(!raw || typeof raw !== 'object') return base;
 
-    ['topOrder','bottomOrder'].forEach(key => {
+    ['topOrder','centerOrder','bottomOrder'].forEach(key => {
       if(Array.isArray(raw[key])){
-        const allowed = key === 'topOrder' ? base.topOrder.slice() : base.bottomOrder.slice();
+        const allowed = base[key].slice();
         const seen = new Set();
         const next = [];
         raw[key].forEach(item => {
@@ -9671,16 +9778,26 @@ We normalize daily buckets so:
   function ensureAnchors(){
     const top = document.getElementById('df-dashboard-top-zone');
     const topSecondary = document.getElementById('df-dashboard-top-secondary');
+    const center = document.getElementById('df-dashboard-center-zone');
     const bottom = document.getElementById('df-dashboard-bottom-zone');
-    if(!top || !topSecondary || !bottom) return null;
-    return { top, topSecondary, bottom };
+    if(!top || !topSecondary || !center || !bottom) return null;
+    return { top, topSecondary, center, bottom };
   }
 
   function setGridColumns(container, count){
     if(!container) return;
-    container.classList.remove('xl:grid-cols-1','xl:grid-cols-2','xl:grid-cols-3');
-    const cols = count >= 3 ? 'xl:grid-cols-3' : (count === 2 ? 'xl:grid-cols-2' : 'xl:grid-cols-1');
+    container.classList.remove('xl:grid-cols-1','xl:grid-cols-2','xl:grid-cols-3','xl:grid-cols-4');
+    const cols = count >= 4 ? 'xl:grid-cols-4' : count === 3 ? 'xl:grid-cols-3' : (count === 2 ? 'xl:grid-cols-2' : 'xl:grid-cols-1');
     container.classList.add(cols);
+  }
+
+  function applyGroup(order, container, layout){
+    order.forEach(key => {
+      const el = cardEl(key);
+      if(!el) return;
+      el.classList.toggle('df-layout-hidden', !layout.visible[key]);
+      if(layout.visible[key]) container.appendChild(el);
+    });
   }
 
   function applyLayout(){
@@ -9688,9 +9805,8 @@ We normalize daily buckets so:
     if(!anchors) return;
 
     const layout = getLayout();
-    const { top, topSecondary, bottom } = anchors;
+    const { top, topSecondary, center, bottom } = anchors;
 
-    // clear classes/styles impacted by older sync logic
     const insights = cardEl('insights');
     if(insights){
       insights.classList.add('df-layout-bottom-card');
@@ -9698,34 +9814,27 @@ We normalize daily buckets so:
       insights.style.maxHeight = 'none';
     }
 
-    // top zone
-    layout.topOrder.forEach(key => {
-      const el = cardEl(key);
-      if(!el) return;
-      el.classList.toggle('df-layout-hidden', !layout.visible[key]);
-      if(layout.visible[key]){
-        if(key === 'performance') top.appendChild(el);
-        else topSecondary.appendChild(el);
-      }
-    });
+    applyGroup(layout.topOrder, topSecondary, layout);
+    applyGroup(layout.centerOrder, center, layout);
+    applyGroup(layout.bottomOrder, bottom, layout);
 
-    // bottom zone
-    layout.bottomOrder.forEach(key => {
-      const el = cardEl(key);
-      if(!el) return;
-      el.classList.toggle('df-layout-hidden', !layout.visible[key]);
-      if(layout.visible[key]) bottom.appendChild(el);
-    });
+    const performance = cardEl('performance');
+    if(performance){
+      performance.classList.toggle('df-layout-hidden', !layout.visible.performance);
+      if(layout.visible.performance) top.insertBefore(performance, top.firstChild);
+    }
 
-    // if performance hidden, keep secondary row attached after it
     if(top.lastElementChild !== topSecondary) top.appendChild(topSecondary);
 
     const topVisibleCount = layout.topOrder.filter(key => key !== 'performance' && layout.visible[key]).length;
+    const centerVisibleCount = layout.centerOrder.filter(key => layout.visible[key]).length;
     const bottomVisibleCount = layout.bottomOrder.filter(key => layout.visible[key]).length;
+
     setGridColumns(topSecondary, topVisibleCount || 1);
     setGridColumns(bottom, bottomVisibleCount || 1);
 
     topSecondary.classList.toggle('df-layout-hidden', topVisibleCount === 0);
+    center.classList.toggle('df-layout-hidden', centerVisibleCount === 0);
     bottom.classList.toggle('df-layout-hidden', bottomVisibleCount === 0);
 
     try{
@@ -9748,7 +9857,7 @@ We normalize daily buckets so:
     return copy;
   }
 
-  function renderGroup(listEl, items, orderKey){
+  function renderGroup(listEl, orderKey){
     if(!listEl) return;
     const layout = getLayout();
     listEl.innerHTML = '';
@@ -9776,8 +9885,9 @@ We normalize daily buckets so:
   }
 
   function renderLayoutPanel(){
-    renderGroup(document.getElementById('df-layout-top-list'), ['performance','period','balance'], 'topOrder');
-    renderGroup(document.getElementById('df-layout-bottom-list'), ['gaincap','payout','insights'], 'bottomOrder');
+    renderGroup(document.getElementById('df-layout-top-list'), 'topOrder');
+    renderGroup(document.getElementById('df-layout-center-list'), 'centerOrder');
+    renderGroup(document.getElementById('df-layout-bottom-list'), 'bottomOrder');
   }
 
   function openModal(){
@@ -9845,7 +9955,7 @@ We normalize daily buckets so:
           const key = moveBtn.getAttribute('data-layout-move');
           const dir = parseInt(moveBtn.getAttribute('data-direction') || '0', 10);
           const layout = getLayout();
-          const orderKey = layout.topOrder.includes(key) ? 'topOrder' : 'bottomOrder';
+          const orderKey = (layout.topOrder.includes(key) ? 'topOrder' : (layout.centerOrder.includes(key) ? 'centerOrder' : 'bottomOrder'));
           const index = layout[orderKey].indexOf(key);
           layout[orderKey] = moveItem(layout[orderKey], index, dir);
           saveLayout(layout);
