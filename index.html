@@ -476,52 +476,11 @@ body.dark #calendar-card .df-card-header{border-bottom-color:#334155;}
 }
 .df-month-nav-btn:hover{background:#f8fafc;}
 body.dark .df-month-nav-btn{background:#0f172a; color:#f8fafc; border-color:#334155;}
-#df-dashboard-bottom-zone{grid-template-columns:repeat(1,minmax(0,1fr));align-items:stretch;}
-#df-dashboard-bottom-zone .df-layout-card{display:flex;flex-direction:column;min-height:420px;max-height:420px;overflow:hidden;}
-#df-dashboard-bottom-zone .df-layout-card.df-scroll-card{overflow:hidden;}
-#df-dashboard-bottom-zone .df-layout-card.df-scroll-card > .df-card-scroll{flex:1;min-height:0;overflow:auto;padding-right:4px;scrollbar-gutter:stable;}
-#df-dashboard-bottom-zone .df-layout-card.df-compact-card{min-height:420px;max-height:420px;}
-#balance-card .df-balance-body{flex:1;min-height:0;overflow:auto;padding-right:4px;scrollbar-gutter:stable;}
-#cycles-card .df-card-scroll{flex:1;min-height:0;overflow:auto;padding-right:4px;scrollbar-gutter:stable;}
-.df-avg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
-@media(min-width:900px){.df-avg-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
-.df-avg-item{padding:10px 8px;border-radius:12px;background:rgba(255,255,255,.78);border:1px solid rgba(99,102,241,.10);}
-body.dark .df-avg-item{background:rgba(15,23,42,.45);border-color:#334155;}
-.df-avg-item .lbl{font-size:11px;color:#64748b;display:block;margin-bottom:4px;}
-body.dark .df-avg-item .lbl{color:#94a3b8;}
-.df-avg-item .val{font-size:18px;line-height:1.1;font-weight:800;color:#0f172a;display:block;word-break:break-word;}
-body.dark .df-avg-item .val{color:#e2e8f0;}
-.df-layout-item{cursor:grab;}
-.df-layout-item.dragging{opacity:.45;transform:scale(.98);}
-.df-layout-item.drag-over{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.14) inset;}
-.df-layout-item-handle{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;border:1px solid rgba(226,232,240,1);background:#fff;color:#64748b;font-size:16px;font-weight:900;cursor:grab;flex:0 0 auto;}
-body.dark .df-layout-item-handle{background:#0b1220;border-color:#334155;color:#cbd5e1;}
-.df-layout-item-main label{flex:1;}
-
-@media(min-width:1280px){
-  #df-dashboard-bottom-zone.xl\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr));}
-}
-.df-layout-body{grid-template-columns:1fr;}
-@media(min-width:900px){.df-layout-body{grid-template-columns:1fr 1fr;}}
-@media(min-width:1200px){.df-layout-body{grid-template-columns:1fr 1fr 1fr;}}
-
-/* v5 structural fixes */
-:root{
-  --df-card-radius:18px;
-  --df-bottom-gap:24px;
-  --df-balance-height:370px;
-  --df-cycles-height:760px;
-  --df-gain-height:320px;
-  --df-payout-height:520px;
-  --df-insights-height:640px;
-}
-#df-dashboard-top-zone,#df-dashboard-center-zone,#df-dashboard-bottom-zone{min-width:0;}
-#df-dashboard-center-zone{display:flex;flex-direction:column;gap:24px;}
 #df-dashboard-bottom-zone{
   display:grid !important;
   grid-template-columns:minmax(0,1fr) !important;
   gap:var(--df-bottom-gap);
-  align-items:start !important;
+  align-items:stretch !important;
 }
 #df-dashboard-bottom-zone .df-layout-card{
   min-width:0;
@@ -531,12 +490,44 @@ body.dark .df-layout-item-handle{background:#0b1220;border-color:#334155;color:#
   overflow:hidden;
   border-radius:var(--df-card-radius);
 }
-#df-dashboard-bottom-zone .df-layout-card > .df-card-scroll,
-#df-dashboard-bottom-zone .df-layout-card .df-card-scroll,
-#balance-card .mt-1,
-#cycles-card .df-card-scroll,
-#weekly-list,
-#payout-manager-container .df-card-scroll{
+#balance-card,
+#gain-cap-card,
+#payout-manager-container,
+#cycles-card,
+#global-insights-card{min-width:0;}
+
+#balance-card{
+  min-height:var(--df-balance-height);
+  height:var(--df-balance-height);
+  max-height:var(--df-balance-height);
+}
+#balance-card .df-balance-body{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  padding-right:6px;
+  scrollbar-width:thin;
+}
+
+#gain-cap-card{
+  min-height:var(--df-gain-height);
+  height:var(--df-gain-height);
+  max-height:var(--df-gain-height);
+  justify-content:flex-start;
+}
+#gain-cap-card .df-card-title{font-size:18px;line-height:1.12;max-width:12ch;}
+#gain-cap-card .df-card-subtitle{max-width:22ch;line-height:1.45;}
+
+#cycles-card{
+  min-height:var(--df-cycles-height);
+  height:var(--df-cycles-height);
+  max-height:var(--df-cycles-height);
+  padding-bottom:16px;
+}
+#cycles-card .df-card-header{margin-bottom:14px;flex:0 0 auto;}
+#cycles-card .df-card-title{font-size:18px;line-height:1.2;max-width:none;}
+#cycles-card .df-card-subtitle{font-size:12px;line-height:1.45;max-width:none;}
+#cycles-card .df-card-scroll{
   flex:1;
   min-height:0;
   overflow:auto;
@@ -544,120 +535,91 @@ body.dark .df-layout-item-handle{background:#0b1220;border-color:#334155;color:#
   scrollbar-gutter:stable;
   scrollbar-width:thin;
 }
-#cycles-card .df-card-scroll::-webkit-scrollbar,
-#weekly-list::-webkit-scrollbar,
-#global-insights-card .df-card-scroll::-webkit-scrollbar,
-#payout-manager-container .df-card-scroll::-webkit-scrollbar,
-#balance-card .df-balance-body::-webkit-scrollbar{width:10px;}
-#cycles-card .df-card-scroll::-webkit-scrollbar-thumb,
-#weekly-list::-webkit-scrollbar-thumb,
-#global-insights-card .df-card-scroll::-webkit-scrollbar-thumb,
-#payout-manager-container .df-card-scroll::-webkit-scrollbar-thumb,
-#balance-card .df-balance-body::-webkit-scrollbar-thumb{background:rgba(148,163,184,.55);border-radius:999px;}
-body.dark #cycles-card .df-card-scroll::-webkit-scrollbar-thumb,
-body.dark #weekly-list::-webkit-scrollbar-thumb,
-body.dark #global-insights-card .df-card-scroll::-webkit-scrollbar-thumb,
-body.dark #payout-manager-container .df-card-scroll::-webkit-scrollbar-thumb,
-body.dark #balance-card .df-balance-body::-webkit-scrollbar-thumb{background:rgba(148,163,184,.35);}
-#balance-card{
-  min-height:var(--df-balance-height);
-  height:var(--df-balance-height);
-  max-height:var(--df-balance-height);
+#cycles-card .space-y-3.text-sm{display:flex;flex-direction:column;gap:14px;}
+#cycles-card .space-y-3.text-sm > div{margin-top:0 !important;}
+#cycles-card .flex.justify-between.items-center{gap:16px;align-items:flex-start;}
+#cycles-card .period-link{display:block;line-height:1.4;padding-right:12px;white-space:normal;word-break:break-word;}
+#cycles-card .flex.justify-between.items-center > span:last-child,
+#cycles-card .flex.justify-between.items-center > button + span{flex-shrink:0;text-align:right;min-width:112px;}
+#cycles-card #weekly-list{
+  border-top:1px solid rgba(226,232,240,1);
+  margin-top:16px !important;
+  padding-top:16px;
 }
-#gain-cap-card{
-  min-height:var(--df-gain-height);
-  height:var(--df-gain-height);
-  max-height:var(--df-gain-height);
-}
+body.dark #cycles-card #weekly-list{border-top-color:#334155;}
+#cycles-card .df-card-scroll::-webkit-scrollbar{width:10px;}
+#cycles-card .df-card-scroll::-webkit-scrollbar-thumb{background:rgba(148,163,184,.55);border-radius:999px;}
+body.dark #cycles-card .df-card-scroll::-webkit-scrollbar-thumb{background:rgba(148,163,184,.35);}
+
+.df-avg-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+.df-avg-item{min-height:84px;padding:12px 10px;}
+.df-avg-item .lbl{font-size:12px;font-weight:800;line-height:1.25;margin-bottom:8px;display:block;}
+.df-avg-item .val{font-size:22px;line-height:1.1;font-weight:900;}
+
 #payout-manager-container{
   min-height:var(--df-payout-height);
-  height:auto;
-  max-height:none;
-  overflow:visible !important;
+  height:var(--df-payout-height);
+  max-height:var(--df-payout-height);
+  padding:20px !important;
 }
-#payout-manager-container{padding:18px !important;}
-#payout-manager-container .df-card-header{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;gap:14px;}
-#payout-manager-container .df-card-header .df-card-copy{padding-right:6px;}
+#payout-manager-container .df-payout-body{display:flex;flex-direction:column;gap:14px;flex:1;min-height:0;}
+#payout-manager-container .df-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:0;flex:0 0 auto;}
+#payout-manager-container .df-card-header .df-card-copy{padding-right:0;}
 #payout-manager-container .df-card-title{font-size:18px;line-height:1.05;}
-#payout-manager-container .df-payout-body{display:flex;flex-direction:column;gap:16px;height:100%;min-height:0;}
-#payout-manager-container .df-payout-window{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px 14px;width:100%;padding:12px 14px;border-radius:14px;background:rgba(79,70,229,.08);border:1px solid rgba(99,102,241,.14);}
-#payout-manager-container .df-payout-window-label{font-size:11px;font-weight:900;line-height:1.15;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;text-align:left;}
-#payout-manager-container .df-payout-window-value{font-size:20px;font-weight:900;line-height:1.1;color:#4f46e5;text-align:right;word-break:keep-all;white-space:nowrap;}
-#payout-manager-container .df-payout-window-info{display:inline-flex;align-items:center;gap:6px;justify-content:flex-start;}
+#payout-manager-container .df-card-subtitle{line-height:1.45;max-width:28ch;}
+#payout-manager-container .df-card-scroll{flex:1;min-height:0;overflow:auto;padding-right:6px;scrollbar-width:thin;}
+#payout-manager-container .df-payout-window{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+#payout-manager-container .df-payout-window-cell{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  padding:12px 14px;
+  border-radius:14px;
+  background:rgba(79,70,229,.08);
+  border:1px solid rgba(99,102,241,.14);
+  min-width:0;
+}
+#payout-manager-container .df-payout-window-label{
+  font-size:11px;
+  font-weight:900;
+  line-height:1.15;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#94a3b8;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+#payout-manager-container .df-payout-window-value{
+  font-size:22px;
+  font-weight:900;
+  line-height:1.1;
+  color:#4f46e5;
+  white-space:nowrap;
+}
 #payout-manager-container .df-payout-summary{background:#fffbeb;border:1px solid #fde68a;border-radius:14px;padding:12px 12px 10px;}
 body.dark #payout-manager-container .df-payout-summary{background:rgba(15,23,42,.55);border-color:#475569;}
 #payout-manager-container .df-payout-summary-row{display:flex;justify-content:space-between;gap:16px;font-size:12px;line-height:1.45;padding:3px 0;}
 #payout-manager-container .df-payout-summary-row strong{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:800;white-space:nowrap;}
 #payout-manager-container .df-payout-summary-row.is-total{border-top:1px solid #fde68a;margin-top:6px;padding-top:8px;}
 body.dark #payout-manager-container .df-payout-summary-row.is-total{border-top-color:#475569;}
-#payout-manager-container #payout-form-area{margin-top:auto;}
-#payout-manager-container .df-card-scroll{overflow:visible !important;padding-right:0 !important;}
-@media(max-width:1279px){
-  #payout-manager-container .df-card-header{grid-template-columns:1fr;}
-  #payout-manager-container .df-payout-window{align-items:flex-start;text-align:left;min-width:0;width:100%;}
-  #payout-manager-container .df-payout-window-label,
-  #payout-manager-container .df-payout-window-value{ text-align:left; }
-  #payout-manager-container .df-payout-window-info{justify-content:flex-start;}
-}
-#cycles-card{
-  min-height:var(--df-cycles-height);
-  height:auto;
-  max-height:none;
-  overflow:auto !important;
-  scrollbar-gutter:stable;
-  scrollbar-width:thin;
-}
-#cycles-card > .space-y-3{flex:0 0 auto;}
-#cycles-card{padding-bottom:16px;}
-#cycles-card .space-y-3.text-sm{display:flex;flex-direction:column;gap:14px;}
-#cycles-card .space-y-3.text-sm > div{margin-top:0 !important;}
-#cycles-card .df-card-scroll{padding-bottom:10px;overflow:visible !important;}
-#cycles-card::-webkit-scrollbar{width:10px;}
-#cycles-card::-webkit-scrollbar-thumb{background:rgba(148,163,184,.55);border-radius:999px;}
-body.dark #cycles-card::-webkit-scrollbar-thumb{background:rgba(148,163,184,.35);}
-#cycles-card .df-card-header{margin-bottom:16px;}
-#cycles-card .df-card-title{font-size:17px;line-height:1.2;max-width:none;}
-#cycles-card .df-card-subtitle{font-size:12px;line-height:1.45;max-width:none;}
-#cycles-card .flex.justify-between.items-center{gap:16px;align-items:flex-start;}
-#cycles-card .period-link{display:block;line-height:1.4;padding-right:12px;white-space:normal;word-break:break-word;}
-#cycles-card .flex.justify-between.items-center > span:last-child,
-#cycles-card .flex.justify-between.items-center > button + span{flex-shrink:0;text-align:right;min-width:108px;}
-#weekly-list{
-  border-top:1px solid rgba(226,232,240,1);
-  margin-top:16px !important;
-  padding-top:16px;
-  overflow:visible !important;
-}
-body.dark #weekly-list{border-top-color:#334155;}
-.df-avg-grid{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:12px;
-}
-.df-avg-item{
-  min-height:84px;
-  padding:12px 10px;
-}
-.df-avg-item .lbl{
-  font-size:12px;
-  font-weight:800;
-  line-height:1.25;
-  margin-bottom:8px;
-}
-.df-avg-item .val{
-  font-size:22px;
-  line-height:1.1;
-  font-weight:900;
-}
+#payout-manager-container #payout-form-area{margin-top:auto;flex:0 0 auto;}
+#payout-manager-container #payout-action-btn{flex:0 0 auto;}
+#payout-manager-container .df-card-scroll::-webkit-scrollbar{width:10px;}
+#payout-manager-container .df-card-scroll::-webkit-scrollbar-thumb{background:rgba(148,163,184,.55);border-radius:999px;}
+body.dark #payout-manager-container .df-card-scroll::-webkit-scrollbar-thumb{background:rgba(148,163,184,.35);}
+
 #global-insights-card{
   min-height:var(--df-insights-height);
   height:var(--df-insights-height);
   max-height:var(--df-insights-height);
 }
 #global-insights-card .df-card-header{margin-bottom:16px;}
-#global-insights-card #global-insights-kpis{
-  gap:12px;
-}
+#global-insights-card #global-insights-kpis{gap:12px;}
 #global-insights-card .grid.grid-cols-2{gap:12px;}
 #global-insights-card #global-insights-kpis > div{padding:14px;}
 #global-insights-card #global-insights-kpis .text-base{font-size:1.9rem;line-height:1.05;}
@@ -665,49 +627,47 @@ body.dark #weekly-list{border-top-color:#334155;}
 #global-top-payout .text-[11px],#global-top-risk .text-[11px],
 #global-top-payout .text-xs,#global-top-risk .text-xs{font-size:12px !important;line-height:1.45;}
 #global-top-payout > *,#global-top-risk > *{padding-top:2px;padding-bottom:2px;}
-#payout-manager-container .df-card-header,
-#gain-cap-card .df-card-header,
-#balance-card .df-card-header{margin-bottom:14px;}
-#payout-manager-container .text-2xl,
-#payout-manager-container .text-3xl,
+
+#balance-card .text-2xl,
+#balance-card .text-3xl,
 #gain-cap-card .text-2xl,
 #gain-cap-card .text-3xl,
-#balance-card .text-2xl,
-#balance-card .text-3xl{line-height:1.05;}
-#payout-manager-container .text-xs,
+#payout-manager-container .text-2xl,
+#payout-manager-container .text-3xl{line-height:1.05;}
+#balance-card .text-xs,
 #gain-cap-card .text-xs,
-#balance-card .text-xs{line-height:1.45;}
+#payout-manager-container .text-xs{line-height:1.45;}
 
 @media(min-width:768px){
   #df-dashboard-bottom-zone{
-    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    grid-template-columns:repeat(6,minmax(0,1fr)) !important;
   }
-  #balance-card,#gain-cap-card{grid-column:span 1;}
-  #cycles-card,#payout-manager-container,#global-insights-card{grid-column:1 / -1;}
+  #balance-card{grid-column:span 3;}
+  #gain-cap-card{grid-column:span 3;}
+  #payout-manager-container{grid-column:1 / -1;}
+  #cycles-card{grid-column:1 / -1;}
+  #global-insights-card{grid-column:1 / -1;}
 }
 @media(min-width:1280px){
   #df-dashboard-bottom-zone{
     grid-template-columns:repeat(12,minmax(0,1fr)) !important;
+    grid-auto-flow:row;
   }
-  #balance-card{grid-column:span 3;}
+  #balance-card{grid-column:span 4;}
+  #gain-cap-card{grid-column:span 2;}
+  #payout-manager-container{grid-column:span 6;}
   #cycles-card{grid-column:span 5;}
-  #payout-manager-container{grid-column:span 4;}
-  #gain-cap-card{grid-column:span 3;}
-  #global-insights-card{grid-column:span 9;}
-  #global-insights-card #global-insights-kpis{
-    grid-template-columns:repeat(4,minmax(0,1fr));
-  }
-  #global-insights-card .mt-3.grid.grid-cols-1.md\:grid-cols-2.md\:grid-rows-1.auto-rows-fr.gap-3.flex-1.min-h-0{
-    grid-template-columns:1.15fr .85fr;
-  }
+  #global-insights-card{grid-column:span 7;}
+  #global-insights-card #global-insights-kpis{grid-template-columns:repeat(4,minmax(0,1fr));}
+  #global-insights-card .mt-3.grid.grid-cols-1.md\:grid-cols-2.md\:grid-rows-1.auto-rows-fr.gap-3.flex-1.min-h-0{grid-template-columns:1fr 1fr;}
 }
 @media(max-width:1279px){
   :root{
-    --df-balance-height:390px;
-    --df-cycles-height:620px;
+    --df-balance-height:370px;
+    --df-cycles-height:560px;
     --df-gain-height:300px;
-    --df-payout-height:460px;
-    --df-insights-height:620px;
+    --df-payout-height:360px;
+    --df-insights-height:600px;
   }
 }
 @media(max-width:767px){
@@ -719,25 +679,16 @@ body.dark #weekly-list{border-top-color:#334155;}
     --df-payout-height:auto;
     --df-insights-height:auto;
   }
-  #df-dashboard-bottom-zone{
-    grid-template-columns:minmax(0,1fr) !important;
-    gap:18px;
-  }
-  #df-dashboard-bottom-zone .df-layout-card{
-    height:auto !important;
-    max-height:none !important;
-    min-height:auto !important;
-  }
-  #df-dashboard-bottom-zone .df-layout-card > .df-card-scroll,
-  #df-dashboard-bottom-zone .df-layout-card .df-card-scroll,
-  #balance-card .mt-1,
+  #df-dashboard-bottom-zone{grid-template-columns:minmax(0,1fr) !important;gap:18px;}
+  #df-dashboard-bottom-zone .df-layout-card{height:auto !important;max-height:none !important;min-height:auto !important;}
+  #balance-card .df-balance-body,
   #cycles-card .df-card-scroll,
-  #weekly-list{
-    overflow:visible;
-    padding-right:0;
-  }
+  #payout-manager-container .df-card-scroll{overflow:visible;padding-right:0;}
+  #payout-manager-container .df-payout-window{grid-template-columns:1fr;}
   .df-avg-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   .df-avg-item .val{font-size:18px;}
+}
+
   #cycles-card .df-card-title{max-width:none;}
   #global-insights-card #global-insights-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
@@ -1387,25 +1338,26 @@ body.dark #weekly-list{border-top-color:#334155;}
         <button type="button" class="info-icon-btn" data-info-key="selectedAccount" aria-label="Info">i</button>
       </div>
     </div>
-    <div class="space-y-3 text-sm">
-      <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button type="button" id="label-month" class="period-link text-slate-500 font-medium" title="Ver detalhes do período">Mensal (1 a 31)</button><span id="stats-month" class="font-bold text-slate-800 dark:text-slate-200">$0.00</span></div>
-      <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button type="button" id="label-c10" class="period-link text-slate-500" title="Ver detalhes do período">Ciclo 10 a 10</button><span id="stats-c10" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
-      <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button type="button" id="label-c15" class="period-link text-slate-500" title="Ver detalhes do período">Ciclo 15 a 15</button><span id="stats-c15" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
-      <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button type="button" id="label-c20" class="period-link text-slate-500" title="Ver detalhes do período">Ciclo 20 a 20</button><span id="stats-c20" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
+    <div class="df-card-scroll">
+      <div class="space-y-3 text-sm">
+        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button type="button" id="label-month" class="period-link text-slate-500 font-medium" title="Ver detalhes do período">Mensal (1 a 31)</button><span id="stats-month" class="font-bold text-slate-800 dark:text-slate-200">$0.00</span></div>
+        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button type="button" id="label-c10" class="period-link text-slate-500" title="Ver detalhes do período">Ciclo 10 a 10</button><span id="stats-c10" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
+        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button type="button" id="label-c15" class="period-link text-slate-500" title="Ver detalhes do período">Ciclo 15 a 15</button><span id="stats-c15" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
+        <div class="flex justify-between items-center border-b border-slate-50 pb-1 dark:border-slate-700"><button type="button" id="label-c20" class="period-link text-slate-500" title="Ver detalhes do período">Ciclo 20 a 20</button><span id="stats-c20" class="font-bold text-slate-700 dark:text-slate-300">$0.00</span></div>
 
-      <div class="mt-4 pt-2 bg-indigo-50 dark:bg-slate-800 p-3 rounded-lg border border-indigo-100 dark:border-slate-700">
-        <h4 class="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase mb-2 text-center">Médias Diárias (Recentes)</h4>
-        <div class="df-avg-grid text-center">
-          <div class="df-avg-item"><span class="lbl">5 Dias</span><span id="stats-avg-5" class="val">--</span></div>
-          <div class="df-avg-item"><span class="lbl">10 Dias</span><span id="stats-avg-10" class="val">--</span></div>
-          <div class="df-avg-item"><span class="lbl">15 Dias</span><span id="stats-avg-15" class="val">--</span></div>
-          <div class="df-avg-item"><span class="lbl">20 Dias</span><span id="stats-avg-20" class="val">--</span></div>
-          <div class="df-avg-item"><span class="lbl">25 Dias</span><span id="stats-avg-25" class="val">--</span></div>
-          <div class="df-avg-item"><span class="lbl">30 Dias</span><span id="stats-avg-30" class="val">--</span></div>
+        <div class="mt-4 pt-2 bg-indigo-50 dark:bg-slate-800 p-3 rounded-lg border border-indigo-100 dark:border-slate-700">
+          <h4 class="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase mb-2 text-center">Médias Diárias (Recentes)</h4>
+          <div class="df-avg-grid text-center">
+            <div class="df-avg-item"><span class="lbl">5 Dias</span><span id="stats-avg-5" class="val">--</span></div>
+            <div class="df-avg-item"><span class="lbl">10 Dias</span><span id="stats-avg-10" class="val">--</span></div>
+            <div class="df-avg-item"><span class="lbl">15 Dias</span><span id="stats-avg-15" class="val">--</span></div>
+            <div class="df-avg-item"><span class="lbl">20 Dias</span><span id="stats-avg-20" class="val">--</span></div>
+            <div class="df-avg-item"><span class="lbl">25 Dias</span><span id="stats-avg-25" class="val">--</span></div>
+            <div class="df-avg-item"><span class="lbl">30 Dias</span><span id="stats-avg-30" class="val">--</span></div>
+          </div>
         </div>
       </div>
-    </div>
-    <div id="weekly-list" class="mt-4 space-y-3 text-sm text-slate-500"></div>
+      <div id="weekly-list" class="mt-4 space-y-3 text-sm text-slate-500"></div>
     </div>
   </div>
 </div>
@@ -4330,15 +4282,18 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                                 <span class="df-card-subtitle">Valor liberado no momento para nova solicitação.</span>
                             </div>
                         </div>
-                        <div class="df-payout-window">
-                            <div class="df-payout-window-info">
-                                <span class="df-payout-window-label">Próxima Janela</span>
-                                <button type="button" class="info-icon-btn" data-info-key="selectedAccount" aria-label="Info">i</button>
-                            </div>
-                            <div class="df-payout-window-value">${getNextWindow()}</div>
-                        </div>
                     </div>
                     <div class="df-card-scroll">
+                        <div class="df-payout-window">
+                            <div class="df-payout-window-cell">
+                                <span class="df-payout-window-label">Próxima Janela <button type="button" class="info-icon-btn" data-info-key="selectedAccount" aria-label="Info">i</button></span>
+                                <div class="df-payout-window-value">${getNextWindow()}</div>
+                            </div>
+                            <div class="df-payout-window-cell">
+                                <span class="df-payout-window-label">Disponível Agora</span>
+                                <div class="df-payout-window-value">${formatCurrency(availablePayout)}</div>
+                            </div>
+                        </div>
                         <div class="df-payout-summary">
                             <div class="df-payout-summary-row"><span class="text-slate-500">Saldo Atual:</span><strong class="text-slate-700 dark:text-slate-300">${formatCurrency(currentEquity)}</strong></div>
                             <div class="df-payout-summary-row"><span class="text-slate-500">Limite Segurança:</span><strong class="text-slate-700 dark:text-slate-300">${formatCurrency(threshold)}</strong></div>
@@ -9955,7 +9910,7 @@ We normalize daily buckets so:
 </script>
 </div><script>
 (function(){
-  const STORAGE_KEY = 'df_dashboard_layout_v4';
+  const STORAGE_KEY = 'df_dashboard_layout_v5';
 
   const LABELS = {
     performance: { title: 'Evolução de Performance', desc: 'Gráfico principal de evolução' },
