@@ -341,32 +341,6 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
 .day-details-row td{background:rgba(99,102,241,0.04);border-top:1px dashed rgba(148,163,184,0.6);}
 .dark .day-details-row td{background:rgba(99,102,241,0.08);border-top:1px dashed rgba(71,85,105,0.8);}
 
-
-        .account-status-pill{
-            display:inline-flex; align-items:center; gap:6px;
-            padding:4px 10px; border-radius:999px; font-size:11px; font-weight:800;
-            border:1px solid transparent;
-        }
-        .account-status-pill.active{ background:rgba(16,185,129,.10); color:#047857; border-color:rgba(16,185,129,.24); }
-        .account-status-pill.suspended{ background:rgba(245,158,11,.12); color:#b45309; border-color:rgba(245,158,11,.26); }
-        .account-status-pill.archived{ background:rgba(100,116,139,.12); color:#475569; border-color:rgba(100,116,139,.26); }
-        body.dark .account-status-pill.active{ color:#6ee7b7; }
-        body.dark .account-status-pill.suspended{ color:#fcd34d; }
-        body.dark .account-status-pill.archived{ color:#cbd5e1; }
-        .account-lock-banner{
-            display:none; align-items:flex-start; gap:10px; padding:12px 14px; margin-bottom:14px;
-            border-radius:14px; border:1px solid rgba(245,158,11,.24); background:rgba(245,158,11,.08);
-            color:#92400e;
-        }
-        .account-lock-banner.visible{ display:flex; }
-        .account-lock-banner.archived{
-            border-color:rgba(100,116,139,.26); background:rgba(100,116,139,.08); color:#334155;
-        }
-        body.dark .account-lock-banner{ color:#fcd34d; }
-        body.dark .account-lock-banner.archived{ color:#cbd5e1; }
-        .account-lock-banner .title{ font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:.04em; }
-        .account-lock-banner .desc{ font-size:12px; line-height:1.35; opacity:.9; }
-
 </style>
 
 <style id="d2-info-modal-styles">
@@ -904,8 +878,6 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
                            <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs dark:bg-slate-800 dark:text-slate-400">
     <tr>
         <th class="px-4 py-3 text-left min-w-[220px]">Conta</th>
-        <th class="px-4 py-3 text-left min-w-[120px]">Grupo</th>
-        <th class="px-4 py-3 text-left min-w-[120px]">Status</th>
         <th class="px-4 py-3 text-left min-w-[140px]">Plano</th>
         <th class="px-4 py-3 text-right">Equity</th>
         <th class="px-4 py-3 text-right">Disponível</th>
@@ -961,7 +933,7 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
 
     <div class="bg-white border-b border-slate-200 shadow-sm sticky top-10 z-30 transition-colors dark:border-slate-700">
         <div class="container mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
-            <div><h1 id="active-account-name" class="font-bold text-lg leading-none text-slate-800 dark:text-white">DF Strategic</h1><p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1"><span id="active-account-config">--</span></p><p id="active-account-meta" class="text-[11px] mt-1 text-slate-500 dark:text-slate-400"></p></div>
+            <div><h1 id="active-account-name" class="font-bold text-lg leading-none text-slate-800 dark:text-white">DF Strategic</h1><p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1"><span id="active-account-config">--</span></p></div>
             <div class="flex gap-2 text-sm no-print">
                 <select id="config-size" onchange="updateConfig()" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200"><option value="25k">25k</option><option value="50k">50k</option><option value="75k">75k</option><option value="100k">100k</option><option value="150k">150k</option><option value="250k">250k</option><option value="300k">300k</option></select>
                 <select id="config-month" onchange="updateConfig()" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200"><option value="1">Mês 1-3</option><option value="4">Mês 4+</option></select>
@@ -973,7 +945,6 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
     </div>
 
     <div class="container mx-auto px-4 py-6 space-y-6">
-        <div id="active-account-lock-banner" class="account-lock-banner no-print" aria-live="polite"></div>
         
         <div class="space-y-6">
             <div class="dashboard-card p-6">
@@ -1617,7 +1588,7 @@ let isOffline = false;
             accountSearch: document.getElementById('account-search'),
             accountSearchClear: document.getElementById('account-search-clear'),
             accountsSummary: document.getElementById('accounts-summary'), 
-            activeName: document.getElementById('active-account-name'), activeConfig: document.getElementById('active-account-config'), activeMeta: document.getElementById('active-account-meta'), activeLockBanner: document.getElementById('active-account-lock-banner'),
+            activeName: document.getElementById('active-account-name'), activeConfig: document.getElementById('active-account-config'), 
             inpSize: document.getElementById('config-size'), inpMonth: document.getElementById('config-month'), 
             equity: document.getElementById('current-equity'), equityDiff: document.getElementById('equity-diff'), equityProgress: document.getElementById('equity-progress'),
             ddFloor: document.getElementById('dd-floor'), ddBuffer: document.getElementById('dd-buffer'), ddThermo: document.getElementById('dd-thermo'), ddAlert: document.getElementById('dd-alert'), ddModeLabel: document.getElementById('dd-mode-label'),
@@ -2737,8 +2708,6 @@ const total = listAll.length;
                     return `
         <tr>
           <td class="name">${escapeHtml(r.name || '')}</td>
-          <td>${escapeHtml(r.group || '')}</td>
-          <td>${escapeHtml(r.statusLabel || '')}</td>
           <td>${escapeHtml(r.size || '')}</td>
           <td class="num">${formatCurrency(Number(r.equity||0))}</td>
           <td class="num">${Number(r.available||0) >= 500 ? formatCurrency(Number(r.available||0)) : '—'}</td>
@@ -2765,8 +2734,6 @@ const total = listAll.length;
         <thead>
           <tr>
             <th>${isEN?'Account':'Conta'}</th>
-            <th>${isEN?'Group':'Grupo'}</th>
-            <th>${isEN?'Status':'Status'}</th>
             <th>${isEN?'Size':'Tamanho'}</th>
             <th class="num">${isEN?'Equity':'Equity'}</th>
             <th class="num">${isEN?'Available':'Disponível'}</th>
@@ -3127,8 +3094,6 @@ function _openPrintWindow(htmlStr){
                 const mapRow = (r) => ({
                     id: r.acc.id || '',
                     name: r.acc.name || '',
-                    group: getAccountGroupLabel(r.acc.companyGroup || 'Sem grupo'),
-                    statusLabel: getAccountStatusLabel(r.acc.status || 'active'),
                     size: r.acc.size || '',
                     equity: Number(r.equity || 0),              // equity (saldo atual)
                     safety: Number(r.threshold || 0),
@@ -3183,8 +3148,6 @@ function _openPrintWindow(htmlStr){
                 rows.push(`
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
                         <td class="px-4 py-3 font-semibold text-slate-800 dark:text-white">${escapeHtml(acc.name || 'Sem nome')}</td>
-                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${escapeHtml(getAccountGroupLabel(acc.companyGroup || 'Sem grupo'))}</td>
-                        <td class="px-4 py-3"><span class="account-status-pill ${acc.status || 'active'}">${getAccountStatusLabel(acc.status || 'active')}</span></td>
                         <td class="px-4 py-3 text-slate-600 dark:text-slate-300">
                             <div class="font-semibold text-slate-800 dark:text-white">${escapeHtml(acc.size || '--')}</div>
                             <div class="text-[11px] text-slate-400">Safety: ${formatCurrency(row.threshold)}</div>
@@ -4609,7 +4572,7 @@ function renderCalendar(acc) {
                 if (displayVal > 0) colorClass = 'val-pos';
                 else if (displayVal < 0) colorClass = 'val-neg';
 
-                const readOnlyDay = (acc.status && acc.status !== 'active'); // inactive accounts stay visible but operationally locked
+                const readOnlyDay = false; // allow editing also on cross-month days shown in the grid
                 const inputDisabledAttr = readOnlyDay ? 'disabled' : '';
                 const inputExtraClass = readOnlyDay ? ' opacity-60 cursor-not-allowed' : '';
 
@@ -5018,7 +4981,6 @@ function renderCalendar(acc) {
             renderPayoutHistory(acc); 
             try{ renderGlobalInsights(); }catch(e){}
             lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions(); 
-            applyActiveAccountOperationalState();
         }
 
         window.toggleFavorite = (id) => {
@@ -5150,91 +5112,10 @@ function renderCalendar(acc) {
             saveToCloud();
             renderAccountGroupFilters();
             renderSidebar();
-            renderActiveAccountMeta();
             try{ renderGlobalInsights(); }catch(e){}
             try{ renderAccountsOverview(); }catch(e){}
-            applyActiveAccountOperationalState();
             closeAccountMetaModal();
         };
-
-
-        function getAccountStatusLabel(status){
-            if(status === 'suspended') return (CURRENT_LANG === 'en') ? 'Suspended' : 'Suspensa';
-            if(status === 'archived') return (CURRENT_LANG === 'en') ? 'Archived' : 'Arquivada';
-            return (CURRENT_LANG === 'en') ? 'Active' : 'Ativa';
-        }
-
-        function getAccountGroupLabel(group){
-            const value = String(group || 'Sem grupo').trim() || 'Sem grupo';
-            return value === 'Sem grupo' && CURRENT_LANG === 'en' ? 'No group' : value;
-        }
-
-        function renderActiveAccountMeta(){
-            const acc = getActive();
-            if(!acc || !els.activeMeta) return;
-            normalizeAccountMeta(acc);
-            const status = acc.status || 'active';
-            const groupLabel = getAccountGroupLabel(acc.companyGroup);
-            els.activeMeta.innerHTML = `
-                <span class="account-status-pill ${status}">${getAccountStatusLabel(status)}</span>
-                <span class="ml-2">${escapeHtml(groupLabel)}</span>
-            `;
-        }
-
-        function applyActiveAccountOperationalState(){
-            const acc = getActive();
-            if(!acc) return;
-            normalizeAccountMeta(acc);
-            const editable = acc.status === 'active';
-            renderActiveAccountMeta();
-
-            if(els.inpSize) els.inpSize.disabled = !editable;
-            if(els.inpMonth) els.inpMonth.disabled = !editable;
-
-            const selectors = [
-                '#calendar-body input',
-                '#calendar-body select',
-                '#calendar-body textarea',
-                '#calendar-body button',
-                '#payout-manager-container input',
-                '#payout-manager-container select',
-                '#payout-manager-container textarea',
-                '#payout-manager-container button'
-            ];
-            selectors.forEach(selector => {
-                document.querySelectorAll(selector).forEach(node => {
-                    node.disabled = !editable;
-                    node.classList.toggle('opacity-60', !editable);
-                    node.classList.toggle('cursor-not-allowed', !editable);
-                });
-            });
-
-            if(els.activeLockBanner){
-                if(editable){
-                    els.activeLockBanner.className = 'account-lock-banner no-print';
-                    els.activeLockBanner.innerHTML = '';
-                }else{
-                    const isArchived = acc.status === 'archived';
-                    els.activeLockBanner.className = `account-lock-banner no-print visible ${isArchived ? 'archived' : ''}`;
-                    els.activeLockBanner.innerHTML = `
-                        <div class="shrink-0 pt-0.5">${isArchived ? '🗂️' : '⏸️'}</div>
-                        <div>
-                            <div class="title">${isArchived ? ((CURRENT_LANG==='en') ? 'Archived account' : 'Conta arquivada') : ((CURRENT_LANG==='en') ? 'Suspended account' : 'Conta suspensa')}</div>
-                            <div class="desc">
-                                ${isArchived
-                                    ? ((CURRENT_LANG==='en')
-                                        ? 'This account remains visible for analysis, but operational actions are locked. Use “Status e Grupo” to reactivate it when needed.'
-                                        : 'Esta conta continua visível para análise, mas as ações operacionais ficam bloqueadas. Use “Status e Grupo” para reativar quando necessário.')
-                                    : ((CURRENT_LANG==='en')
-                                        ? 'This account remains visible for analysis, but trading, payout and editing actions are temporarily locked until it is reactivated.'
-                                        : 'Esta conta continua visível para análise, mas as ações de trade, saque e edição ficam temporariamente bloqueadas até ser reativada.')
-                                }
-                            </div>
-                        </div>
-                    `;
-                }
-            }
-        }
 
         function renderSidebar() {
             // Wire search UI once
@@ -5366,13 +5247,11 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             els.activeConfig.textContent = `${acc.size} • ${(CURRENT_LANG==='en'?'Month':'Mês')} ${acc.monthType}`;
             els.inpSize.value = acc.size;
             els.inpMonth.value = acc.monthType;
-            renderActiveAccountMeta();
 
             // Conta selecionada é por-dispositivo (localStorage). Não salvar na nuvem aqui para evitar loops.
 
             renderSidebar();
             renderDashboard();
-            applyActiveAccountOperationalState();
         }
 
                 function shareReportInternal() {
