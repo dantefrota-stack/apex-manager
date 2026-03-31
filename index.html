@@ -1277,7 +1277,7 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
     };
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, onSnapshot, runTransaction, deleteField } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot, runTransaction, deleteField, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     // Inicializa o Firebase
@@ -1566,7 +1566,7 @@ Usuário administrador:`) || '';
   // Local persistence (prevents data loss if cloud save fails)
   const LOCAL_STORE_KEY = 'df_store_local_v1';
   function saveStoreToLocal(){
-    try { localStorage.setItem(LOCAL_STORE_KEY, JSON.stringify(getPersistableStore())); } catch(e) {}
+    try { localStorage.setItem(LOCAL_STORE_KEY, JSON.stringify(buildLocalBackupStore())); } catch(e) {}
   }
   function loadStoreFromLocal(){
     try {
@@ -5675,6 +5675,71 @@ ${period} • ${(acc?.name || 'Conta')}
         function getCloudImportAuditRef(){
             return getCloudSystemDocRef(CLOUD_AUDIT_DOC_IMPORT_AUDIT);
         }
+        const CLOUD_PERIODS_COL = "periods";
+
+        function getCloudPeriodsColRef(){
+            return collection(db, CLOUD_DOC_COL, CLOUD_DOC_ID, CLOUD_PERIODS_COL);
+        }
+
+        function getCloudPeriodDocRef(docId){
+            return doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID, CLOUD_PERIODS_COL, docId);
+        }
+
+        function getPeriodKeyFromISO(iso){
+            const s = String(iso || '');
+            return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s.slice(0,7) : 'misc';
+        }
+
+        function makeOperationalPeriodDocId(accountId, periodKey){
+            return `${String(accountId || '').replace(/[^a-zA-Z0-9_-]/g,'_')}__${String(periodKey || 'misc').replace(/[^0-9A-Za-z_-]/g,'_')}`;
+        }
+
+        function clonePlain(value){
+            try { return JSON.parse(JSON.stringify(value)); } catch(e){ return value; }
+        }
+
+        function buildOperationalPeriodPayloads(srcStore){
+            const out = {};
+            try{
+                const accounts = (srcStore && srcStore.accounts && typeof srcStore.accounts === 'object') ? srcStore.accounts : {};
+                for(const [accountId, acc] of Object.entries(accounts)){
+                    const data = (acc && acc.data && typeof acc.data === 'object') ? acc.data : {};
+                    for(const [iso, rawEntry] of Object.entries(data)){
+                        if(!/^\d{4}-\d{2}-\d{2}$/.test(String(iso||''))) continue;
+                        const periodKey = getPeriodKeyFromISO(iso);
+                        const docId = makeOperationalPeriodDocId(accountId, periodKey);
+                        if(!out[docId]) out[docId] = { accountId, period: periodKey, entries: {} };
+                        out[docId].entries[iso] = clonePlain(rawEntry || {});
+                    }
+                }
+            }catch(e){ console.warn('buildOperationalPeriodPayloads failed:', e); }
+            return out;
+        }
+
+        function stripOperationalDataFromStore(persistable){
+            try{
+                const accounts = (persistable && persistable.accounts && typeof persistable.accounts === 'object') ? persistable.accounts : {};
+                for(const acc of Object.values(accounts)){
+                    if(acc && typeof acc === 'object'){
+                        acc.data = {};
+                    }
+                }
+            }catch(e){}
+            return persistable;
+        }
+
+        function buildLocalBackupStore(){
+            try{
+                const s = JSON.parse(JSON.stringify(store));
+                try{ delete s.dayDetailsOpen; }catch(e){}
+                try{ delete s.tradeDetailsOpen; }catch(e){}
+                try{ delete s.apex_fee_rate; }catch(e){}
+                try{ delete s.importAudit; }catch(e){}
+                return s;
+            }catch(e){
+                return clonePlain(store || {});
+            }
+        }
 
         const CLIENT_ID_KEY = "df_client_id";
         const CLIENT_ID = (() => {
@@ -5707,6 +5772,7 @@ ${period} • ${(acc?.name || 'Conta')}
         let __adminLogsSaveTimer = null;
         let __importAuditSaveTimer = null;
         let __importAuditLogs = [];
+        let __lastOperationalDocHashes = {};
 
         let __cloudStatusTimer = null;
 
@@ -5761,7 +5827,7 @@ ${period} • ${(acc?.name || 'Conta')}
                 // sidecars (não manter no documento principal)
                 try{ delete s.adminLogs; }catch(e){}
                 try{ delete s.importAudit; }catch(e){}
-                return s;
+                return stripOperationalDataFromStore(s);
             }catch(e){
                 // fallback (não ideal)
                 const clone = { ...store };
@@ -5772,7 +5838,7 @@ ${period} • ${(acc?.name || 'Conta')}
                 try{ delete clone.apex_fee_rate; }catch(_){}
                 try{ delete clone.adminLogs; }catch(_){}
                 try{ delete clone.importAudit; }catch(_){}
-                return clone;
+                return stripOperationalDataFromStore(clone);
             }
         }
 
@@ -5907,6 +5973,85 @@ ${period} • ${(acc?.name || 'Conta')}
             }
         }
 
+        async function loadCloudOperationalPeriods(){
+            try{
+                if(isOffline || !db || !getDocs || !collection) return false;
+                const snap = await getDocs(getCloudPeriodsColRef());
+                const seen = {};
+                snap.forEach((docSnap) => {
+                    const raw = docSnap.data() || {};
+                    const accountId = String(raw.accountId || '');
+                    const entries = (raw.entries && typeof raw.entries === 'object') ? raw.entries : {};
+                    if(!accountId || !store.accounts || !store.accounts[accountId]) return;
+                    const acc = store.accounts[accountId];
+                    if(!acc.data || typeof acc.data !== 'object') acc.data = {};
+                    Object.assign(acc.data, clonePlain(entries));
+                    try{ seen[docSnap.id] = JSON.stringify(entries || {}); }catch(e){ seen[docSnap.id] = ''; }
+                });
+                __lastOperationalDocHashes = seen;
+                return true;
+            }catch(e){
+                console.warn('loadCloudOperationalPeriods failed:', e);
+                return false;
+            }
+        }
+
+        async function saveCloudOperationalPeriodsNow(){
+            try{
+                if(isOffline || !db || !writeBatch) return false;
+                const payloads = buildOperationalPeriodPayloads(store);
+                const nextHashes = {};
+                let changedIds = [];
+                for(const [docId, payload] of Object.entries(payloads)){
+                    let h = '';
+                    try{ h = JSON.stringify(payload.entries || {}); }catch(e){ h = ''; }
+                    nextHashes[docId] = h;
+                    if(__lastOperationalDocHashes[docId] !== h) changedIds.push(docId);
+                }
+                const removedIds = Object.keys(__lastOperationalDocHashes || {}).filter(id => !(id in nextHashes));
+                if(!changedIds.length && !removedIds.length){
+                    __lastOperationalDocHashes = nextHashes;
+                    return true;
+                }
+                let batch = writeBatch(db);
+                let ops = 0;
+                const nowMs = Date.now();
+                const nowIso = new Date(nowMs).toISOString();
+                const flush = async () => {
+                    if(ops > 0){
+                        await batch.commit();
+                        batch = writeBatch(db);
+                        ops = 0;
+                    }
+                };
+                for(const docId of changedIds){
+                    const payload = payloads[docId];
+                    batch.set(getCloudPeriodDocRef(docId), {
+                        accountId: payload.accountId,
+                        period: payload.period,
+                        entries: payload.entries || {},
+                        source_client_id: CLIENT_ID,
+                        schema_version: 1,
+                        last_update_ms: nowMs,
+                        last_update_iso: nowIso
+                    }, { merge:true });
+                    ops += 1;
+                    if(ops >= 350) await flush();
+                }
+                for(const docId of removedIds){
+                    batch.delete(getCloudPeriodDocRef(docId));
+                    ops += 1;
+                    if(ops >= 350) await flush();
+                }
+                await flush();
+                __lastOperationalDocHashes = nextHashes;
+                return true;
+            }catch(e){
+                console.warn('saveCloudOperationalPeriodsNow failed:', e);
+                return false;
+            }
+        }
+
         async function migrateLegacyEmbeddedBackupIfNeeded(){
             try{
                 if(isOffline || !db || !runTransaction) return false;
@@ -6025,6 +6170,8 @@ ${period} • ${(acc?.name || 'Conta')}
 
             // Sidecars: admin logs / import audit (kept out of main store_json)
             await loadCloudSidecarDocs();
+            // Operational data sidecar: per-account/per-period entries
+            await loadCloudOperationalPeriods();
 
             // If the user made changes before the cloud finished loading, flush them now
             if (__pendingSaveBeforeHydrate) {
@@ -6071,6 +6218,11 @@ async function saveToCloudNow() {
             setCloudStatus('saving', (CURRENT_LANG==='en' ? "Saving..." : "Salvando..."));
 
             try {
+                // Persist heavy operational data outside the main store_json first
+                const operationalOk = await saveCloudOperationalPeriodsNow();
+                if(!operationalOk){
+                    throw new Error((CURRENT_LANG==='en' ? 'Failed to save operational periods' : 'Falha ao salvar períodos operacionais'));
+                }
                 // Preferred: transactional save with rollback fields (prevents catastrophic wipes)
                 if (runTransaction) {
                     await runTransaction(db, async (txn) => {
@@ -6248,7 +6400,7 @@ async function saveToCloudNow() {
 
         function downloadLocalBackupJson(){
             try{
-                const jb = localStorage.getItem('df_backup_local') || JSON.stringify(getPersistableStore());
+                const jb = localStorage.getItem('df_backup_local') || JSON.stringify(buildLocalBackupStore());
                 const blob = new Blob([jb], {type:'application/json'});
                 const a = document.createElement('a');
                 const ts = new Date().toISOString().replace(/[:.]/g,'-');
@@ -6272,7 +6424,7 @@ async function saveToCloudNow() {
         function scheduleSaveToCloud(){
             // Local safety backup (per-device) – helps recover if something goes wrong
             try{
-                const jb = JSON.stringify(getPersistableStore());
+                const jb = JSON.stringify(buildLocalBackupStore());
                 if(jb && jb !== __lastLocalBackupJson){
                     __lastLocalBackupJson = jb;
                     localStorage.setItem('df_backup_local', jb);
@@ -6310,7 +6462,7 @@ async function saveToCloudNow() {
                 const docRef = getCloudDocRef();
                 if(__cloudUnsub) { try{ __cloudUnsub(); }catch(e){} __cloudUnsub = null; }
 
-                __cloudUnsub = onSnapshot(docRef, (snap) => {
+                __cloudUnsub = onSnapshot(docRef, async (snap) => {
                     if(!snap.exists()) return;
                     const data = snap.data() || {};
                     const ms = Number(data.last_update_ms || 0) || 0;
@@ -6357,6 +6509,8 @@ async function saveToCloudNow() {
 
                     store = remote || store;
                     store.date = localDate;
+                    try{ await loadCloudSidecarDocs(); }catch(e){ console.warn('realtime sidecar load failed:', e); }
+                    try{ await loadCloudOperationalPeriods(); }catch(e){ console.warn('realtime operational load failed:', e); }
 
                     // UI state: sempre iniciar com detalhes fechados
                     try{ delete store.dayDetailsOpen; delete store.tradeDetailsOpen; }catch(e){}
