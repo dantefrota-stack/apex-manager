@@ -2756,155 +2756,6 @@ const total = listAll.length;
 
   ${groupsHtml}
 
-
-<style id="df-layout-fix-v13">
-  #df-v13-root{display:flex;flex-direction:column;gap:1.5rem;}
-  .df-v13-analysis #period-analysis-card,
-  #df-v13-calendar > div{width:100%;}
-  .df-v13-small-row{display:grid;grid-template-columns:minmax(260px,1.05fr) minmax(220px,.82fr) minmax(340px,1.18fr);gap:1.5rem;align-items:stretch;}
-  .df-v13-large-row{display:grid;grid-template-columns:minmax(420px,1fr) minmax(520px,1.18fr);gap:1.5rem;align-items:stretch;}
-  #df-v13-calendar .space-y-4{width:100%;}
-  #df-v13-calendar .dashboard-card.overflow-hidden{width:100%;}
-  #df-cycles-card{display:flex;flex-direction:column;min-height:560px;max-height:560px;overflow:hidden;}
-  #df-cycles-card > .space-y-3.text-sm{display:flex;flex-direction:column;gap:.95rem;min-height:0;}
-  #df-cycles-card #weekly-list{margin-top:1rem !important;padding-right:.35rem;overflow:auto;flex:1;min-height:140px;}
-  #df-cycles-card .grid.grid-cols-3{gap:.65rem;}
-  #df-cycles-card .grid.grid-cols-3 > div{padding:.65rem .35rem;border-radius:.75rem;background:rgba(255,255,255,.78);border:1px solid rgba(99,102,241,.08);}
-  body.dark #df-cycles-card .grid.grid-cols-3 > div{background:rgba(15,23,42,.45);border-color:rgba(71,85,105,.7);}
-  #global-insights-card{min-height:560px;}
-  #global-insights-card .df-scroll-always{max-height:240px;}
-  #payout-manager-container.df-payout-ready{display:flex;flex-direction:column;gap:.9rem;min-height:260px;}
-  #payout-manager-container.df-payout-ready > div:first-child{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.9rem;align-items:start;margin-bottom:0 !important;}
-  #payout-manager-container .df-payout-window-chip{padding:.7rem .85rem;border-radius:.85rem;background:rgba(99,102,241,.09);border:1px solid rgba(99,102,241,.14);min-width:140px;}
-  body.dark #payout-manager-container .df-payout-window-chip{background:rgba(99,102,241,.16);border-color:rgba(129,140,248,.22);}
-  #payout-manager-container .df-payout-window-chip p:first-child{font-size:10px !important;line-height:1.1;letter-spacing:.06em;text-transform:uppercase;color:#64748b;}
-  #payout-manager-container .df-payout-window-chip p:last-child{font-size:1.05rem !important;line-height:1.15;font-weight:800;}
-  #payout-manager-container #payout-action-btn{margin-top:auto;}
-  #payout-manager-container .bg-yellow-50{margin-bottom:0 !important;}
-  @media (max-width: 1279px){
-    .df-v13-small-row{grid-template-columns:repeat(2,minmax(0,1fr));}
-    #payout-manager-container{grid-column:1 / -1;}
-    .df-v13-large-row{grid-template-columns:1fr;}
-    #df-cycles-card,#global-insights-card{min-height:unset;max-height:none;}
-    #df-cycles-card #weekly-list{max-height:240px;flex:unset;}
-  }
-  @media (max-width: 767px){
-    .df-v13-small-row,.df-v13-large-row{grid-template-columns:1fr;}
-    #payout-manager-container.df-payout-ready > div:first-child{grid-template-columns:1fr;}
-    #payout-manager-container .df-payout-window-chip{min-width:0;}
-    #df-cycles-card .grid.grid-cols-3{grid-template-columns:repeat(2,minmax(0,1fr));}
-  }
-</style>
-
-<script id="df-layout-fix-v13-script">
-(function(){
-  function q(sel, root){ return (root || document).querySelector(sel); }
-  function buildLayout(){
-    var main = q('.container.mx-auto.px-4.py-6.space-y-6');
-    if(!main || q('#df-v13-root', main)) return;
-    var topStack = q(':scope > .space-y-6', main);
-    var metricsGrid = q(':scope > .grid.grid-cols-1.md\\:grid-cols-3.gap-4', main);
-    var calendarGrid = q(':scope > .grid.grid-cols-1.lg\\:grid-cols-3.gap-6', main);
-    if(!topStack || !metricsGrid || !calendarGrid) return;
-
-    var evolutionCard = topStack.children[0];
-    var analysisGrid = topStack.children[1];
-    if(!evolutionCard || !analysisGrid) return;
-
-    var analysisCard = q('#period-analysis-card', analysisGrid);
-    var insightsCard = q('#global-insights-card', analysisGrid);
-    var saldoCard = metricsGrid.children[0];
-    var capCard = metricsGrid.children[1];
-    var payoutCard = q('#payout-manager-container', metricsGrid);
-    var calendarLeft = calendarGrid.children[0];
-    var calendarRight = calendarGrid.children[1];
-    var cyclesCard = calendarRight ? q('.dashboard-card', calendarRight) : null;
-
-    if(!analysisCard || !insightsCard || !saldoCard || !capCard || !payoutCard || !calendarLeft || !cyclesCard) return;
-
-    var root = document.createElement('div');
-    root.id = 'df-v13-root';
-    root.className = 'space-y-6';
-
-    var analysisWrap = document.createElement('div');
-    analysisWrap.className = 'df-v13-analysis';
-    analysisWrap.appendChild(analysisCard);
-
-    var calendarWrap = document.createElement('div');
-    calendarWrap.id = 'df-v13-calendar';
-    calendarWrap.appendChild(calendarLeft);
-
-    var smallRow = document.createElement('div');
-    smallRow.className = 'df-v13-small-row';
-    saldoCard.id = saldoCard.id || 'df-saldo-card';
-    capCard.id = capCard.id || 'df-cap-card';
-    payoutCard.classList.add('df-payout-card');
-    smallRow.appendChild(saldoCard);
-    smallRow.appendChild(capCard);
-    smallRow.appendChild(payoutCard);
-
-    var largeRow = document.createElement('div');
-    largeRow.className = 'df-v13-large-row';
-    cyclesCard.id = 'df-cycles-card';
-    largeRow.appendChild(cyclesCard);
-    largeRow.appendChild(insightsCard);
-
-    root.appendChild(evolutionCard);
-    root.appendChild(analysisWrap);
-    root.appendChild(calendarWrap);
-    root.appendChild(smallRow);
-    root.appendChild(largeRow);
-
-    try{ analysisGrid.remove(); }catch(e){}
-    try{ topStack.remove(); }catch(e){}
-    try{ metricsGrid.remove(); }catch(e){}
-    try{ calendarGrid.remove(); }catch(e){}
-
-    main.insertBefore(root, main.firstChild);
-    syncHeights();
-    polishPayout();
-    try{ if(window.lucide && lucide.createIcons) lucide.createIcons(); }catch(e){}
-  }
-
-  function syncHeights(){
-    var cycles = q('#df-cycles-card');
-    var insights = q('#global-insights-card');
-    if(!cycles || !insights) return;
-    if(window.innerWidth >= 1280){
-      cycles.style.minHeight = '560px';
-      cycles.style.maxHeight = '560px';
-      insights.style.minHeight = '560px';
-    } else {
-      cycles.style.minHeight = '';
-      cycles.style.maxHeight = '';
-      insights.style.minHeight = '';
-    }
-  }
-
-  function polishPayout(){
-    var card = q('#payout-manager-container');
-    if(!card) return;
-    card.classList.add('df-payout-ready');
-    var header = card.firstElementChild;
-    if(header && header.children && header.children.length > 1){
-      header.children[1].classList.add('df-payout-window-chip');
-    }
-  }
-
-  function init(){
-    buildLayout();
-    polishPayout();
-    syncHeights();
-    setTimeout(function(){ polishPayout(); syncHeights(); }, 250);
-    setTimeout(function(){ polishPayout(); syncHeights(); }, 1200);
-  }
-
-  document.addEventListener('DOMContentLoaded', init);
-  window.addEventListener('load', init);
-  window.addEventListener('resize', syncHeights);
-})();
-</script>
-
 </body>
 </html>`;
         }
@@ -5569,156 +5420,7 @@ ${period} • ${(acc?.name || 'Conta')}
                       <tr><td><b>Max Drawdown</b></td><td>${kpiMaxDD}</td></tr>
                     </table>
 
-                    
-<style id="df-layout-fix-v13">
-  #df-v13-root{display:flex;flex-direction:column;gap:1.5rem;}
-  .df-v13-analysis #period-analysis-card,
-  #df-v13-calendar > div{width:100%;}
-  .df-v13-small-row{display:grid;grid-template-columns:minmax(260px,1.05fr) minmax(220px,.82fr) minmax(340px,1.18fr);gap:1.5rem;align-items:stretch;}
-  .df-v13-large-row{display:grid;grid-template-columns:minmax(420px,1fr) minmax(520px,1.18fr);gap:1.5rem;align-items:stretch;}
-  #df-v13-calendar .space-y-4{width:100%;}
-  #df-v13-calendar .dashboard-card.overflow-hidden{width:100%;}
-  #df-cycles-card{display:flex;flex-direction:column;min-height:560px;max-height:560px;overflow:hidden;}
-  #df-cycles-card > .space-y-3.text-sm{display:flex;flex-direction:column;gap:.95rem;min-height:0;}
-  #df-cycles-card #weekly-list{margin-top:1rem !important;padding-right:.35rem;overflow:auto;flex:1;min-height:140px;}
-  #df-cycles-card .grid.grid-cols-3{gap:.65rem;}
-  #df-cycles-card .grid.grid-cols-3 > div{padding:.65rem .35rem;border-radius:.75rem;background:rgba(255,255,255,.78);border:1px solid rgba(99,102,241,.08);}
-  body.dark #df-cycles-card .grid.grid-cols-3 > div{background:rgba(15,23,42,.45);border-color:rgba(71,85,105,.7);}
-  #global-insights-card{min-height:560px;}
-  #global-insights-card .df-scroll-always{max-height:240px;}
-  #payout-manager-container.df-payout-ready{display:flex;flex-direction:column;gap:.9rem;min-height:260px;}
-  #payout-manager-container.df-payout-ready > div:first-child{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.9rem;align-items:start;margin-bottom:0 !important;}
-  #payout-manager-container .df-payout-window-chip{padding:.7rem .85rem;border-radius:.85rem;background:rgba(99,102,241,.09);border:1px solid rgba(99,102,241,.14);min-width:140px;}
-  body.dark #payout-manager-container .df-payout-window-chip{background:rgba(99,102,241,.16);border-color:rgba(129,140,248,.22);}
-  #payout-manager-container .df-payout-window-chip p:first-child{font-size:10px !important;line-height:1.1;letter-spacing:.06em;text-transform:uppercase;color:#64748b;}
-  #payout-manager-container .df-payout-window-chip p:last-child{font-size:1.05rem !important;line-height:1.15;font-weight:800;}
-  #payout-manager-container #payout-action-btn{margin-top:auto;}
-  #payout-manager-container .bg-yellow-50{margin-bottom:0 !important;}
-  @media (max-width: 1279px){
-    .df-v13-small-row{grid-template-columns:repeat(2,minmax(0,1fr));}
-    #payout-manager-container{grid-column:1 / -1;}
-    .df-v13-large-row{grid-template-columns:1fr;}
-    #df-cycles-card,#global-insights-card{min-height:unset;max-height:none;}
-    #df-cycles-card #weekly-list{max-height:240px;flex:unset;}
-  }
-  @media (max-width: 767px){
-    .df-v13-small-row,.df-v13-large-row{grid-template-columns:1fr;}
-    #payout-manager-container.df-payout-ready > div:first-child{grid-template-columns:1fr;}
-    #payout-manager-container .df-payout-window-chip{min-width:0;}
-    #df-cycles-card .grid.grid-cols-3{grid-template-columns:repeat(2,minmax(0,1fr));}
-  }
-</style>
-
-<script id="df-layout-fix-v13-script">
-(function(){
-  function q(sel, root){ return (root || document).querySelector(sel); }
-  function buildLayout(){
-    var main = q('.container.mx-auto.px-4.py-6.space-y-6');
-    if(!main || q('#df-v13-root', main)) return;
-    var topStack = q(':scope > .space-y-6', main);
-    var metricsGrid = q(':scope > .grid.grid-cols-1.md\\:grid-cols-3.gap-4', main);
-    var calendarGrid = q(':scope > .grid.grid-cols-1.lg\\:grid-cols-3.gap-6', main);
-    if(!topStack || !metricsGrid || !calendarGrid) return;
-
-    var evolutionCard = topStack.children[0];
-    var analysisGrid = topStack.children[1];
-    if(!evolutionCard || !analysisGrid) return;
-
-    var analysisCard = q('#period-analysis-card', analysisGrid);
-    var insightsCard = q('#global-insights-card', analysisGrid);
-    var saldoCard = metricsGrid.children[0];
-    var capCard = metricsGrid.children[1];
-    var payoutCard = q('#payout-manager-container', metricsGrid);
-    var calendarLeft = calendarGrid.children[0];
-    var calendarRight = calendarGrid.children[1];
-    var cyclesCard = calendarRight ? q('.dashboard-card', calendarRight) : null;
-
-    if(!analysisCard || !insightsCard || !saldoCard || !capCard || !payoutCard || !calendarLeft || !cyclesCard) return;
-
-    var root = document.createElement('div');
-    root.id = 'df-v13-root';
-    root.className = 'space-y-6';
-
-    var analysisWrap = document.createElement('div');
-    analysisWrap.className = 'df-v13-analysis';
-    analysisWrap.appendChild(analysisCard);
-
-    var calendarWrap = document.createElement('div');
-    calendarWrap.id = 'df-v13-calendar';
-    calendarWrap.appendChild(calendarLeft);
-
-    var smallRow = document.createElement('div');
-    smallRow.className = 'df-v13-small-row';
-    saldoCard.id = saldoCard.id || 'df-saldo-card';
-    capCard.id = capCard.id || 'df-cap-card';
-    payoutCard.classList.add('df-payout-card');
-    smallRow.appendChild(saldoCard);
-    smallRow.appendChild(capCard);
-    smallRow.appendChild(payoutCard);
-
-    var largeRow = document.createElement('div');
-    largeRow.className = 'df-v13-large-row';
-    cyclesCard.id = 'df-cycles-card';
-    largeRow.appendChild(cyclesCard);
-    largeRow.appendChild(insightsCard);
-
-    root.appendChild(evolutionCard);
-    root.appendChild(analysisWrap);
-    root.appendChild(calendarWrap);
-    root.appendChild(smallRow);
-    root.appendChild(largeRow);
-
-    try{ analysisGrid.remove(); }catch(e){}
-    try{ topStack.remove(); }catch(e){}
-    try{ metricsGrid.remove(); }catch(e){}
-    try{ calendarGrid.remove(); }catch(e){}
-
-    main.insertBefore(root, main.firstChild);
-    syncHeights();
-    polishPayout();
-    try{ if(window.lucide && lucide.createIcons) lucide.createIcons(); }catch(e){}
-  }
-
-  function syncHeights(){
-    var cycles = q('#df-cycles-card');
-    var insights = q('#global-insights-card');
-    if(!cycles || !insights) return;
-    if(window.innerWidth >= 1280){
-      cycles.style.minHeight = '560px';
-      cycles.style.maxHeight = '560px';
-      insights.style.minHeight = '560px';
-    } else {
-      cycles.style.minHeight = '';
-      cycles.style.maxHeight = '';
-      insights.style.minHeight = '';
-    }
-  }
-
-  function polishPayout(){
-    var card = q('#payout-manager-container');
-    if(!card) return;
-    card.classList.add('df-payout-ready');
-    var header = card.firstElementChild;
-    if(header && header.children && header.children.length > 1){
-      header.children[1].classList.add('df-payout-window-chip');
-    }
-  }
-
-  function init(){
-    buildLayout();
-    polishPayout();
-    syncHeights();
-    setTimeout(function(){ polishPayout(); syncHeights(); }, 250);
-    setTimeout(function(){ polishPayout(); syncHeights(); }, 1200);
-  }
-
-  document.addEventListener('DOMContentLoaded', init);
-  window.addEventListener('load', init);
-  window.addEventListener('resize', syncHeights);
-})();
-</script>
-
-</body></html>`;
+                    </body></html>`;
                     w.document.open();
                     w.document.write(html);
                     w.document.close();
@@ -9899,151 +9601,184 @@ We normalize daily buckets so:
 
 
 
-<style id="df-layout-fix-v13">
-  #df-v13-root{display:flex;flex-direction:column;gap:1.5rem;}
-  .df-v13-analysis #period-analysis-card,
-  #df-v13-calendar > div{width:100%;}
-  .df-v13-small-row{display:grid;grid-template-columns:minmax(260px,1.05fr) minmax(220px,.82fr) minmax(340px,1.18fr);gap:1.5rem;align-items:stretch;}
-  .df-v13-large-row{display:grid;grid-template-columns:minmax(420px,1fr) minmax(520px,1.18fr);gap:1.5rem;align-items:stretch;}
-  #df-v13-calendar .space-y-4{width:100%;}
-  #df-v13-calendar .dashboard-card.overflow-hidden{width:100%;}
-  #df-cycles-card{display:flex;flex-direction:column;min-height:560px;max-height:560px;overflow:hidden;}
-  #df-cycles-card > .space-y-3.text-sm{display:flex;flex-direction:column;gap:.95rem;min-height:0;}
-  #df-cycles-card #weekly-list{margin-top:1rem !important;padding-right:.35rem;overflow:auto;flex:1;min-height:140px;}
-  #df-cycles-card .grid.grid-cols-3{gap:.65rem;}
-  #df-cycles-card .grid.grid-cols-3 > div{padding:.65rem .35rem;border-radius:.75rem;background:rgba(255,255,255,.78);border:1px solid rgba(99,102,241,.08);}
-  body.dark #df-cycles-card .grid.grid-cols-3 > div{background:rgba(15,23,42,.45);border-color:rgba(71,85,105,.7);}
-  #global-insights-card{min-height:560px;}
-  #global-insights-card .df-scroll-always{max-height:240px;}
-  #payout-manager-container.df-payout-ready{display:flex;flex-direction:column;gap:.9rem;min-height:260px;}
-  #payout-manager-container.df-payout-ready > div:first-child{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:.9rem;align-items:start;margin-bottom:0 !important;}
-  #payout-manager-container .df-payout-window-chip{padding:.7rem .85rem;border-radius:.85rem;background:rgba(99,102,241,.09);border:1px solid rgba(99,102,241,.14);min-width:140px;}
-  body.dark #payout-manager-container .df-payout-window-chip{background:rgba(99,102,241,.16);border-color:rgba(129,140,248,.22);}
-  #payout-manager-container .df-payout-window-chip p:first-child{font-size:10px !important;line-height:1.1;letter-spacing:.06em;text-transform:uppercase;color:#64748b;}
-  #payout-manager-container .df-payout-window-chip p:last-child{font-size:1.05rem !important;line-height:1.15;font-weight:800;}
-  #payout-manager-container #payout-action-btn{margin-top:auto;}
-  #payout-manager-container .bg-yellow-50{margin-bottom:0 !important;}
-  @media (max-width: 1279px){
-    .df-v13-small-row{grid-template-columns:repeat(2,minmax(0,1fr));}
-    #payout-manager-container{grid-column:1 / -1;}
-    .df-v13-large-row{grid-template-columns:1fr;}
-    #df-cycles-card,#global-insights-card{min-height:unset;max-height:none;}
-    #df-cycles-card #weekly-list{max-height:240px;flex:unset;}
+<style id="df-v14-layout-styles">
+  /* Safe layout layer appended at the real end of document */
+  #global-insights-card{height:auto !important; max-height:none !important;}
+  #df-v14-root{display:flex; flex-direction:column; gap:24px;}
+  #df-v14-root .df-v14-full{width:100%;}
+  #df-v14-root .df-v14-small-grid{display:grid; grid-template-columns:1fr; gap:24px; align-items:start;}
+  #df-v14-root .df-v14-large-grid{display:grid; grid-template-columns:1fr; gap:24px; align-items:start;}
+  #df-v14-root .df-v14-card{min-width:0; width:100%;}
+  #df-v14-root #df-cycles-card,
+  #df-v14-root #global-insights-card{min-width:0; width:100%;}
+  #df-v14-root #df-cycles-card{min-height:560px;}
+  #df-v14-root .df-v14-scroll{overflow:auto; scrollbar-width:thin; scrollbar-color: rgba(100,116,139,.55) transparent;}
+  #df-v14-root .df-v14-scroll::-webkit-scrollbar{width:8px; height:8px;}
+  #df-v14-root .df-v14-scroll::-webkit-scrollbar-thumb{background:rgba(100,116,139,.45); border-radius:999px;}
+  body.dark #df-v14-root .df-v14-scroll::-webkit-scrollbar-thumb{background:rgba(148,163,184,.35);}
+  body.dark #df-v14-root .df-v14-scroll{scrollbar-color: rgba(148,163,184,.55) transparent;}
+
+  /* Make payout card read more cleanly */
+  #df-v14-root #payout-manager-container{min-height:320px; display:flex; flex-direction:column;}
+  #df-v14-root #payout-manager-container > *{min-width:0;}
+  #df-v14-root #payout-manager-container .df-v14-payout-chip{display:flex; flex-direction:column; align-items:flex-end; gap:2px; text-align:right; line-height:1.05;}
+  #df-v14-root #payout-manager-container .df-v14-payout-chip .df-v14-payout-chip-label{font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; color:#64748b;}
+  #df-v14-root #payout-manager-container .df-v14-payout-chip .df-v14-payout-chip-value{font-size:22px; font-weight:900; color:#4f46e5;}
+  body.dark #df-v14-root #payout-manager-container .df-v14-payout-chip .df-v14-payout-chip-label{color:#94a3b8;}
+
+  /* Cycles card readability */
+  #df-v14-root #df-cycles-card{display:flex; flex-direction:column; overflow:hidden;}
+  #df-v14-root #df-cycles-card > .df-v14-card-body{display:flex; flex-direction:column; min-height:0; flex:1;}
+  #df-v14-root #df-cycles-card #weekly-list{overflow:auto; max-height:220px; padding-right:4px;}
+  #df-v14-root #df-cycles-card .grid.grid-cols-3.gap-2.text-center{gap:10px;}
+  #df-v14-root #df-cycles-card .grid.grid-cols-3.gap-2.text-center > div{padding:10px 8px; border-radius:12px; background:rgba(255,255,255,.75); border:1px solid rgba(226,232,240,1);}
+  body.dark #df-v14-root #df-cycles-card .grid.grid-cols-3.gap-2.text-center > div{background:rgba(15,23,42,.45); border-color:#334155;}
+
+  /* Insights card becomes a proper large panel */
+  #df-v14-root #global-insights-card{min-height:560px;}
+
+  @media (min-width: 768px){
+    #df-v14-root .df-v14-small-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
   }
-  @media (max-width: 767px){
-    .df-v13-small-row,.df-v13-large-row{grid-template-columns:1fr;}
-    #payout-manager-container.df-payout-ready > div:first-child{grid-template-columns:1fr;}
-    #payout-manager-container .df-payout-window-chip{min-width:0;}
-    #df-cycles-card .grid.grid-cols-3{grid-template-columns:repeat(2,minmax(0,1fr));}
+  @media (min-width: 1280px){
+    #df-v14-root .df-v14-small-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+    #df-v14-root .df-v14-large-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,0.9fr);}
   }
 </style>
-
-<script id="df-layout-fix-v13-script">
+<script id="df-v14-layout-script">
 (function(){
+  if (window.__dfV14LayoutApplied) return;
+  window.__dfV14LayoutApplied = true;
+
   function q(sel, root){ return (root || document).querySelector(sel); }
-  function buildLayout(){
-    var main = q('.container.mx-auto.px-4.py-6.space-y-6');
-    if(!main || q('#df-v13-root', main)) return;
-    var topStack = q(':scope > .space-y-6', main);
-    var metricsGrid = q(':scope > .grid.grid-cols-1.md\\:grid-cols-3.gap-4', main);
-    var calendarGrid = q(':scope > .grid.grid-cols-1.lg\\:grid-cols-3.gap-6', main);
-    if(!topStack || !metricsGrid || !calendarGrid) return;
+
+  function unwrapCyclesCard(cyclesCard){
+    if (!cyclesCard || cyclesCard.dataset.dfV14Prepared === '1') return;
+    cyclesCard.dataset.dfV14Prepared = '1';
+    var sections = Array.from(cyclesCard.children);
+    var body = document.createElement('div');
+    body.className = 'df-v14-card-body';
+    sections.forEach(function(node){ body.appendChild(node); });
+    cyclesCard.appendChild(body);
+    cyclesCard.classList.add('df-v14-scroll');
+  }
+
+  function polishPayout(card){
+    if (!card || card.dataset.dfV14Prepared === '1') return;
+    card.dataset.dfV14Prepared = '1';
+    var header = card.firstElementChild;
+    if (header && header.children && header.children.length >= 2) {
+      var chipHost = header.children[1];
+      var label = chipHost.textContent || '';
+      chipHost.textContent = '';
+      chipHost.classList.add('df-v14-payout-chip');
+      var labelEl = document.createElement('div');
+      labelEl.className = 'df-v14-payout-chip-label';
+      labelEl.textContent = label.replace(/\s+/g,' ').trim() || 'Próxima janela';
+      var valueEl = document.createElement('div');
+      valueEl.className = 'df-v14-payout-chip-value';
+      valueEl.id = 'df-v14-payout-chip-value';
+      valueEl.textContent = 'Hoje';
+      chipHost.appendChild(labelEl);
+      chipHost.appendChild(valueEl);
+    }
+  }
+
+  function refreshPayoutChip(){
+    var source = document.getElementById('payout-next-window');
+    var target = document.getElementById('df-v14-payout-chip-value');
+    if (source && target) target.textContent = source.textContent.trim() || target.textContent;
+  }
+
+  function build(){
+    var container = q('div.container.mx-auto.px-4.py-6.space-y-6');
+    if (!container) return false;
+    var topStack = container.children[0];
+    var calendarGrid = container.children[1];
+    if (!topStack || !calendarGrid) return false;
 
     var evolutionCard = topStack.children[0];
     var analysisGrid = topStack.children[1];
-    if(!evolutionCard || !analysisGrid) return;
+    var metricsGrid = topStack.children[2];
+    if (!evolutionCard || !analysisGrid || !metricsGrid) return false;
 
-    var analysisCard = q('#period-analysis-card', analysisGrid);
-    var insightsCard = q('#global-insights-card', analysisGrid);
+    var periodCard = document.getElementById('period-analysis-card');
+    var insightsCard = document.getElementById('global-insights-card');
+    var payoutCard = document.getElementById('payout-manager-container');
+    var cyclesCard = calendarGrid.querySelector('.lg\:col-span-1 .dashboard-card');
+    var leftCalendarCol = calendarGrid.children[0];
+    if (!periodCard || !insightsCard || !payoutCard || !cyclesCard || !leftCalendarCol) return false;
+
     var saldoCard = metricsGrid.children[0];
     var capCard = metricsGrid.children[1];
-    var payoutCard = q('#payout-manager-container', metricsGrid);
-    var calendarLeft = calendarGrid.children[0];
-    var calendarRight = calendarGrid.children[1];
-    var cyclesCard = calendarRight ? q('.dashboard-card', calendarRight) : null;
+    if (!saldoCard || !capCard) return false;
 
-    if(!analysisCard || !insightsCard || !saldoCard || !capCard || !payoutCard || !calendarLeft || !cyclesCard) return;
+    var root = document.getElementById('df-v14-root');
+    if (!root) {
+      root = document.createElement('div');
+      root.id = 'df-v14-root';
+      container.insertBefore(root, topStack);
+    }
 
-    var root = document.createElement('div');
-    root.id = 'df-v13-root';
-    root.className = 'space-y-6';
+    evolutionCard.classList.add('df-v14-full','df-v14-card');
+    periodCard.classList.add('df-v14-full','df-v14-card');
+    leftCalendarCol.classList.add('df-v14-full','df-v14-card');
+    saldoCard.classList.add('df-v14-card');
+    capCard.classList.add('df-v14-card');
+    payoutCard.classList.add('df-v14-card');
+    cyclesCard.classList.add('df-v14-card');
+    insightsCard.classList.add('df-v14-card');
 
-    var analysisWrap = document.createElement('div');
-    analysisWrap.className = 'df-v13-analysis';
-    analysisWrap.appendChild(analysisCard);
-
-    var calendarWrap = document.createElement('div');
-    calendarWrap.id = 'df-v13-calendar';
-    calendarWrap.appendChild(calendarLeft);
-
-    var smallRow = document.createElement('div');
-    smallRow.className = 'df-v13-small-row';
-    saldoCard.id = saldoCard.id || 'df-saldo-card';
-    capCard.id = capCard.id || 'df-cap-card';
-    payoutCard.classList.add('df-payout-card');
-    smallRow.appendChild(saldoCard);
-    smallRow.appendChild(capCard);
-    smallRow.appendChild(payoutCard);
-
-    var largeRow = document.createElement('div');
-    largeRow.className = 'df-v13-large-row';
-    cyclesCard.id = 'df-cycles-card';
-    largeRow.appendChild(cyclesCard);
-    largeRow.appendChild(insightsCard);
+    var smallGrid = document.getElementById('df-v14-small-grid');
+    if (!smallGrid) {
+      smallGrid = document.createElement('div');
+      smallGrid.id = 'df-v14-small-grid';
+      smallGrid.className = 'df-v14-small-grid';
+    }
+    var largeGrid = document.getElementById('df-v14-large-grid');
+    if (!largeGrid) {
+      largeGrid = document.createElement('div');
+      largeGrid.id = 'df-v14-large-grid';
+      largeGrid.className = 'df-v14-large-grid';
+    }
 
     root.appendChild(evolutionCard);
-    root.appendChild(analysisWrap);
-    root.appendChild(calendarWrap);
-    root.appendChild(smallRow);
-    root.appendChild(largeRow);
+    root.appendChild(periodCard);
+    root.appendChild(leftCalendarCol);
+    smallGrid.appendChild(saldoCard);
+    smallGrid.appendChild(capCard);
+    smallGrid.appendChild(payoutCard);
+    largeGrid.appendChild(cyclesCard);
+    largeGrid.appendChild(insightsCard);
+    root.appendChild(smallGrid);
+    root.appendChild(largeGrid);
 
-    try{ analysisGrid.remove(); }catch(e){}
-    try{ topStack.remove(); }catch(e){}
-    try{ metricsGrid.remove(); }catch(e){}
-    try{ calendarGrid.remove(); }catch(e){}
+    topStack.style.display = 'none';
+    calendarGrid.style.display = 'none';
 
-    main.insertBefore(root, main.firstChild);
-    syncHeights();
-    polishPayout();
-    try{ if(window.lucide && lucide.createIcons) lucide.createIcons(); }catch(e){}
+    unwrapCyclesCard(cyclesCard);
+    polishPayout(payoutCard);
+    refreshPayoutChip();
+    try { if (window.lucide && lucide.createIcons) lucide.createIcons(); } catch(e){}
+    return true;
   }
 
-  function syncHeights(){
-    var cycles = q('#df-cycles-card');
-    var insights = q('#global-insights-card');
-    if(!cycles || !insights) return;
-    if(window.innerWidth >= 1280){
-      cycles.style.minHeight = '560px';
-      cycles.style.maxHeight = '560px';
-      insights.style.minHeight = '560px';
-    } else {
-      cycles.style.minHeight = '';
-      cycles.style.maxHeight = '';
-      insights.style.minHeight = '';
+  function boot(){
+    if (build()) {
+      setTimeout(refreshPayoutChip, 300);
+      setTimeout(refreshPayoutChip, 1200);
+      return;
     }
+    var tries = 0;
+    var iv = setInterval(function(){
+      tries += 1;
+      if (build() || tries >= 40) clearInterval(iv);
+    }, 250);
   }
 
-  function polishPayout(){
-    var card = q('#payout-manager-container');
-    if(!card) return;
-    card.classList.add('df-payout-ready');
-    var header = card.firstElementChild;
-    if(header && header.children && header.children.length > 1){
-      header.children[1].classList.add('df-payout-window-chip');
-    }
-  }
-
-  function init(){
-    buildLayout();
-    polishPayout();
-    syncHeights();
-    setTimeout(function(){ polishPayout(); syncHeights(); }, 250);
-    setTimeout(function(){ polishPayout(); syncHeights(); }, 1200);
-  }
-
-  document.addEventListener('DOMContentLoaded', init);
-  window.addEventListener('load', init);
-  window.addEventListener('resize', syncHeights);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+  window.addEventListener('load', function(){ setTimeout(boot, 50); });
 })();
 </script>
 
