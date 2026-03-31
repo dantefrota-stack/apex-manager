@@ -726,6 +726,25 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
                 <span id="accounts-summary">—</span>
                 <span class="text-slate-600">Grupo: tamanho</span>
             </div>
+            <div class="mt-3 p-3 rounded-lg bg-slate-800 border border-slate-700 space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Filtro de Análise</span>
+                    <button type="button" onclick="resetAccountFilters()" class="text-[11px] text-indigo-300 hover:text-indigo-200 font-semibold">Limpar</button>
+                </div>
+                <div>
+                    <label class="text-[11px] uppercase tracking-wider text-slate-500 font-bold block mb-1">Status</label>
+                    <select id="account-status-filter" onchange="updateAccountFilters()" class="w-full px-2 py-2 rounded-md bg-slate-900 border border-slate-700 text-slate-100 text-xs outline-none focus:ring-2 focus:ring-indigo-500/40">
+                        <option value="active">Ativas</option>
+                        <option value="all">Todas</option>
+                        <option value="suspended">Suspensas</option>
+                        <option value="archived">Arquivadas</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[11px] uppercase tracking-wider text-slate-500 font-bold block mb-1">Grupos de empresa</label>
+                    <div id="account-group-filters" class="space-y-1.5 max-h-28 overflow-y-auto pr-1"></div>
+                </div>
+            </div>
         </div>
         
         <div class="flex-1 overflow-y-auto p-4 space-y-2" id="account-list"></div>
@@ -919,6 +938,7 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
                 <select id="config-size" onchange="updateConfig()" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200"><option value="25k">25k</option><option value="50k">50k</option><option value="75k">75k</option><option value="100k">100k</option><option value="150k">150k</option><option value="250k">250k</option><option value="300k">300k</option></select>
                 <select id="config-month" onchange="updateConfig()" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200"><option value="1">Mês 1-3</option><option value="4">Mês 4+</option></select>
                 <button onclick="renameAccount()" class="p-1.5 bg-slate-100 hover:bg-indigo-100 text-slate-500 hover:text-indigo-600 rounded transition dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700" title="Renomear"><i data-lucide="edit-2" class="w-4 h-4"></i></button>
+                <button onclick="openAccountMetaModal()" class="p-1.5 bg-slate-100 hover:bg-violet-100 text-slate-500 hover:text-violet-600 rounded transition dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700" title="Status e Grupo"><i data-lucide="folder-cog" class="w-4 h-4"></i></button>
                 <button onclick="deleteAccount()" class="p-1.5 bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-600 rounded transition dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-red-900" title="Excluir Conta"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             </div>
         </div>
@@ -1148,6 +1168,47 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
 </div>
 
     
+
+    <div id="account-meta-modal" class="fixed inset-0 z-[70] hidden no-print">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeAccountMetaModal()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[92vw] max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5">
+            <div class="flex items-start justify-between gap-3 mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">Status e Grupo da Conta</h3>
+                    <p id="account-meta-subtitle" class="text-xs text-slate-500 dark:text-slate-400 mt-1">—</p>
+                </div>
+                <button type="button" onclick="closeAccountMetaModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1">Status</label>
+                    <select id="account-meta-status" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="active">Ativa</option>
+                        <option value="suspended">Suspensa</option>
+                        <option value="archived">Arquivada</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1">Grupo de Empresa</label>
+                    <input id="account-meta-group" type="text" placeholder="Ex.: DF, CA" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <p class="text-[11px] text-slate-400 mt-1">Use o mesmo nome para agrupar contas relacionadas.</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-3">
+                    <div class="text-[11px] uppercase tracking-wider text-slate-400 font-bold mb-2">Ações rápidas</div>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="setActiveAccountStatus('active')" class="px-3 py-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800">Ativar</button>
+                        <button type="button" onclick="setActiveAccountStatus('suspended')" class="px-3 py-2 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800">Suspender</button>
+                        <button type="button" onclick="setActiveAccountStatus('archived')" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold dark:bg-slate-700 dark:text-slate-200 dark:border-slate-600">Arquivar</button>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-1">
+                    <button type="button" onclick="closeAccountMetaModal()" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">Cancelar</button>
+                    <button type="button" onclick="saveAccountMeta()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Help Popover -->
     <div id="help-popover" class="hidden" role="dialog" aria-modal="false">
         <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
@@ -1576,7 +1637,13 @@ let isOffline = false;
             adminAISave: document.getElementById('ai-save-key'),
             adminAIModel: document.getElementById('ai-model'),
             adminAITest: document.getElementById('ai-test'),
-            adminAIRemove: document.getElementById('ai-remove'),};
+            adminAIRemove: document.getElementById('ai-remove'),
+            accountStatusFilter: document.getElementById('account-status-filter'),
+            accountGroupFilters: document.getElementById('account-group-filters'),
+            accountMetaModal: document.getElementById('account-meta-modal'),
+            accountMetaSubtitle: document.getElementById('account-meta-subtitle'),
+            accountMetaStatus: document.getElementById('account-meta-status'),
+            accountMetaGroup: document.getElementById('account-meta-group'),};
 
 
 
@@ -2893,7 +2960,8 @@ function _openPrintWindow(htmlStr){
             }catch(e){}
 
 
-            let accounts = Object.values(store.accounts || {}).slice();
+            ensureAllAccountsMeta();
+            let accounts = getFilteredAccounts().slice();
 
             // filter by size
             if(prefs.size && prefs.size !== 'all'){
@@ -3365,7 +3433,7 @@ function _openPrintWindow(htmlStr){
             return `${y}-${m}-${day}`;
         }
 
-        window.createAccount = () => { const name = prompt(translateString("Nome:")); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [], createdAt: new Date().toISOString(), favorite: false }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); };
+        window.createAccount = () => { const name = prompt(translateString("Nome:")); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [], createdAt: new Date().toISOString(), favorite: false, status: 'active', companyGroup: 'Sem grupo' }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); };
         window.renameAccount = () => { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } };
         
         // DELEÇÃO COM SEGURANÇA
@@ -3941,7 +4009,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         function createNewStore() {
             const defaultId = 'acc_' + Date.now();
             store = { activeId: defaultId, date: new Date(), accounts: {}, adminLogs: [] };
-            store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [], createdAt: new Date().toISOString(), favorite: false };
+            store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, data: {}, payouts: [], createdAt: new Date().toISOString(), favorite: false, status: 'active', companyGroup: 'Sem grupo' };
         }
 
         function getNextWindow() {
@@ -4687,10 +4755,10 @@ function renderCalendar(acc) {
             if(lblRisk) lblRisk.textContent = isEN ? 'Drawdown Risk' : 'Risco de Drawdown';
             if(lblTopPayout) lblTopPayout.textContent = isEN ? 'Closest to first $500' : 'Próximas do 1º $500';
             if(lblTopRisk) lblTopRisk.textContent = isEN ? 'Highest DD risk' : 'Mais risco de DD';
-            if(footnoteEl) footnoteEl.textContent = isEN ? 'Overall summary (all accounts). Click an item to open the account.' : 'Resumo geral de todas as contas. Clique em um item para abrir a conta.';
+            if(footnoteEl) footnoteEl.textContent = isEN ? 'Summary based on current account filters.' : 'Resumo com base no filtro atual de contas.';
 
-            const accountsObj = store.accounts || {};
-            const accounts = Object.values(accountsObj);
+            ensureAllAccountsMeta();
+            const accounts = getFilteredAccounts();
             const rows = [];
 
             let equitySum = 0;
@@ -4931,6 +4999,124 @@ function renderCalendar(acc) {
             return m ? parseInt(m[1], 10) : 0;
         }
 
+
+        function normalizeAccountMeta(acc){
+            if(!acc || typeof acc !== 'object') return acc;
+            if(!acc.id) acc.id = 'acc_' + Math.random().toString(36).slice(2,10);
+            if(!acc.status) acc.status = 'active';
+            if(!['active','suspended','archived'].includes(acc.status)) acc.status = 'active';
+            if(acc.companyGroup === undefined || acc.companyGroup === null || String(acc.companyGroup).trim() === '') acc.companyGroup = 'Sem grupo';
+            acc.companyGroup = String(acc.companyGroup).trim();
+            return acc;
+        }
+
+        function ensureAllAccountsMeta(){
+            Object.values(store.accounts || {}).forEach(normalizeAccountMeta);
+            if(!store.accountFilters || typeof store.accountFilters !== 'object'){
+                store.accountFilters = { status: 'active', groups: [] };
+            }
+            if(!Array.isArray(store.accountFilters.groups)) store.accountFilters.groups = [];
+            if(!store.accountFilters.status) store.accountFilters.status = 'active';
+        }
+
+        function getAllCompanyGroups(){
+            ensureAllAccountsMeta();
+            const groups = Array.from(new Set(Object.values(store.accounts || {}).map(a => normalizeAccountMeta(a).companyGroup || 'Sem grupo')));
+            return groups.sort((a,b)=> String(a).localeCompare(String(b), 'pt-BR', { sensitivity:'base', numeric:true }));
+        }
+
+        function accountMatchesCurrentFilters(acc, opts={}){
+            ensureAllAccountsMeta();
+            normalizeAccountMeta(acc);
+            const filters = store.accountFilters || { status:'active', groups:[] };
+            const status = opts.status || filters.status || 'active';
+            const groups = Array.isArray(opts.groups) ? opts.groups : (filters.groups || []);
+            const matchStatus = (status === 'all') ? true : acc.status === status;
+            const matchGroup = !groups.length || groups.includes(acc.companyGroup || 'Sem grupo');
+            return matchStatus && matchGroup;
+        }
+
+        function getFilteredAccounts(){
+            ensureAllAccountsMeta();
+            return Object.values(store.accounts || {}).filter(acc => accountMatchesCurrentFilters(acc));
+        }
+
+        function renderAccountGroupFilters(){
+            if(!els.accountGroupFilters) return;
+            ensureAllAccountsMeta();
+            const groups = getAllCompanyGroups();
+            const selected = new Set((store.accountFilters && store.accountFilters.groups) || []);
+            if(!groups.length){
+                els.accountGroupFilters.innerHTML = '<div class="text-[11px] text-slate-500 italic">Nenhum grupo cadastrado.</div>';
+                return;
+            }
+            els.accountGroupFilters.innerHTML = groups.map(group => `
+                <label class="flex items-center gap-2 text-xs text-slate-200">
+                    <input type="checkbox" class="rounded accent-indigo-500" data-group-filter="${escapeHtml(group)}" ${selected.has(group) ? 'checked' : ''}>
+                    <span class="truncate">${escapeHtml(group)}</span>
+                </label>
+            `).join('');
+            els.accountGroupFilters.querySelectorAll('input[data-group-filter]').forEach(el => {
+                el.addEventListener('change', updateAccountFilters);
+            });
+        }
+
+        window.updateAccountFilters = () => {
+            ensureAllAccountsMeta();
+            if(els.accountStatusFilter) store.accountFilters.status = els.accountStatusFilter.value || 'active';
+            if(els.accountGroupFilters){
+                store.accountFilters.groups = Array.from(els.accountGroupFilters.querySelectorAll('input[data-group-filter]:checked')).map(i => i.getAttribute('data-group-filter'));
+            }
+            saveStoreToLocal();
+            renderSidebar();
+            try{ renderGlobalInsights(); }catch(e){}
+            try{ renderAccountsOverview(); }catch(e){}
+        };
+
+        window.resetAccountFilters = () => {
+            ensureAllAccountsMeta();
+            store.accountFilters = { status: 'active', groups: [] };
+            if(els.accountStatusFilter) els.accountStatusFilter.value = 'active';
+            renderAccountGroupFilters();
+            updateAccountFilters();
+        };
+
+        let __accountMetaTargetId = null;
+        window.openAccountMetaModal = () => {
+            const acc = getActive();
+            if(!acc || !els.accountMetaModal) return;
+            normalizeAccountMeta(acc);
+            __accountMetaTargetId = acc.id;
+            if(els.accountMetaSubtitle) els.accountMetaSubtitle.textContent = acc.name || acc.id;
+            if(els.accountMetaStatus) els.accountMetaStatus.value = acc.status || 'active';
+            if(els.accountMetaGroup) els.accountMetaGroup.value = acc.companyGroup || 'Sem grupo';
+            els.accountMetaModal.classList.remove('hidden');
+            try{ lucide.createIcons(); }catch(e){}
+        };
+        window.closeAccountMetaModal = () => {
+            if(els.accountMetaModal) els.accountMetaModal.classList.add('hidden');
+        };
+        window.setActiveAccountStatus = (status) => {
+            if(els.accountMetaStatus) els.accountMetaStatus.value = status;
+        };
+        window.saveAccountMeta = () => {
+            const id = __accountMetaTargetId || (getActive() && getActive().id);
+            if(!id || !store.accounts[id]) return;
+            const acc = store.accounts[id];
+            normalizeAccountMeta(acc);
+            acc.status = (els.accountMetaStatus && els.accountMetaStatus.value) || 'active';
+            acc.companyGroup = ((els.accountMetaGroup && els.accountMetaGroup.value) || 'Sem grupo').trim() || 'Sem grupo';
+            if(acc.status !== 'active' && store.activeId === id){
+                // keep active if desired; no change
+            }
+            saveToCloud();
+            renderAccountGroupFilters();
+            renderSidebar();
+            try{ renderGlobalInsights(); }catch(e){}
+            try{ renderAccountsOverview(); }catch(e){}
+            closeAccountMetaModal();
+        };
+
         function renderSidebar() {
             // Wire search UI once
             if (els.accountSearch && !els.accountSearch.__wired) {
@@ -4951,11 +5137,15 @@ function renderCalendar(acc) {
                 });
             }
 
+            ensureAllAccountsMeta();
+            if (els.accountStatusFilter) els.accountStatusFilter.value = (store.accountFilters && store.accountFilters.status) || 'active';
+            renderAccountGroupFilters();
+
             const q = _normText(els.accountSearch ? els.accountSearch.value : '');
 
             els.accList.innerHTML = '';
 
-            const all = Object.values(store.accounts || {});
+            const all = getFilteredAccounts();
             let filtered = all;
             if (q) {
                 filtered = all.filter(a => {
@@ -5003,8 +5193,8 @@ const div = document.createElement('div');
                         </div>
                         <span class="text-xs text-indigo-300 font-mono">${acc.size || ''}</span>
                     </div>
-                    <div class="flex justify-between items-center mt-1">
-                        <span class="text-xs text-slate-400">Saldo:</span>
+                    <div class="flex justify-between items-center mt-1 gap-2">
+                        <span class="text-[11px] text-slate-500 truncate">${acc.companyGroup || 'Sem grupo'} • ${acc.status === 'active' ? 'Ativa' : (acc.status === 'suspended' ? 'Suspensa' : 'Arquivada')}</span>
                         <span class="text-xs font-bold ${equity >= RULES[acc.size].start ? 'text-green-400' : 'text-red-400'}">${formatCurrency(equity)}</span>
                     </div>
                 `;
@@ -5052,7 +5242,7 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             store.activeId = id;
             try { localStorage.setItem('df_last_activeId', id); } catch (e) {}
 
-            const acc = store.accounts[id];
+            const acc = normalizeAccountMeta(store.accounts[id]);
             els.activeName.textContent = acc.name;
             els.activeConfig.textContent = `${acc.size} • ${(CURRENT_LANG==='en'?'Month':'Mês')} ${acc.monthType}`;
             els.inpSize.value = acc.size;
@@ -6666,7 +6856,7 @@ if (!store.activeId) {
                 const defaultId = 'acc_' + Date.now();
                 store.activeId = defaultId;
                 store.accounts = {};
-                store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, favorite: false, data: {}, payouts: [] };
+                store.accounts[defaultId] = { id: defaultId, name: 'Conta Principal', size: '50k', monthType: 1, favorite: false, data: {}, payouts: [], status: 'active', companyGroup: 'Sem grupo' };
                 await saveToCloud(); 
             }
 
@@ -7960,7 +8150,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
             // Create new account safely
             const id = 'acc_' + Date.now() + '_' + Math.floor(Math.random()*1000);
-            store.accounts[id] = { id, name: label, size: '50k', monthType: 1, data: {}, payouts: [], createdAt: new Date().toISOString(), favorite: false };
+            store.accounts[id] = { id, name: label, size: '50k', monthType: 1, data: {}, payouts: [], createdAt: new Date().toISOString(), favorite: false, status: 'active', companyGroup: 'Sem grupo' };
             return {acc: store.accounts[id], created:true};
         }
 
@@ -9868,5 +10058,196 @@ We normalize daily buckets so:
 </script>
 
 
+
+<style id="df-v15-visibility-styles">
+  #df-v15-visibility-fab{position:fixed; right:20px; bottom:20px; z-index:80; border:none; border-radius:999px; padding:12px 16px; font-weight:800; font-size:13px; background:#4f46e5; color:#fff; box-shadow:0 16px 40px rgba(79,70,229,.35); cursor:pointer;}
+  #df-v15-visibility-fab:hover{filter:brightness(.96);}
+  #df-v15-visibility-modal{position:fixed; inset:0; z-index:85; display:none;}
+  #df-v15-visibility-modal.open{display:block;}
+  #df-v15-visibility-modal .df-backdrop{position:absolute; inset:0; background:rgba(2,6,23,.58); backdrop-filter:blur(3px);}
+  #df-v15-visibility-modal .df-panel{position:relative; width:min(820px, calc(100vw - 24px)); margin:36px auto; background:#fff; border:1px solid rgba(148,163,184,.26); border-radius:22px; overflow:hidden; box-shadow:0 30px 80px rgba(2,6,23,.25);}
+  body.dark #df-v15-visibility-modal .df-panel{background:#0f172a; border-color:#334155; box-shadow:0 30px 80px rgba(0,0,0,.45);}
+  #df-v15-visibility-modal .df-head{display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:20px 22px 16px; border-bottom:1px solid rgba(148,163,184,.18);}
+  #df-v15-visibility-modal .df-head h3{margin:0; font-size:17px; font-weight:900; color:#0f172a;}
+  body.dark #df-v15-visibility-modal .df-head h3{color:#e2e8f0;}
+  #df-v15-visibility-modal .df-head p{margin:6px 0 0; font-size:13px; color:#64748b;}
+  body.dark #df-v15-visibility-modal .df-head p{color:#94a3b8;}
+  #df-v15-visibility-modal .df-close{border:none; background:transparent; color:#64748b; font-size:28px; line-height:1; cursor:pointer; padding:0 4px;}
+  #df-v15-visibility-modal .df-body{padding:18px 22px 8px; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px;}
+  #df-v15-visibility-modal .df-group{border:1px solid rgba(148,163,184,.18); border-radius:18px; padding:14px; background:#f8fafc;}
+  body.dark #df-v15-visibility-modal .df-group{background:#111827; border-color:#334155;}
+  #df-v15-visibility-modal .df-group-title{font-size:12px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; color:#475569; margin-bottom:10px;}
+  body.dark #df-v15-visibility-modal .df-group-title{color:#cbd5e1;}
+  #df-v15-visibility-modal .df-option{display:flex; align-items:center; gap:12px; padding:12px 10px; border:1px solid rgba(148,163,184,.18); border-radius:14px; background:#fff; margin-bottom:10px;}
+  body.dark #df-v15-visibility-modal .df-option{background:#0b1220; border-color:#334155;}
+  #df-v15-visibility-modal .df-option:last-child{margin-bottom:0;}
+  #df-v15-visibility-modal .df-option input{width:18px; height:18px; accent-color:#4f46e5;}
+  #df-v15-visibility-modal .df-option-title{font-size:14px; font-weight:800; color:#0f172a;}
+  body.dark #df-v15-visibility-modal .df-option-title{color:#e2e8f0;}
+  #df-v15-visibility-modal .df-option-sub{margin-top:2px; font-size:12px; color:#64748b;}
+  body.dark #df-v15-visibility-modal .df-option-sub{color:#94a3b8;}
+  #df-v15-visibility-modal .df-foot{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 22px 20px; border-top:1px solid rgba(148,163,184,.18);}
+  #df-v15-visibility-modal .df-reset{border:none; background:#e2e8f0; color:#1e293b; border-radius:999px; padding:12px 16px; font-weight:800; cursor:pointer;}
+  body.dark #df-v15-visibility-modal .df-reset{background:#1e293b; color:#e2e8f0;}
+  #df-v15-visibility-modal .df-done{border:none; background:#4f46e5; color:#fff; border-radius:999px; padding:12px 18px; font-weight:900; cursor:pointer;}
+  @media (max-width: 768px){
+    #df-v15-visibility-modal .df-panel{margin:12px auto; width:min(100vw - 16px, 100%); max-height:calc(100vh - 24px); display:flex; flex-direction:column;}
+    #df-v15-visibility-modal .df-body{grid-template-columns:1fr; overflow:auto; padding-bottom:16px;}
+    #df-v15-visibility-fab{right:14px; bottom:14px; padding:11px 14px; font-size:12px;}
+  }
+</style>
+
+<div class="no-print" id="df-v15-visibility-root">
+  <button id="df-v15-visibility-fab" type="button">Janelas Visíveis</button>
+  <div id="df-v15-visibility-modal" aria-hidden="true">
+    <div class="df-backdrop" data-close="1"></div>
+    <div class="df-panel">
+      <div class="df-head">
+        <div>
+          <h3>Visibilidade do Painel</h3>
+          <p>Escolha quais janelas ficam visíveis. A seleção fica salva para o próximo acesso.</p>
+        </div>
+        <button class="df-close" id="df-v15-visibility-close" type="button">×</button>
+      </div>
+      <div class="df-body">
+        <div class="df-group">
+          <div class="df-group-title">Estrutura Principal</div>
+          <label class="df-option"><input type="checkbox" data-card-key="evolution" checked><span><div class="df-option-title">Evolução da Performance</div><div class="df-option-sub">Gráfico principal de evolução</div></span></label>
+          <label class="df-option"><input type="checkbox" data-card-key="period" checked><span><div class="df-option-title">Análise por Período</div><div class="df-option-sub">Filtros, KPIs e exportações</div></span></label>
+          <label class="df-option"><input type="checkbox" data-card-key="calendar" checked><span><div class="df-option-title">Calendário de Trades</div><div class="df-option-sub">Tabela mensal de operações</div></span></label>
+        </div>
+        <div class="df-group">
+          <div class="df-group-title">Abaixo do Calendário</div>
+          <label class="df-option"><input type="checkbox" data-card-key="saldo" checked><span><div class="df-option-title">Saldo Atual</div><div class="df-option-sub">Equity, progresso e buffer</div></span></label>
+          <label class="df-option"><input type="checkbox" data-card-key="cap" checked><span><div class="df-option-title">Teto 30% (Hoje)</div><div class="df-option-sub">Limite sugerido do dia</div></span></label>
+          <label class="df-option"><input type="checkbox" data-card-key="payout" checked><span><div class="df-option-title">Gestão de Saques</div><div class="df-option-sub">Disponível e próxima janela</div></span></label>
+          <label class="df-option"><input type="checkbox" data-card-key="cycles" checked><span><div class="df-option-title">Ciclos Atuais</div><div class="df-option-sub">Mensal, ciclos e médias recentes</div></span></label>
+          <label class="df-option"><input type="checkbox" data-card-key="insights" checked><span><div class="df-option-title">Insights Globais</div><div class="df-option-sub">Resumo consolidado entre contas</div></span></label>
+        </div>
+      </div>
+      <div class="df-foot">
+        <button class="df-reset" id="df-v15-visibility-reset" type="button">Restaurar padrão</button>
+        <button class="df-done" id="df-v15-visibility-done" type="button">Concluir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script id="df-v15-visibility-script">
+(function(){
+  if (window.__dfV15VisibilityApplied) return;
+  window.__dfV15VisibilityApplied = true;
+  var STORAGE_KEY = 'df_v15_card_visibility';
+
+  function getDefaultState(){
+    return { evolution:true, period:true, calendar:true, saldo:true, cap:true, payout:true, cycles:true, insights:true };
+  }
+  function loadState(){
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return getDefaultState();
+      var parsed = JSON.parse(raw);
+      return Object.assign(getDefaultState(), parsed || {});
+    } catch(e){ return getDefaultState(); }
+  }
+  function saveState(state){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e){}
+  }
+  function getRefs(){
+    var root = document.getElementById('df-v15-root');
+    var rowSmall = document.getElementById('df-v15-row-small');
+    var rowLarge = document.getElementById('df-v15-row-large');
+    if (!root || !rowSmall || !rowLarge) return null;
+    var evolution = root.children[0] || null;
+    var period = document.getElementById('period-analysis-card');
+    var calendar = root.children[2] || null;
+    var saldo = rowSmall.children[0] || null;
+    var cap = rowSmall.children[1] || null;
+    var payout = document.getElementById('payout-manager-container');
+    var cycles = rowLarge.children[0] || null;
+    var insights = document.getElementById('global-insights-card');
+    var refs = { evolution:evolution, period:period, calendar:calendar, saldo:saldo, cap:cap, payout:payout, cycles:cycles, insights:insights, rowSmall:rowSmall, rowLarge:rowLarge };
+    Object.keys(refs).forEach(function(key){
+      var el = refs[key];
+      if (el && el.nodeType === 1 && key !== 'rowSmall' && key !== 'rowLarge') {
+        el.dataset.dfCardKey = key;
+      }
+    });
+    return refs;
+  }
+  function applyState(state){
+    var refs = getRefs();
+    if (!refs) return false;
+    ['evolution','period','calendar','saldo','cap','payout','cycles','insights'].forEach(function(key){
+      var el = refs[key];
+      if (!el) return;
+      el.style.display = state[key] === false ? 'none' : '';
+    });
+    refs.rowSmall.style.display = Array.from(refs.rowSmall.children).some(function(el){ return el.style.display !== 'none'; }) ? '' : 'none';
+    refs.rowLarge.style.display = Array.from(refs.rowLarge.children).some(function(el){ return el.style.display !== 'none'; }) ? '' : 'none';
+    return true;
+  }
+  function syncInputs(state){
+    document.querySelectorAll('#df-v15-visibility-modal input[data-card-key]').forEach(function(input){
+      var key = input.getAttribute('data-card-key');
+      input.checked = state[key] !== false;
+    });
+  }
+  function updateFromInputs(){
+    var state = loadState();
+    document.querySelectorAll('#df-v15-visibility-modal input[data-card-key]').forEach(function(input){
+      state[input.getAttribute('data-card-key')] = !!input.checked;
+    });
+    saveState(state);
+    applyState(state);
+  }
+  function openModal(){
+    var modal = document.getElementById('df-v15-visibility-modal');
+    if (!modal) return;
+    syncInputs(loadState());
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+  }
+  function closeModal(){
+    var modal = document.getElementById('df-v15-visibility-modal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+  function bind(){
+    var fab = document.getElementById('df-v15-visibility-fab');
+    var closeBtn = document.getElementById('df-v15-visibility-close');
+    var doneBtn = document.getElementById('df-v15-visibility-done');
+    var resetBtn = document.getElementById('df-v15-visibility-reset');
+    var modal = document.getElementById('df-v15-visibility-modal');
+    if (fab && !fab.dataset.bound) { fab.dataset.bound='1'; fab.addEventListener('click', openModal); }
+    if (closeBtn && !closeBtn.dataset.bound) { closeBtn.dataset.bound='1'; closeBtn.addEventListener('click', closeModal); }
+    if (doneBtn && !doneBtn.dataset.bound) { doneBtn.dataset.bound='1'; doneBtn.addEventListener('click', function(){ updateFromInputs(); closeModal(); }); }
+    if (resetBtn && !resetBtn.dataset.bound) { resetBtn.dataset.bound='1'; resetBtn.addEventListener('click', function(){ var s = getDefaultState(); saveState(s); syncInputs(s); applyState(s); }); }
+    if (modal && !modal.dataset.bound) {
+      modal.dataset.bound='1';
+      modal.addEventListener('click', function(e){ if (e.target && e.target.getAttribute('data-close') === '1') closeModal(); });
+    }
+    document.querySelectorAll('#df-v15-visibility-modal input[data-card-key]').forEach(function(input){
+      if (input.dataset.bound) return;
+      input.dataset.bound='1';
+      input.addEventListener('change', updateFromInputs);
+    });
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeModal(); });
+  }
+  function boot(){
+    bind();
+    if (applyState(loadState())) return;
+    var tries = 0;
+    var iv = setInterval(function(){
+      tries += 1;
+      if (applyState(loadState())) clearInterval(iv);
+      if (tries >= 60) clearInterval(iv);
+    }, 250);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+})();
+</script>
 </body>
 </html>
