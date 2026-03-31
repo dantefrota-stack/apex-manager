@@ -364,6 +364,61 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
   .d2-info-body li{margin:6px 0;}
 </style>
 
+
+<style id="df-v11-layout-fix">
+  /* ===== Stable layout reconstruction (safe, original JS preserved) ===== */
+  .df-v11-stack{display:flex;flex-direction:column;gap:24px;}
+  .df-v11-primary > .dashboard-card{margin:0;}
+  .df-v11-calendar-full{width:100%;}
+  .df-v11-calendar-full > .dashboard-card,
+  .df-v11-calendar-full > .flex,
+  .df-v11-calendar-full > div{width:100%;}
+
+  .df-v11-small-grid,
+  .df-v11-large-grid{display:grid;gap:24px;align-items:stretch;}
+  .df-v11-small-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .df-v11-large-grid{grid-template-columns:minmax(480px,1.05fr) minmax(640px,1.35fr);} 
+
+  .df-v11-small-grid > .dashboard-card,
+  .df-v11-large-grid > .dashboard-card{height:100%;}
+
+  .df-balance-card{min-height:300px;}
+  .df-cap-card{min-height:300px;}
+  .df-payout-card{min-height:300px;}
+  .df-cycles-card{min-height:560px; max-height:680px; overflow-y:auto; scrollbar-gutter:stable;}
+  .df-global-card{min-height:560px; overflow:hidden;}
+  .df-global-card .df-scroll-always,
+  .df-global-card .df-scroll{max-height:240px;}
+
+  .df-v11-primary #period-analysis-card{width:100%;}
+  .df-v11-primary #period-analysis-card .grid.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr));}
+
+  .df-balance-card h2#current-equity{font-size:2.35rem;line-height:1;}
+  .df-cycles-card .grid.grid-cols-3.gap-2.text-center{gap:10px;}
+  .df-cycles-card .grid.grid-cols-3.gap-2.text-center > div{
+      background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.12);border-radius:12px;padding:12px 8px;
+  }
+  body.dark .df-cycles-card .grid.grid-cols-3.gap-2.text-center > div{background:rgba(99,102,241,.10);border-color:rgba(99,102,241,.18);}
+  .df-cycles-card #weekly-list{margin-top:16px; padding-top:8px; border-top:1px solid rgba(148,163,184,.18);} 
+
+  .df-payout-card .dashboard-card{height:100%;}
+  .df-payout-card .text-right p:first-child{white-space:nowrap;}
+  .df-payout-card .text-right p:last-child{white-space:nowrap;}
+
+  @media (max-width: 1279px){
+    .df-v11-small-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .df-v11-large-grid{grid-template-columns:1fr;}
+    .df-global-card,.df-cycles-card{min-height:520px;max-height:none;}
+  }
+  @media (max-width: 767px){
+    .df-v11-small-grid{grid-template-columns:1fr;}
+    .df-v11-primary,#period-analysis-card{width:100%;}
+    .df-balance-card,.df-cap-card,.df-payout-card,.df-cycles-card,.df-global-card{min-height:auto;max-height:none;overflow:visible;}
+    .df-balance-card h2#current-equity{font-size:2rem;}
+    .df-v11-primary #period-analysis-card .grid.grid-cols-3{grid-template-columns:1fr;}
+  }
+</style>
+
 </head>
 <body class="pb-12 transition-colors duration-300">
 
@@ -2736,6 +2791,61 @@ const total = listAll.length;
     tbody td{ padding:6px; }
   }
 </style>
+
+<style id="df-v11-layout-fix">
+  /* ===== Stable layout reconstruction (safe, original JS preserved) ===== */
+  .df-v11-stack{display:flex;flex-direction:column;gap:24px;}
+  .df-v11-primary > .dashboard-card{margin:0;}
+  .df-v11-calendar-full{width:100%;}
+  .df-v11-calendar-full > .dashboard-card,
+  .df-v11-calendar-full > .flex,
+  .df-v11-calendar-full > div{width:100%;}
+
+  .df-v11-small-grid,
+  .df-v11-large-grid{display:grid;gap:24px;align-items:stretch;}
+  .df-v11-small-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .df-v11-large-grid{grid-template-columns:minmax(480px,1.05fr) minmax(640px,1.35fr);} 
+
+  .df-v11-small-grid > .dashboard-card,
+  .df-v11-large-grid > .dashboard-card{height:100%;}
+
+  .df-balance-card{min-height:300px;}
+  .df-cap-card{min-height:300px;}
+  .df-payout-card{min-height:300px;}
+  .df-cycles-card{min-height:560px; max-height:680px; overflow-y:auto; scrollbar-gutter:stable;}
+  .df-global-card{min-height:560px; overflow:hidden;}
+  .df-global-card .df-scroll-always,
+  .df-global-card .df-scroll{max-height:240px;}
+
+  .df-v11-primary #period-analysis-card{width:100%;}
+  .df-v11-primary #period-analysis-card .grid.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr));}
+
+  .df-balance-card h2#current-equity{font-size:2.35rem;line-height:1;}
+  .df-cycles-card .grid.grid-cols-3.gap-2.text-center{gap:10px;}
+  .df-cycles-card .grid.grid-cols-3.gap-2.text-center > div{
+      background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.12);border-radius:12px;padding:12px 8px;
+  }
+  body.dark .df-cycles-card .grid.grid-cols-3.gap-2.text-center > div{background:rgba(99,102,241,.10);border-color:rgba(99,102,241,.18);}
+  .df-cycles-card #weekly-list{margin-top:16px; padding-top:8px; border-top:1px solid rgba(148,163,184,.18);} 
+
+  .df-payout-card .dashboard-card{height:100%;}
+  .df-payout-card .text-right p:first-child{white-space:nowrap;}
+  .df-payout-card .text-right p:last-child{white-space:nowrap;}
+
+  @media (max-width: 1279px){
+    .df-v11-small-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .df-v11-large-grid{grid-template-columns:1fr;}
+    .df-global-card,.df-cycles-card{min-height:520px;max-height:none;}
+  }
+  @media (max-width: 767px){
+    .df-v11-small-grid{grid-template-columns:1fr;}
+    .df-v11-primary,#period-analysis-card{width:100%;}
+    .df-balance-card,.df-cap-card,.df-payout-card,.df-cycles-card,.df-global-card{min-height:auto;max-height:none;overflow:visible;}
+    .df-balance-card h2#current-equity{font-size:2rem;}
+    .df-v11-primary #period-analysis-card .grid.grid-cols-3{grid-template-columns:1fr;}
+  }
+</style>
+
 </head>
 <body>
 
@@ -2757,181 +2867,79 @@ const total = listAll.length;
   ${groupsHtml}
 
 
-<style id="df-professional-layout-v10">
-/* ===== DF professional fixed dashboard layout v10 ===== */
-.df-top-stack{display:flex;flex-direction:column;gap:24px;margin-bottom:24px;}
-.df-calendar-only-grid{display:block !important;}
-.df-calendar-only-grid > .df-calendar-column{width:100% !important;max-width:none !important;}
-.df-bottom-fixed{display:flex;flex-direction:column;gap:24px;margin-top:24px;}
-.df-bottom-fixed .df-small-row,
-.df-bottom-fixed .df-large-row{display:grid;gap:24px;align-items:stretch;}
-.df-bottom-fixed .df-small-row{grid-template-columns:repeat(3,minmax(0,1fr));}
-.df-bottom-fixed .df-large-row{grid-template-columns:minmax(0,1.2fr) minmax(0,1.8fr);}
-.df-bottom-fixed .dashboard-card{height:100%;min-height:0;overflow:hidden;}
-.df-bottom-fixed .df-small-card{min-height:320px;}
-.df-bottom-fixed .df-large-card{min-height:500px;}
-.df-bottom-fixed .df-large-card.flex-col,
-.df-bottom-fixed #period-analysis-card,
-.df-bottom-fixed #global-insights-card{display:flex;flex-direction:column;}
-
-/* saldo */
-.df-bottom-fixed [data-df-card="balance"]{min-height:320px;}
-.df-bottom-fixed [data-df-card="balance"] .progress-bar-bg{margin-top:4px;}
-
-/* teto */
-.df-bottom-fixed [data-df-card="gaincap"]{display:flex;flex-direction:column;justify-content:flex-start;}
-.df-bottom-fixed [data-df-card="gaincap"] h2{font-size:2rem;line-height:1.05;word-break:break-word;}
-
-/* payout */
-.df-bottom-fixed [data-df-card="payout"]{display:flex;flex-direction:column;min-height:320px;}
-.df-bottom-fixed #payout-manager-container{display:flex;flex-direction:column;height:100%;gap:14px;}
-.df-bottom-fixed #payout-manager-container > div:first-child{display:grid !important;grid-template-columns:1fr;gap:10px;align-items:start;margin-bottom:0 !important;}
-.df-bottom-fixed #payout-manager-container > div:first-child > div:first-child{padding-bottom:0;border-bottom:none;}
-.df-bottom-fixed #payout-manager-container > div:first-child > div:last-child{text-align:left !important;background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.16);border-radius:12px;padding:10px 12px;}
-.df-bottom-fixed #payout-manager-container > div:first-child > div:last-child p:first-child{font-size:11px !important;line-height:1.1;font-weight:800;color:#64748b;letter-spacing:.05em;}
-.df-bottom-fixed #payout-manager-container > div:first-child > div:last-child p:last-child{font-size:1.2rem !important;line-height:1.1;margin-top:4px;}
-.df-bottom-fixed #payout-manager-container > div:nth-child(2){margin-bottom:0 !important;}
-.df-bottom-fixed #payout-manager-container > button,
-.df-bottom-fixed #payout-manager-container #payout-form-area{margin-top:auto;}
-
-/* cycles */
-.df-bottom-fixed [data-df-card="cycles"]{display:flex;flex-direction:column;min-height:500px;}
-.df-bottom-fixed [data-df-card="cycles"] > div{display:flex;flex-direction:column;height:100%;min-height:0;}
-.df-bottom-fixed [data-df-card="cycles"] .space-y-3{display:flex;flex-direction:column;gap:14px;min-height:0;flex:0 0 auto;}
-.df-bottom-fixed [data-df-card="cycles"] .mt-4.pt-2{flex:0 0 auto;}
-.df-bottom-fixed [data-df-card="cycles"] #weekly-list{margin-top:16px;flex:1 1 auto;min-height:150px;max-height:240px;overflow:auto;padding-right:6px;}
-.df-bottom-fixed [data-df-card="cycles"] #weekly-list::-webkit-scrollbar{width:8px;}
-.df-bottom-fixed [data-df-card="cycles"] #weekly-list::-webkit-scrollbar-thumb{background:rgba(100,116,139,.45);border-radius:999px;}
-.df-bottom-fixed [data-df-card="cycles"] .grid.grid-cols-3{gap:10px;}
-.df-bottom-fixed [data-df-card="cycles"] .grid.grid-cols-3 > div{background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.10);border-radius:12px;padding:10px 6px;}
-.df-bottom-fixed [data-df-card="cycles"] .grid.grid-cols-3 > div span:first-child{font-size:11px;line-height:1.15;}
-.df-bottom-fixed [data-df-card="cycles"] .grid.grid-cols-3 > div span:last-child{font-size:18px !important;line-height:1.1;display:block;margin-top:8px;}
-
-/* insights */
-.df-bottom-fixed [data-df-card="global"]{min-height:500px;}
-.df-bottom-fixed [data-df-card="global"] > .mt-3{flex:1 1 auto;min-height:0;}
-.df-bottom-fixed #global-top-payout,
-.df-bottom-fixed #global-top-risk{max-height:250px;overflow:auto;}
-
-/* period analysis under chart, same rhythm */
-.df-period-fullwidth{width:100%;}
-.df-period-fullwidth .dashboard-card{min-height:0;}
-
-/* phone/tablet */
-@media (max-width: 1279px){
-  .df-bottom-fixed .df-small-row{grid-template-columns:repeat(2,minmax(0,1fr));}
-  .df-bottom-fixed .df-large-row{grid-template-columns:1fr;}
-  .df-bottom-fixed [data-df-card="cycles"],
-  .df-bottom-fixed [data-df-card="global"]{min-height:460px;}
-}
-@media (max-width: 767px){
-  .df-top-stack,.df-bottom-fixed{gap:16px;}
-  .df-bottom-fixed .df-small-row,
-  .df-bottom-fixed .df-large-row{grid-template-columns:1fr;gap:16px;}
-  .df-bottom-fixed .df-small-card,
-  .df-bottom-fixed .df-large-card{min-height:auto;}
-  .df-bottom-fixed [data-df-card="cycles"] #weekly-list,
-  .df-bottom-fixed #global-top-payout,
-  .df-bottom-fixed #global-top-risk{max-height:none;overflow:visible;}
-}
-</style>
-<script id="df-professional-layout-script-v10">
+<script>
 (function(){
-  function run(){
-    const mainContainer = document.querySelector('.container.mx-auto.px-4.py-6.space-y-6');
-    if(!mainContainer) return;
+  function buildLayout(){
+    const main = document.querySelector('.container.mx-auto.px-4.py-6.space-y-6');
+    if(!main || document.getElementById('df-v11-anchor')) return;
 
-    const perfCard = document.getElementById('equityChart')?.closest('.dashboard-card');
-    const periodCard = document.getElementById('period-analysis-card');
-    const globalCard = document.getElementById('global-insights-card');
-    const balanceCard = document.getElementById('current-equity')?.closest('.dashboard-card');
-    const gainCard = document.getElementById('gain-cap')?.closest('.dashboard-card');
-    const payoutCard = document.getElementById('payout-manager-container')?.closest('.dashboard-card');
-    const cyclesCard = document.getElementById('stats-month')?.closest('.dashboard-card');
-    const calendarBody = document.getElementById('calendar-body');
-    if(!perfCard || !periodCard || !globalCard || !balanceCard || !gainCard || !payoutCard || !cyclesCard || !calendarBody) return;
+    const firstSection = main.children[0];
+    const calendarSection = main.children[1];
+    if(!firstSection || !calendarSection) return;
 
-    // avoid double-run
-    if(document.getElementById('df-bottom-fixed')) return;
+    const topChildren = Array.from(firstSection.children).filter(el => el && el.nodeType===1);
+    const chartCard = topChildren.find(el => el.querySelector && el.querySelector('#equityChart'));
+    const mixedGrid = topChildren.find(el => el.querySelector && el.querySelector('#period-analysis-card'));
+    const balanceGrid = topChildren.find(el => el.querySelector && el.querySelector('#current-equity'));
+    const periodCard = mixedGrid ? mixedGrid.querySelector('#period-analysis-card') : null;
+    const globalCard = mixedGrid ? mixedGrid.querySelector('#global-insights-card') : null;
 
-    const calendarCard = calendarBody.closest('.dashboard-card');
-    const calendarColumn = calendarCard?.parentElement;
-    const calendarGrid = calendarColumn?.parentElement;
-    const cyclesColumn = cyclesCard.parentElement;
+    const calendarBlock = calendarSection.querySelector('.lg\:col-span-2');
+    const cyclesCard = calendarSection.querySelector('#weekly-list')?.closest('.dashboard-card');
 
-    // remove old rows that become empty after moving cards
-    const topArea = perfCard.parentElement?.parentElement; // .space-y-6 wrapper
-    const oldStatsRow = balanceCard.parentElement;
-    const oldPeriodGrid = periodCard.parentElement;
+    const balanceCard = balanceGrid ? balanceGrid.querySelector('#current-equity')?.closest('.dashboard-card') : null;
+    const capCard = balanceGrid ? balanceGrid.querySelector('#gain-cap')?.closest('.dashboard-card') : null;
+    const payoutCard = balanceGrid ? document.getElementById('payout-manager-container')?.closest('.dashboard-card') : null;
 
-    // Build new top stack: performance then analysis, same width rhythm
-    const topStack = document.createElement('div');
-    topStack.className = 'df-top-stack';
-    perfCard.parentNode?.insertBefore(topStack, perfCard);
-    topStack.appendChild(perfCard);
+    if(!chartCard || !periodCard || !calendarBlock || !balanceCard || !capCard || !payoutCard || !cyclesCard || !globalCard) return;
 
-    const periodWrap = document.createElement('div');
-    periodWrap.className = 'df-period-fullwidth';
-    topStack.appendChild(periodWrap);
-    periodWrap.appendChild(periodCard);
+    balanceCard.classList.add('df-balance-card');
+    capCard.classList.add('df-cap-card');
+    payoutCard.classList.add('df-payout-card');
+    cyclesCard.classList.add('df-cycles-card');
+    globalCard.classList.add('df-global-card');
 
-    // Make calendar full width only
-    if(cyclesColumn && cyclesColumn !== calendarColumn){ cyclesColumn.remove(); }
-    if(calendarGrid){
-      calendarGrid.classList.add('df-calendar-only-grid');
-    }
-    if(calendarColumn){
-      calendarColumn.classList.add('df-calendar-column');
-      calendarColumn.className = 'df-calendar-column';
-    }
+    const anchor = document.createElement('div');
+    anchor.id = 'df-v11-anchor';
+    anchor.className = 'df-v11-stack';
 
-    // Bottom fixed structure
-    const bottom = document.createElement('div');
-    bottom.id = 'df-bottom-fixed';
-    bottom.className = 'df-bottom-fixed';
+    const primary = document.createElement('div');
+    primary.className = 'df-v11-primary space-y-6';
+    primary.appendChild(chartCard);
+    primary.appendChild(periodCard);
 
-    const smallRow = document.createElement('div');
-    smallRow.className = 'df-small-row';
-    const largeRow = document.createElement('div');
-    largeRow.className = 'df-large-row';
-    bottom.appendChild(smallRow);
-    bottom.appendChild(largeRow);
+    const calendarWrap = document.createElement('div');
+    calendarWrap.className = 'df-v11-calendar-full';
+    calendarWrap.appendChild(calendarBlock);
 
-    balanceCard.dataset.dfCard = 'balance';
-    gainCard.dataset.dfCard = 'gaincap';
-    payoutCard.dataset.dfCard = 'payout';
-    cyclesCard.dataset.dfCard = 'cycles';
-    globalCard.dataset.dfCard = 'global';
+    const smallGrid = document.createElement('div');
+    smallGrid.className = 'df-v11-small-grid';
+    smallGrid.appendChild(balanceCard);
+    smallGrid.appendChild(capCard);
+    smallGrid.appendChild(payoutCard);
 
-    balanceCard.classList.add('df-small-card');
-    gainCard.classList.add('df-small-card');
-    payoutCard.classList.add('df-small-card');
-    cyclesCard.classList.add('df-large-card');
-    globalCard.classList.add('df-large-card');
+    const largeGrid = document.createElement('div');
+    largeGrid.className = 'df-v11-large-grid';
+    largeGrid.appendChild(cyclesCard);
+    largeGrid.appendChild(globalCard);
 
-    smallRow.appendChild(balanceCard);
-    smallRow.appendChild(gainCard);
-    smallRow.appendChild(payoutCard);
-    largeRow.appendChild(cyclesCard);
-    largeRow.appendChild(globalCard);
+    anchor.appendChild(primary);
+    anchor.appendChild(calendarWrap);
+    anchor.appendChild(smallGrid);
+    anchor.appendChild(largeGrid);
 
-    if(calendarGrid && calendarGrid.parentNode){
-      calendarGrid.parentNode.insertBefore(bottom, calendarGrid.nextSibling);
-    }else{
-      mainContainer.appendChild(bottom);
-    }
-
-    // remove obsolete rows if empty
-    if(oldStatsRow && !oldStatsRow.querySelector('.dashboard-card')) oldStatsRow.remove();
-    if(oldPeriodGrid && !oldPeriodGrid.querySelector('.dashboard-card')) oldPeriodGrid.remove();
+    // Hide old wrappers after moving their children out
+    firstSection.style.display = 'none';
+    calendarSection.style.display = 'none';
+    main.insertBefore(anchor, main.querySelector('#help-popover'));
 
     try{ if(window.lucide) lucide.createIcons(); }catch(e){}
   }
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', () => setTimeout(run, 0), {once:true});
-  } else {
-    setTimeout(run, 0);
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(buildLayout, 50); }, {once:true});
+  }else{
+    setTimeout(buildLayout, 50);
   }
 })();
 </script>
@@ -5580,7 +5588,62 @@ ${period} • ${(acc?.name || 'Conta')}
                     const w = window.open('', '_blank');
                     if(!w) throw new Error('Popup bloqueado');
                     const html = `<!doctype html><html><head><meta charset="utf-8"><title>Analise por Periodo</title>
-                    <style>body{font-family:Arial,Helvetica,sans-serif;padding:24px}h1{margin:0 0 6px}p{margin:0 0 14px;color:#555}img{max-width:100%;height:auto;border:1px solid #ddd;border-radius:10px}table{margin-top:14px;width:100%;border-collapse:collapse}td{padding:8px;border-top:1px solid #eee}td:first-child{color:#666}</style></head>
+                    <style>body{font-family:Arial,Helvetica,sans-serif;padding:24px}h1{margin:0 0 6px}p{margin:0 0 14px;color:#555}img{max-width:100%;height:auto;border:1px solid #ddd;border-radius:10px}table{margin-top:14px;width:100%;border-collapse:collapse}td{padding:8px;border-top:1px solid #eee}td:first-child{color:#666}</style>
+<style id="df-v11-layout-fix">
+  /* ===== Stable layout reconstruction (safe, original JS preserved) ===== */
+  .df-v11-stack{display:flex;flex-direction:column;gap:24px;}
+  .df-v11-primary > .dashboard-card{margin:0;}
+  .df-v11-calendar-full{width:100%;}
+  .df-v11-calendar-full > .dashboard-card,
+  .df-v11-calendar-full > .flex,
+  .df-v11-calendar-full > div{width:100%;}
+
+  .df-v11-small-grid,
+  .df-v11-large-grid{display:grid;gap:24px;align-items:stretch;}
+  .df-v11-small-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+  .df-v11-large-grid{grid-template-columns:minmax(480px,1.05fr) minmax(640px,1.35fr);} 
+
+  .df-v11-small-grid > .dashboard-card,
+  .df-v11-large-grid > .dashboard-card{height:100%;}
+
+  .df-balance-card{min-height:300px;}
+  .df-cap-card{min-height:300px;}
+  .df-payout-card{min-height:300px;}
+  .df-cycles-card{min-height:560px; max-height:680px; overflow-y:auto; scrollbar-gutter:stable;}
+  .df-global-card{min-height:560px; overflow:hidden;}
+  .df-global-card .df-scroll-always,
+  .df-global-card .df-scroll{max-height:240px;}
+
+  .df-v11-primary #period-analysis-card{width:100%;}
+  .df-v11-primary #period-analysis-card .grid.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr));}
+
+  .df-balance-card h2#current-equity{font-size:2.35rem;line-height:1;}
+  .df-cycles-card .grid.grid-cols-3.gap-2.text-center{gap:10px;}
+  .df-cycles-card .grid.grid-cols-3.gap-2.text-center > div{
+      background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.12);border-radius:12px;padding:12px 8px;
+  }
+  body.dark .df-cycles-card .grid.grid-cols-3.gap-2.text-center > div{background:rgba(99,102,241,.10);border-color:rgba(99,102,241,.18);}
+  .df-cycles-card #weekly-list{margin-top:16px; padding-top:8px; border-top:1px solid rgba(148,163,184,.18);} 
+
+  .df-payout-card .dashboard-card{height:100%;}
+  .df-payout-card .text-right p:first-child{white-space:nowrap;}
+  .df-payout-card .text-right p:last-child{white-space:nowrap;}
+
+  @media (max-width: 1279px){
+    .df-v11-small-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    .df-v11-large-grid{grid-template-columns:1fr;}
+    .df-global-card,.df-cycles-card{min-height:520px;max-height:none;}
+  }
+  @media (max-width: 767px){
+    .df-v11-small-grid{grid-template-columns:1fr;}
+    .df-v11-primary,#period-analysis-card{width:100%;}
+    .df-balance-card,.df-cap-card,.df-payout-card,.df-cycles-card,.df-global-card{min-height:auto;max-height:none;overflow:visible;}
+    .df-balance-card h2#current-equity{font-size:2rem;}
+    .df-v11-primary #period-analysis-card .grid.grid-cols-3{grid-template-columns:1fr;}
+  }
+</style>
+
+</head>
                     <body><h1>Analise por Periodo</h1><p>${rangeText}</p>
                     ${chartDataUrl ? ("<img src=\""+chartDataUrl+"\"/>") : ""}
                     <table>
@@ -5601,181 +5664,79 @@ ${period} • ${(acc?.name || 'Conta')}
                     </table>
 
                     
-<style id="df-professional-layout-v10">
-/* ===== DF professional fixed dashboard layout v10 ===== */
-.df-top-stack{display:flex;flex-direction:column;gap:24px;margin-bottom:24px;}
-.df-calendar-only-grid{display:block !important;}
-.df-calendar-only-grid > .df-calendar-column{width:100% !important;max-width:none !important;}
-.df-bottom-fixed{display:flex;flex-direction:column;gap:24px;margin-top:24px;}
-.df-bottom-fixed .df-small-row,
-.df-bottom-fixed .df-large-row{display:grid;gap:24px;align-items:stretch;}
-.df-bottom-fixed .df-small-row{grid-template-columns:repeat(3,minmax(0,1fr));}
-.df-bottom-fixed .df-large-row{grid-template-columns:minmax(0,1.2fr) minmax(0,1.8fr);}
-.df-bottom-fixed .dashboard-card{height:100%;min-height:0;overflow:hidden;}
-.df-bottom-fixed .df-small-card{min-height:320px;}
-.df-bottom-fixed .df-large-card{min-height:500px;}
-.df-bottom-fixed .df-large-card.flex-col,
-.df-bottom-fixed #period-analysis-card,
-.df-bottom-fixed #global-insights-card{display:flex;flex-direction:column;}
-
-/* saldo */
-.df-bottom-fixed [data-df-card="balance"]{min-height:320px;}
-.df-bottom-fixed [data-df-card="balance"] .progress-bar-bg{margin-top:4px;}
-
-/* teto */
-.df-bottom-fixed [data-df-card="gaincap"]{display:flex;flex-direction:column;justify-content:flex-start;}
-.df-bottom-fixed [data-df-card="gaincap"] h2{font-size:2rem;line-height:1.05;word-break:break-word;}
-
-/* payout */
-.df-bottom-fixed [data-df-card="payout"]{display:flex;flex-direction:column;min-height:320px;}
-.df-bottom-fixed #payout-manager-container{display:flex;flex-direction:column;height:100%;gap:14px;}
-.df-bottom-fixed #payout-manager-container > div:first-child{display:grid !important;grid-template-columns:1fr;gap:10px;align-items:start;margin-bottom:0 !important;}
-.df-bottom-fixed #payout-manager-container > div:first-child > div:first-child{padding-bottom:0;border-bottom:none;}
-.df-bottom-fixed #payout-manager-container > div:first-child > div:last-child{text-align:left !important;background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.16);border-radius:12px;padding:10px 12px;}
-.df-bottom-fixed #payout-manager-container > div:first-child > div:last-child p:first-child{font-size:11px !important;line-height:1.1;font-weight:800;color:#64748b;letter-spacing:.05em;}
-.df-bottom-fixed #payout-manager-container > div:first-child > div:last-child p:last-child{font-size:1.2rem !important;line-height:1.1;margin-top:4px;}
-.df-bottom-fixed #payout-manager-container > div:nth-child(2){margin-bottom:0 !important;}
-.df-bottom-fixed #payout-manager-container > button,
-.df-bottom-fixed #payout-manager-container #payout-form-area{margin-top:auto;}
-
-/* cycles */
-.df-bottom-fixed [data-df-card="cycles"]{display:flex;flex-direction:column;min-height:500px;}
-.df-bottom-fixed [data-df-card="cycles"] > div{display:flex;flex-direction:column;height:100%;min-height:0;}
-.df-bottom-fixed [data-df-card="cycles"] .space-y-3{display:flex;flex-direction:column;gap:14px;min-height:0;flex:0 0 auto;}
-.df-bottom-fixed [data-df-card="cycles"] .mt-4.pt-2{flex:0 0 auto;}
-.df-bottom-fixed [data-df-card="cycles"] #weekly-list{margin-top:16px;flex:1 1 auto;min-height:150px;max-height:240px;overflow:auto;padding-right:6px;}
-.df-bottom-fixed [data-df-card="cycles"] #weekly-list::-webkit-scrollbar{width:8px;}
-.df-bottom-fixed [data-df-card="cycles"] #weekly-list::-webkit-scrollbar-thumb{background:rgba(100,116,139,.45);border-radius:999px;}
-.df-bottom-fixed [data-df-card="cycles"] .grid.grid-cols-3{gap:10px;}
-.df-bottom-fixed [data-df-card="cycles"] .grid.grid-cols-3 > div{background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.10);border-radius:12px;padding:10px 6px;}
-.df-bottom-fixed [data-df-card="cycles"] .grid.grid-cols-3 > div span:first-child{font-size:11px;line-height:1.15;}
-.df-bottom-fixed [data-df-card="cycles"] .grid.grid-cols-3 > div span:last-child{font-size:18px !important;line-height:1.1;display:block;margin-top:8px;}
-
-/* insights */
-.df-bottom-fixed [data-df-card="global"]{min-height:500px;}
-.df-bottom-fixed [data-df-card="global"] > .mt-3{flex:1 1 auto;min-height:0;}
-.df-bottom-fixed #global-top-payout,
-.df-bottom-fixed #global-top-risk{max-height:250px;overflow:auto;}
-
-/* period analysis under chart, same rhythm */
-.df-period-fullwidth{width:100%;}
-.df-period-fullwidth .dashboard-card{min-height:0;}
-
-/* phone/tablet */
-@media (max-width: 1279px){
-  .df-bottom-fixed .df-small-row{grid-template-columns:repeat(2,minmax(0,1fr));}
-  .df-bottom-fixed .df-large-row{grid-template-columns:1fr;}
-  .df-bottom-fixed [data-df-card="cycles"],
-  .df-bottom-fixed [data-df-card="global"]{min-height:460px;}
-}
-@media (max-width: 767px){
-  .df-top-stack,.df-bottom-fixed{gap:16px;}
-  .df-bottom-fixed .df-small-row,
-  .df-bottom-fixed .df-large-row{grid-template-columns:1fr;gap:16px;}
-  .df-bottom-fixed .df-small-card,
-  .df-bottom-fixed .df-large-card{min-height:auto;}
-  .df-bottom-fixed [data-df-card="cycles"] #weekly-list,
-  .df-bottom-fixed #global-top-payout,
-  .df-bottom-fixed #global-top-risk{max-height:none;overflow:visible;}
-}
-</style>
-<script id="df-professional-layout-script-v10">
+<script>
 (function(){
-  function run(){
-    const mainContainer = document.querySelector('.container.mx-auto.px-4.py-6.space-y-6');
-    if(!mainContainer) return;
+  function buildLayout(){
+    const main = document.querySelector('.container.mx-auto.px-4.py-6.space-y-6');
+    if(!main || document.getElementById('df-v11-anchor')) return;
 
-    const perfCard = document.getElementById('equityChart')?.closest('.dashboard-card');
-    const periodCard = document.getElementById('period-analysis-card');
-    const globalCard = document.getElementById('global-insights-card');
-    const balanceCard = document.getElementById('current-equity')?.closest('.dashboard-card');
-    const gainCard = document.getElementById('gain-cap')?.closest('.dashboard-card');
-    const payoutCard = document.getElementById('payout-manager-container')?.closest('.dashboard-card');
-    const cyclesCard = document.getElementById('stats-month')?.closest('.dashboard-card');
-    const calendarBody = document.getElementById('calendar-body');
-    if(!perfCard || !periodCard || !globalCard || !balanceCard || !gainCard || !payoutCard || !cyclesCard || !calendarBody) return;
+    const firstSection = main.children[0];
+    const calendarSection = main.children[1];
+    if(!firstSection || !calendarSection) return;
 
-    // avoid double-run
-    if(document.getElementById('df-bottom-fixed')) return;
+    const topChildren = Array.from(firstSection.children).filter(el => el && el.nodeType===1);
+    const chartCard = topChildren.find(el => el.querySelector && el.querySelector('#equityChart'));
+    const mixedGrid = topChildren.find(el => el.querySelector && el.querySelector('#period-analysis-card'));
+    const balanceGrid = topChildren.find(el => el.querySelector && el.querySelector('#current-equity'));
+    const periodCard = mixedGrid ? mixedGrid.querySelector('#period-analysis-card') : null;
+    const globalCard = mixedGrid ? mixedGrid.querySelector('#global-insights-card') : null;
 
-    const calendarCard = calendarBody.closest('.dashboard-card');
-    const calendarColumn = calendarCard?.parentElement;
-    const calendarGrid = calendarColumn?.parentElement;
-    const cyclesColumn = cyclesCard.parentElement;
+    const calendarBlock = calendarSection.querySelector('.lg\:col-span-2');
+    const cyclesCard = calendarSection.querySelector('#weekly-list')?.closest('.dashboard-card');
 
-    // remove old rows that become empty after moving cards
-    const topArea = perfCard.parentElement?.parentElement; // .space-y-6 wrapper
-    const oldStatsRow = balanceCard.parentElement;
-    const oldPeriodGrid = periodCard.parentElement;
+    const balanceCard = balanceGrid ? balanceGrid.querySelector('#current-equity')?.closest('.dashboard-card') : null;
+    const capCard = balanceGrid ? balanceGrid.querySelector('#gain-cap')?.closest('.dashboard-card') : null;
+    const payoutCard = balanceGrid ? document.getElementById('payout-manager-container')?.closest('.dashboard-card') : null;
 
-    // Build new top stack: performance then analysis, same width rhythm
-    const topStack = document.createElement('div');
-    topStack.className = 'df-top-stack';
-    perfCard.parentNode?.insertBefore(topStack, perfCard);
-    topStack.appendChild(perfCard);
+    if(!chartCard || !periodCard || !calendarBlock || !balanceCard || !capCard || !payoutCard || !cyclesCard || !globalCard) return;
 
-    const periodWrap = document.createElement('div');
-    periodWrap.className = 'df-period-fullwidth';
-    topStack.appendChild(periodWrap);
-    periodWrap.appendChild(periodCard);
+    balanceCard.classList.add('df-balance-card');
+    capCard.classList.add('df-cap-card');
+    payoutCard.classList.add('df-payout-card');
+    cyclesCard.classList.add('df-cycles-card');
+    globalCard.classList.add('df-global-card');
 
-    // Make calendar full width only
-    if(cyclesColumn && cyclesColumn !== calendarColumn){ cyclesColumn.remove(); }
-    if(calendarGrid){
-      calendarGrid.classList.add('df-calendar-only-grid');
-    }
-    if(calendarColumn){
-      calendarColumn.classList.add('df-calendar-column');
-      calendarColumn.className = 'df-calendar-column';
-    }
+    const anchor = document.createElement('div');
+    anchor.id = 'df-v11-anchor';
+    anchor.className = 'df-v11-stack';
 
-    // Bottom fixed structure
-    const bottom = document.createElement('div');
-    bottom.id = 'df-bottom-fixed';
-    bottom.className = 'df-bottom-fixed';
+    const primary = document.createElement('div');
+    primary.className = 'df-v11-primary space-y-6';
+    primary.appendChild(chartCard);
+    primary.appendChild(periodCard);
 
-    const smallRow = document.createElement('div');
-    smallRow.className = 'df-small-row';
-    const largeRow = document.createElement('div');
-    largeRow.className = 'df-large-row';
-    bottom.appendChild(smallRow);
-    bottom.appendChild(largeRow);
+    const calendarWrap = document.createElement('div');
+    calendarWrap.className = 'df-v11-calendar-full';
+    calendarWrap.appendChild(calendarBlock);
 
-    balanceCard.dataset.dfCard = 'balance';
-    gainCard.dataset.dfCard = 'gaincap';
-    payoutCard.dataset.dfCard = 'payout';
-    cyclesCard.dataset.dfCard = 'cycles';
-    globalCard.dataset.dfCard = 'global';
+    const smallGrid = document.createElement('div');
+    smallGrid.className = 'df-v11-small-grid';
+    smallGrid.appendChild(balanceCard);
+    smallGrid.appendChild(capCard);
+    smallGrid.appendChild(payoutCard);
 
-    balanceCard.classList.add('df-small-card');
-    gainCard.classList.add('df-small-card');
-    payoutCard.classList.add('df-small-card');
-    cyclesCard.classList.add('df-large-card');
-    globalCard.classList.add('df-large-card');
+    const largeGrid = document.createElement('div');
+    largeGrid.className = 'df-v11-large-grid';
+    largeGrid.appendChild(cyclesCard);
+    largeGrid.appendChild(globalCard);
 
-    smallRow.appendChild(balanceCard);
-    smallRow.appendChild(gainCard);
-    smallRow.appendChild(payoutCard);
-    largeRow.appendChild(cyclesCard);
-    largeRow.appendChild(globalCard);
+    anchor.appendChild(primary);
+    anchor.appendChild(calendarWrap);
+    anchor.appendChild(smallGrid);
+    anchor.appendChild(largeGrid);
 
-    if(calendarGrid && calendarGrid.parentNode){
-      calendarGrid.parentNode.insertBefore(bottom, calendarGrid.nextSibling);
-    }else{
-      mainContainer.appendChild(bottom);
-    }
-
-    // remove obsolete rows if empty
-    if(oldStatsRow && !oldStatsRow.querySelector('.dashboard-card')) oldStatsRow.remove();
-    if(oldPeriodGrid && !oldPeriodGrid.querySelector('.dashboard-card')) oldPeriodGrid.remove();
+    // Hide old wrappers after moving their children out
+    firstSection.style.display = 'none';
+    calendarSection.style.display = 'none';
+    main.insertBefore(anchor, main.querySelector('#help-popover'));
 
     try{ if(window.lucide) lucide.createIcons(); }catch(e){}
   }
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', () => setTimeout(run, 0), {once:true});
-  } else {
-    setTimeout(run, 0);
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(buildLayout, 50); }, {once:true});
+  }else{
+    setTimeout(buildLayout, 50);
   }
 })();
 </script>
@@ -9961,181 +9922,79 @@ We normalize daily buckets so:
 
 
 
-<style id="df-professional-layout-v10">
-/* ===== DF professional fixed dashboard layout v10 ===== */
-.df-top-stack{display:flex;flex-direction:column;gap:24px;margin-bottom:24px;}
-.df-calendar-only-grid{display:block !important;}
-.df-calendar-only-grid > .df-calendar-column{width:100% !important;max-width:none !important;}
-.df-bottom-fixed{display:flex;flex-direction:column;gap:24px;margin-top:24px;}
-.df-bottom-fixed .df-small-row,
-.df-bottom-fixed .df-large-row{display:grid;gap:24px;align-items:stretch;}
-.df-bottom-fixed .df-small-row{grid-template-columns:repeat(3,minmax(0,1fr));}
-.df-bottom-fixed .df-large-row{grid-template-columns:minmax(0,1.2fr) minmax(0,1.8fr);}
-.df-bottom-fixed .dashboard-card{height:100%;min-height:0;overflow:hidden;}
-.df-bottom-fixed .df-small-card{min-height:320px;}
-.df-bottom-fixed .df-large-card{min-height:500px;}
-.df-bottom-fixed .df-large-card.flex-col,
-.df-bottom-fixed #period-analysis-card,
-.df-bottom-fixed #global-insights-card{display:flex;flex-direction:column;}
-
-/* saldo */
-.df-bottom-fixed [data-df-card="balance"]{min-height:320px;}
-.df-bottom-fixed [data-df-card="balance"] .progress-bar-bg{margin-top:4px;}
-
-/* teto */
-.df-bottom-fixed [data-df-card="gaincap"]{display:flex;flex-direction:column;justify-content:flex-start;}
-.df-bottom-fixed [data-df-card="gaincap"] h2{font-size:2rem;line-height:1.05;word-break:break-word;}
-
-/* payout */
-.df-bottom-fixed [data-df-card="payout"]{display:flex;flex-direction:column;min-height:320px;}
-.df-bottom-fixed #payout-manager-container{display:flex;flex-direction:column;height:100%;gap:14px;}
-.df-bottom-fixed #payout-manager-container > div:first-child{display:grid !important;grid-template-columns:1fr;gap:10px;align-items:start;margin-bottom:0 !important;}
-.df-bottom-fixed #payout-manager-container > div:first-child > div:first-child{padding-bottom:0;border-bottom:none;}
-.df-bottom-fixed #payout-manager-container > div:first-child > div:last-child{text-align:left !important;background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.16);border-radius:12px;padding:10px 12px;}
-.df-bottom-fixed #payout-manager-container > div:first-child > div:last-child p:first-child{font-size:11px !important;line-height:1.1;font-weight:800;color:#64748b;letter-spacing:.05em;}
-.df-bottom-fixed #payout-manager-container > div:first-child > div:last-child p:last-child{font-size:1.2rem !important;line-height:1.1;margin-top:4px;}
-.df-bottom-fixed #payout-manager-container > div:nth-child(2){margin-bottom:0 !important;}
-.df-bottom-fixed #payout-manager-container > button,
-.df-bottom-fixed #payout-manager-container #payout-form-area{margin-top:auto;}
-
-/* cycles */
-.df-bottom-fixed [data-df-card="cycles"]{display:flex;flex-direction:column;min-height:500px;}
-.df-bottom-fixed [data-df-card="cycles"] > div{display:flex;flex-direction:column;height:100%;min-height:0;}
-.df-bottom-fixed [data-df-card="cycles"] .space-y-3{display:flex;flex-direction:column;gap:14px;min-height:0;flex:0 0 auto;}
-.df-bottom-fixed [data-df-card="cycles"] .mt-4.pt-2{flex:0 0 auto;}
-.df-bottom-fixed [data-df-card="cycles"] #weekly-list{margin-top:16px;flex:1 1 auto;min-height:150px;max-height:240px;overflow:auto;padding-right:6px;}
-.df-bottom-fixed [data-df-card="cycles"] #weekly-list::-webkit-scrollbar{width:8px;}
-.df-bottom-fixed [data-df-card="cycles"] #weekly-list::-webkit-scrollbar-thumb{background:rgba(100,116,139,.45);border-radius:999px;}
-.df-bottom-fixed [data-df-card="cycles"] .grid.grid-cols-3{gap:10px;}
-.df-bottom-fixed [data-df-card="cycles"] .grid.grid-cols-3 > div{background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.10);border-radius:12px;padding:10px 6px;}
-.df-bottom-fixed [data-df-card="cycles"] .grid.grid-cols-3 > div span:first-child{font-size:11px;line-height:1.15;}
-.df-bottom-fixed [data-df-card="cycles"] .grid.grid-cols-3 > div span:last-child{font-size:18px !important;line-height:1.1;display:block;margin-top:8px;}
-
-/* insights */
-.df-bottom-fixed [data-df-card="global"]{min-height:500px;}
-.df-bottom-fixed [data-df-card="global"] > .mt-3{flex:1 1 auto;min-height:0;}
-.df-bottom-fixed #global-top-payout,
-.df-bottom-fixed #global-top-risk{max-height:250px;overflow:auto;}
-
-/* period analysis under chart, same rhythm */
-.df-period-fullwidth{width:100%;}
-.df-period-fullwidth .dashboard-card{min-height:0;}
-
-/* phone/tablet */
-@media (max-width: 1279px){
-  .df-bottom-fixed .df-small-row{grid-template-columns:repeat(2,minmax(0,1fr));}
-  .df-bottom-fixed .df-large-row{grid-template-columns:1fr;}
-  .df-bottom-fixed [data-df-card="cycles"],
-  .df-bottom-fixed [data-df-card="global"]{min-height:460px;}
-}
-@media (max-width: 767px){
-  .df-top-stack,.df-bottom-fixed{gap:16px;}
-  .df-bottom-fixed .df-small-row,
-  .df-bottom-fixed .df-large-row{grid-template-columns:1fr;gap:16px;}
-  .df-bottom-fixed .df-small-card,
-  .df-bottom-fixed .df-large-card{min-height:auto;}
-  .df-bottom-fixed [data-df-card="cycles"] #weekly-list,
-  .df-bottom-fixed #global-top-payout,
-  .df-bottom-fixed #global-top-risk{max-height:none;overflow:visible;}
-}
-</style>
-<script id="df-professional-layout-script-v10">
+<script>
 (function(){
-  function run(){
-    const mainContainer = document.querySelector('.container.mx-auto.px-4.py-6.space-y-6');
-    if(!mainContainer) return;
+  function buildLayout(){
+    const main = document.querySelector('.container.mx-auto.px-4.py-6.space-y-6');
+    if(!main || document.getElementById('df-v11-anchor')) return;
 
-    const perfCard = document.getElementById('equityChart')?.closest('.dashboard-card');
-    const periodCard = document.getElementById('period-analysis-card');
-    const globalCard = document.getElementById('global-insights-card');
-    const balanceCard = document.getElementById('current-equity')?.closest('.dashboard-card');
-    const gainCard = document.getElementById('gain-cap')?.closest('.dashboard-card');
-    const payoutCard = document.getElementById('payout-manager-container')?.closest('.dashboard-card');
-    const cyclesCard = document.getElementById('stats-month')?.closest('.dashboard-card');
-    const calendarBody = document.getElementById('calendar-body');
-    if(!perfCard || !periodCard || !globalCard || !balanceCard || !gainCard || !payoutCard || !cyclesCard || !calendarBody) return;
+    const firstSection = main.children[0];
+    const calendarSection = main.children[1];
+    if(!firstSection || !calendarSection) return;
 
-    // avoid double-run
-    if(document.getElementById('df-bottom-fixed')) return;
+    const topChildren = Array.from(firstSection.children).filter(el => el && el.nodeType===1);
+    const chartCard = topChildren.find(el => el.querySelector && el.querySelector('#equityChart'));
+    const mixedGrid = topChildren.find(el => el.querySelector && el.querySelector('#period-analysis-card'));
+    const balanceGrid = topChildren.find(el => el.querySelector && el.querySelector('#current-equity'));
+    const periodCard = mixedGrid ? mixedGrid.querySelector('#period-analysis-card') : null;
+    const globalCard = mixedGrid ? mixedGrid.querySelector('#global-insights-card') : null;
 
-    const calendarCard = calendarBody.closest('.dashboard-card');
-    const calendarColumn = calendarCard?.parentElement;
-    const calendarGrid = calendarColumn?.parentElement;
-    const cyclesColumn = cyclesCard.parentElement;
+    const calendarBlock = calendarSection.querySelector('.lg\:col-span-2');
+    const cyclesCard = calendarSection.querySelector('#weekly-list')?.closest('.dashboard-card');
 
-    // remove old rows that become empty after moving cards
-    const topArea = perfCard.parentElement?.parentElement; // .space-y-6 wrapper
-    const oldStatsRow = balanceCard.parentElement;
-    const oldPeriodGrid = periodCard.parentElement;
+    const balanceCard = balanceGrid ? balanceGrid.querySelector('#current-equity')?.closest('.dashboard-card') : null;
+    const capCard = balanceGrid ? balanceGrid.querySelector('#gain-cap')?.closest('.dashboard-card') : null;
+    const payoutCard = balanceGrid ? document.getElementById('payout-manager-container')?.closest('.dashboard-card') : null;
 
-    // Build new top stack: performance then analysis, same width rhythm
-    const topStack = document.createElement('div');
-    topStack.className = 'df-top-stack';
-    perfCard.parentNode?.insertBefore(topStack, perfCard);
-    topStack.appendChild(perfCard);
+    if(!chartCard || !periodCard || !calendarBlock || !balanceCard || !capCard || !payoutCard || !cyclesCard || !globalCard) return;
 
-    const periodWrap = document.createElement('div');
-    periodWrap.className = 'df-period-fullwidth';
-    topStack.appendChild(periodWrap);
-    periodWrap.appendChild(periodCard);
+    balanceCard.classList.add('df-balance-card');
+    capCard.classList.add('df-cap-card');
+    payoutCard.classList.add('df-payout-card');
+    cyclesCard.classList.add('df-cycles-card');
+    globalCard.classList.add('df-global-card');
 
-    // Make calendar full width only
-    if(cyclesColumn && cyclesColumn !== calendarColumn){ cyclesColumn.remove(); }
-    if(calendarGrid){
-      calendarGrid.classList.add('df-calendar-only-grid');
-    }
-    if(calendarColumn){
-      calendarColumn.classList.add('df-calendar-column');
-      calendarColumn.className = 'df-calendar-column';
-    }
+    const anchor = document.createElement('div');
+    anchor.id = 'df-v11-anchor';
+    anchor.className = 'df-v11-stack';
 
-    // Bottom fixed structure
-    const bottom = document.createElement('div');
-    bottom.id = 'df-bottom-fixed';
-    bottom.className = 'df-bottom-fixed';
+    const primary = document.createElement('div');
+    primary.className = 'df-v11-primary space-y-6';
+    primary.appendChild(chartCard);
+    primary.appendChild(periodCard);
 
-    const smallRow = document.createElement('div');
-    smallRow.className = 'df-small-row';
-    const largeRow = document.createElement('div');
-    largeRow.className = 'df-large-row';
-    bottom.appendChild(smallRow);
-    bottom.appendChild(largeRow);
+    const calendarWrap = document.createElement('div');
+    calendarWrap.className = 'df-v11-calendar-full';
+    calendarWrap.appendChild(calendarBlock);
 
-    balanceCard.dataset.dfCard = 'balance';
-    gainCard.dataset.dfCard = 'gaincap';
-    payoutCard.dataset.dfCard = 'payout';
-    cyclesCard.dataset.dfCard = 'cycles';
-    globalCard.dataset.dfCard = 'global';
+    const smallGrid = document.createElement('div');
+    smallGrid.className = 'df-v11-small-grid';
+    smallGrid.appendChild(balanceCard);
+    smallGrid.appendChild(capCard);
+    smallGrid.appendChild(payoutCard);
 
-    balanceCard.classList.add('df-small-card');
-    gainCard.classList.add('df-small-card');
-    payoutCard.classList.add('df-small-card');
-    cyclesCard.classList.add('df-large-card');
-    globalCard.classList.add('df-large-card');
+    const largeGrid = document.createElement('div');
+    largeGrid.className = 'df-v11-large-grid';
+    largeGrid.appendChild(cyclesCard);
+    largeGrid.appendChild(globalCard);
 
-    smallRow.appendChild(balanceCard);
-    smallRow.appendChild(gainCard);
-    smallRow.appendChild(payoutCard);
-    largeRow.appendChild(cyclesCard);
-    largeRow.appendChild(globalCard);
+    anchor.appendChild(primary);
+    anchor.appendChild(calendarWrap);
+    anchor.appendChild(smallGrid);
+    anchor.appendChild(largeGrid);
 
-    if(calendarGrid && calendarGrid.parentNode){
-      calendarGrid.parentNode.insertBefore(bottom, calendarGrid.nextSibling);
-    }else{
-      mainContainer.appendChild(bottom);
-    }
-
-    // remove obsolete rows if empty
-    if(oldStatsRow && !oldStatsRow.querySelector('.dashboard-card')) oldStatsRow.remove();
-    if(oldPeriodGrid && !oldPeriodGrid.querySelector('.dashboard-card')) oldPeriodGrid.remove();
+    // Hide old wrappers after moving their children out
+    firstSection.style.display = 'none';
+    calendarSection.style.display = 'none';
+    main.insertBefore(anchor, main.querySelector('#help-popover'));
 
     try{ if(window.lucide) lucide.createIcons(); }catch(e){}
   }
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', () => setTimeout(run, 0), {once:true});
-  } else {
-    setTimeout(run, 0);
+    document.addEventListener('DOMContentLoaded', function(){ setTimeout(buildLayout, 50); }, {once:true});
+  }else{
+    setTimeout(buildLayout, 50);
   }
 })();
 </script>
