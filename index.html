@@ -1277,7 +1277,7 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
     };
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot, runTransaction, deleteField } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     // Inicializa o Firebase
@@ -1373,6 +1373,8 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
         try {
             // 1) Hidrata do Firestore uma vez (define __cloudHydrated e popula store)
             await loadFromCloud();
+            // Migra backup antigo embutido no documento principal para um documento separado
+            try { await migrateLegacyEmbeddedBackupIfNeeded(); } catch(e) { console.warn("backup migration failed:", e); }
 
             // 2) Listener inteligente: aplica apenas updates remotos mais novos e evita loop
             try { startCloudRealtimeSync(); } catch (e) { console.warn("startCloudRealtimeSync falhou:", e); }
@@ -1424,21 +1426,32 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
     }
 
     // Sobrescreve a função de salvar para usar o caminho fixo 'dante_data'
-    // Mantendo a lógica de backup 'prev_store_json'
+    // e manter o backup em documento separado para não estourar o limite de 1MB.
     window.saveToCloud = async () => {
+        if (typeof saveToCloudNow === 'function') {
+            return saveToCloudNow();
+        }
         const docRef = doc(db, "users", "dante_data");
+        const backupRef = doc(db, "users", "dante_data", "system", "prev");
         const statusEl = document.getElementById('status-text');
         if(statusEl) statusEl.textContent = "Salvando...";
 
         try {
-            const jsonStr = JSON.stringify(getPersistableStore()); // Usa sua função original de limpar dados
-            
+            const jsonStr = JSON.stringify(getPersistableStore());
             await runTransaction(db, async (txn) => {
                 const sfDoc = await txn.get(docRef);
+                const cur = sfDoc.exists() ? (sfDoc.data() || {}) : {};
+                txn.set(backupRef, {
+                    store_json: (typeof cur.store_json === 'string') ? cur.store_json : null,
+                    last_update_ms: Number(cur.last_update_ms || 0) || null,
+                    last_update_iso: (typeof cur.last_update_iso === 'string') ? cur.last_update_iso : null
+                }, { merge: true });
                 txn.set(docRef, {
                     store_json: jsonStr,
                     last_update_ms: Date.now(),
-                    prev_store_json: sfDoc.exists() ? sfDoc.data().store_json : null
+                    prev_store_json: deleteField(),
+                    prev_update_ms: deleteField(),
+                    prev_update_iso: deleteField()
                 }, { merge: true });
             });
 
@@ -5625,6 +5638,16 @@ ${period} • ${(acc?.name || 'Conta')}
                 // --- CLOUD (Realtime + Debounced Save; cloud-first) ---
         const CLOUD_DOC_COL = "users";
         const CLOUD_DOC_ID  = "dante_data";
+        const CLOUD_BACKUP_COL = "system";
+        const CLOUD_BACKUP_ID  = "prev";
+
+        function getCloudDocRef(){
+            return doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+        }
+
+        function getCloudBackupRef(){
+            return doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID, CLOUD_BACKUP_COL, CLOUD_BACKUP_ID);
+        }
 
         const CLIENT_ID_KEY = "df_client_id";
         const CLIENT_ID = (() => {
@@ -5718,8 +5741,52 @@ ${period} • ${(acc?.name || 'Conta')}
             }
         }
 
+        async function migrateLegacyEmbeddedBackupIfNeeded(){
+            try{
+                if(isOffline || !db || !runTransaction) return false;
+                const docRef = getCloudDocRef();
+                const backupRef = getCloudBackupRef();
+                let migrated = false;
+                await runTransaction(db, async (txn) => {
+                    const snap = await txn.get(docRef);
+                    if(!snap.exists()) return;
+                    const cur = snap.data() || {};
+                    const prevJson = (typeof cur.prev_store_json === 'string') ? cur.prev_store_json : '';
+                    if(!prevJson || prevJson.length < 20) return;
+
+                    const backupSnap = await txn.get(backupRef);
+                    const backupData = backupSnap.exists() ? (backupSnap.data() || {}) : {};
+                    const backupJson = (typeof backupData.store_json === 'string') ? backupData.store_json : '';
+
+                    if(!backupJson){
+                        txn.set(backupRef, {
+                            store_json: prevJson,
+                            last_update_ms: Number(cur.prev_update_ms || 0) || Number(cur.last_update_ms || 0) || Date.now(),
+                            last_update_iso: (typeof cur.prev_update_iso === 'string' && cur.prev_update_iso) ? cur.prev_update_iso : (typeof cur.last_update_iso === 'string' ? cur.last_update_iso : new Date().toISOString()),
+                            source_client_id: CLIENT_ID,
+                            migrated_from_main_doc: true
+                        }, { merge:true });
+                    }
+
+                    txn.set(docRef, {
+                        prev_store_json: deleteField(),
+                        prev_update_ms: deleteField(),
+                        prev_update_iso: deleteField()
+                    }, { merge:true });
+                    migrated = true;
+                });
+                if(migrated){
+                    console.info('[cloud] legacy embedded backup migrated to separate document');
+                }
+                return migrated;
+            }catch(e){
+                console.warn('migrateLegacyEmbeddedBackupIfNeeded failed:', e);
+                return false;
+            }
+        }
+
         async function loadFromCloud() {
-            const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+            const docRef = getCloudDocRef();
             const docSnap = await Promise.race([
                 getDoc(docRef),
                 new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout ao conectar no Firestore.")), 10000))
@@ -5820,7 +5887,7 @@ async function saveToCloudNow() {
             const force = !!__forceCloudSaveOnce;
             __forceCloudSaveOnce = false;
 
-            const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+            const docRef = getCloudDocRef();
             const nowMs = Date.now();
             const nowIso = new Date(nowMs).toISOString();
 
@@ -5867,17 +5934,24 @@ async function saveToCloudNow() {
                             }
                         }
 
+                        const backupRef = getCloudBackupRef();
+                        txn.set(backupRef, {
+                            store_json: curJson || null,
+                            last_update_ms: curMs || null,
+                            last_update_iso: curIso || null,
+                            source_client_id: CLIENT_ID,
+                            schema_version: 1
+                        }, { merge: true });
+
                         txn.set(docRef, {
                             store_json: jsonStr,
                             last_update_ms: nowMs,
                             last_update_iso: nowIso,
                             source_client_id: CLIENT_ID,
                             schema_version: 1,
-
-                            // rollback (previous cloud version)
-                            prev_store_json: curJson || null,
-                            prev_update_ms: curMs || null,
-                            prev_update_iso: curIso || null
+                            prev_store_json: deleteField(),
+                            prev_update_ms: deleteField(),
+                            prev_update_iso: deleteField()
                         }, { merge: true });
                     });
                 } else {
@@ -5887,7 +5961,10 @@ async function saveToCloudNow() {
                         last_update_ms: nowMs,
                         last_update_iso: nowIso,
                         source_client_id: CLIENT_ID,
-                        schema_version: 1
+                        schema_version: 1,
+                        prev_store_json: deleteField(),
+                        prev_update_ms: deleteField(),
+                        prev_update_iso: deleteField()
                     }, { merge: true });
                 }
 
@@ -5918,7 +5995,7 @@ async function saveToCloudNow() {
             }
             try{
                 await __initFirebaseIfPossible();
-                const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+                const docRef = getCloudDocRef();
 
                 if(!runTransaction){
                     toast(translateString(CURRENT_LANG==='en' ? "Restore unavailable (transaction module missing)." : "Restauração indisponível (módulo de transação ausente)."), 'error');
@@ -5928,11 +6005,25 @@ async function saveToCloudNow() {
                 setCloudStatus('saving', (CURRENT_LANG==='en' ? "Restoring..." : "Restaurando..."));
 
                 await runTransaction(db, async (txn) => {
+                    const backupRef = getCloudBackupRef();
                     const snap = await txn.get(docRef);
                     if(!snap.exists()) throw new Error(CURRENT_LANG==='en' ? "No cloud document found." : "Documento na nuvem não encontrado.");
                     const cur = snap.data() || {};
-                    const prevJson = (typeof cur.prev_store_json === 'string') ? cur.prev_store_json : '';
                     const curJson  = (typeof cur.store_json === 'string') ? cur.store_json : '';
+
+                    const backupSnap = await txn.get(backupRef);
+                    const backupData = backupSnap.exists() ? (backupSnap.data() || {}) : {};
+                    let prevJson = (typeof backupData.store_json === 'string') ? backupData.store_json : '';
+                    let prevMs = Number(backupData.last_update_ms || 0) || null;
+                    let prevIso = (typeof backupData.last_update_iso === 'string') ? backupData.last_update_iso : null;
+
+                    // backward compatibility if an old embedded backup still exists
+                    if((!prevJson || prevJson.length < 20) && typeof cur.prev_store_json === 'string'){
+                        prevJson = cur.prev_store_json;
+                        prevMs = Number(cur.prev_update_ms || 0) || prevMs;
+                        prevIso = (typeof cur.prev_update_iso === 'string') ? cur.prev_update_iso : prevIso;
+                    }
+
                     if(!prevJson || prevJson.length < 20){
                         throw new Error(CURRENT_LANG==='en'
                             ? "No previous cloud version available yet."
@@ -5946,11 +6037,18 @@ async function saveToCloudNow() {
                         last_update_ms: nowMs,
                         last_update_iso: nowIso,
                         source_client_id: CLIENT_ID,
+                        prev_store_json: deleteField(),
+                        prev_update_ms: deleteField(),
+                        prev_update_iso: deleteField()
+                    }, { merge:true });
 
-                        // keep current as the new 'prev' so you can undo the restore if needed
-                        prev_store_json: curJson,
-                        prev_update_ms: Number(cur.last_update_ms || 0) || null,
-                        prev_update_iso: (typeof cur.last_update_iso === 'string') ? cur.last_update_iso : null
+                    txn.set(backupRef, {
+                        store_json: curJson || null,
+                        last_update_ms: Number(cur.last_update_ms || 0) || null,
+                        last_update_iso: (typeof cur.last_update_iso === 'string') ? cur.last_update_iso : null,
+                        source_client_id: CLIENT_ID,
+                        restored_from_backup_ms: prevMs,
+                        restored_from_backup_iso: prevIso
                     }, { merge:true });
                 });
 
@@ -6040,7 +6138,7 @@ async function saveToCloudNow() {
         function startCloudRealtimeSync(){
             try{
                 if(!db || !onSnapshot) return;
-                const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+                const docRef = getCloudDocRef();
                 if(__cloudUnsub) { try{ __cloudUnsub(); }catch(e){} __cloudUnsub = null; }
 
                 __cloudUnsub = onSnapshot(docRef, (snap) => {
