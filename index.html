@@ -1531,7 +1531,9 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
 
         function logAdminAction(user, action){
             if(!store.adminLogs) store.adminLogs = [];
-            store.adminLogs.push({ date: new Date().toISOString(), user, action });
+            store.adminLogs = sanitizeAdminLogs([...(store.adminLogs || []), { date: new Date().toISOString(), user, action, source: 'admin' }]);
+            scheduleAdminLogsSave();
+            try { renderAdminLogsList(); } catch(e) {}
         }
 
         function promptAdminCredentials(contextMsg, minRole='admin'){
@@ -3483,22 +3485,32 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
         function renderAdminLogsList(){
             if(!els.adminLogsList) return;
-            const logs = (store.adminLogs || []);
+            const logs = [
+                ...(Array.isArray(store.adminLogs) ? store.adminLogs : []),
+                ...(Array.isArray(__importAuditLogs) ? __importAuditLogs : [])
+            ].sort((a,b) => new Date(b.date || 0) - new Date(a.date || 0));
+
             if(!logs.length){
                 els.adminLogsList.innerHTML = '<p class="text-xs text-slate-400 italic">Vazio.</p>';
                 return;
             }
-            const rows = logs.slice().reverse().map(l => {
+            const rows = logs.map(l => {
                 const dt = new Date(l.date);
                 const when = `${formatDateShort(dt)} ${formatTimeShort(dt)}`;
                 const user = l.user || '—';
-                const action = l.action || '';
+                const isImport = (l.source === 'import');
+                const badge = isImport
+                    ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">IMPORT</span>'
+                    : '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200">ADMIN</span>';
+                const action = isImport
+                    ? (l.summary || l.action || 'Importação')
+                    : (l.action || '—');
                 return `<div class="border-b border-slate-100 dark:border-slate-700 pb-2 last:border-0">
-                            <div class="flex justify-between gap-3">
+                            <div class="flex justify-between gap-3 items-center">
                                 <span class="text-slate-500">${when}</span>
-                                <span class="font-bold text-slate-700 dark:text-slate-200">${user}</span>
+                                <div class="flex items-center gap-2">${badge}<span class="font-bold text-slate-700 dark:text-slate-200">${escapeHtml(user)}</span></div>
                             </div>
-                            <div class="text-slate-600 dark:text-slate-300 mt-1">${action}</div>
+                            <div class="text-slate-600 dark:text-slate-300 mt-1">${escapeHtml(action)}</div>
                         </div>`;
             }).join('');
             els.adminLogsList.innerHTML = rows;
@@ -5649,6 +5661,21 @@ ${period} • ${(acc?.name || 'Conta')}
             return doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID, CLOUD_BACKUP_COL, CLOUD_BACKUP_ID);
         }
 
+        const CLOUD_AUDIT_DOC_ADMIN_LOGS = "admin_logs";
+        const CLOUD_AUDIT_DOC_IMPORT_AUDIT = "import_audit";
+
+        function getCloudSystemDocRef(docId){
+            return doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID, CLOUD_BACKUP_COL, docId);
+        }
+
+        function getCloudAdminLogsRef(){
+            return getCloudSystemDocRef(CLOUD_AUDIT_DOC_ADMIN_LOGS);
+        }
+
+        function getCloudImportAuditRef(){
+            return getCloudSystemDocRef(CLOUD_AUDIT_DOC_IMPORT_AUDIT);
+        }
+
         const CLIENT_ID_KEY = "df_client_id";
         const CLIENT_ID = (() => {
             try{
@@ -5677,6 +5704,9 @@ ${period} • ${(acc?.name || 'Conta')}
         let __pendingSaveBeforeHydrate = false;
         let __forceCloudSaveOnce = false;
         let __lastLocalBackupJson = "";
+        let __adminLogsSaveTimer = null;
+        let __importAuditSaveTimer = null;
+        let __importAuditLogs = [];
 
         let __cloudStatusTimer = null;
 
@@ -5728,6 +5758,9 @@ ${period} • ${(acc?.name || 'Conta')}
                 try{ delete s.tradeDetailsOpen; }catch(e){}
                 // recursos removidos
                 try{ delete s.apex_fee_rate; }catch(e){}
+                // sidecars (não manter no documento principal)
+                try{ delete s.adminLogs; }catch(e){}
+                try{ delete s.importAudit; }catch(e){}
                 return s;
             }catch(e){
                 // fallback (não ideal)
@@ -5737,7 +5770,140 @@ ${period} • ${(acc?.name || 'Conta')}
                 try{ delete clone.dayDetailsOpen; }catch(_){}
                 try{ delete clone.tradeDetailsOpen; }catch(_){}
                 try{ delete clone.apex_fee_rate; }catch(_){}
+                try{ delete clone.adminLogs; }catch(_){}
+                try{ delete clone.importAudit; }catch(_){}
                 return clone;
+            }
+        }
+
+
+        function sanitizeAdminLogs(items){
+            return (Array.isArray(items) ? items : [])
+                .filter(x => x && typeof x === 'object')
+                .map(x => ({
+                    date: (typeof x.date === 'string' && x.date) ? x.date : new Date().toISOString(),
+                    user: (x.user || '—').toString().slice(0, 80),
+                    action: (x.action || '').toString().slice(0, 500),
+                    source: 'admin'
+                }))
+                .slice(-500);
+        }
+
+        function sanitizeImportAudit(items){
+            return (Array.isArray(items) ? items : [])
+                .filter(x => x && typeof x === 'object')
+                .map(x => ({
+                    date: (typeof x.date === 'string' && x.date) ? x.date : new Date().toISOString(),
+                    user: (x.user || 'system').toString().slice(0, 80),
+                    source: 'import',
+                    kind: (x.kind || 'import').toString().slice(0, 40),
+                    summary: (x.summary || '').toString().slice(0, 500),
+                    details: (x.details && typeof x.details === 'object') ? x.details : {}
+                }))
+                .slice(-300);
+        }
+
+        async function saveCloudSidecarDoc(ref, payload){
+            if(isOffline || !db || !ref) return false;
+            await setDoc(ref, {
+                ...payload,
+                source_client_id: CLIENT_ID,
+                schema_version: 1,
+                last_update_ms: Date.now(),
+                last_update_iso: new Date().toISOString()
+            }, { merge:true });
+            return true;
+        }
+
+        async function saveAdminLogsSidecarNow(){
+            try{
+                await saveCloudSidecarDoc(getCloudAdminLogsRef(), {
+                    items: sanitizeAdminLogs(store.adminLogs || [])
+                });
+                return true;
+            }catch(e){
+                console.warn('saveAdminLogsSidecarNow failed:', e);
+                return false;
+            }
+        }
+
+        async function saveImportAuditSidecarNow(){
+            try{
+                await saveCloudSidecarDoc(getCloudImportAuditRef(), {
+                    items: sanitizeImportAudit(__importAuditLogs || [])
+                });
+                return true;
+            }catch(e){
+                console.warn('saveImportAuditSidecarNow failed:', e);
+                return false;
+            }
+        }
+
+        function scheduleAdminLogsSave(){
+            if(__adminLogsSaveTimer) clearTimeout(__adminLogsSaveTimer);
+            __adminLogsSaveTimer = setTimeout(()=>{
+                __adminLogsSaveTimer = null;
+                saveAdminLogsSidecarNow().catch(()=>{});
+            }, 350);
+        }
+
+        function scheduleImportAuditSave(){
+            if(__importAuditSaveTimer) clearTimeout(__importAuditSaveTimer);
+            __importAuditSaveTimer = setTimeout(()=>{
+                __importAuditSaveTimer = null;
+                saveImportAuditSidecarNow().catch(()=>{});
+            }, 350);
+        }
+
+        function recordImportAuditEvent(kind, summary, details){
+            try{
+                const item = {
+                    date: new Date().toISOString(),
+                    user: (adminSession && adminSession.username) ? adminSession.username : 'system',
+                    source: 'import',
+                    kind: (kind || 'import').toString(),
+                    summary: (summary || '').toString(),
+                    details: (details && typeof details === 'object') ? details : {}
+                };
+                __importAuditLogs = sanitizeImportAudit([...(Array.isArray(__importAuditLogs) ? __importAuditLogs : []), item]);
+                scheduleImportAuditSave();
+                try{ renderAdminLogsList(); }catch(e){}
+            }catch(e){ console.warn('recordImportAuditEvent failed:', e); }
+        }
+
+        async function loadCloudSidecarDocs(){
+            try{
+                const legacyAdmin = sanitizeAdminLogs(store.adminLogs || []);
+                const legacyImport = sanitizeImportAudit(store.importAudit || []);
+                store.adminLogs = [];
+                try{ delete store.importAudit; }catch(e){}
+                __importAuditLogs = [];
+
+                const [adminSnap, importSnap] = await Promise.all([
+                    getDoc(getCloudAdminLogsRef()).catch(()=>null),
+                    getDoc(getCloudImportAuditRef()).catch(()=>null)
+                ]);
+
+                const remoteAdmin = (adminSnap && adminSnap.exists()) ? sanitizeAdminLogs((adminSnap.data() || {}).items || []) : [];
+                const remoteImport = (importSnap && importSnap.exists()) ? sanitizeImportAudit((importSnap.data() || {}).items || []) : [];
+
+                if(remoteAdmin.length){
+                    store.adminLogs = remoteAdmin;
+                }else if(legacyAdmin.length){
+                    store.adminLogs = legacyAdmin;
+                    scheduleAdminLogsSave();
+                }
+
+                if(remoteImport.length){
+                    __importAuditLogs = remoteImport;
+                }else if(legacyImport.length){
+                    __importAuditLogs = legacyImport;
+                    scheduleImportAuditSave();
+                }
+            }catch(e){
+                console.warn('loadCloudSidecarDocs failed:', e);
+                store.adminLogs = sanitizeAdminLogs(store.adminLogs || []);
+                __importAuditLogs = sanitizeImportAudit(__importAuditLogs || []);
             }
         }
 
@@ -5856,6 +6022,9 @@ ${period} • ${(acc?.name || 'Conta')}
             // Mark cloud as hydrated so saves can proceed
             __cloudHydrated = true;
             try { __lastLoadedCloudLen = (data.store_json || '').length; } catch(e) { __lastLoadedCloudLen = 0; }
+
+            // Sidecars: admin logs / import audit (kept out of main store_json)
+            await loadCloudSidecarDocs();
 
             // If the user made changes before the cloud finished loading, flush them now
             if (__pendingSaveBeforeHydrate) {
@@ -8061,6 +8230,12 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
               }
             }
         touchStore();
+        recordImportAuditEvent('ninja_trader', `NinjaTrader • Dias aplicados: ${appliedDays} | Contas criadas: ${createdAccounts} | Conflitos ignorados: ${skippedConflicts}`, {
+            appliedDays,
+            createdAccounts,
+            skippedConflicts,
+            files: (ninjaPerfPreview && Array.isArray(ninjaPerfPreview.files) ? ninjaPerfPreview.files.map(x => x?.file?.name).filter(Boolean).slice(0, 20) : [])
+        });
         await saveToCloudNow();
                 try{ renderAll(); }catch(err){ console.error(err); }
 
@@ -8769,6 +8944,13 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                     }
                 }
         touchStore();
+        recordImportAuditEvent('tradovate_cash_history', `Tradovate Cash History • Novos: ${imported} | Match: ${matches} | Conflitos: ${conflicts} | Equity: ${equityUpdated}`, {
+            imported,
+            matches,
+            conflicts,
+            equityUpdated,
+            files: (_cashGetSelectedFiles() || []).map(f => f && f.name).filter(Boolean).slice(0, 20)
+        });
         await saveToCloudNow();
                 try{ renderAll(); }catch(err){ console.error(err); }
 
