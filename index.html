@@ -341,6 +341,32 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
 .day-details-row td{background:rgba(99,102,241,0.04);border-top:1px dashed rgba(148,163,184,0.6);}
 .dark .day-details-row td{background:rgba(99,102,241,0.08);border-top:1px dashed rgba(71,85,105,0.8);}
 
+
+        .account-status-pill{
+            display:inline-flex; align-items:center; gap:6px;
+            padding:4px 10px; border-radius:999px; font-size:11px; font-weight:800;
+            border:1px solid transparent;
+        }
+        .account-status-pill.active{ background:rgba(16,185,129,.10); color:#047857; border-color:rgba(16,185,129,.24); }
+        .account-status-pill.suspended{ background:rgba(245,158,11,.12); color:#b45309; border-color:rgba(245,158,11,.26); }
+        .account-status-pill.archived{ background:rgba(100,116,139,.12); color:#475569; border-color:rgba(100,116,139,.26); }
+        body.dark .account-status-pill.active{ color:#6ee7b7; }
+        body.dark .account-status-pill.suspended{ color:#fcd34d; }
+        body.dark .account-status-pill.archived{ color:#cbd5e1; }
+        .account-lock-banner{
+            display:none; align-items:flex-start; gap:10px; padding:12px 14px; margin-bottom:14px;
+            border-radius:14px; border:1px solid rgba(245,158,11,.24); background:rgba(245,158,11,.08);
+            color:#92400e;
+        }
+        .account-lock-banner.visible{ display:flex; }
+        .account-lock-banner.archived{
+            border-color:rgba(100,116,139,.26); background:rgba(100,116,139,.08); color:#334155;
+        }
+        body.dark .account-lock-banner{ color:#fcd34d; }
+        body.dark .account-lock-banner.archived{ color:#cbd5e1; }
+        .account-lock-banner .title{ font-size:12px; font-weight:900; text-transform:uppercase; letter-spacing:.04em; }
+        .account-lock-banner .desc{ font-size:12px; line-height:1.35; opacity:.9; }
+
 </style>
 
 <style id="d2-info-modal-styles">
@@ -878,6 +904,8 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
                            <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs dark:bg-slate-800 dark:text-slate-400">
     <tr>
         <th class="px-4 py-3 text-left min-w-[220px]">Conta</th>
+        <th class="px-4 py-3 text-left min-w-[120px]">Grupo</th>
+        <th class="px-4 py-3 text-left min-w-[120px]">Status</th>
         <th class="px-4 py-3 text-left min-w-[140px]">Plano</th>
         <th class="px-4 py-3 text-right">Equity</th>
         <th class="px-4 py-3 text-right">Disponível</th>
@@ -933,7 +961,7 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
 
     <div class="bg-white border-b border-slate-200 shadow-sm sticky top-10 z-30 transition-colors dark:border-slate-700">
         <div class="container mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
-            <div><h1 id="active-account-name" class="font-bold text-lg leading-none text-slate-800 dark:text-white">DF Strategic</h1><p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1"><span id="active-account-config">--</span></p></div>
+            <div><h1 id="active-account-name" class="font-bold text-lg leading-none text-slate-800 dark:text-white">DF Strategic</h1><p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1"><span id="active-account-config">--</span></p><p id="active-account-meta" class="text-[11px] mt-1 text-slate-500 dark:text-slate-400"></p></div>
             <div class="flex gap-2 text-sm no-print">
                 <select id="config-size" onchange="updateConfig()" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200"><option value="25k">25k</option><option value="50k">50k</option><option value="75k">75k</option><option value="100k">100k</option><option value="150k">150k</option><option value="250k">250k</option><option value="300k">300k</option></select>
                 <select id="config-month" onchange="updateConfig()" class="bg-slate-50 border border-slate-300 rounded px-2 py-1 text-slate-700 text-xs outline-none dark:bg-slate-800 dark:border-slate-600 dark:text-slate-200"><option value="1">Mês 1-3</option><option value="4">Mês 4+</option></select>
@@ -945,6 +973,7 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
     </div>
 
     <div class="container mx-auto px-4 py-6 space-y-6">
+        <div id="active-account-lock-banner" class="account-lock-banner no-print" aria-live="polite"></div>
         
         <div class="space-y-6">
             <div class="dashboard-card p-6">
@@ -1277,7 +1306,7 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
     };
 
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, onSnapshot, runTransaction, collection, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
     // Inicializa o Firebase
@@ -1588,7 +1617,7 @@ let isOffline = false;
             accountSearch: document.getElementById('account-search'),
             accountSearchClear: document.getElementById('account-search-clear'),
             accountsSummary: document.getElementById('accounts-summary'), 
-            activeName: document.getElementById('active-account-name'), activeConfig: document.getElementById('active-account-config'), 
+            activeName: document.getElementById('active-account-name'), activeConfig: document.getElementById('active-account-config'), activeMeta: document.getElementById('active-account-meta'), activeLockBanner: document.getElementById('active-account-lock-banner'),
             inpSize: document.getElementById('config-size'), inpMonth: document.getElementById('config-month'), 
             equity: document.getElementById('current-equity'), equityDiff: document.getElementById('equity-diff'), equityProgress: document.getElementById('equity-progress'),
             ddFloor: document.getElementById('dd-floor'), ddBuffer: document.getElementById('dd-buffer'), ddThermo: document.getElementById('dd-thermo'), ddAlert: document.getElementById('dd-alert'), ddModeLabel: document.getElementById('dd-mode-label'),
@@ -2708,6 +2737,8 @@ const total = listAll.length;
                     return `
         <tr>
           <td class="name">${escapeHtml(r.name || '')}</td>
+          <td>${escapeHtml(r.group || '')}</td>
+          <td>${escapeHtml(r.statusLabel || '')}</td>
           <td>${escapeHtml(r.size || '')}</td>
           <td class="num">${formatCurrency(Number(r.equity||0))}</td>
           <td class="num">${Number(r.available||0) >= 500 ? formatCurrency(Number(r.available||0)) : '—'}</td>
@@ -2734,6 +2765,8 @@ const total = listAll.length;
         <thead>
           <tr>
             <th>${isEN?'Account':'Conta'}</th>
+            <th>${isEN?'Group':'Grupo'}</th>
+            <th>${isEN?'Status':'Status'}</th>
             <th>${isEN?'Size':'Tamanho'}</th>
             <th class="num">${isEN?'Equity':'Equity'}</th>
             <th class="num">${isEN?'Available':'Disponível'}</th>
@@ -3094,6 +3127,8 @@ function _openPrintWindow(htmlStr){
                 const mapRow = (r) => ({
                     id: r.acc.id || '',
                     name: r.acc.name || '',
+                    group: getAccountGroupLabel(r.acc.companyGroup || 'Sem grupo'),
+                    statusLabel: getAccountStatusLabel(r.acc.status || 'active'),
                     size: r.acc.size || '',
                     equity: Number(r.equity || 0),              // equity (saldo atual)
                     safety: Number(r.threshold || 0),
@@ -3148,6 +3183,8 @@ function _openPrintWindow(htmlStr){
                 rows.push(`
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/40">
                         <td class="px-4 py-3 font-semibold text-slate-800 dark:text-white">${escapeHtml(acc.name || 'Sem nome')}</td>
+                        <td class="px-4 py-3 text-slate-600 dark:text-slate-300">${escapeHtml(getAccountGroupLabel(acc.companyGroup || 'Sem grupo'))}</td>
+                        <td class="px-4 py-3"><span class="account-status-pill ${acc.status || 'active'}">${getAccountStatusLabel(acc.status || 'active')}</span></td>
                         <td class="px-4 py-3 text-slate-600 dark:text-slate-300">
                             <div class="font-semibold text-slate-800 dark:text-white">${escapeHtml(acc.size || '--')}</div>
                             <div class="text-[11px] text-slate-400">Safety: ${formatCurrency(row.threshold)}</div>
@@ -4572,7 +4609,7 @@ function renderCalendar(acc) {
                 if (displayVal > 0) colorClass = 'val-pos';
                 else if (displayVal < 0) colorClass = 'val-neg';
 
-                const readOnlyDay = false; // allow editing also on cross-month days shown in the grid
+                const readOnlyDay = (acc.status && acc.status !== 'active'); // inactive accounts stay visible but operationally locked
                 const inputDisabledAttr = readOnlyDay ? 'disabled' : '';
                 const inputExtraClass = readOnlyDay ? ' opacity-60 cursor-not-allowed' : '';
 
@@ -4981,6 +5018,7 @@ function renderCalendar(acc) {
             renderPayoutHistory(acc); 
             try{ renderGlobalInsights(); }catch(e){}
             lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions(); 
+            applyActiveAccountOperationalState();
         }
 
         window.toggleFavorite = (id) => {
@@ -5112,10 +5150,91 @@ function renderCalendar(acc) {
             saveToCloud();
             renderAccountGroupFilters();
             renderSidebar();
+            renderActiveAccountMeta();
             try{ renderGlobalInsights(); }catch(e){}
             try{ renderAccountsOverview(); }catch(e){}
+            applyActiveAccountOperationalState();
             closeAccountMetaModal();
         };
+
+
+        function getAccountStatusLabel(status){
+            if(status === 'suspended') return (CURRENT_LANG === 'en') ? 'Suspended' : 'Suspensa';
+            if(status === 'archived') return (CURRENT_LANG === 'en') ? 'Archived' : 'Arquivada';
+            return (CURRENT_LANG === 'en') ? 'Active' : 'Ativa';
+        }
+
+        function getAccountGroupLabel(group){
+            const value = String(group || 'Sem grupo').trim() || 'Sem grupo';
+            return value === 'Sem grupo' && CURRENT_LANG === 'en' ? 'No group' : value;
+        }
+
+        function renderActiveAccountMeta(){
+            const acc = getActive();
+            if(!acc || !els.activeMeta) return;
+            normalizeAccountMeta(acc);
+            const status = acc.status || 'active';
+            const groupLabel = getAccountGroupLabel(acc.companyGroup);
+            els.activeMeta.innerHTML = `
+                <span class="account-status-pill ${status}">${getAccountStatusLabel(status)}</span>
+                <span class="ml-2">${escapeHtml(groupLabel)}</span>
+            `;
+        }
+
+        function applyActiveAccountOperationalState(){
+            const acc = getActive();
+            if(!acc) return;
+            normalizeAccountMeta(acc);
+            const editable = acc.status === 'active';
+            renderActiveAccountMeta();
+
+            if(els.inpSize) els.inpSize.disabled = !editable;
+            if(els.inpMonth) els.inpMonth.disabled = !editable;
+
+            const selectors = [
+                '#calendar-body input',
+                '#calendar-body select',
+                '#calendar-body textarea',
+                '#calendar-body button',
+                '#payout-manager-container input',
+                '#payout-manager-container select',
+                '#payout-manager-container textarea',
+                '#payout-manager-container button'
+            ];
+            selectors.forEach(selector => {
+                document.querySelectorAll(selector).forEach(node => {
+                    node.disabled = !editable;
+                    node.classList.toggle('opacity-60', !editable);
+                    node.classList.toggle('cursor-not-allowed', !editable);
+                });
+            });
+
+            if(els.activeLockBanner){
+                if(editable){
+                    els.activeLockBanner.className = 'account-lock-banner no-print';
+                    els.activeLockBanner.innerHTML = '';
+                }else{
+                    const isArchived = acc.status === 'archived';
+                    els.activeLockBanner.className = `account-lock-banner no-print visible ${isArchived ? 'archived' : ''}`;
+                    els.activeLockBanner.innerHTML = `
+                        <div class="shrink-0 pt-0.5">${isArchived ? '🗂️' : '⏸️'}</div>
+                        <div>
+                            <div class="title">${isArchived ? ((CURRENT_LANG==='en') ? 'Archived account' : 'Conta arquivada') : ((CURRENT_LANG==='en') ? 'Suspended account' : 'Conta suspensa')}</div>
+                            <div class="desc">
+                                ${isArchived
+                                    ? ((CURRENT_LANG==='en')
+                                        ? 'This account remains visible for analysis, but operational actions are locked. Use “Status e Grupo” to reactivate it when needed.'
+                                        : 'Esta conta continua visível para análise, mas as ações operacionais ficam bloqueadas. Use “Status e Grupo” para reativar quando necessário.')
+                                    : ((CURRENT_LANG==='en')
+                                        ? 'This account remains visible for analysis, but trading, payout and editing actions are temporarily locked until it is reactivated.'
+                                        : 'Esta conta continua visível para análise, mas as ações de trade, saque e edição ficam temporariamente bloqueadas até ser reativada.')
+                                }
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
 
         function renderSidebar() {
             // Wire search UI once
@@ -5247,11 +5366,13 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             els.activeConfig.textContent = `${acc.size} • ${(CURRENT_LANG==='en'?'Month':'Mês')} ${acc.monthType}`;
             els.inpSize.value = acc.size;
             els.inpMonth.value = acc.monthType;
+            renderActiveAccountMeta();
 
             // Conta selecionada é por-dispositivo (localStorage). Não salvar na nuvem aqui para evitar loops.
 
             renderSidebar();
             renderDashboard();
+            applyActiveAccountOperationalState();
         }
 
                 function shareReportInternal() {
@@ -5625,8 +5746,6 @@ ${period} • ${(acc?.name || 'Conta')}
                 // --- CLOUD (Realtime + Debounced Save; cloud-first) ---
         const CLOUD_DOC_COL = "users";
         const CLOUD_DOC_ID  = "dante_data";
-        const CLOUD_CHUNKS_SUBCOL = "store_chunks";
-        const CLOUD_CHUNK_SIZE = 300000;
 
         const CLIENT_ID_KEY = "df_client_id";
         const CLIENT_ID = (() => {
@@ -5720,63 +5839,6 @@ ${period} • ${(acc?.name || 'Conta')}
             }
         }
 
-
-        function splitStringIntoChunks(str, size){
-            const s = String(str || '');
-            const out = [];
-            for(let i = 0; i < s.length; i += size){
-                out.push(s.slice(i, i + size));
-            }
-            return out;
-        }
-
-        async function fetchChunkedStoreJson(){
-            const colRef = collection(db, CLOUD_DOC_COL, CLOUD_DOC_ID, CLOUD_CHUNKS_SUBCOL);
-            const snap = await getDocs(colRef);
-            if(!snap || snap.empty) return '';
-            const rows = [];
-            snap.forEach(d => {
-                const v = d.data() || {};
-                rows.push({ i: Number(v.i || 0), part: String(v.json_part || '') });
-            });
-            rows.sort((a,b) => a.i - b.i);
-            return rows.map(r => r.part).join('');
-        }
-
-        async function writeChunkedStoreJson(jsonStr, nowMs, nowIso){
-            const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
-            const colRef = collection(db, CLOUD_DOC_COL, CLOUD_DOC_ID, CLOUD_CHUNKS_SUBCOL);
-
-            const chunks = splitStringIntoChunks(jsonStr, CLOUD_CHUNK_SIZE);
-            const existing = await getDocs(colRef);
-            const batch = writeBatch(db);
-
-            existing.forEach(d => batch.delete(d.ref));
-
-            chunks.forEach((part, idx) => {
-                batch.set(doc(colRef, `chunk_${String(idx).padStart(4,'0')}`), {
-                    i: idx,
-                    json_part: part,
-                    bytes: part.length,
-                    updated_ms: nowMs
-                });
-            });
-
-            batch.set(docRef, {
-                storage_mode: 'chunked',
-                chunk_count: chunks.length,
-                chunk_size: CLOUD_CHUNK_SIZE,
-                store_json: null,
-                total_json_bytes: jsonStr.length,
-                last_update_ms: nowMs,
-                last_update_iso: nowIso,
-                source_client_id: CLIENT_ID,
-                schema_version: 2
-            }, { merge: true });
-
-            await batch.commit();
-        }
-
         async function loadFromCloud() {
             const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
             const docSnap = await Promise.race([
@@ -5790,26 +5852,19 @@ ${period} • ${(acc?.name || 'Conta')}
             const ms = Number(data.last_update_ms || 0) || 0;
             if(ms) __lastRemoteUpdateMs = ms;
 
-            let cloudJson = '';
-            if(data.storage_mode === 'chunked'){
-                cloudJson = await fetchChunkedStoreJson();
-            } else {
-                cloudJson = String(data.store_json || '');
-            }
-
-            if (!cloudJson) { __cloudHydrated = true; __lastLoadedCloudLen = 0; return; }
+            if (!data.store_json) { __cloudHydrated = true; __lastLoadedCloudLen = 0; return; }
 
             let parsed = null;
-            try { parsed = JSON.parse(cloudJson); } catch(e){
+            try { parsed = JSON.parse(data.store_json); } catch(e){
                 console.warn('[sync] invalid cloud JSON; ignoring remote state', e);
                 __cloudHydrated = true;
-                __lastLoadedCloudLen = cloudJson.length;
+                __lastLoadedCloudLen = (data.store_json || '').length;
                 return;
             }
             if(!parsed || typeof parsed !== 'object' || !parsed.accounts || typeof parsed.accounts !== 'object'){
                 console.warn('[sync] cloud state missing accounts; ignoring remote state');
                 __cloudHydrated = true;
-                __lastLoadedCloudLen = cloudJson.length;
+                __lastLoadedCloudLen = (data.store_json || '').length;
                 return;
             }
             try{
@@ -5818,48 +5873,163 @@ ${period} • ${(acc?.name || 'Conta')}
                 if(localAccCount > 0 && remoteAccCount === 0){
                     console.warn('[sync] cloud state has 0 accounts; ignoring remote state');
                     __cloudHydrated = true;
-                    __lastLoadedCloudLen = cloudJson.length;
+                    __lastLoadedCloudLen = (data.store_json || '').length;
                     return;
                 }
             }catch(e){}
 
+            // Proteção contra "rollback":
+            // Se o local estiver mais recente que o cloud, NÃO sobrescreve (mantém local).
             const localMs = Number((store && store.last_update_ms) ? store.last_update_ms : 0) || 0;
             if(localMs && ms && localMs > ms){
                 __cloudHydrated = true;
-                __lastLoadedCloudLen = cloudJson.length;
+                __lastLoadedCloudLen = (data.store_json || '').length;
+                // opcional: tenta enviar o local para o cloud em background (sem travar a UI)
                 try{ window.__D2_NEEDS_CLOUD_PUSH = true; }catch(e){}
                 return;
             }
 
+
+            // manter data/conta ativa por-device
             const localDate = (store && store.date) ? new Date(store.date) : new Date();
             const lastLocalActive = (() => { try { return localStorage.getItem('df_last_activeId'); } catch (e) { return null; } })();
 
             store = parsed || store;
             store.date = localDate;
 
+            // UI state: sempre iniciar com detalhes fechados
             try{ delete store.dayDetailsOpen; delete store.tradeDetailsOpen; }catch(e){}
 
+            // preferir última conta deste dispositivo
             if (lastLocalActive && store.accounts && store.accounts[lastLocalActive]) {
                 store.activeId = lastLocalActive;
             } else if (!store.activeId && store.accounts) {
                 store.activeId = Object.keys(store.accounts)[0] || null;
             }
 
+            // Mark cloud as hydrated so saves can proceed
             __cloudHydrated = true;
-            try { __lastLoadedCloudLen = cloudJson.length; } catch(e) { __lastLoadedCloudLen = 0; }
+            try { __lastLoadedCloudLen = (data.store_json || '').length; } catch(e) { __lastLoadedCloudLen = 0; }
 
+            // If the user made changes before the cloud finished loading, flush them now
             if (__pendingSaveBeforeHydrate) {
                 __pendingSaveBeforeHydrate = false;
                 try { scheduleSaveToCloud(); } catch(e) { try { saveToCloudNow(); } catch(_){} }
             }
-            saveStoreToLocal();
+        saveStoreToLocal();
       }
 
 async function saveToCloudNow() {
             if (isOffline) {
                 setCloudStatus('offline', (CURRENT_LANG==='en' ? "Offline" : "Offline"));
                 return;
-    
+            }
+            if (!__cloudHydrated) {
+                __pendingSaveBeforeHydrate = true;
+                setCloudStatus('saving', translateString(CURRENT_LANG==='en' ? 'Loading cloud...' : 'Carregando nuvem...'));
+                return;
+            }
+            if (!db || !doc || !setDoc) return;
+
+            if(__saveInFlight){
+                __saveAgain = true;
+                return;
+            }
+            __saveInFlight = true;
+
+            // one-shot "force save" (admin override)
+            const force = !!__forceCloudSaveOnce;
+            __forceCloudSaveOnce = false;
+
+            const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
+            const nowMs = Date.now();
+            const nowIso = new Date(nowMs).toISOString();
+
+            // Persist only what should be synced to cloud
+            const persistable = getPersistableStore();
+            const jsonStr = JSON.stringify(persistable);
+            const newLen = (jsonStr || '').length;
+
+            // If nothing meaningful to save, bail
+            if (!jsonStr || newLen < 20) { __saveInFlight = false; return; }
+
+            setCloudStatus('saving', (CURRENT_LANG==='en' ? "Saving..." : "Salvando..."));
+
+            try {
+                // Preferred: transactional save with rollback fields (prevents catastrophic wipes)
+                if (runTransaction) {
+                    await runTransaction(db, async (txn) => {
+                        const snap = await txn.get(docRef);
+                        const cur = snap.exists() ? (snap.data() || {}) : {};
+                        const curJson = (typeof cur.store_json === 'string') ? cur.store_json : '';
+                        const curLen = curJson.length;
+                        const curMs = Number(cur.last_update_ms || 0) || 0;
+
+                        // Anti-wipe (timestamp): aborta se a nuvem estiver mais nova do que a versão local
+                        // (permite force-save apenas quando explicitamente solicitado no Admin)
+                        const localKnownMs = Math.max(Number(__lastRemoteUpdateMs || 0) || 0, Number(__lastCloudWriteMs || 0) || 0);
+                        if (!force && localKnownMs && curMs > localKnownMs) {
+                            throw new Error("CONFLITO");
+                        }
+
+                        const curIso = (typeof cur.last_update_iso === 'string') ? cur.last_update_iso : null;
+
+                        // Safety guard: refuse to overwrite a much larger cloud dataset with a much smaller one
+                        // This is what causes "everything disappeared on all devices".
+                        if (!force && curLen > 2000) {
+                            const threshold = Math.max(900, Math.floor(curLen * 0.85));
+                            if (newLen < threshold) {
+                                throw new Error(
+                                    (CURRENT_LANG==='en'
+                                        ? "Cloud safety protection: refusing to overwrite cloud with a much smaller dataset. Use Admin Area → Force cloud save only if you are 100% sure."
+                                        : "Proteção de segurança da nuvem: recusando sobrescrever a nuvem com um conjunto de dados muito menor. Use Área Administrativa → Forçar salvar somente se tiver 100% de certeza."
+                                    )
+                                );
+                            }
+                        }
+
+                        txn.set(docRef, {
+                            store_json: jsonStr,
+                            last_update_ms: nowMs,
+                            last_update_iso: nowIso,
+                            source_client_id: CLIENT_ID,
+                            schema_version: 1,
+
+                            // rollback (previous cloud version)
+                            prev_store_json: curJson || null,
+                            prev_update_ms: curMs || null,
+                            prev_update_iso: curIso || null
+                        }, { merge: true });
+                    });
+                } else {
+                    // Fallback (no transaction): still keep a local backup, but less safe
+                    await setDoc(docRef, {
+                        store_json: jsonStr,
+                        last_update_ms: nowMs,
+                        last_update_iso: nowIso,
+                        source_client_id: CLIENT_ID,
+                        schema_version: 1
+                    }, { merge: true });
+                }
+
+                __dirty = false;
+                __lastLocalWriteMs = nowMs;
+                __lastCloudWriteMs = nowMs;
+                __lastLoadedCloudLen = newLen;
+
+                flashSaved();
+            } catch (err) {
+                console.error("Cloud save failed:", err);
+                setCloudStatus('error', (err && err.message) ? err.message : (CURRENT_LANG==='en' ? "Cloud save failed" : "Falha ao salvar na nuvem"));
+            } finally {
+                __saveInFlight = false;
+                // If any changes happened while saving, try again soon
+                if (__saveAgain) {
+                    __saveAgain = false;
+                    setTimeout(() => saveToCloudNow(), 900);
+                }
+            }
+        }
 
         // ===== Cloud safety tools (rollback / force save / local backup download) =====
         async function restorePrevCloudVersion(){
@@ -5994,19 +6164,21 @@ async function saveToCloudNow() {
                 const docRef = doc(db, CLOUD_DOC_COL, CLOUD_DOC_ID);
                 if(__cloudUnsub) { try{ __cloudUnsub(); }catch(e){} __cloudUnsub = null; }
 
-                __cloudUnsub = onSnapshot(docRef, async (snap) => {
+                __cloudUnsub = onSnapshot(docRef, (snap) => {
                     if(!snap.exists()) return;
                     const data = snap.data() || {};
                     const ms = Number(data.last_update_ms || 0) || 0;
                     if(!ms) return;
 
                     const source = String(data.source_client_id || '');
+                    // ignore our own echo (most of the time)
                     if(source === CLIENT_ID && ms <= __lastLocalWriteMs){
                         __lastRemoteUpdateMs = Math.max(__lastRemoteUpdateMs, ms);
                         return;
                     }
                     if(ms <= __lastRemoteUpdateMs) return;
 
+                    // Se temos mudanças locais ainda não confirmadas, não sobrescreva
                     if(__dirty){
                         console.warn("Atualização remota detectada, mas há mudanças locais pendentes. Ignorando para evitar perda.");
                         return;
@@ -6014,31 +6186,36 @@ async function saveToCloudNow() {
 
                     __lastRemoteUpdateMs = ms;
 
-                    let cloudJson = '';
-                    if(data.storage_mode === 'chunked'){
-                        cloudJson = await fetchChunkedStoreJson();
-                    } else {
-                        cloudJson = String(data.store_json || '');
-                    }
-                    if(!cloudJson) return;
+                    if(!data.store_json) return;
 
                     let remote = null;
-                    try { remote = JSON.parse(cloudJson); } catch(e){
-                        console.warn('[sync] invalid cloud JSON from realtime; ignoring', e);
+                try { remote = JSON.parse(data.store_json); } catch(e){
+                    console.warn('[sync] invalid cloud JSON from realtime; ignoring', e);
+                    return;
+                }
+                if(!remote || typeof remote !== 'object' || !remote.accounts || typeof remote.accounts !== 'object'){
+                    console.warn('[sync] cloud realtime state missing accounts; ignoring');
+                    return;
+                }
+                try{
+                    const localAccCount = Object.keys((store && store.accounts) || {}).length;
+                    const remoteAccCount = Object.keys(remote.accounts || {}).length;
+                    if(localAccCount > 0 && remoteAccCount === 0){
+                        console.warn('[sync] cloud realtime has 0 accounts; ignoring');
                         return;
                     }
-                    if(!remote || typeof remote !== 'object' || !remote.accounts || typeof remote.accounts !== 'object'){
-                        console.warn('[sync] cloud realtime state missing accounts; ignoring');
-                        return;
-                    }
+                }catch(e){}
 
                     const localDate = (store && store.date) ? new Date(store.date) : new Date();
                     const lastLocalActive = (() => { try { return localStorage.getItem('df_last_activeId'); } catch (e) { return null; } })();
 
                     store = remote || store;
                     store.date = localDate;
+
+                    // UI state: sempre iniciar com detalhes fechados
                     try{ delete store.dayDetailsOpen; delete store.tradeDetailsOpen; }catch(e){}
 
+                    // preferir última conta deste dispositivo
                     if (lastLocalActive && store.accounts && store.accounts[lastLocalActive]) {
                         store.activeId = lastLocalActive;
                     } else if (!store.activeId && store.accounts) {
