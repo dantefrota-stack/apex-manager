@@ -1240,9 +1240,9 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
                         <thead>
                             <tr>
                                 <th>Data</th>
-                                <th>Abertura</th>
                                 <th>Trade 1</th>
                                 <th>Trade 2</th>
+                                <th>Trade 3</th>
                                 <th>Total</th>
                                 <th>Nota</th>
                             </tr>
@@ -1732,11 +1732,12 @@ let isOffline = false;
                     const note = (e.note || '').toString();
                     const holiday = !!e.holiday;
 
-                    const t0parts = e.t0parts || { p2520:0, p4080:0, technical:0 };
-                    const t1parts = e.t1parts || { p2520:0, p4080:0, technical:0 };
-                    const t2parts = e.t2parts || { p2520:0, p4080:0, technical:0 };
+                    const hasExplicitParts = !!(e.t0parts || e.t1parts || e.t2parts);
+                    const t0parts = e.t0parts || { p2520:0, p4080:0, technical:(Number(t0)||0) };
+                    const t1parts = e.t1parts || { p2520:0, p4080:0, technical:(Number(t1)||0) };
+                    const t2parts = e.t2parts || { p2520:0, p4080:0, technical:(Number(t2)||0) };
 
-                    const hasParts = [t0parts, t1parts, t2parts].some(p => Number(p.p2520)||Number(p.p4080)||Number(p.technical));
+                    const hasParts = hasExplicitParts || [t0parts, t1parts, t2parts].some(p => Number(p.p2520)||Number(p.p4080)||Number(p.technical));
                     const hasActivity = (t0 !== 0 || t1 !== 0 || t2 !== 0 || total !== 0 || note.trim() || holiday || hasParts);
 
                     return {
@@ -3692,7 +3693,8 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
             const ensureTradeParts = (key) => {
                 if(!acc.data[iso][key]){
-                    acc.data[iso][key] = { p2520:0, p4080:0, technical:0 };
+                    const legacyMap = key === 't0parts' ? 't0' : (key === 't1parts' ? 't1' : 't2');
+                    acc.data[iso][key] = { p2520:0, p4080:0, technical:(Number(acc.data[iso][legacyMap])||0) };
                 }
                 return acc.data[iso][key];
             };
@@ -3913,7 +3915,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
         window.exportCSV = () => {
             const acc = getActive();
-            let csvContent = "data:text/csv;charset=utf-8,Data,Abertura,Trade 1,Trade 2,Total Dia,Notas\n";
+            let csvContent = "data:text/csv;charset=utf-8,Data,Trade 1,Trade 2,Trade 3,Total Dia,Notas\n";
             const dates = Object.keys(acc.data).sort();
             dates.forEach(iso => {
                 const d = acc.data[iso] || {};
@@ -4593,9 +4595,9 @@ function renderCalendar(acc) {
                 const tr = document.createElement('tr');
                 const isToday = (iso === getTodayISO());
                 tr.className = `dark:border-slate-700 ${isOutsideMonth ? 'opacity-60 bg-slate-50 dark:bg-slate-800/40' : ''} ${isToday ? 'today-row' : ''}`;
-                const t0parts = entry.t0parts || { p2520:0, p4080:0, technical:0 };
-                const t1parts = entry.t1parts || { p2520:0, p4080:0, technical:0 };
-                const t2parts = entry.t2parts || { p2520:0, p4080:0, technical:0 };
+                const t0parts = entry.t0parts || { p2520:0, p4080:0, technical:(Number(entry.t0)||0) };
+                const t1parts = entry.t1parts || { p2520:0, p4080:0, technical:(Number(entry.t1)||0) };
+                const t2parts = entry.t2parts || { p2520:0, p4080:0, technical:(Number(entry.t2)||0) };
 
                 const trade1Total = round2((Number(t0parts.p2520)||0) + (Number(t0parts.p4080)||0) + (Number(t0parts.technical)||0));
                 const trade2Total = round2((Number(t1parts.p2520)||0) + (Number(t1parts.p4080)||0) + (Number(t1parts.technical)||0));
