@@ -5931,6 +5931,36 @@ tr.bg-green-50 td {
         }
 
         // Remove estado de UI (linhas abertas/fechadas) e preferências de tela antes de salvar
+        
+        function getComparableStoreForCloudSafetyFromJson(rawJson){
+            try{
+                if(typeof rawJson !== 'string' || !rawJson.trim()) return null;
+                const parsed = JSON.parse(rawJson);
+                if(!parsed || typeof parsed !== 'object') return null;
+                try{ delete parsed.date; }catch(e){}
+                try{ delete parsed.activeId; }catch(e){}
+                try{ delete parsed.dayDetailsOpen; }catch(e){}
+                try{ delete parsed.tradeDetailsOpen; }catch(e){}
+                try{ delete parsed.apex_fee_rate; }catch(e){}
+                try{ delete parsed.adminLogs; }catch(e){}
+                try{ delete parsed.importAudit; }catch(e){}
+                return stripOperationalDataFromStore(parsed);
+            }catch(e){
+                return null;
+            }
+        }
+
+        function getComparableStoreJsonLength(rawJson){
+            try{
+                const comparable = getComparableStoreForCloudSafetyFromJson(rawJson);
+                if(!comparable) return 0;
+                return JSON.stringify(comparable).length;
+            }catch(e){
+                return 0;
+            }
+        }
+
+
         function getPersistableStore(){
             try{
                 const s = JSON.parse(JSON.stringify(store));
@@ -6233,13 +6263,13 @@ tr.bg-green-50 td {
             try { parsed = JSON.parse(data.store_json); } catch(e){
                 console.warn('[sync] invalid cloud JSON; ignoring remote state', e);
                 __cloudHydrated = true;
-                __lastLoadedCloudLen = (data.store_json || '').length;
+                __lastLoadedCloudLen = getComparableStoreJsonLength(data.store_json || '');
                 return;
             }
             if(!parsed || typeof parsed !== 'object' || !parsed.accounts || typeof parsed.accounts !== 'object'){
                 console.warn('[sync] cloud state missing accounts; ignoring remote state');
                 __cloudHydrated = true;
-                __lastLoadedCloudLen = (data.store_json || '').length;
+                __lastLoadedCloudLen = getComparableStoreJsonLength(data.store_json || '');
                 return;
             }
             try{
@@ -6248,7 +6278,7 @@ tr.bg-green-50 td {
                 if(localAccCount > 0 && remoteAccCount === 0){
                     console.warn('[sync] cloud state has 0 accounts; ignoring remote state');
                     __cloudHydrated = true;
-                    __lastLoadedCloudLen = (data.store_json || '').length;
+                    __lastLoadedCloudLen = getComparableStoreJsonLength(data.store_json || '');
                     return;
                 }
             }catch(e){}
@@ -6258,7 +6288,7 @@ tr.bg-green-50 td {
             const localMs = Number((store && store.last_update_ms) ? store.last_update_ms : 0) || 0;
             if(localMs && ms && localMs > ms){
                 __cloudHydrated = true;
-                __lastLoadedCloudLen = (data.store_json || '').length;
+                __lastLoadedCloudLen = getComparableStoreJsonLength(data.store_json || '');
                 // opcional: tenta enviar o local para o cloud em background (sem travar a UI)
                 try{ window.__D2_NEEDS_CLOUD_PUSH = true; }catch(e){}
                 return;
@@ -6284,7 +6314,7 @@ tr.bg-green-50 td {
 
             // Mark cloud as hydrated so saves can proceed
             __cloudHydrated = true;
-            try { __lastLoadedCloudLen = (data.store_json || '').length; } catch(e) { __lastLoadedCloudLen = 0; }
+            try { __lastLoadedCloudLen = getComparableStoreJsonLength(data.store_json || ''); } catch(e) { __lastLoadedCloudLen = 0; }
 
             // Sidecars: admin logs / import audit (kept out of main store_json)
             await loadCloudSidecarDocs();
@@ -6347,7 +6377,7 @@ async function saveToCloudNow() {
                         const snap = await txn.get(docRef);
                         const cur = snap.exists() ? (snap.data() || {}) : {};
                         const curJson = (typeof cur.store_json === 'string') ? cur.store_json : '';
-                        const curLen = curJson.length;
+                        const curLen = getComparableStoreJsonLength(curJson);
                         const curMs = Number(cur.last_update_ms || 0) || 0;
 
                         // Anti-wipe (timestamp): aborta se a nuvem estiver mais nova do que a versão local
