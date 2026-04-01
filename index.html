@@ -360,6 +360,32 @@ tr[style*="background: #eefaf5"] + tr > td {
   border-top: none !important;
 }
 
+
+/* Corrige faixa verde COMPLETA (linha inteira) */
+tr.bg-green-50 {
+  background-color: #eefaf5 !important;
+}
+
+tr.bg-green-50 > td {
+  background-color: #eefaf5 !important;
+}
+
+/* Remove qualquer fundo branco interno */
+tr.bg-green-50 td div {
+  background: transparent !important;
+}
+
+/* Garante que a borda lateral não quebre o bloco */
+tr.bg-green-50 > td:first-child {
+  border-left: 3px solid #22c55e;
+}
+
+/* Remove possíveis gaps */
+tr.bg-green-50 td {
+  box-shadow: none !important;
+  border-bottom: none !important;
+}
+
 </style>
 
 <style id="d2-info-modal-styles">
@@ -381,6 +407,32 @@ tr[style*="background: #eefaf5"] + tr > td {
   .d2-info-body code{background:rgba(241,245,249,1);padding:2px 6px;border-radius:8px;border:1px solid rgba(226,232,240,1);}
   .d2-info-body ul{margin:10px 0 0 18px;}
   .d2-info-body li{margin:6px 0;}
+
+/* Corrige faixa verde COMPLETA (linha inteira) */
+tr.bg-green-50 {
+  background-color: #eefaf5 !important;
+}
+
+tr.bg-green-50 > td {
+  background-color: #eefaf5 !important;
+}
+
+/* Remove qualquer fundo branco interno */
+tr.bg-green-50 td div {
+  background: transparent !important;
+}
+
+/* Garante que a borda lateral não quebre o bloco */
+tr.bg-green-50 > td:first-child {
+  border-left: 3px solid #22c55e;
+}
+
+/* Remove possíveis gaps */
+tr.bg-green-50 td {
+  box-shadow: none !important;
+  border-bottom: none !important;
+}
+
 </style>
 
 </head>
@@ -2836,6 +2888,32 @@ const total = listAll.length;
     thead th{ padding:6px; }
     tbody td{ padding:6px; }
   }
+
+/* Corrige faixa verde COMPLETA (linha inteira) */
+tr.bg-green-50 {
+  background-color: #eefaf5 !important;
+}
+
+tr.bg-green-50 > td {
+  background-color: #eefaf5 !important;
+}
+
+/* Remove qualquer fundo branco interno */
+tr.bg-green-50 td div {
+  background: transparent !important;
+}
+
+/* Garante que a borda lateral não quebre o bloco */
+tr.bg-green-50 > td:first-child {
+  border-left: 3px solid #22c55e;
+}
+
+/* Remove possíveis gaps */
+tr.bg-green-50 td {
+  box-shadow: none !important;
+  border-bottom: none !important;
+}
+
 </style>
 </head>
 <body>
@@ -5556,7 +5634,33 @@ ${period} • ${(acc?.name || 'Conta')}
                     const w = window.open('', '_blank');
                     if(!w) throw new Error('Popup bloqueado');
                     const html = `<!doctype html><html><head><meta charset="utf-8"><title>Analise por Periodo</title>
-                    <style>body{font-family:Arial,Helvetica,sans-serif;padding:24px}h1{margin:0 0 6px}p{margin:0 0 14px;color:#555}img{max-width:100%;height:auto;border:1px solid #ddd;border-radius:10px}table{margin-top:14px;width:100%;border-collapse:collapse}td{padding:8px;border-top:1px solid #eee}td:first-child{color:#666}</style></head>
+                    <style>body{font-family:Arial,Helvetica,sans-serif;padding:24px}h1{margin:0 0 6px}p{margin:0 0 14px;color:#555}img{max-width:100%;height:auto;border:1px solid #ddd;border-radius:10px}table{margin-top:14px;width:100%;border-collapse:collapse}td{padding:8px;border-top:1px solid #eee}td:first-child{color:#666}
+/* Corrige faixa verde COMPLETA (linha inteira) */
+tr.bg-green-50 {
+  background-color: #eefaf5 !important;
+}
+
+tr.bg-green-50 > td {
+  background-color: #eefaf5 !important;
+}
+
+/* Remove qualquer fundo branco interno */
+tr.bg-green-50 td div {
+  background: transparent !important;
+}
+
+/* Garante que a borda lateral não quebre o bloco */
+tr.bg-green-50 > td:first-child {
+  border-left: 3px solid #22c55e;
+}
+
+/* Remove possíveis gaps */
+tr.bg-green-50 td {
+  box-shadow: none !important;
+  border-bottom: none !important;
+}
+
+</style></head>
                     <body><h1>Analise por Periodo</h1><p>${rangeText}</p>
                     ${chartDataUrl ? ("<img src=\""+chartDataUrl+"\"/>") : ""}
                     <table>
@@ -10290,6 +10394,32 @@ We normalize daily buckets so:
     #df-v15-root #payout-manager-container{max-height:none; min-height:0;}
     #df-v15-root #df-cycles-card > .df-v15-card-body{overflow:visible; padding-right:0;}
   }
+
+/* Corrige faixa verde COMPLETA (linha inteira) */
+tr.bg-green-50 {
+  background-color: #eefaf5 !important;
+}
+
+tr.bg-green-50 > td {
+  background-color: #eefaf5 !important;
+}
+
+/* Remove qualquer fundo branco interno */
+tr.bg-green-50 td div {
+  background: transparent !important;
+}
+
+/* Garante que a borda lateral não quebre o bloco */
+tr.bg-green-50 > td:first-child {
+  border-left: 3px solid #22c55e;
+}
+
+/* Remove possíveis gaps */
+tr.bg-green-50 td {
+  box-shadow: none !important;
+  border-bottom: none !important;
+}
+
 </style>
 <script id="df-v15-layout-script">
 (function(){
@@ -10470,6 +10600,32 @@ We normalize daily buckets so:
     #df-v15-visibility-modal .df-body{grid-template-columns:1fr; overflow:auto; padding-bottom:16px;}
     #df-v15-visibility-fab{right:14px; bottom:14px; padding:11px 14px; font-size:12px;}
   }
+
+/* Corrige faixa verde COMPLETA (linha inteira) */
+tr.bg-green-50 {
+  background-color: #eefaf5 !important;
+}
+
+tr.bg-green-50 > td {
+  background-color: #eefaf5 !important;
+}
+
+/* Remove qualquer fundo branco interno */
+tr.bg-green-50 td div {
+  background: transparent !important;
+}
+
+/* Garante que a borda lateral não quebre o bloco */
+tr.bg-green-50 > td:first-child {
+  border-left: 3px solid #22c55e;
+}
+
+/* Remove possíveis gaps */
+tr.bg-green-50 td {
+  box-shadow: none !important;
+  border-bottom: none !important;
+}
+
 </style>
 
 <div class="no-print" id="df-v15-visibility-root">
