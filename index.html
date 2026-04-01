@@ -932,6 +932,21 @@ tr.bg-green-50 td {
             </div>
 
             <div id="accounts-overview-body" class="p-5 space-y-4 overflow-y-auto max-h-[calc(90vh-70px)]">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="accounts-overview-strategy-cards">
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
+                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">25/50</div>
+                        <div id="accounts-overview-2550" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
+                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">40/80</div>
+                        <div id="accounts-overview-4080" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
+                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">Condução Técnica</div>
+                        <div id="accounts-overview-ct" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
+                    </div>
+                </div>
+
                 <div class="flex items-center justify-between gap-3 flex-wrap">
                     <div class="text-xs text-slate-500 dark:text-slate-400">
                         <span class="font-semibold text-slate-700 dark:text-slate-200">Dica:</span> valores usam a mesma lógica do app (equity atual e safety threshold por tamanho).
@@ -1012,23 +1027,7 @@ tr.bg-green-50 td {
                     </div>
                 </div>
 
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="accounts-overview-strategy-cards">
-                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
-                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">25/50</div>
-                        <div id="accounts-overview-2550" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
-                    </div>
-                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
-                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">40/80</div>
-                        <div id="accounts-overview-4080" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
-                    </div>
-                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
-                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">Condução Técnica</div>
-                        <div id="accounts-overview-ct" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
-                    </div>
-                </div>
-
-<div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div id="accounts-overview-table-scroll" class="overflow-x-auto">
                         <table class="min-w-[1100px] w-full text-sm">
                            <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs dark:bg-slate-800 dark:text-slate-400">
@@ -1125,29 +1124,7 @@ tr.bg-green-50 td {
                     <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Pior Dia</span><span id="custom-worst" class="font-bold text-red-600">--</span></div>
                 </div>
                 
-                
                 <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
-                    <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
-                        <i data-lucide="layers-3" class="w-3.5 h-3.5 text-emerald-600"></i>
-                        <span>Estratégias no Período</span>
-                    </div>
-                    <div class="space-y-2 text-xs">
-                        <div class="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700">
-                            <div class="flex items-center justify-between"><span class="text-slate-500 dark:text-slate-400">25/50</span><span id="strategy-2550-total" class="font-bold text-slate-800 dark:text-slate-100">--</span></div>
-                            <div class="mt-1 flex items-center justify-between"><span class="text-slate-400">Trades</span><span id="strategy-2550-trades" class="font-semibold text-slate-600 dark:text-slate-300">--</span></div>
-                        </div>
-                        <div class="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700">
-                            <div class="flex items-center justify-between"><span class="text-slate-500 dark:text-slate-400">40/80</span><span id="strategy-4080-total" class="font-bold text-slate-800 dark:text-slate-100">--</span></div>
-                            <div class="mt-1 flex items-center justify-between"><span class="text-slate-400">Trades</span><span id="strategy-4080-trades" class="font-semibold text-slate-600 dark:text-slate-300">--</span></div>
-                        </div>
-                        <div class="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700">
-                            <div class="flex items-center justify-between"><span class="text-slate-500 dark:text-slate-400">Condução Técnica</span><span id="strategy-ct-total" class="font-bold text-slate-800 dark:text-slate-100">--</span></div>
-                            <div class="mt-1 flex items-center justify-between"><span class="text-slate-400">Trades</span><span id="strategy-ct-trades" class="font-semibold text-slate-600 dark:text-slate-300">--</span></div>
-                        </div>
-                    </div>
-                </div>
-
-<div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
                     <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
                         <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-indigo-600"></i>
                         <span>KPIs do Período</span>
@@ -1172,6 +1149,49 @@ tr.bg-green-50 td {
                                 <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Avg por dia</span><span id="kpi-avg-day" class="font-bold text-slate-800 dark:text-white">--</span></div>
                                 <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Max Drawdown</span><span id="kpi-maxdd" class="font-bold text-red-600">--</span></div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+                    <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
+                        <i data-lucide="table-properties" class="w-3.5 h-3.5 text-emerald-600"></i>
+                        <span>Breakdown por Estratégia</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-[11px]">
+                            <thead>
+                                <tr class="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                                    <th class="text-left py-2">Estratégia</th>
+                                    <th class="text-right py-2">Resultado</th>
+                                    <th class="text-right py-2">Trades</th>
+                                    <th class="text-right py-2">Win%</th>
+                                    <th class="text-right py-2">Payoff</th>
+                                    <th class="text-right py-2">Expect.</th>
+                                    <th class="text-right py-2">Max DD</th>
+                                </tr>
+                            </thead>
+                            <tbody id="strategy-breakdown-body" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+                    <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
+                        <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-orange-600"></i>
+                        <span>Risco & Consistência</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                        <div class="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700">
+                            <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Max Losing Streak</span><span id="risk-max-losing" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                            <div class="mt-1 flex justify-between"><span class="text-slate-500 dark:text-slate-400">Max Winning Streak</span><span id="risk-max-winning" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                            <div class="mt-1 flex justify-between"><span class="text-slate-500 dark:text-slate-400">Expectancy Geral</span><span id="risk-expectancy-overall" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                        </div>
+                        <div class="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700">
+                            <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Melhor Estratégia</span><span id="risk-best-strategy" class="font-bold text-emerald-600">--</span></div>
+                            <div class="mt-1 flex justify-between"><span class="text-slate-500 dark:text-slate-400">Pior Estratégia</span><span id="risk-worst-strategy" class="font-bold text-red-600">--</span></div>
+                            <div class="mt-1 flex justify-between"><span class="text-slate-500 dark:text-slate-400">Dias Verdes/Vermelhos</span><span id="risk-days-balance" class="font-bold text-slate-800 dark:text-white">--</span></div>
                         </div>
                     </div>
                 </div>
@@ -3274,12 +3294,12 @@ function _openPrintWindow(htmlStr){
                         sct += Number(e.t2 || 0);
                     });
                 });
-                const _2550 = document.getElementById('accounts-overview-2550');
-                const _4080 = document.getElementById('accounts-overview-4080');
-                const _ct = document.getElementById('accounts-overview-ct');
-                if(_2550) _2550.textContent = formatCurrency(s2550);
-                if(_4080) _4080.textContent = formatCurrency(s4080);
-                if(_ct) _ct.textContent = formatCurrency(sct);
+                const el2550 = document.getElementById('accounts-overview-2550');
+                const el4080 = document.getElementById('accounts-overview-4080');
+                const elct = document.getElementById('accounts-overview-ct');
+                if(el2550) el2550.textContent = formatCurrency(s2550);
+                if(el4080) el4080.textContent = formatCurrency(s4080);
+                if(elct) elct.textContent = formatCurrency(sct);
             }catch(e){}
             const pageSize = Math.max(1, Number(prefs.pageSize) || 15);
             const totalPages = Math.max(1, Math.ceil(computedAll.length / pageSize));
@@ -4170,38 +4190,37 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
         window.exportCSV = () => {
             const acc = getActive();
+            const fs = (document.getElementById('filter-start') || {}).value || '';
+            const fe = (document.getElementById('filter-end') || {}).value || '';
             let csvContent = "data:text/csv;charset=utf-8,Data,25/50,40/80,Condução Técnica,Total Dia,Notas\n";
             const dates = Object.keys(acc.data).sort();
             dates.forEach(iso => {
+                if(fs && iso < fs) return;
+                if(fe && iso > fe) return;
                 const d = acc.data[iso] || {};
                 const dateStr = formatDateShort(parseISODateLocal(iso));
-
-                // Compat: versões antigas tinham apenas t1/t2 (sem t0). Agora t0 (Abertura) fica vazio por padrão.
-                let t0 = parseFloat(d.t0);
-                let t1 = parseFloat(d.t1);
-                let t2 = parseFloat(d.t2);
-                if(d.t0 === undefined && (d.t1 !== undefined || d.t2 !== undefined)){
-                    t0 = 0;
-                    t1 = parseFloat(d.t1);
-                    t2 = parseFloat(d.t2);
-                }
-
-                const v0 = (isNaN(t0) ? 0 : t0);
-                const v1 = (isNaN(t1) ? 0 : t1);
-                const v2 = (isNaN(t2) ? 0 : t2);
-
+                const v0 = Number(d.t0 || 0);
+                const v1 = Number(d.t1 || 0);
+                const v2 = Number(d.t2 || 0);
                 const valNum = (d.val !== undefined && d.val !== null && d.val !== '') ? (parseFloat(d.val) || 0) : (v0 + v1 + v2);
-
-                const t0s = v0.toFixed(2);
-                const t1s = v1.toFixed(2);
-                const t2s = v2.toFixed(2);
-                const vals = valNum.toFixed(2);
-
                 const note = (d.note || '').replace(/[\r\n]+/g, " ").replace(/,/g, ";");
-                if (parseFloat(vals) !== 0 || note !== '') {
-                    csvContent += `${dateStr},${t0s},${t1s},${t2s},${vals},${note}\n`;
+                if (v0 !== 0 || v1 !== 0 || v2 !== 0 || valNum !== 0 || note !== '') {
+                    csvContent += `${dateStr},${v0.toFixed(2)},${v1.toFixed(2)},${v2.toFixed(2)},${valNum.toFixed(2)},${note}\n`;
                 }
             });
+
+            if(fs && fe){
+                const strat = _computeStrategyAnalytics(acc, fs, fe);
+                csvContent += `\nResumo por Estratégia,,,,,\n`;
+                csvContent += `Estratégia,Resultado,Trades,Win Rate,Payoff,Expectancy,\n`;
+                [['25/50',strat.t2550],['40/80',strat.t4080],['Condução Técnica',strat.ct]].forEach(([label,s])=>{
+                    const wr = s.trades > 0 ? `${(s.winRate*100).toFixed(0)}%` : '--';
+                    const payoff = (s.payoff === null || !isFinite(s.payoff)) ? '--' : s.payoff.toFixed(2);
+                    const expectancy = s.trades > 0 ? formatCurrency(s.expectancy) : '--';
+                    csvContent += `${label},${s.total.toFixed(2)},${s.trades},${wr},${payoff},${String(expectancy).replace(/,/g,';')}\n`;
+                });
+            }
+
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
@@ -4425,6 +4444,89 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             els.filterStart.value = fmt(start); els.filterEnd.value = fmt(end);
         }
 
+
+        function _tradeTripletForDay(e){
+            return {
+                t2550: Number(e?.t0 || 0),
+                t4080: Number(e?.t1 || 0),
+                ct: Number(e?.t2 || 0)
+            };
+        }
+
+        function _safePayoff(avgWin, avgLoss){
+            if (!avgLoss || avgLoss === 0) return null;
+            return avgWin / Math.abs(avgLoss);
+        }
+
+        function _safeExpectancy(winRate, avgWin, avgLoss){
+            return (winRate * avgWin) - ((1 - winRate) * Math.abs(avgLoss));
+        }
+
+        function _computeStrategyAnalytics(acc, startISO, endISO){
+            const strategies = {
+                t2550: { label: '25/50', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
+                t4080: { label: '40/80', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
+                ct:    { label: 'Condução Técnica', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 }
+            };
+
+            Object.keys(acc.data || {}).sort().forEach(iso => {
+                if (iso < startISO || iso > endISO) return;
+                const e = acc.data[iso] || {};
+                if (e.holiday) return;
+                const triplet = _tradeTripletForDay(e);
+
+                Object.entries(triplet).forEach(([key, v]) => {
+                    const s = strategies[key];
+                    if (v === 0) {
+                        s.currentWinningStreak = 0;
+                        s.currentLosingStreak = 0;
+                        return;
+                    }
+
+                    s.total += v;
+                    s.trades += 1;
+                    if (v > 0) {
+                        s.wins += 1;
+                        s.grossWin += v;
+                        s.winSum += v;
+                        s.winCount += 1;
+                        s.greenDays += 1;
+                        s.currentWinningStreak += 1;
+                        s.currentLosingStreak = 0;
+                    } else if (v < 0) {
+                        s.losses += 1;
+                        s.grossLoss += Math.abs(v);
+                        s.lossSum += v;
+                        s.lossCount += 1;
+                        s.redDays += 1;
+                        s.currentLosingStreak += 1;
+                        s.currentWinningStreak = 0;
+                    }
+
+                    if (s.currentWinningStreak > s.maxWinningStreak) s.maxWinningStreak = s.currentWinningStreak;
+                    if (s.currentLosingStreak > s.maxLosingStreak) s.maxLosingStreak = s.currentLosingStreak;
+
+                    s.cum += v;
+                    if (s.cum > s.peak) s.peak = s.cum;
+                    const dd = s.peak - s.cum;
+                    if (dd > s.maxDD) s.maxDD = dd;
+                    s.curveLabels.push(formatDateShort(parseISODateLocal(iso)));
+                    s.curveData.push(s.cum);
+                });
+            });
+
+            Object.values(strategies).forEach((s) => {
+                s.winRate = s.trades > 0 ? (s.wins / s.trades) : 0;
+                s.avgWin = s.winCount > 0 ? (s.winSum / s.winCount) : 0;
+                s.avgLoss = s.lossCount > 0 ? (s.lossSum / s.lossCount) : 0;
+                s.payoff = _safePayoff(s.avgWin, s.avgLoss);
+                s.expectancy = _safeExpectancy(s.winRate, s.avgWin, s.avgLoss);
+            });
+
+            return strategies;
+        }
+
+
         function filterReportInternal() {
             const start = els.filterStart.value; const end = els.filterEnd.value;
             if(!start || !end) return;
@@ -4540,13 +4642,42 @@ if (chartLabels.length === 1 && chartData.length === 1) {
 }
 updateChart(chartLabels, chartData);
 
-const strat = _computeStrategySummary(acc, start, end);
-if(document.getElementById('strategy-2550-total')) document.getElementById('strategy-2550-total').textContent = formatCurrency(strat.t2550.total);
-if(document.getElementById('strategy-2550-trades')) document.getElementById('strategy-2550-trades').textContent = String(strat.t2550.trades);
-if(document.getElementById('strategy-4080-total')) document.getElementById('strategy-4080-total').textContent = formatCurrency(strat.t4080.total);
-if(document.getElementById('strategy-4080-trades')) document.getElementById('strategy-4080-trades').textContent = String(strat.t4080.trades);
-if(document.getElementById('strategy-ct-total')) document.getElementById('strategy-ct-total').textContent = formatCurrency(strat.ct.total);
-if(document.getElementById('strategy-ct-trades')) document.getElementById('strategy-ct-trades').textContent = String(strat.ct.trades);
+// Breakdown por estratégia + risco/consistência
+const stratStats = _computeStrategyAnalytics(acc, start, end);
+const stratRows = [
+    ['t2550', stratStats.t2550],
+    ['t4080', stratStats.t4080],
+    ['ct', stratStats.ct]
+];
+const stratBody = document.getElementById('strategy-breakdown-body');
+if (stratBody) {
+    stratBody.innerHTML = stratRows.map(([key, s]) => {
+        const wr = s.trades > 0 ? `${(s.winRate * 100).toFixed(0)}%` : '--';
+        const payoff = (s.payoff === null || !isFinite(s.payoff)) ? '--' : s.payoff.toFixed(2);
+        const expectancy = s.trades > 0 ? formatCurrency(s.expectancy) : '--';
+        const maxDDTxt = s.trades > 0 ? formatCurrency(-s.maxDD) : '--';
+        return `<tr>
+            <td class="py-2 font-semibold text-slate-700 dark:text-slate-200">${s.label}</td>
+            <td class="py-2 text-right font-bold ${s.total >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(s.total)}</td>
+            <td class="py-2 text-right">${s.trades}</td>
+            <td class="py-2 text-right">${wr}</td>
+            <td class="py-2 text-right">${payoff}</td>
+            <td class="py-2 text-right ${s.expectancy >= 0 ? 'text-emerald-600' : 'text-red-600'}">${expectancy}</td>
+            <td class="py-2 text-right text-red-600">${maxDDTxt}</td>
+        </tr>`;
+    }).join('');
+}
+const bestStrategy = stratRows.slice().sort((a,b)=>b[1].total-a[1].total)[0]?.[1];
+const worstStrategy = stratRows.slice().sort((a,b)=>a[1].total-b[1].total)[0]?.[1];
+const maxLose = Math.max(...stratRows.map(([,s])=>s.maxLosingStreak), 0);
+const maxWin = Math.max(...stratRows.map(([,s])=>s.maxWinningStreak), 0);
+const overallExpectancy = totalTrades > 0 ? formatCurrency(((wins/totalTrades) * (winCount ? (winSum/winCount) : 0)) - (((totalTrades-wins)/totalTrades) * Math.abs(lossCount ? (lossSum/lossCount) : 0))) : '--';
+if (document.getElementById('risk-max-losing')) document.getElementById('risk-max-losing').textContent = `${maxLose} trades`;
+if (document.getElementById('risk-max-winning')) document.getElementById('risk-max-winning').textContent = `${maxWin} trades`;
+if (document.getElementById('risk-expectancy-overall')) document.getElementById('risk-expectancy-overall').textContent = overallExpectancy;
+if (document.getElementById('risk-best-strategy')) document.getElementById('risk-best-strategy').textContent = bestStrategy ? `${bestStrategy.label} (${formatCurrency(bestStrategy.total)})` : '--';
+if (document.getElementById('risk-worst-strategy')) document.getElementById('risk-worst-strategy').textContent = worstStrategy ? `${worstStrategy.label} (${formatCurrency(worstStrategy.total)})` : '--';
+if (document.getElementById('risk-days-balance')) document.getElementById('risk-days-balance').textContent = tradedDays ? `${greenDays} / ${redDays}` : '--';
 
 // --- KPIs do Período (Trades + Dias) ---
 const avgTrade = totalTrades > 0 ? (sum / totalTrades) : 0;
@@ -7775,40 +7906,6 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             return { start: toISODateLocal(start), end: toISODateLocal(end) };
         }
 
-        
-        function _computeStrategySummary(acc, startISO, endISO){
-            const start = parseISODateLocal(startISO);
-            const end = parseISODateLocal(endISO);
-            const out = {
-                t2550: { total: 0, trades: 0 },
-                t4080: { total: 0, trades: 0 },
-                ct:    { total: 0, trades: 0 }
-            };
-
-            for(let d = new Date(start); d <= end; d.setDate(d.getDate()+1)){
-                const dow = d.getDay();
-                if(dow === 0 || dow === 6) continue;
-                const iso = toISODateLocal(d);
-                const e = (acc.data && acc.data[iso]) ? acc.data[iso] : {};
-                if(e.holiday) continue;
-
-                const buckets = [
-                    ['t2550', Number(e.t0 || 0)],
-                    ['t4080', Number(e.t1 || 0)],
-                    ['ct', Number(e.t2 || 0)]
-                ];
-
-                buckets.forEach(([key, val]) => {
-                    if(!isNaN(val) && val !== 0){
-                        out[key].total += val;
-                        out[key].trades += 1;
-                    }
-                });
-            }
-            return out;
-        }
-
-
         function _buildPeriodRows(acc, startISO, endISO){
             const start = parseISODateLocal(startISO);
             const end = parseISODateLocal(endISO);
@@ -7871,8 +7968,8 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
             ttl.textContent = title || "Detalhes do período";
             rng.textContent = `${_formatDM(startISO)} – ${_formatDM(endISO)} • ${acc.name || (CURRENT_LANG==='en'?'Account':'Conta')}`;
-            const strat = _computeStrategySummary(acc, startISO, endISO);
-            sum.textContent = `Dias com trade: ${res.tradedDays} • 25/50: ${formatCurrency(strat.t2550.total)} • 40/80: ${formatCurrency(strat.t4080.total)} • CT: ${formatCurrency(strat.ct.total)}`;
+            const strat = _computeStrategyAnalytics(acc, startISO, endISO);
+            sum.textContent = `Dias com trade: ${res.tradedDays} • 25/50 ${formatCurrency(strat.t2550.total)} • 40/80 ${formatCurrency(strat.t4080.total)} • CT ${formatCurrency(strat.ct.total)}`;
             tot.textContent = `Total: ${formatCurrency(res.total)}`;
 
             tbody.innerHTML = '';
@@ -7961,7 +8058,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                     doc.text(String(range||''), 40, y);
                     y += 14;
 
-                    const strat = _computeStrategySummary(acc, startISO, endISO);
+                    const strat = _computeStrategyAnalytics(acc, startISO, endISO);
                     const totalTxt = `Total do período: ${formatCurrency(res.total)}`;
                     doc.setFont('helvetica','bold');
                     doc.setFontSize(11);
