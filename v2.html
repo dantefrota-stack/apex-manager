@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DF Apex Manager V2</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(148,163,184,.55); border-radius: 999px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen">
+  <div id="app" class="min-h-screen">
+    <header class="sticky top-0 z-40 bg-slate-950 text-white border-b border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-extrabold">DF</div>
+          <div>
+            <div class="text-xs uppercase tracking-[0.22em] text-slate-400">Nova Arquitetura</div>
+            <h1 class="text-xl md:text-2xl font-extrabold">DF Apex Manager V2</h1>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span id="authBadge" class="hidden text-xs px-3 py-2 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-400/20"></span>
+          <button id="loginBtn" class="px-4 py-2 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-200">Entrar com Google</button>
+          <button id="logoutBtn" class="hidden px-4 py-2 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      <section id="accessNotice" class="bg-amber-50 border border-amber-200 rounded-2xl shadow-sm p-6">
+        <h2 class="text-lg font-bold text-amber-900">Acesso necessário</h2>
+        <p class="mt-2 text-sm text-amber-800">Entre com uma conta autorizada para carregar os dados da nova arquitetura no Firestore.</p>
+      </section>
+
+      <section id="loadingBox" class="hidden bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+        <div class="flex items-center gap-3">
+          <div class="w-5 h-5 border-2 border-slate-300 border-t-indigo-600 rounded-full animate-spin"></div>
+          <div class="text-sm text-slate-600">Carregando dados da nova arquitetura...</div>
+        </div>
+      </section>
+
+      <section id="dashboard" class="hidden space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+            <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Contas</div>
+            <div id="kpiAccounts" class="mt-2 text-3xl font-extrabold">—</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+            <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Empresas</div>
+            <div id="kpiCompanies" class="mt-2 text-3xl font-extrabold">—</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+            <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Dias Importados</div>
+            <div id="kpiDays" class="mt-2 text-3xl font-extrabold">—</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+            <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Notas</div>
+            <div id="kpiNotes" class="mt-2 text-3xl font-extrabold">—</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+            <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">PnL Total</div>
+            <div id="kpiPnL" class="mt-2 text-3xl font-extrabold">—</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          <div class="xl:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+            <div>
+              <h2 class="text-lg font-bold">Evolução mensal consolidada</h2>
+              <p class="text-sm text-slate-500 mt-1">Soma do PnL por mês considerando todas as contas da nova arquitetura.</p>
+            </div>
+            <div class="mt-6 h-[340px]">
+              <canvas id="equityChart"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+            <h2 class="text-lg font-bold">Saúde do ambiente</h2>
+            <div class="mt-4 space-y-4">
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Última importação</div>
+                <div id="lastImportText" class="mt-2 text-sm font-semibold text-slate-800">—</div>
+              </div>
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Contas com mais notas</div>
+                <div id="topNotesList" class="mt-3 space-y-2 text-sm text-slate-700"></div>
+              </div>
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Melhores contas por PnL</div>
+                <div id="topPnlList" class="mt-3 space-y-2 text-sm text-slate-700"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-[380px_minmax(0,1fr)] gap-6">
+          <aside class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+            <div>
+              <h2 class="text-lg font-bold">Contas</h2>
+              <p class="text-sm text-slate-500 mt-1">Selecione uma conta para ver os detalhes.</p>
+            </div>
+
+            <div class="mt-4">
+              <input id="accountSearch" type="text" placeholder="Buscar conta..." class="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+            </div>
+
+            <div id="accountList" class="mt-4 space-y-3 max-h-[700px] overflow-y-auto pr-1 scrollbar-thin"></div>
+          </aside>
+
+          <section class="space-y-6">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+              <div class="flex items-start justify-between gap-3 flex-wrap">
+                <div>
+                  <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Conta ativa</div>
+                  <h2 id="activeAccountName" class="mt-1 text-2xl font-extrabold">Selecione uma conta</h2>
+                  <div id="activeAccountMeta" class="mt-2 text-sm text-slate-500">—</div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 min-w-[220px]">
+                  <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">PnL</div>
+                    <div id="activeAccountPnL" class="mt-2 text-xl font-extrabold">—</div>
+                  </div>
+                  <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Dias</div>
+                    <div id="activeAccountDays" class="mt-2 text-xl font-extrabold">—</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 2xl:grid-cols-3 gap-6">
+              <div class="2xl:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+                <div>
+                  <h3 class="text-lg font-bold">Períodos da conta</h3>
+                  <p class="text-sm text-slate-500 mt-1">Resumo mensal da conta selecionada.</p>
+                </div>
+
+                <div class="mt-5 overflow-x-auto">
+                  <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 text-slate-500 uppercase text-xs tracking-wide">
+                      <tr>
+                        <th class="text-left px-4 py-3 rounded-l-xl">Período</th>
+                        <th class="text-right px-4 py-3">Dias</th>
+                        <th class="text-right px-4 py-3">Feriados</th>
+                        <th class="text-right px-4 py-3 rounded-r-xl">PnL</th>
+                      </tr>
+                    </thead>
+                    <tbody id="periodTableBody" class="divide-y divide-slate-100"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+                <h3 class="text-lg font-bold">Notas recentes</h3>
+                <div id="notesList" class="mt-4 space-y-3 max-h-[420px] overflow-y-auto pr-1 scrollbar-thin"></div>
+              </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+              <div>
+                <h3 class="text-lg font-bold">Linha do tempo diária</h3>
+                <p class="text-sm text-slate-500 mt-1">Primeiros 120 registros da conta selecionada para leitura rápida.</p>
+              </div>
+
+              <div class="mt-5 overflow-x-auto">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-50 text-slate-500 uppercase text-xs tracking-wide">
+                    <tr>
+                      <th class="text-left px-4 py-3 rounded-l-xl">Data</th>
+                      <th class="text-right px-4 py-3">Open</th>
+                      <th class="text-right px-4 py-3">T1</th>
+                      <th class="text-right px-4 py-3">T2</th>
+                      <th class="text-right px-4 py-3">Total</th>
+                      <th class="text-left px-4 py-3 rounded-r-xl">Nota</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dailyTableBody" class="divide-y divide-slate-100"></tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: 'AIzaSyCu5pQrMnrpSj45lto_GXKx9xIWq2kyDjg',
+      authDomain: 'df-apex-manager.firebaseapp.com',
+      projectId: 'df-apex-manager',
+      storageBucket: 'df-apex-manager.firebasestorage.app',
+      messagingSenderId: '761037562102',
+      appId: '1:761037562102:web:a7622dca93a157dc21ccd7'
+    };
+
+    const AUTHORIZED_EMAILS = new Set(['dantefrota@gmail.com', 'fellipemendonca87@gmail.com']);
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    const state = {
+      user: null,
+      chart: null,
+      companies: [],
+      accounts: [],
+      imports: [],
+      activeAccountId: null,
+      filteredAccounts: []
+    };
+
+    const el = {
+      authBadge: document.getElementById('authBadge'),
+      loginBtn: document.getElementById('loginBtn'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      accessNotice: document.getElementById('accessNotice'),
+      loadingBox: document.getElementById('loadingBox'),
+      dashboard: document.getElementById('dashboard'),
+      kpiAccounts: document.getElementById('kpiAccounts'),
+      kpiCompanies: document.getElementById('kpiCompanies'),
+      kpiDays: document.getElementById('kpiDays'),
+      kpiNotes: document.getElementById('kpiNotes'),
+      kpiPnL: document.getElementById('kpiPnL'),
+      lastImportText: document.getElementById('lastImportText'),
+      topNotesList: document.getElementById('topNotesList'),
+      topPnlList: document.getElementById('topPnlList'),
+      accountSearch: document.getElementById('accountSearch'),
+      accountList: document.getElementById('accountList'),
+      activeAccountName: document.getElementById('activeAccountName'),
+      activeAccountMeta: document.getElementById('activeAccountMeta'),
+      activeAccountPnL: document.getElementById('activeAccountPnL'),
+      activeAccountDays: document.getElementById('activeAccountDays'),
+      periodTableBody: document.getElementById('periodTableBody'),
+      notesList: document.getElementById('notesList'),
+      dailyTableBody: document.getElementById('dailyTableBody')
+    };
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat('pt-BR').format(Number(value || 0));
+    }
+
+    function formatCurrency(value) {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value || 0));
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '—';
+      const d = value && value.seconds ? new Date(value.seconds * 1000) : new Date(value);
+      if (Number.isNaN(d.getTime())) return '—';
+      return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(d);
+    }
+
+    function formatDate(value) {
+      if (!value) return '—';
+      const d = new Date(String(value) + 'T00:00:00');
+      if (Number.isNaN(d.getTime())) return String(value);
+      return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' }).format(d);
+    }
+
+    function escapeHtml(text) {
+      return String(text ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function sortPeriods(periods) {
+      return [...periods].sort((a, b) => String(b.id).localeCompare(String(a.id)));
+    }
+
+    function flattenDaily(periods) {
+      const items = [];
+      periods.forEach((period) => {
+        const dailyMap = period && period.dailyData ? period.dailyData : {};
+        Object.values(dailyMap).forEach((day) => items.push(day));
+      });
+      return items.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    }
+
+    function updateAuthUi() {
+      const authorized = !!(state.user && AUTHORIZED_EMAILS.has(state.user.email || ''));
+      el.loginBtn.classList.toggle('hidden', !!state.user);
+      el.logoutBtn.classList.toggle('hidden', !state.user);
+      el.authBadge.classList.toggle('hidden', !state.user);
+      el.accessNotice.classList.toggle('hidden', authorized);
+      el.dashboard.classList.toggle('hidden', !authorized);
+
+      if (state.user) {
+        el.authBadge.textContent = state.user.email + (authorized ? ' • autorizado' : ' • sem acesso');
+      } else {
+        el.authBadge.textContent = '';
+      }
+    }
+
+    function renderKpis() {
+      let totalDays = 0;
+      let totalNotes = 0;
+      let totalPnL = 0;
+
+      state.accounts.forEach((acc) => {
+        totalDays += Number(acc.stats?.tradingDays || 0);
+        totalNotes += Number(acc.notes?.length || acc.stats?.noteCount || 0);
+        totalPnL += Number(acc.stats?.totalPnL || 0);
+      });
+
+      el.kpiAccounts.textContent = formatNumber(state.accounts.length);
+      el.kpiCompanies.textContent = formatNumber(state.companies.length);
+      el.kpiDays.textContent = formatNumber(totalDays);
+      el.kpiNotes.textContent = formatNumber(totalNotes);
+      el.kpiPnL.textContent = formatCurrency(totalPnL);
+      el.kpiPnL.className = 'mt-2 text-3xl font-extrabold ' + (totalPnL >= 0 ? 'text-emerald-600' : 'text-red-600');
+    }
+
+    function renderSideCards() {
+      const imports = [...state.imports].sort((a, b) => {
+        const ta = a && a.importedAt && a.importedAt.seconds ? a.importedAt.seconds : 0;
+        const tb = b && b.importedAt && b.importedAt.seconds ? b.importedAt.seconds : 0;
+        return tb - ta;
+      });
+      const latestImport = imports[0];
+      el.lastImportText.textContent = latestImport ? formatDateTime(latestImport.importedAt) + ' • ' + (latestImport.fileName || 'sem nome') : 'Nenhuma importação encontrada.';
+
+      const topNotes = [...state.accounts].sort((a, b) => (b.notes?.length || 0) - (a.notes?.length || 0)).slice(0, 5);
+      el.topNotesList.innerHTML = topNotes.length ? topNotes.map((acc) => `
+        <div class="flex items-center justify-between gap-3">
+          <span class="font-medium">${escapeHtml(acc.name)}</span>
+          <span class="text-xs px-2 py-1 rounded-full bg-slate-200 text-slate-700">${formatNumber(acc.notes?.length || 0)} notas</span>
+        </div>
+      `).join('') : '<div class="text-sm text-slate-400">Sem dados.</div>';
+
+      const topPnl = [...state.accounts].sort((a, b) => Number(b.stats?.totalPnL || 0) - Number(a.stats?.totalPnL || 0)).slice(0, 5);
+      el.topPnlList.innerHTML = topPnl.length ? topPnl.map((acc) => `
+        <div class="flex items-center justify-between gap-3">
+          <span class="font-medium">${escapeHtml(acc.name)}</span>
+          <span class="text-xs px-2 py-1 rounded-full ${Number(acc.stats?.totalPnL || 0) >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">${escapeHtml(formatCurrency(acc.stats?.totalPnL || 0))}</span>
+        </div>
+      `).join('') : '<div class="text-sm text-slate-400">Sem dados.</div>';
+    }
+
+    function renderChart() {
+      const monthly = new Map();
+      state.accounts.forEach((acc) => {
+        (acc.periods || []).forEach((period) => {
+          const key = period.id;
+          monthly.set(key, (monthly.get(key) || 0) + Number(period.stats?.totalPnL || 0));
+        });
+      });
+
+      const labels = [...monthly.keys()].sort((a, b) => String(a).localeCompare(String(b)));
+      const data = labels.map((label) => monthly.get(label) || 0);
+
+      const ctx = document.getElementById('equityChart').getContext('2d');
+      if (state.chart) state.chart.destroy();
+      state.chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'PnL mensal consolidado',
+            data,
+            tension: 0.28,
+            borderWidth: 2,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              ticks: {
+                callback: (value) => '$' + new Intl.NumberFormat('en-US').format(value)
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function getActiveAccount() {
+      return state.accounts.find((acc) => acc.id === state.activeAccountId) || null;
+    }
+
+    function renderAccountList() {
+      const query = (el.accountSearch.value || '').trim().toLowerCase();
+      state.filteredAccounts = state.accounts.filter((acc) => {
+        const target = `${acc.name} ${acc.companyName} ${acc.size} ${acc.status}`.toLowerCase();
+        return target.includes(query);
+      });
+
+      el.accountList.innerHTML = state.filteredAccounts.length ? state.filteredAccounts.map((acc) => {
+        const active = acc.id === state.activeAccountId;
+        return `
+          <button data-account-id="${escapeHtml(acc.id)}" class="w-full text-left rounded-2xl border p-4 transition ${active ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 bg-slate-50 hover:bg-slate-100'}">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="font-bold text-slate-900">${escapeHtml(acc.name)}</div>
+                <div class="mt-1 text-xs text-slate-500">${escapeHtml(acc.companyName || 'Sem grupo')} • ${escapeHtml(acc.size || '—')} • ${escapeHtml(acc.status || 'active')}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold ${Number(acc.stats?.totalPnL || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}">${escapeHtml(formatCurrency(acc.stats?.totalPnL || 0))}</div>
+                <div class="text-xs text-slate-400 mt-1">${formatNumber(acc.stats?.tradingDays || 0)} dias</div>
+              </div>
+            </div>
+          </button>
+        `;
+      }).join('') : '<div class="text-sm text-slate-400 p-2">Nenhuma conta encontrada.</div>';
+
+      el.accountList.querySelectorAll('[data-account-id]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.activeAccountId = btn.getAttribute('data-account-id');
+          renderAccountList();
+          renderActiveAccount();
+        });
+      });
+    }
+
+    function renderActiveAccount() {
+      const account = getActiveAccount();
+      if (!account) {
+        el.activeAccountName.textContent = 'Selecione uma conta';
+        el.activeAccountMeta.textContent = '—';
+        el.activeAccountPnL.textContent = '—';
+        el.activeAccountDays.textContent = '—';
+        el.periodTableBody.innerHTML = '';
+        el.notesList.innerHTML = '<div class="text-sm text-slate-400">Sem conta selecionada.</div>';
+        el.dailyTableBody.innerHTML = '';
+        return;
+      }
+
+      el.activeAccountName.textContent = account.name || 'Sem nome';
+      el.activeAccountMeta.textContent = `${account.companyName || 'Sem grupo'} • ${account.size || '—'} • ${account.status || 'active'} • ${account.periods.length} períodos`;
+      el.activeAccountPnL.textContent = formatCurrency(account.stats?.totalPnL || 0);
+      el.activeAccountPnL.className = 'mt-2 text-xl font-extrabold ' + (Number(account.stats?.totalPnL || 0) >= 0 ? 'text-emerald-600' : 'text-red-600');
+      el.activeAccountDays.textContent = formatNumber(account.stats?.tradingDays || 0);
+
+      const periods = sortPeriods(account.periods || []);
+      el.periodTableBody.innerHTML = periods.length ? periods.map((period) => `
+        <tr>
+          <td class="px-4 py-3 font-medium">${escapeHtml(period.id)}</td>
+          <td class="px-4 py-3 text-right">${formatNumber(period.stats?.tradingDays || 0)}</td>
+          <td class="px-4 py-3 text-right">${formatNumber(period.stats?.holidays || 0)}</td>
+          <td class="px-4 py-3 text-right font-bold ${Number(period.stats?.totalPnL || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}">${escapeHtml(formatCurrency(period.stats?.totalPnL || 0))}</td>
+        </tr>
+      `).join('') : '<tr><td colspan="4" class="px-4 py-6 text-center text-slate-400">Sem períodos.</td></tr>';
+
+      const notes = [...(account.notes || [])].sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))).slice(0, 40);
+      el.notesList.innerHTML = notes.length ? notes.map((note) => `
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">${escapeHtml(formatDate(note.date))}</div>
+          <div class="mt-2 text-sm text-slate-700 whitespace-pre-wrap">${escapeHtml(note.note || '')}</div>
+        </div>
+      `).join('') : '<div class="text-sm text-slate-400">Sem notas para esta conta.</div>';
+
+      const daily = flattenDaily(periods).slice(0, 120);
+      el.dailyTableBody.innerHTML = daily.length ? daily.map((day) => `
+        <tr>
+          <td class="px-4 py-3 font-medium">${escapeHtml(formatDate(day.date))}</td>
+          <td class="px-4 py-3 text-right">${escapeHtml(formatCurrency(day.open || 0))}</td>
+          <td class="px-4 py-3 text-right">${escapeHtml(formatCurrency(day.t1 || 0))}</td>
+          <td class="px-4 py-3 text-right">${escapeHtml(formatCurrency(day.t2 || 0))}</td>
+          <td class="px-4 py-3 text-right font-bold ${Number(day.val || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}">${escapeHtml(formatCurrency(day.val || 0))}</td>
+          <td class="px-4 py-3 text-slate-600 whitespace-pre-wrap">${escapeHtml(day.note || '')}</td>
+        </tr>
+      `).join('') : '<tr><td colspan="6" class="px-4 py-6 text-center text-slate-400">Sem registros diários.</td></tr>';
+    }
+
+    async function loadCollectionDocs(pathSegments) {
+      const snapshot = await getDocs(collection(db, ...pathSegments));
+      return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+    }
+
+    async function loadAppData() {
+      el.loadingBox.classList.remove('hidden');
+      try {
+        const companies = await loadCollectionDocs(['companies']);
+        const accountsBase = await loadCollectionDocs(['accounts']);
+        let imports = [];
+        try {
+          imports = await loadCollectionDocs(['imports']);
+        } catch (e) {
+          imports = [];
+        }
+
+        const accounts = [];
+        for (const base of accountsBase) {
+          const periods = await loadCollectionDocs(['accounts', base.id, 'periods']);
+          const notes = await loadCollectionDocs(['accounts', base.id, 'notes']);
+          const payouts = await loadCollectionDocs(['accounts', base.id, 'payouts']);
+          accounts.push({
+            ...base,
+            companyName: base.companyName || (companies.find((c) => c.id === base.companyId)?.name || 'Sem grupo'),
+            periods,
+            notes,
+            payouts,
+            stats: {
+              tradingDays: Number(base.stats?.tradingDays || 0),
+              noteCount: Number(base.stats?.noteCount || notes.length || 0),
+              payoutCount: Number(base.stats?.payoutCount || payouts.length || 0),
+              totalPnL: Number(base.stats?.totalPnL || 0)
+            }
+          });
+        }
+
+        state.companies = companies.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+        state.accounts = accounts.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+        state.imports = imports;
+
+        if (!state.activeAccountId && state.accounts.length) {
+          state.activeAccountId = state.accounts[0].id;
+        }
+
+        renderKpis();
+        renderSideCards();
+        renderChart();
+        renderAccountList();
+        renderActiveAccount();
+      } finally {
+        el.loadingBox.classList.add('hidden');
+      }
+    }
+
+    el.loginBtn.addEventListener('click', async () => {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        alert('Erro no login: ' + (error.message || error));
+      }
+    });
+
+    el.logoutBtn.addEventListener('click', async () => {
+      await signOut(auth);
+    });
+
+    el.accountSearch.addEventListener('input', renderAccountList);
+
+    onAuthStateChanged(auth, async (user) => {
+      state.user = user;
+      updateAuthUi();
+      if (user && AUTHORIZED_EMAILS.has(user.email || '')) {
+        await loadAppData();
+      }
+    });
+  </script>
+</body>
+</html>
