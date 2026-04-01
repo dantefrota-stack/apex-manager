@@ -3060,6 +3060,38 @@ tr.bg-green-50 td {
 
   ${groupsHtml}
 
+
+<script>
+(function(){
+  function normalizeDayData(day){
+    if(!day) return day;
+    if(!day.t2550){
+      return {
+        t2550:{t1:day.trade1||0,t2:day.trade2||0},
+        t4080:{t1:0,t2:0},
+        ct:{t1:0,t2:0}
+      };
+    }
+    return day;
+  }
+
+  function calcBlockTotal(b){
+    return (b?.t1||0)+(b?.t2||0);
+  }
+
+  function calcDayTotal(day){
+    day = normalizeDayData(day);
+    return calcBlockTotal(day.t2550)+calcBlockTotal(day.t4080)+calcBlockTotal(day.ct);
+  }
+
+  window.__tradeModelV2 = {
+    normalizeDayData,
+    calcBlockTotal,
+    calcDayTotal
+  };
+})();
+</script>
+
 </body>
 </html>`;
         }
@@ -5893,7 +5925,39 @@ tr.bg-green-50 td {
                       <tr><td><b>Max Drawdown</b></td><td>${kpiMaxDD}</td></tr>
                     </table>
 
-                    </body></html>`;
+                    
+<script>
+(function(){
+  function normalizeDayData(day){
+    if(!day) return day;
+    if(!day.t2550){
+      return {
+        t2550:{t1:day.trade1||0,t2:day.trade2||0},
+        t4080:{t1:0,t2:0},
+        ct:{t1:0,t2:0}
+      };
+    }
+    return day;
+  }
+
+  function calcBlockTotal(b){
+    return (b?.t1||0)+(b?.t2||0);
+  }
+
+  function calcDayTotal(day){
+    day = normalizeDayData(day);
+    return calcBlockTotal(day.t2550)+calcBlockTotal(day.t4080)+calcBlockTotal(day.ct);
+  }
+
+  window.__tradeModelV2 = {
+    normalizeDayData,
+    calcBlockTotal,
+    calcDayTotal
+  };
+})();
+</script>
+
+</body></html>`;
                     w.document.open();
                     w.document.write(html);
                     w.document.close();
@@ -11039,6 +11103,38 @@ tr.bg-green-50 td {
     };
     window.__toggleWrappedTradeInputsSafe = true;
   }
+})();
+</script>
+
+
+<script>
+(function(){
+  function normalizeDayData(day){
+    if(!day) return day;
+    if(!day.t2550){
+      return {
+        t2550:{t1:day.trade1||0,t2:day.trade2||0},
+        t4080:{t1:0,t2:0},
+        ct:{t1:0,t2:0}
+      };
+    }
+    return day;
+  }
+
+  function calcBlockTotal(b){
+    return (b?.t1||0)+(b?.t2||0);
+  }
+
+  function calcDayTotal(day){
+    day = normalizeDayData(day);
+    return calcBlockTotal(day.t2550)+calcBlockTotal(day.t4080)+calcBlockTotal(day.ct);
+  }
+
+  window.__tradeModelV2 = {
+    normalizeDayData,
+    calcBlockTotal,
+    calcDayTotal
+  };
 })();
 </script>
 
