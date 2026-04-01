@@ -3831,6 +3831,109 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         window.pdfFilteredReport = () => pdfFilteredReportInternal();
         window.shareReport = () => shareReportInternal();
         
+        
+        function computeEntryTotal(entry){
+            try{
+                if(!entry || typeof entry !== 'object') return 0;
+                return (
+                    (parseFloat(entry.t0meta?.leg1) || 0) +
+                    (parseFloat(entry.t0meta?.leg2) || 0) +
+                    (parseFloat(entry.t1meta?.leg1) || 0) +
+                    (parseFloat(entry.t1meta?.leg2) || 0) +
+                    (parseFloat(entry.t2meta?.leg1) || 0) +
+                    (parseFloat(entry.t2meta?.leg2) || 0)
+                );
+            }catch(e){
+                return 0;
+            }
+        }
+
+        function normalizeEntry(entry){
+            const out = (entry && typeof entry === 'object') ? entry : {};
+
+            const ensureMeta = (legKey) => {
+                const metaKey = `${legKey}meta`;
+                const rawMeta = (out[metaKey] && typeof out[metaKey] === 'object') ? out[metaKey] : {};
+                const hasLegs = Object.prototype.hasOwnProperty.call(rawMeta, 'leg1') || Object.prototype.hasOwnProperty.call(rawMeta, 'leg2');
+
+                if (hasLegs) {
+                    out[metaKey] = {
+                        leg1: (rawMeta.leg1 === null || rawMeta.leg1 === undefined) ? '' : rawMeta.leg1,
+                        leg2: (rawMeta.leg2 === null || rawMeta.leg2 === undefined) ? '' : rawMeta.leg2
+                    };
+                } else {
+                    const legacy = (out[legKey] === null || out[legKey] === undefined) ? '' : out[legKey];
+                    out[metaKey] = { leg1: legacy, leg2: '' };
+                }
+
+                const subtotal = (parseFloat(out[metaKey].leg1) || 0) + (parseFloat(out[metaKey].leg2) || 0);
+                out[legKey] = subtotal === 0 ? '' : subtotal;
+            };
+
+            ensureMeta('t0');
+            ensureMeta('t1');
+            ensureMeta('t2');
+
+            out.val = computeEntryTotal(out);
+            if (!('holiday' in out)) out.holiday = false;
+            if (!('note' in out)) out.note = '';
+            return out;
+        }
+
+        function normalizeAccountData(acc){
+            if(!acc || typeof acc !== 'object') return acc;
+            if(!acc.data || typeof acc.data !== 'object') acc.data = {};
+            for(const iso of Object.keys(acc.data)){
+                acc.data[iso] = normalizeEntry(acc.data[iso]);
+            }
+            return acc;
+        }
+
+        function normalizeStoreForPersist(src){
+            try{
+                const accounts = (src && src.accounts && typeof src.accounts === 'object') ? src.accounts : {};
+                for(const acc of Object.values(accounts)){
+                    normalizeAccountData(acc);
+                }
+            }catch(e){}
+            return src;
+        }
+
+        function getComparableMainStoreJsonLength(storeJson){
+            try{
+                if(typeof storeJson !== 'string' || !storeJson) return 0;
+                const parsed = JSON.parse(storeJson);
+                const accounts = (parsed && parsed.accounts && typeof parsed.accounts === 'object') ? parsed.accounts : {};
+                for(const acc of Object.values(accounts)){
+                    normalizeAccountData(acc);
+                }
+                try{ delete parsed.date; }catch(e){}
+                try{ delete parsed.activeId; }catch(e){}
+                try{ delete parsed.dayDetailsOpen; }catch(e){}
+                try{ delete parsed.tradeDetailsOpen; }catch(e){}
+                try{ delete parsed.apex_fee_rate; }catch(e){}
+                try{ delete parsed.adminLogs; }catch(e){}
+                try{ delete parsed.importAudit; }catch(e){}
+                const stripped = stripOperationalDataFromStore(parsed);
+                return JSON.stringify(stripped).length;
+            }catch(e){
+                return 0;
+            }
+        }
+
+        function ensureNoDataLoss(oldData, newData){
+            try{
+                const oldKeys = Object.keys(oldData || {});
+                const newKeys = Object.keys(newData || {});
+                if(oldKeys.length && newKeys.length < oldKeys.length){
+                    console.warn('Prevented smaller dataset overwrite on account data');
+                    return oldData;
+                }
+            }catch(e){}
+            return newData;
+        }
+
+
         function _applyDataChange(acc, iso, type, val){
             if(!acc || !iso || !type) return;
             if(!acc.data) acc.data = {};
@@ -3861,10 +3964,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if (type === 't0' || type === 't1' || type === 't2') {
                 if (val === '' || val === null || val === undefined) {
                     acc.data[iso][type] = '';
-                    const t0 = parseFloat(acc.data[iso].t0) || 0;
-                    const t1 = parseFloat(acc.data[iso].t1) || 0;
-                    const t2 = parseFloat(acc.data[iso].t2) || 0;
-                    acc.data[iso].val = t0 + t1 + t2;
+                    normalizeEntry(acc.data[iso]);
                     return;
                 }
             }
@@ -3883,10 +3983,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             }
 
             if (type === 't0' || type === 't1' || type === 't2') {
-                const t0 = parseFloat(acc.data[iso].t0) || 0;
-                const t1 = parseFloat(acc.data[iso].t1) || 0;
-                const t2 = parseFloat(acc.data[iso].t2) || 0;
-                acc.data[iso].val = t0 + t1 + t2;
+                normalizeEntry(acc.data[iso]);
             }
         }
 
@@ -3911,24 +4008,15 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if (!acc.data) acc.data = {};
             if (!acc.data[iso]) acc.data[iso] = {};
 
-            const entry = acc.data[iso];
+            const entry = normalizeEntry(acc.data[iso]);
             const metaKey = `${legKey}meta`;
-            if (!entry[metaKey]) entry[metaKey] = {};
+            if (!entry[metaKey] || typeof entry[metaKey] !== 'object') entry[metaKey] = { leg1:'', leg2:'' };
 
             const cleanVal = (rawVal === '' || rawVal === null || rawVal === undefined) ? '' : (parseFloat(String(rawVal).replace(',', '.')) || 0);
             entry[metaKey][`leg${legIndex}`] = cleanVal;
 
-            const hasExplicitLegs = Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg1') || Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg2');
-            const leg1 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg1) || 0) : (parseFloat(entry[legKey]) || 0);
-            const leg2 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg2) || 0) : 0;
-            const subtotal = leg1 + leg2;
-
-            entry[legKey] = subtotal === 0 ? '' : subtotal;
-
-            const t0 = parseFloat(entry.t0) || 0;
-            const t1 = parseFloat(entry.t1) || 0;
-            const t2 = parseFloat(entry.t2) || 0;
-            entry.val = t0 + t1 + t2;
+            normalizeEntry(entry);
+            acc.data[iso] = entry;
 
             renderDashboard();
             scheduleSaveToCloud();
@@ -5807,7 +5895,7 @@ tr.bg-green-50 td {
                         const periodKey = getPeriodKeyFromISO(iso);
                         const docId = makeOperationalPeriodDocId(accountId, periodKey);
                         if(!out[docId]) out[docId] = { accountId, period: periodKey, entries: {} };
-                        out[docId].entries[iso] = clonePlain(rawEntry || {});
+                        out[docId].entries[iso] = normalizeEntry(clonePlain(rawEntry || {}));
                     }
                 }
             }catch(e){ console.warn('buildOperationalPeriodPayloads failed:', e); }
@@ -5828,14 +5916,14 @@ tr.bg-green-50 td {
 
         function buildLocalBackupStore(){
             try{
-                const s = JSON.parse(JSON.stringify(store));
+                const s = normalizeStoreForPersist(JSON.parse(JSON.stringify(store)));
                 try{ delete s.dayDetailsOpen; }catch(e){}
                 try{ delete s.tradeDetailsOpen; }catch(e){}
                 try{ delete s.apex_fee_rate; }catch(e){}
                 try{ delete s.importAudit; }catch(e){}
                 return s;
             }catch(e){
-                return clonePlain(store || {});
+                return normalizeStoreForPersist(clonePlain(store || {}));
             }
         }
 
@@ -5913,7 +6001,7 @@ tr.bg-green-50 td {
         // Remove estado de UI (linhas abertas/fechadas) e preferências de tela antes de salvar
         function getPersistableStore(){
             try{
-                const s = JSON.parse(JSON.stringify(store));
+                const s = normalizeStoreForPersist(JSON.parse(JSON.stringify(store)));
                 // preferências por-device (não sincronizar)
                 try{ delete s.date; }catch(e){}
                 try{ delete s.activeId; }catch(e){}
@@ -5928,7 +6016,7 @@ tr.bg-green-50 td {
                 return stripOperationalDataFromStore(s);
             }catch(e){
                 // fallback (não ideal)
-                const clone = { ...store };
+                const clone = normalizeStoreForPersist({ ...store });
                 try{ delete clone.date; }catch(_){}
                 try{ delete clone.activeId; }catch(_){}
                 try{ delete clone.dayDetailsOpen; }catch(_){}
@@ -6084,6 +6172,7 @@ tr.bg-green-50 td {
                     const acc = store.accounts[accountId];
                     if(!acc.data || typeof acc.data !== 'object') acc.data = {};
                     Object.assign(acc.data, clonePlain(entries));
+                    normalizeAccountData(acc);
                     try{ seen[docSnap.id] = JSON.stringify(entries || {}); }catch(e){ seen[docSnap.id] = ''; }
                 });
                 __lastOperationalDocHashes = seen;
@@ -6328,6 +6417,7 @@ async function saveToCloudNow() {
                         const cur = snap.exists() ? (snap.data() || {}) : {};
                         const curJson = (typeof cur.store_json === 'string') ? cur.store_json : '';
                         const curLen = curJson.length;
+                        const curComparableLen = getComparableMainStoreJsonLength(curJson) || curLen;
                         const curMs = Number(cur.last_update_ms || 0) || 0;
 
                         // Anti-wipe (timestamp): aborta se a nuvem estiver mais nova do que a versão local
@@ -6341,8 +6431,8 @@ async function saveToCloudNow() {
 
                         // Safety guard: refuse to overwrite a much larger cloud dataset with a much smaller one
                         // This is what causes "everything disappeared on all devices".
-                        if (!force && curLen > 2000) {
-                            const threshold = Math.max(900, Math.floor(curLen * 0.85));
+                        if (!force && curComparableLen > 2000) {
+                            const threshold = Math.max(900, Math.floor(curComparableLen * 0.85));
                             if (newLen < threshold) {
                                 throw new Error(
                                     (CURRENT_LANG==='en'
