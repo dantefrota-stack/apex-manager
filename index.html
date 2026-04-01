@@ -421,6 +421,24 @@ body.dark .calendar-body-custom tr:not(.week-separator):not(.day-details-row) td
   border-top-color: transparent !important;
 }
 
+
+/* Força a linha do dia atual a ficar visualmente contínua */
+tr.today-row,
+tr.today-row > td {
+  background: #eefaf5 !important;
+}
+tr.today-row * {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+tr.today-row > td:first-child {
+  box-shadow: inset 4px 0 0 #22c55e !important;
+}
+tr.today-row > td {
+  border-top-color: transparent !important;
+  border-bottom-color: transparent !important;
+}
+
 </style>
 
 <style id="d2-info-modal-styles">
