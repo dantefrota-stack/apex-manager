@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DF Apex Manager V2</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .scrollbar-thin::-webkit-scrollbar { width: 8px; height: 8px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(148,163,184,.55); border-radius: 999px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+    .sidebar-transition { transition: transform .25s ease, opacity .25s ease; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen">
+  <div id="app" class="min-h-screen">
+    <header class="sticky top-0 z-40 bg-slate-950 text-white border-b border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <button id="menuBtn" class="p-2 rounded-xl hover:bg-slate-800" title="Contas">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 5.25h16.5M3.75 12h16.5M3.75 18.75h16.5" />
+            </svg>
+          </button>
+          <div class="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center text-white font-extrabold">DF</div>
+          <div>
+            <div class="text-[11px] uppercase tracking-[0.24em] text-slate-400">Nova Arquitetura</div>
+            <h1 class="text-xl md:text-2xl font-extrabold">DF Apex Manager V2</h1>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="overviewBtn" class="hidden md:inline-flex px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-semibold">Resumo</button>
+          <span id="authBadge" class="hidden text-xs px-3 py-2 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-400/20"></span>
+          <button id="loginBtn" class="px-4 py-2 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-200">Entrar com Google</button>
+          <button id="logoutBtn" class="hidden px-4 py-2 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <div id="sidebarBackdrop" class="fixed inset-0 bg-black/40 z-40 hidden"></div>
+
+    <aside id="sidebar" class="fixed top-0 left-0 z-50 h-full w-[360px] max-w-[92vw] bg-slate-950 text-white border-r border-slate-800 sidebar-transition -translate-x-full">
+      <div class="h-full flex flex-col">
+        <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between gap-3">
+          <div>
+            <div class="text-xs uppercase tracking-[0.22em] text-slate-500">Contas</div>
+            <div class="text-lg font-extrabold mt-1">Selecionar conta</div>
+          </div>
+          <button id="closeSidebarBtn" class="p-2 rounded-xl hover:bg-slate-800">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="p-4 border-b border-slate-800 space-y-3">
+          <input id="accountSearch" type="text" placeholder="Buscar conta..." class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+          <select id="groupFilter" class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="all">Todos os grupos</option>
+          </select>
+        </div>
+        <div id="accountList" class="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin"></div>
+        <div class="p-4 border-t border-slate-800 bg-slate-900 space-y-2">
+          <div class="text-xs text-slate-400">Última conta aberta salva automaticamente neste navegador.</div>
+          <button id="resetLastAccountBtn" class="w-full px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-sm font-semibold">Limpar última conta salva</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      <section id="accessNotice" class="bg-amber-50 border border-amber-200 rounded-2xl shadow-sm p-6">
+        <h2 class="text-lg font-bold text-amber-900">Acesso necessário</h2>
+        <p class="mt-2 text-sm text-amber-800">Entre com uma conta autorizada para carregar os dados operacionais da nova arquitetura.</p>
+      </section>
+
+      <section id="loadingBox" class="hidden bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+        <div class="flex items-center gap-3">
+          <div class="w-5 h-5 border-2 border-slate-300 border-t-indigo-600 rounded-full animate-spin"></div>
+          <div class="text-sm text-slate-600">Carregando conta ativa e períodos...</div>
+        </div>
+      </section>
+
+      <section id="dashboard" class="hidden space-y-6">
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <div class="text-xs uppercase tracking-[0.22em] text-slate-400 font-bold">Conta ativa</div>
+              <h2 id="activeAccountName" class="mt-1 text-2xl md:text-3xl font-extrabold">—</h2>
+              <div id="activeAccountMeta" class="mt-2 text-sm text-slate-500">—</div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <select id="periodFilter" class="px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="all">Todos os períodos</option>
+              </select>
+              <button id="toggleNotesBtn" class="px-4 py-3 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-slate-800">Mostrar notas</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+            <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">PnL da conta</div>
+            <div id="kpiPnL" class="mt-2 text-3xl font-extrabold">—</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+            <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Dias operados</div>
+            <div id="kpiDays" class="mt-2 text-3xl font-extrabold">—</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+            <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Notas</div>
+            <div id="kpiNotes" class="mt-2 text-3xl font-extrabold">—</div>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
+            <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Períodos</div>
+            <div id="kpiPeriods" class="mt-2 text-3xl font-extrabold">—</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+          <div class="xl:col-span-2 space-y-6">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+              <div>
+                <h3 class="text-lg font-bold">Evolução da conta ativa</h3>
+                <p class="text-sm text-slate-500 mt-1">PnL mensal da conta selecionada, respeitando o filtro de período.</p>
+              </div>
+              <div class="mt-6 h-[320px]">
+                <canvas id="equityChart"></canvas>
+              </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between gap-3">
+                <div>
+                  <h3 class="text-lg font-bold">Calendário operacional</h3>
+                  <p id="calendarSubtitle" class="text-sm text-slate-500 mt-1">Visão diária da conta ativa.</p>
+                </div>
+                <div id="calendarLegend" class="text-xs text-slate-400 font-semibold">Notas recolhidas por padrão</div>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                  <thead class="bg-slate-50 text-slate-500 uppercase text-xs tracking-wide">
+                    <tr>
+                      <th class="text-left px-4 py-3">Data</th>
+                      <th class="text-right px-4 py-3">Open</th>
+                      <th class="text-right px-4 py-3">T1</th>
+                      <th class="text-right px-4 py-3">T2</th>
+                      <th class="text-right px-4 py-3">Total</th>
+                      <th class="text-center px-4 py-3">Nota</th>
+                    </tr>
+                  </thead>
+                  <tbody id="calendarBody" class="divide-y divide-slate-100"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-6">
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+              <h3 class="text-lg font-bold">Análise por período</h3>
+              <div class="mt-4 space-y-3">
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Período ativo</div>
+                  <div id="analysisPeriodLabel" class="mt-2 text-sm font-semibold text-slate-800">—</div>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 flex items-center justify-between">
+                  <span class="text-sm text-slate-500">PnL</span>
+                  <span id="analysisPnL" class="text-sm font-bold">—</span>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 flex items-center justify-between">
+                  <span class="text-sm text-slate-500">Dias</span>
+                  <span id="analysisDays" class="text-sm font-bold">—</span>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 flex items-center justify-between">
+                  <span class="text-sm text-slate-500">Notas</span>
+                  <span id="analysisNotes" class="text-sm font-bold">—</span>
+                </div>
+              </div>
+            </div>
+
+            <div id="notesPanel" class="hidden bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+              <h3 class="text-lg font-bold">Notas do período</h3>
+              <div id="notesList" class="mt-4 space-y-3 max-h-[420px] overflow-y-auto pr-1 scrollbar-thin"></div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+              <h3 class="text-lg font-bold">Resumo da conta</h3>
+              <div class="mt-4 space-y-3">
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Última importação</div>
+                  <div id="lastImportText" class="mt-2 text-sm font-semibold text-slate-800">—</div>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Grupo</div>
+                  <div id="summaryGroup" class="mt-2 text-sm font-semibold text-slate-800">—</div>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Status</div>
+                  <div id="summaryStatus" class="mt-2 text-sm font-semibold text-slate-800">—</div>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">Tamanho</div>
+                  <div id="summarySize" class="mt-2 text-sm font-semibold text-slate-800">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="overviewModal" class="hidden fixed inset-0 z-50">
+          <div class="absolute inset-0 bg-black/50"></div>
+          <div class="absolute inset-x-0 top-10 mx-auto max-w-5xl bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between gap-3">
+              <div>
+                <div class="text-xs uppercase tracking-[0.22em] text-slate-400 font-bold">Resumo</div>
+                <h3 class="text-xl font-extrabold">Visão global das contas</h3>
+              </div>
+              <button id="closeOverviewBtn" class="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold">Fechar</button>
+            </div>
+            <div class="p-6 space-y-6 max-h-[80vh] overflow-y-auto scrollbar-thin">
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4"><div class="text-xs uppercase text-slate-400 font-bold">Contas</div><div id="ovAccounts" class="mt-2 text-2xl font-extrabold">—</div></div>
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4"><div class="text-xs uppercase text-slate-400 font-bold">Empresas</div><div id="ovCompanies" class="mt-2 text-2xl font-extrabold">—</div></div>
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4"><div class="text-xs uppercase text-slate-400 font-bold">Notas totais</div><div id="ovNotes" class="mt-2 text-2xl font-extrabold">—</div></div>
+                <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4"><div class="text-xs uppercase text-slate-400 font-bold">PnL total</div><div id="ovPnL" class="mt-2 text-2xl font-extrabold">—</div></div>
+              </div>
+              <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+                <div class="px-5 py-4 border-b border-slate-200">
+                  <h4 class="font-bold">Contas</h4>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="min-w-full text-sm">
+                    <thead class="bg-slate-50 text-slate-500 uppercase text-xs tracking-wide">
+                      <tr>
+                        <th class="text-left px-4 py-3">Conta</th>
+                        <th class="text-left px-4 py-3">Grupo</th>
+                        <th class="text-left px-4 py-3">Status</th>
+                        <th class="text-right px-4 py-3">Dias</th>
+                        <th class="text-right px-4 py-3">Notas</th>
+                        <th class="text-right px-4 py-3">PnL</th>
+                      </tr>
+                    </thead>
+                    <tbody id="overviewTableBody" class="divide-y divide-slate-100"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: 'AIzaSyCu5pQrMnrpSj45lto_GXKx9xIWq2kyDjg',
+      authDomain: 'df-apex-manager.firebaseapp.com',
+      projectId: 'df-apex-manager',
+      storageBucket: 'df-apex-manager.firebasestorage.app',
+      messagingSenderId: '761037562102',
+      appId: '1:761037562102:web:a7622dca93a157dc21ccd7'
+    };
+
+    const AUTHORIZED_EMAILS = new Set(['dantefrota@gmail.com', 'fellipemendonca87@gmail.com']);
+    const STORAGE_ACTIVE_ACCOUNT_KEY = 'df_apex_v2_active_account';
+    const STORAGE_NOTES_OPEN_KEY = 'df_apex_v2_notes_open';
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    const state = {
+      user: null,
+      chart: null,
+      companies: [],
+      accounts: [],
+      imports: [],
+      activeAccountId: localStorage.getItem(STORAGE_ACTIVE_ACCOUNT_KEY) || null,
+      notesOpen: localStorage.getItem(STORAGE_NOTES_OPEN_KEY) === '1',
+      filteredAccounts: []
+    };
+
+    const el = {
+      menuBtn: document.getElementById('menuBtn'),
+      overviewBtn: document.getElementById('overviewBtn'),
+      loginBtn: document.getElementById('loginBtn'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      authBadge: document.getElementById('authBadge'),
+      accessNotice: document.getElementById('accessNotice'),
+      loadingBox: document.getElementById('loadingBox'),
+      dashboard: document.getElementById('dashboard'),
+      sidebar: document.getElementById('sidebar'),
+      sidebarBackdrop: document.getElementById('sidebarBackdrop'),
+      closeSidebarBtn: document.getElementById('closeSidebarBtn'),
+      accountSearch: document.getElementById('accountSearch'),
+      groupFilter: document.getElementById('groupFilter'),
+      accountList: document.getElementById('accountList'),
+      resetLastAccountBtn: document.getElementById('resetLastAccountBtn'),
+      activeAccountName: document.getElementById('activeAccountName'),
+      activeAccountMeta: document.getElementById('activeAccountMeta'),
+      periodFilter: document.getElementById('periodFilter'),
+      toggleNotesBtn: document.getElementById('toggleNotesBtn'),
+      kpiPnL: document.getElementById('kpiPnL'),
+      kpiDays: document.getElementById('kpiDays'),
+      kpiNotes: document.getElementById('kpiNotes'),
+      kpiPeriods: document.getElementById('kpiPeriods'),
+      calendarSubtitle: document.getElementById('calendarSubtitle'),
+      calendarLegend: document.getElementById('calendarLegend'),
+      calendarBody: document.getElementById('calendarBody'),
+      analysisPeriodLabel: document.getElementById('analysisPeriodLabel'),
+      analysisPnL: document.getElementById('analysisPnL'),
+      analysisDays: document.getElementById('analysisDays'),
+      analysisNotes: document.getElementById('analysisNotes'),
+      notesPanel: document.getElementById('notesPanel'),
+      notesList: document.getElementById('notesList'),
+      lastImportText: document.getElementById('lastImportText'),
+      summaryGroup: document.getElementById('summaryGroup'),
+      summaryStatus: document.getElementById('summaryStatus'),
+      summarySize: document.getElementById('summarySize'),
+      overviewModal: document.getElementById('overviewModal'),
+      closeOverviewBtn: document.getElementById('closeOverviewBtn'),
+      ovAccounts: document.getElementById('ovAccounts'),
+      ovCompanies: document.getElementById('ovCompanies'),
+      ovNotes: document.getElementById('ovNotes'),
+      ovPnL: document.getElementById('ovPnL'),
+      overviewTableBody: document.getElementById('overviewTableBody')
+    };
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat('pt-BR').format(Number(value || 0));
+    }
+
+    function formatCurrency(value) {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value || 0));
+    }
+
+    function formatDate(value) {
+      if (!value) return '—';
+      const d = new Date(String(value) + 'T00:00:00');
+      if (Number.isNaN(d.getTime())) return String(value);
+      return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' }).format(d);
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '—';
+      const d = value && value.seconds ? new Date(value.seconds * 1000) : new Date(value);
+      if (Number.isNaN(d.getTime())) return '—';
+      return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(d);
+    }
+
+    function escapeHtml(text) {
+      return String(text ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function openSidebar() {
+      el.sidebar.classList.remove('-translate-x-full');
+      el.sidebarBackdrop.classList.remove('hidden');
+    }
+
+    function closeSidebar() {
+      el.sidebar.classList.add('-translate-x-full');
+      el.sidebarBackdrop.classList.add('hidden');
+    }
+
+    function toggleNotes() {
+      state.notesOpen = !state.notesOpen;
+      localStorage.setItem(STORAGE_NOTES_OPEN_KEY, state.notesOpen ? '1' : '0');
+      renderNotesPanel();
+      renderCalendar();
+    }
+
+    function renderNotesPanel() {
+      el.notesPanel.classList.toggle('hidden', !state.notesOpen);
+      el.toggleNotesBtn.textContent = state.notesOpen ? 'Ocultar notas' : 'Mostrar notas';
+      el.calendarLegend.textContent = state.notesOpen ? 'Notas abertas' : 'Notas recolhidas por padrão';
+    }
+
+    function sortPeriods(periods) {
+      return [...periods].sort((a, b) => String(b.id || b.month).localeCompare(String(a.id || a.month)));
+    }
+
+    function getActiveAccount() {
+      return state.accounts.find((acc) => acc.id === state.activeAccountId) || null;
+    }
+
+    function getFilteredPeriods(account) {
+      const selected = el.periodFilter.value || 'all';
+      const periods = sortPeriods(account?.periods || []);
+      if (selected === 'all') return periods;
+      return periods.filter((period) => (period.id || period.month) === selected);
+    }
+
+    function flattenDaily(periods) {
+      const items = [];
+      periods.forEach((period) => {
+        const dailyMap = period?.dailyData || {};
+        Object.values(dailyMap).forEach((day) => items.push(day));
+      });
+      return items.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    }
+
+    function getFilteredNotes(account, periods) {
+      const validIds = new Set(periods.map((p) => String(p.id || p.month)));
+      return [...(account?.notes || [])]
+        .filter((note) => validIds.has(String(note.date || '').slice(0, 7)))
+        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    }
+
+    function updateAuthUi() {
+      const authorized = !!(state.user && AUTHORIZED_EMAILS.has(state.user.email || ''));
+      el.loginBtn.classList.toggle('hidden', !!state.user);
+      el.logoutBtn.classList.toggle('hidden', !state.user);
+      el.authBadge.classList.toggle('hidden', !state.user);
+      el.accessNotice.classList.toggle('hidden', authorized);
+      el.dashboard.classList.toggle('hidden', !authorized);
+      el.overviewBtn.classList.toggle('hidden', !authorized);
+
+      if (state.user) {
+        el.authBadge.textContent = state.user.email + (authorized ? ' • autorizado' : ' • sem acesso');
+      } else {
+        el.authBadge.textContent = '';
+      }
+    }
+
+    function renderSidebarFilters() {
+      const groups = [...new Set(state.accounts.map((acc) => acc.companyName || 'Sem grupo'))].sort((a, b) => String(a).localeCompare(String(b)));
+      const current = el.groupFilter.value || 'all';
+      el.groupFilter.innerHTML = '<option value="all">Todos os grupos</option>' + groups.map((group) => `<option value="${escapeHtml(group)}">${escapeHtml(group)}</option>`).join('');
+      if ([...el.groupFilter.options].some((o) => o.value === current)) {
+        el.groupFilter.value = current;
+      }
+    }
+
+    function renderAccountList() {
+      const text = (el.accountSearch.value || '').trim().toLowerCase();
+      const group = el.groupFilter.value || 'all';
+
+      state.filteredAccounts = state.accounts.filter((acc) => {
+        const target = `${acc.name} ${acc.companyName} ${acc.size} ${acc.status}`.toLowerCase();
+        const textOk = target.includes(text);
+        const groupOk = group === 'all' ? true : (acc.companyName || 'Sem grupo') === group;
+        return textOk && groupOk;
+      });
+
+      el.accountList.innerHTML = state.filteredAccounts.length ? state.filteredAccounts.map((acc) => {
+        const active = acc.id === state.activeAccountId;
+        return `
+          <button data-account-id="${escapeHtml(acc.id)}" class="w-full text-left rounded-2xl border p-4 transition ${active ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-800 bg-slate-900 hover:bg-slate-800'}">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="font-bold text-white">${escapeHtml(acc.name)}</div>
+                <div class="mt-1 text-xs text-slate-400">${escapeHtml(acc.companyName || 'Sem grupo')} • ${escapeHtml(acc.size || '—')} • ${escapeHtml(acc.status || 'active')}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm font-bold ${Number(acc.stats?.totalPnL || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}">${escapeHtml(formatCurrency(acc.stats?.totalPnL || 0))}</div>
+                <div class="text-xs text-slate-500 mt-1">${formatNumber(acc.stats?.tradingDays || 0)} dias</div>
+              </div>
+            </div>
+          </button>
+        `;
+      }).join('') : '<div class="text-sm text-slate-500 p-2">Nenhuma conta encontrada.</div>';
+
+      el.accountList.querySelectorAll('[data-account-id]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.activeAccountId = btn.getAttribute('data-account-id');
+          localStorage.setItem(STORAGE_ACTIVE_ACCOUNT_KEY, state.activeAccountId);
+          renderAccountList();
+          renderActiveAccount();
+          closeSidebar();
+        });
+      });
+    }
+
+    function renderPeriodFilter(account) {
+      const periods = sortPeriods(account?.periods || []);
+      const current = el.periodFilter.value || 'all';
+      el.periodFilter.innerHTML = '<option value="all">Todos os períodos</option>' + periods.map((period) => {
+        const key = period.id || period.month;
+        return `<option value="${escapeHtml(key)}">${escapeHtml(key)}</option>`;
+      }).join('');
+      if ([...el.periodFilter.options].some((o) => o.value === current)) {
+        el.periodFilter.value = current;
+      }
+    }
+
+    function renderChart(periods) {
+      const monthly = new Map();
+      periods.forEach((period) => {
+        const key = period.id || period.month;
+        monthly.set(key, (monthly.get(key) || 0) + Number(period?.stats?.totalPnL || 0));
+      });
+
+      const labels = [...monthly.keys()].sort((a, b) => String(a).localeCompare(String(b)));
+      const data = labels.map((label) => monthly.get(label) || 0);
+
+      const ctx = document.getElementById('equityChart').getContext('2d');
+      if (state.chart) state.chart.destroy();
+
+      state.chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            label: 'PnL mensal',
+            data,
+            tension: 0.28,
+            borderWidth: 2,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              ticks: {
+                callback: (value) => '$' + new Intl.NumberFormat('en-US').format(value)
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderCalendar() {
+      const account = getActiveAccount();
+      if (!account) {
+        el.calendarBody.innerHTML = '<tr><td colspan="6" class="px-4 py-6 text-center text-slate-400">Sem conta selecionada.</td></tr>';
+        return;
+      }
+
+      const periods = getFilteredPeriods(account);
+      const daily = flattenDaily(periods).slice(0, 120);
+
+      el.calendarBody.innerHTML = daily.length ? daily.map((day) => {
+        const hasNote = !!String(day.note || '').trim();
+        return `
+          <tr class="${hasNote && state.notesOpen ? 'align-top' : ''}">
+            <td class="px-4 py-3 font-medium">${escapeHtml(formatDate(day.date))}</td>
+            <td class="px-4 py-3 text-right">${escapeHtml(formatCurrency(day.open || 0))}</td>
+            <td class="px-4 py-3 text-right">${escapeHtml(formatCurrency(day.t1 || 0))}</td>
+            <td class="px-4 py-3 text-right">${escapeHtml(formatCurrency(day.t2 || 0))}</td>
+            <td class="px-4 py-3 text-right font-bold ${Number(day.val || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}">${escapeHtml(formatCurrency(day.val || 0))}</td>
+            <td class="px-4 py-3 text-center">
+              ${hasNote
+                ? `<span class="inline-flex items-center justify-center w-7 h-7 rounded-full ${state.notesOpen ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-500'} font-bold text-xs">N</span>${state.notesOpen ? `<div class="mt-3 text-left text-sm text-slate-600 whitespace-pre-wrap">${escapeHtml(day.note || '')}</div>` : ''}`
+                : '<span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-slate-50 text-slate-300 font-bold text-xs">—</span>'}
+            </td>
+          </tr>
+        `;
+      }).join('') : '<tr><td colspan="6" class="px-4 py-6 text-center text-slate-400">Sem registros para o período selecionado.</td></tr>';
+    }
+
+    function renderNotesList(notes) {
+      el.notesList.innerHTML = notes.length ? notes.slice(0, 50).map((note) => `
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div class="text-xs uppercase tracking-wide text-slate-400 font-bold">${escapeHtml(formatDate(note.date))}</div>
+          <div class="mt-2 text-sm text-slate-700 whitespace-pre-wrap">${escapeHtml(note.note || '')}</div>
+        </div>
+      `).join('') : '<div class="text-sm text-slate-400">Sem notas no período selecionado.</div>';
+    }
+
+    function renderOverview() {
+      const totalNotes = state.accounts.reduce((sum, acc) => sum + Number(acc.notes?.length || 0), 0);
+      const totalPnL = state.accounts.reduce((sum, acc) => sum + Number(acc.stats?.totalPnL || 0), 0);
+
+      el.ovAccounts.textContent = formatNumber(state.accounts.length);
+      el.ovCompanies.textContent = formatNumber(state.companies.length);
+      el.ovNotes.textContent = formatNumber(totalNotes);
+      el.ovPnL.textContent = formatCurrency(totalPnL);
+      el.ovPnL.className = 'mt-2 text-2xl font-extrabold ' + (totalPnL >= 0 ? 'text-emerald-600' : 'text-red-600');
+
+      el.overviewTableBody.innerHTML = state.accounts.map((acc) => `
+        <tr>
+          <td class="px-4 py-3 font-medium">${escapeHtml(acc.name)}</td>
+          <td class="px-4 py-3">${escapeHtml(acc.companyName || 'Sem grupo')}</td>
+          <td class="px-4 py-3">${escapeHtml(acc.status || 'active')}</td>
+          <td class="px-4 py-3 text-right">${formatNumber(acc.stats?.tradingDays || 0)}</td>
+          <td class="px-4 py-3 text-right">${formatNumber(acc.notes?.length || 0)}</td>
+          <td class="px-4 py-3 text-right font-bold ${Number(acc.stats?.totalPnL || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}">${escapeHtml(formatCurrency(acc.stats?.totalPnL || 0))}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderActiveAccount() {
+      const account = getActiveAccount();
+      if (!account) {
+        el.activeAccountName.textContent = 'Selecione uma conta';
+        el.activeAccountMeta.textContent = '—';
+        return;
+      }
+
+      renderPeriodFilter(account);
+      const periods = getFilteredPeriods(account);
+      const notes = getFilteredNotes(account, periods);
+
+      const pnl = periods.reduce((sum, period) => sum + Number(period?.stats?.totalPnL || 0), 0);
+      const days = periods.reduce((sum, period) => sum + Number(period?.stats?.tradingDays || 0), 0);
+
+      el.activeAccountName.textContent = account.name || 'Sem nome';
+      el.activeAccountMeta.textContent = `${account.companyName || 'Sem grupo'} • ${account.size || '—'} • ${account.status || 'active'}`;
+      el.kpiPnL.textContent = formatCurrency(pnl);
+      el.kpiPnL.className = 'mt-2 text-3xl font-extrabold ' + (pnl >= 0 ? 'text-emerald-600' : 'text-red-600');
+      el.kpiDays.textContent = formatNumber(days);
+      el.kpiNotes.textContent = formatNumber(notes.length);
+      el.kpiPeriods.textContent = formatNumber(periods.length);
+      el.calendarSubtitle.textContent = (el.periodFilter.value || 'all') === 'all'
+        ? 'Visão diária consolidada da conta ativa.'
+        : `Visão diária do período ${el.periodFilter.value}.`;
+
+      el.analysisPeriodLabel.textContent = (el.periodFilter.value || 'all') === 'all' ? 'Todos os períodos' : el.periodFilter.value;
+      el.analysisPnL.textContent = formatCurrency(pnl);
+      el.analysisPnL.className = 'text-sm font-bold ' + (pnl >= 0 ? 'text-emerald-600' : 'text-red-600');
+      el.analysisDays.textContent = formatNumber(days);
+      el.analysisNotes.textContent = formatNumber(notes.length);
+
+      el.summaryGroup.textContent = account.companyName || 'Sem grupo';
+      el.summaryStatus.textContent = account.status || 'active';
+      el.summarySize.textContent = account.size || '—';
+
+      const latestImport = [...state.imports].sort((a, b) => {
+        const ta = a?.importedAt?.seconds || 0;
+        const tb = b?.importedAt?.seconds || 0;
+        return tb - ta;
+      })[0];
+      el.lastImportText.textContent = latestImport ? `${formatDateTime(latestImport.importedAt)} • ${latestImport.fileName || 'sem nome'}` : 'Nenhuma importação encontrada.';
+
+      renderChart(periods);
+      renderNotesList(notes);
+      renderCalendar();
+    }
+
+    async function loadCollectionDocs(pathSegments) {
+      const snapshot = await getDocs(collection(db, ...pathSegments));
+      return snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+    }
+
+    async function loadAppData() {
+      el.loadingBox.classList.remove('hidden');
+      try {
+        const companies = await loadCollectionDocs(['companies']);
+        const accountsBase = await loadCollectionDocs(['accounts']);
+        let imports = [];
+        try {
+          imports = await loadCollectionDocs(['imports']);
+        } catch (e) {
+          imports = [];
+        }
+
+        const accounts = [];
+        for (const base of accountsBase) {
+          const periods = await loadCollectionDocs(['accounts', base.id, 'periods']);
+          const notes = await loadCollectionDocs(['accounts', base.id, 'notes']);
+          accounts.push({
+            ...base,
+            companyName: base.companyName || (companies.find((c) => c.id === base.companyId)?.name || 'Sem grupo'),
+            periods,
+            notes,
+            stats: {
+              tradingDays: Number(base?.stats?.tradingDays || 0),
+              noteCount: Number(base?.stats?.noteCount || notes.length || 0),
+              totalPnL: Number(base?.stats?.totalPnL || 0)
+            }
+          });
+        }
+
+        state.companies = companies.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+        state.accounts = accounts.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+        state.imports = imports;
+
+        if (!state.activeAccountId || !state.accounts.some((acc) => acc.id === state.activeAccountId)) {
+          state.activeAccountId = state.accounts[0]?.id || null;
+          if (state.activeAccountId) localStorage.setItem(STORAGE_ACTIVE_ACCOUNT_KEY, state.activeAccountId);
+        }
+
+        renderSidebarFilters();
+        renderAccountList();
+        renderNotesPanel();
+        renderOverview();
+        renderActiveAccount();
+      } finally {
+        el.loadingBox.classList.add('hidden');
+      }
+    }
+
+    el.menuBtn.addEventListener('click', openSidebar);
+    el.closeSidebarBtn.addEventListener('click', closeSidebar);
+    el.sidebarBackdrop.addEventListener('click', closeSidebar);
+    el.toggleNotesBtn.addEventListener('click', toggleNotes);
+    el.accountSearch.addEventListener('input', renderAccountList);
+    el.groupFilter.addEventListener('change', renderAccountList);
+    el.periodFilter.addEventListener('change', renderActiveAccount);
+    el.overviewBtn.addEventListener('click', () => el.overviewModal.classList.remove('hidden'));
+    el.closeOverviewBtn.addEventListener('click', () => el.overviewModal.classList.add('hidden'));
+    el.resetLastAccountBtn.addEventListener('click', () => {
+      localStorage.removeItem(STORAGE_ACTIVE_ACCOUNT_KEY);
+      state.activeAccountId = state.accounts[0]?.id || null;
+      if (state.activeAccountId) localStorage.setItem(STORAGE_ACTIVE_ACCOUNT_KEY, state.activeAccountId);
+      renderAccountList();
+      renderActiveAccount();
+    });
+
+    el.loginBtn.addEventListener('click', async () => {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        alert('Erro no login: ' + (error.message || error));
+      }
+    });
+
+    el.logoutBtn.addEventListener('click', async () => {
+      await signOut(auth);
+    });
+
+    onAuthStateChanged(auth, async (user) => {
+      state.user = user;
+      updateAuthUi();
+      if (user && AUTHORIZED_EMAILS.has(user.email || '')) {
+        await loadAppData();
+      }
+    });
+  </script>
+</body>
+</html>
