@@ -386,6 +386,26 @@ tr.bg-green-50 td {
   border-bottom: none !important;
 }
 
+
+/* Integra a linha do dia atual com a área expandida abaixo */
+tr.today-row + tr.day-details-row td {
+  background: #eefaf5 !important;
+  border-top: none !important;
+  padding-top: 0 !important;
+}
+tr.today-row + tr.day-details-row td > div {
+  padding-top: 12px !important;
+}
+tr.today-row + tr.day-details-row .rounded-xl {
+  background-color: #ffffff !important;
+}
+body.dark tr.today-row + tr.day-details-row td {
+  background: rgba(16,185,129,0.12) !important;
+}
+body.dark tr.today-row + tr.day-details-row .rounded-xl {
+  background-color: rgba(15,23,42,0.65) !important;
+}
+
 </style>
 
 <style id="d2-info-modal-styles">
