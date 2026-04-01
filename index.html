@@ -4445,6 +4445,53 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         }
 
 
+        
+        function _strategyBlocksForDay(e){
+            return {
+                t2550: { label:'25/50', key:'t0', legs: getTradeLegValues(e || {}, 't0') },
+                t4080: { label:'40/80', key:'t1', legs: getTradeLegValues(e || {}, 't1') },
+                ct:    { label:'Condução Técnica', key:'t2', legs: getTradeLegValues(e || {}, 't2') }
+            };
+        }
+
+        function _individualTradeValuesForDay(e){
+            const blocks = _strategyBlocksForDay(e || {});
+            const out = [];
+            Object.entries(blocks).forEach(([key, block]) => {
+                const legVals = [block.legs.leg1, block.legs.leg2]
+                    .map(v => (v === '' || v === null || v === undefined) ? null : Number(v))
+                    .filter(v => v !== null && !isNaN(v) && v !== 0);
+                legVals.forEach((v, idx) => out.push({ strategy:key, tradeIndex: idx + 1, value:v }));
+            });
+            return out;
+        }
+
+        function _periodTradeSummary(acc, startISO, endISO){
+            let tradedDays = 0;
+            let firstTradeDay = null;
+            let lastTradeDay = null;
+            const byDay = [];
+
+            Object.keys(acc.data || {}).sort().forEach(iso => {
+                if (iso < startISO || iso > endISO) return;
+                const e = acc.data[iso] || {};
+                if (e.holiday) return;
+
+                const blocks = _strategyBlocksForDay(e);
+                const total = Object.values(blocks).reduce((sum, b) => sum + (Number(b.legs.subtotal) || 0), 0);
+                const trades = _individualTradeValuesForDay(e);
+                if (total !== 0 || trades.length) {
+                    tradedDays += 1;
+                    if(!firstTradeDay) firstTradeDay = iso;
+                    lastTradeDay = iso;
+                    byDay.push({ iso, total, trades, blocks });
+                }
+            });
+
+            return { tradedDays, firstTradeDay, lastTradeDay, byDay };
+        }
+
+
         function _tradeTripletForDay(e){
             return {
                 t2550: Number(e?.t0 || 0),
@@ -4473,45 +4520,48 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 if (iso < startISO || iso > endISO) return;
                 const e = acc.data[iso] || {};
                 if (e.holiday) return;
-                const triplet = _tradeTripletForDay(e);
+                const blocks = _strategyBlocksForDay(e);
 
-                Object.entries(triplet).forEach(([key, v]) => {
+                Object.entries(blocks).forEach(([key, block]) => {
                     const s = strategies[key];
-                    if (v === 0) {
-                        s.currentWinningStreak = 0;
-                        s.currentLosingStreak = 0;
-                        return;
+                    const subtotal = Number(block.legs.subtotal || 0);
+                    const legs = [block.legs.leg1, block.legs.leg2]
+                        .map(v => (v === '' || v === null || v === undefined) ? null : Number(v))
+                        .filter(v => v !== null && !isNaN(v) && v !== 0);
+
+                    if (subtotal > 0) s.greenDays += 1;
+                    else if (subtotal < 0) s.redDays += 1;
+
+                    legs.forEach(v => {
+                        s.trades += 1;
+                        if (v > 0) {
+                            s.wins += 1;
+                            s.grossWin += v;
+                            s.winSum += v;
+                            s.winCount += 1;
+                            s.currentWinningStreak += 1;
+                            s.currentLosingStreak = 0;
+                        } else if (v < 0) {
+                            s.losses += 1;
+                            s.grossLoss += Math.abs(v);
+                            s.lossSum += v;
+                            s.lossCount += 1;
+                            s.currentLosingStreak += 1;
+                            s.currentWinningStreak = 0;
+                        }
+                        if (s.currentWinningStreak > s.maxWinningStreak) s.maxWinningStreak = s.currentWinningStreak;
+                        if (s.currentLosingStreak > s.maxLosingStreak) s.maxLosingStreak = s.currentLosingStreak;
+                    });
+
+                    if (subtotal !== 0 || legs.length) {
+                        s.total += subtotal;
+                        s.cum += subtotal;
+                        if (s.cum > s.peak) s.peak = s.cum;
+                        const dd = s.peak - s.cum;
+                        if (dd > s.maxDD) s.maxDD = dd;
+                        s.curveLabels.push(formatDateShort(parseISODateLocal(iso)));
+                        s.curveData.push(s.cum);
                     }
-
-                    s.total += v;
-                    s.trades += 1;
-                    if (v > 0) {
-                        s.wins += 1;
-                        s.grossWin += v;
-                        s.winSum += v;
-                        s.winCount += 1;
-                        s.greenDays += 1;
-                        s.currentWinningStreak += 1;
-                        s.currentLosingStreak = 0;
-                    } else if (v < 0) {
-                        s.losses += 1;
-                        s.grossLoss += Math.abs(v);
-                        s.lossSum += v;
-                        s.lossCount += 1;
-                        s.redDays += 1;
-                        s.currentLosingStreak += 1;
-                        s.currentWinningStreak = 0;
-                    }
-
-                    if (s.currentWinningStreak > s.maxWinningStreak) s.maxWinningStreak = s.currentWinningStreak;
-                    if (s.currentLosingStreak > s.maxLosingStreak) s.maxLosingStreak = s.currentLosingStreak;
-
-                    s.cum += v;
-                    if (s.cum > s.peak) s.peak = s.cum;
-                    const dd = s.peak - s.cum;
-                    if (dd > s.maxDD) s.maxDD = dd;
-                    s.curveLabels.push(formatDateShort(parseISODateLocal(iso)));
-                    s.curveData.push(s.cum);
                 });
             });
 
@@ -4528,180 +4578,178 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
 
         function filterReportInternal() {
-            const start = els.filterStart.value; const end = els.filterEnd.value;
+            const start = els.filterStart.value; 
+            const end = els.filterEnd.value;
             if(!start || !end) return;
             const acc = getActive();
-            
-// Métricas por período devem respeitar SOMENTE o intervalo selecionado.
-// Contagem de trades: usa T1/T2 quando existirem; caso contrário, considera 1 trade (o TOTAL do dia).
-// Melhor/Pior dia: usa o TOTAL do dia (val) quando presente; senão, soma T1+T2.
-let sum = 0;
-let wins = 0;
-let totalTrades = 0;
-let tradedDays = 0;
-let greenDays = 0;
-let redDays = 0;
 
-let grossWin = 0;
-let grossLoss = 0; // absoluto
-let winSum = 0;
-let lossSum = 0; // negativo
-let winCount = 0;
-let lossCount = 0;
+            let sum = 0;
+            let wins = 0;
+            let totalTrades = 0;
+            let tradedDays = 0;
+            let greenDays = 0;
+            let redDays = 0;
 
-let best = -Infinity;
-let worst = Infinity;
+            let grossWin = 0;
+            let grossLoss = 0;
+            let winSum = 0;
+            let lossSum = 0;
+            let winCount = 0;
+            let lossCount = 0;
 
-let chartLabels = [];
-let chartData = [];
-let cumSum = 0;
+            let best = -Infinity;
+            let worst = Infinity;
 
-// Max Drawdown (peak-to-trough) dentro do intervalo
-let peak = 0;
-let maxDD = 0; // positivo
+            let chartLabels = [];
+            let chartData = [];
+            let cumSum = 0;
+            let peak = 0;
+            let maxDD = 0;
 
-Object.keys(acc.data).sort().forEach(iso => {
-    if(iso >= start && iso <= end) {
-        const e = acc.data[iso];
-        const val = (parseFloat(e.val) || 0);
-        const t0n = parseFloat(e.t0);
-        const t1n = parseFloat(e.t1);
-        const t2n = parseFloat(e.t2);
+            Object.keys(acc.data || {}).sort().forEach(iso => {
+                if(iso < start || iso > end) return;
+                const e = acc.data[iso] || {};
+                if(e.holiday) return;
 
-        if(!e.holiday) {
-            const hasT0 = !isNaN(t0n) && t0n !== 0;
-            const hasT1 = !isNaN(t1n) && t1n !== 0;
-            const hasT2 = !isNaN(t2n) && t2n !== 0;
+                const tradeVals = _individualTradeValuesForDay(e).map(t => Number(t.value || 0)).filter(v => !isNaN(v) && v !== 0);
+                const blocks = _strategyBlocksForDay(e);
+                const dayTotal = Object.values(blocks).reduce((s,b)=> s + (Number(b.legs.subtotal) || 0), 0);
 
-            // Total do dia (para soma, melhor/pior e curva acumulada)
-            // Prioriza 'val' (TOTAL já calculado). Se não existir, usa soma de T1+T2.
-            let dayTotal = 0;
-            if (val !== 0) {
-                dayTotal = val;
-            } else if (hasT0 || hasT1 || hasT2) {
-                dayTotal = (isNaN(t0n) ? 0 : t0n) + (isNaN(t1n) ? 0 : t1n) + (isNaN(t2n) ? 0 : t2n);
-            }
+                tradeVals.forEach(tv => {
+                    totalTrades += 1;
+                    if (tv > 0) {
+                        wins += 1;
+                        grossWin += tv;
+                        winSum += tv;
+                        winCount += 1;
+                    } else if (tv < 0) {
+                        grossLoss += Math.abs(tv);
+                        lossSum += tv;
+                        lossCount += 1;
+                    }
+                });
 
-            // Trade values (para KPIs de trades)
-            const tradeVals = [];
-            if (hasT0) tradeVals.push(t0n);
-            if (hasT1) tradeVals.push(t1n);
-            if (hasT2) tradeVals.push(t2n);
-            if (tradeVals.length === 0 && dayTotal !== 0) tradeVals.push(dayTotal);
+                if (dayTotal !== 0 || tradeVals.length) {
+                    tradedDays++;
+                    sum += dayTotal;
+                    if (dayTotal > 0) greenDays++;
+                    if (dayTotal < 0) redDays++;
+                    if (dayTotal > best) best = dayTotal;
+                    if (dayTotal < worst) worst = dayTotal;
 
-            tradeVals.forEach(tv => {
-                totalTrades += 1;
-                if (tv > 0) {
-                    wins += 1;
-                    grossWin += tv;
-                    winSum += tv;
-                    winCount += 1;
-                } else if (tv < 0) {
-                    grossLoss += Math.abs(tv);
-                    lossSum += tv;
-                    lossCount += 1;
+                    cumSum += dayTotal;
+                    if (cumSum > peak) peak = cumSum;
+                    const dd = peak - cumSum;
+                    if (dd > maxDD) maxDD = dd;
+
+                    chartLabels.push(formatDateShort(parseISODateLocal(iso)));
+                    chartData.push(cumSum);
                 }
             });
 
-            if (dayTotal !== 0) {
-                tradedDays++;
-                sum += dayTotal;
+            els.customResult.textContent = formatCurrency(sum); 
+            els.customResult.className = sum >= 0 ? "font-bold text-green-600" : "font-bold text-red-600";
 
-                if (dayTotal > 0) greenDays++;
-                if (dayTotal < 0) redDays++;
+            const losses = Math.max(0, totalTrades - wins);
+            const rate = totalTrades > 0 ? ((wins/totalTrades)*100).toFixed(0)+"%" : "0%";
+            els.customWinrate.textContent = `${rate}`;
 
-                if(dayTotal > best) best = dayTotal;
-                if(dayTotal < worst) worst = dayTotal;
+            const periodSummary = _periodTradeSummary(acc, start, end);
+            const singleDayMode = periodSummary.tradedDays <= 1;
 
-                cumSum += dayTotal;
+            els.customBest.textContent = (!singleDayMode && best > -Infinity) ? formatCurrency(best) : "--";
+            els.customWorst.textContent = (!singleDayMode && worst < Infinity) ? formatCurrency(worst) : "--";
 
-                if (cumSum > peak) peak = cumSum;
-                const dd = peak - cumSum;
-                if (dd > maxDD) maxDD = dd;
-
-                // Gráfico: lucro acumulado apenas em dias operados
-                chartLabels.push(formatDateShort(parseISODateLocal(iso)));
-                chartData.push(cumSum);
+            if (chartLabels.length === 1 && chartData.length === 1) {
+                chartLabels = ['Início', chartLabels[0]];
+                chartData = [0, chartData[0]];
             }
-        }
-    }
-});
+            updateChart(chartLabels, chartData);
 
-els.customResult.textContent = formatCurrency(sum); 
-els.customResult.className = sum >= 0 ? "font-bold text-green-600" : "font-bold text-red-600";
+            const strat = _computeStrategyAnalytics(acc, start, end);
+            const fillStrategy = (prefix, obj) => {
+                const totalEl = document.getElementById(`strategy-${prefix}-total`);
+                const tradesEl = document.getElementById(`strategy-${prefix}-trades`);
+                if(totalEl) totalEl.textContent = formatCurrency(obj.total);
+                if(tradesEl) tradesEl.textContent = `${obj.trades} (${obj.wins}/${obj.losses})`;
+            };
+            fillStrategy('2550', strat.t2550);
+            fillStrategy('4080', strat.t4080);
+            fillStrategy('ct', strat.ct);
 
-const losses = Math.max(0, totalTrades - wins);
-const rate = totalTrades > 0 ? ((wins/totalTrades)*100).toFixed(0)+"%" : "0%";
-els.customWinrate.textContent = `${rate}`;
-els.customBest.textContent = best > -Infinity ? formatCurrency(best) : "--";
-els.customWorst.textContent = worst < Infinity ? formatCurrency(worst) : "--";
+            const avgTrade = totalTrades > 0 ? (sum / totalTrades) : 0;
+            const avgWin = winCount > 0 ? (winSum / winCount) : 0;
+            const avgLoss = lossCount > 0 ? (lossSum / lossCount) : 0;
+            const pf = grossLoss > 0 ? (grossWin / grossLoss) : (grossWin > 0 ? Infinity : 0);
+            const payoffRatio = (lossCount > 0 && avgLoss !== 0) ? (avgWin / Math.abs(avgLoss)) : (avgWin > 0 ? Infinity : 0);
+            const avgDay = tradedDays > 0 ? (sum / tradedDays) : 0;
+            const maxDDNeg = -maxDD;
 
-if (chartLabels.length === 1 && chartData.length === 1) {
-    chartLabels = ['Início', chartLabels[0]];
-    chartData = [0, chartData[0]];
-}
-updateChart(chartLabels, chartData);
+            if (els.kpiTrades) els.kpiTrades.textContent = totalTrades > 0 ? `${totalTrades} (${wins}/${losses})` : "0 (0/0)";
+            if (els.kpiAvgTrade) els.kpiAvgTrade.textContent = totalTrades > 0 ? formatCurrency(avgTrade) : "--";
+            if (els.kpiAvgWinLoss) els.kpiAvgWinLoss.textContent = (winCount || lossCount) ? `${formatCurrency(avgWin)} / ${formatCurrency(avgLoss)}` : "--";
+            if (els.kpiPF) els.kpiPF.textContent = (pf === Infinity) ? "∞" : (grossLoss > 0 ? pf.toFixed(2) : "--");
+            if (els.kpiExpectancy) els.kpiExpectancy.textContent = (payoffRatio === Infinity) ? "∞" : (lossCount > 0 ? payoffRatio.toFixed(2) : "--");
+            if (els.kpiDays) els.kpiDays.textContent = tradedDays ? String(tradedDays) : "--";
+            if (els.kpiDaysGR) els.kpiDaysGR.textContent = tradedDays ? `${greenDays} / ${redDays}` : "--";
+            if (els.kpiAvgDay) els.kpiAvgDay.textContent = tradedDays ? formatCurrency(avgDay) : "--";
+            if (els.kpiMaxDD) els.kpiMaxDD.textContent = tradedDays ? formatCurrency(maxDDNeg) : "--";
 
-// Breakdown por estratégia + risco/consistência
-const stratStats = _computeStrategyAnalytics(acc, start, end);
-const stratRows = [
-    ['t2550', stratStats.t2550],
-    ['t4080', stratStats.t4080],
-    ['ct', stratStats.ct]
-];
-const stratBody = document.getElementById('strategy-breakdown-body');
-if (stratBody) {
-    stratBody.innerHTML = stratRows.map(([key, s]) => {
-        const wr = s.trades > 0 ? `${(s.winRate * 100).toFixed(0)}%` : '--';
-        const payoff = (s.payoff === null || !isFinite(s.payoff)) ? '--' : s.payoff.toFixed(2);
-        const expectancy = s.trades > 0 ? formatCurrency(s.expectancy) : '--';
-        const maxDDTxt = s.trades > 0 ? formatCurrency(-s.maxDD) : '--';
-        return `<tr>
-            <td class="py-2 font-semibold text-slate-700 dark:text-slate-200">${s.label}</td>
-            <td class="py-2 text-right font-bold ${s.total >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(s.total)}</td>
-            <td class="py-2 text-right">${s.trades}</td>
-            <td class="py-2 text-right">${wr}</td>
-            <td class="py-2 text-right">${payoff}</td>
-            <td class="py-2 text-right ${s.expectancy >= 0 ? 'text-emerald-600' : 'text-red-600'}">${expectancy}</td>
-            <td class="py-2 text-right text-red-600">${maxDDTxt}</td>
-        </tr>`;
-    }).join('');
-}
-const bestStrategy = stratRows.slice().sort((a,b)=>b[1].total-a[1].total)[0]?.[1];
-const worstStrategy = stratRows.slice().sort((a,b)=>a[1].total-b[1].total)[0]?.[1];
-const maxLose = Math.max(...stratRows.map(([,s])=>s.maxLosingStreak), 0);
-const maxWin = Math.max(...stratRows.map(([,s])=>s.maxWinningStreak), 0);
-const overallExpectancy = totalTrades > 0 ? formatCurrency(((wins/totalTrades) * (winCount ? (winSum/winCount) : 0)) - (((totalTrades-wins)/totalTrades) * Math.abs(lossCount ? (lossSum/lossCount) : 0))) : '--';
-if (document.getElementById('risk-max-losing')) document.getElementById('risk-max-losing').textContent = `${maxLose} trades`;
-if (document.getElementById('risk-max-winning')) document.getElementById('risk-max-winning').textContent = `${maxWin} trades`;
-if (document.getElementById('risk-expectancy-overall')) document.getElementById('risk-expectancy-overall').textContent = overallExpectancy;
-if (document.getElementById('risk-best-strategy')) document.getElementById('risk-best-strategy').textContent = bestStrategy ? `${bestStrategy.label} (${formatCurrency(bestStrategy.total)})` : '--';
-if (document.getElementById('risk-worst-strategy')) document.getElementById('risk-worst-strategy').textContent = worstStrategy ? `${worstStrategy.label} (${formatCurrency(worstStrategy.total)})` : '--';
-if (document.getElementById('risk-days-balance')) document.getElementById('risk-days-balance').textContent = tradedDays ? `${greenDays} / ${redDays}` : '--';
+            const strategyRows = document.getElementById('strategy-breakdown-body');
+            if(strategyRows){
+                strategyRows.innerHTML = '';
+                Object.values(strat).forEach((s) => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td class="py-2 text-left">${s.label}</td>
+                        <td class="py-2 text-right ${s.total >= 0 ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}">${formatCurrency(s.total)}</td>
+                        <td class="py-2 text-right">${s.trades}</td>
+                        <td class="py-2 text-right">${Math.round((s.winRate || 0) * 100)}%</td>
+                        <td class="py-2 text-right">${s.payoff === null ? '--' : (s.payoff === Infinity ? '∞' : s.payoff.toFixed(2))}</td>
+                        <td class="py-2 text-right ${s.expectancy >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(s.expectancy || 0)}</td>
+                        <td class="py-2 text-right text-red-600">${formatCurrency(-(s.maxDD || 0))}</td>
+                    `;
+                    strategyRows.appendChild(tr);
+                });
+            }
 
-// --- KPIs do Período (Trades + Dias) ---
-const avgTrade = totalTrades > 0 ? (sum / totalTrades) : 0;
-const avgWin = winCount > 0 ? (winSum / winCount) : 0;
-const avgLoss = lossCount > 0 ? (lossSum / lossCount) : 0; // negativo
-const pf = grossLoss > 0 ? (grossWin / grossLoss) : (grossWin > 0 ? Infinity : 0);
+            const bestStrategy = Object.values(strat).slice().sort((a,b)=> b.total - a.total)[0];
+            const worstStrategy = Object.values(strat).slice().sort((a,b)=> a.total - b.total)[0];
+            const overallExpectancy = totalTrades > 0 ? (sum / totalTrades) : 0;
+            const overallTradeSequence = [];
+            Object.keys(acc.data || {}).sort().forEach(iso => {
+                if(iso < start || iso > end) return;
+                const e = acc.data[iso] || {};
+                if(e.holiday) return;
+                overallTradeSequence.push(..._individualTradeValuesForDay(e).map(t => t.value).filter(v => Number(v) !== 0));
+            });
+            let curLose = 0, maxLose = 0, curWin = 0, maxWin = 0;
+            overallTradeSequence.forEach(v => {
+                v = Number(v || 0);
+                if(v > 0){ curWin += 1; curLose = 0; }
+                else if(v < 0){ curLose += 1; curWin = 0; }
+                maxLose = Math.max(maxLose, curLose);
+                maxWin = Math.max(maxWin, curWin);
+            });
 
-const winRate = totalTrades > 0 ? (wins / totalTrades) : 0;
-// Payoff Ratio = Avg Win / |Avg Loss| (evita redundância com Avg Trade/Expectancy em $)
-const payoffRatio = (lossCount > 0 && avgLoss !== 0) ? (avgWin / Math.abs(avgLoss)) : (avgWin > 0 ? Infinity : 0);
+            const riskMaxLosing = document.getElementById('risk-max-losing');
+            const riskMaxWinning = document.getElementById('risk-max-winning');
+            const riskExpectancyOverall = document.getElementById('risk-expectancy-overall');
+            const riskBestStrategy = document.getElementById('risk-best-strategy');
+            const riskWorstStrategy = document.getElementById('risk-worst-strategy');
+            const riskDaysBalance = document.getElementById('risk-days-balance');
 
-const avgDay = tradedDays > 0 ? (sum / tradedDays) : 0;
-const maxDDNeg = -maxDD; // exibe como negativo
+            if(riskMaxLosing) riskMaxLosing.textContent = `${maxLose} trades`;
+            if(riskMaxWinning) riskMaxWinning.textContent = `${maxWin} trades`;
+            if(riskExpectancyOverall) riskExpectancyOverall.textContent = formatCurrency(overallExpectancy);
+            if(riskBestStrategy) riskBestStrategy.textContent = `${bestStrategy.label} (${formatCurrency(bestStrategy.total)})`;
+            if(riskWorstStrategy) riskWorstStrategy.textContent = `${worstStrategy.label} (${formatCurrency(worstStrategy.total)})`;
+            if(riskDaysBalance) riskDaysBalance.textContent = `${greenDays} / ${redDays}`;
 
-if (els.kpiTrades) els.kpiTrades.textContent = totalTrades > 0 ? `${totalTrades} (${wins}/${losses})` : "0 (0/0)";
-if (els.kpiAvgTrade) els.kpiAvgTrade.textContent = totalTrades > 0 ? formatCurrency(avgTrade) : "--";
-if (els.kpiAvgWinLoss) els.kpiAvgWinLoss.textContent = (winCount || lossCount) ? `${formatCurrency(avgWin)} / ${formatCurrency(avgLoss)}` : "--";
-if (els.kpiPF) els.kpiPF.textContent = (pf === Infinity) ? "∞" : (grossLoss > 0 ? pf.toFixed(2) : "--");
-if (els.kpiExpectancy) els.kpiExpectancy.textContent = (payoffRatio === Infinity) ? "∞" : (lossCount > 0 ? payoffRatio.toFixed(2) : "--");
-
-if (els.kpiDays) els.kpiDays.textContent = tradedDays ? String(tradedDays) : "--";
-if (els.kpiDaysGR) els.kpiDaysGR.textContent = tradedDays ? `${greenDays} / ${redDays}` : "--";
-if (els.kpiAvgDay) els.kpiAvgDay.textContent = tradedDays ? formatCurrency(avgDay) : "--";
-if (els.kpiMaxDD) els.kpiMaxDD.textContent = tradedDays ? formatCurrency(maxDDNeg) : "--";
+            const bestRow = document.querySelector('span#custom-best')?.closest('div');
+            const worstRow = document.querySelector('span#custom-worst')?.closest('div');
+            if(bestRow) bestRow.style.display = singleDayMode ? 'none' : '';
+            if(worstRow) worstRow.style.display = singleDayMode ? 'none' : '';
         }
 
         function updateChart(labels, data) {
@@ -5572,59 +5620,61 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             const hasRange = !!(els.filterStart?.value && els.filterEnd?.value);
             const start = els.filterStart?.value || '';
             const end = els.filterEnd?.value || '';
-
             const period = hasRange
                 ? `(${formatDateShort(parseISODateLocal(start))} - ${formatDateShort(parseISODateLocal(end))})`
                 : "(Geral)";
 
             const res = (els.customResult?.textContent || '--').trim();
             const win = (els.customWinrate?.textContent || '--').trim();
-            const best = (els.customBest?.textContent || '--').trim();
-            const worst = (els.customWorst?.textContent || '--').trim();
             const kpiTrades = (els.kpiTrades?.textContent || '--').trim();
             const kpiPF = (els.kpiPF?.textContent || '--').trim();
             const kpiMaxDD = (els.kpiMaxDD?.textContent || '--').trim();
+            const riskMaxLosing = (document.getElementById('risk-max-losing')?.textContent || '--').trim();
+            const riskExpectancyOverall = (document.getElementById('risk-expectancy-overall')?.textContent || '--').trim();
 
-            let strategyText = '';
-            let riskText = '';
-            let conclusionText = '';
+            const strat = _computeStrategyAnalytics(acc, start, end);
+            const strategies = [strat.t2550, strat.t4080, strat.ct];
+            const bestStrategy = strategies.slice().sort((a,b)=> b.total - a.total)[0];
+            const worstStrategy = strategies.slice().sort((a,b)=> a.total - b.total)[0];
+            const periodSummary = _periodTradeSummary(acc, start, end);
+            const singleDayMode = periodSummary.tradedDays <= 1;
 
-            try{
-                const strat = _computeStrategyAnalytics(acc, start, end);
-                const strategies = [strat.t2550, strat.t4080, strat.ct];
-                const bestStrategy = strategies.slice().sort((a,b)=> b.total - a.total)[0];
-                const worstStrategy = strategies.slice().sort((a,b)=> a.total - b.total)[0];
-                const riskMaxLosing = (document.getElementById('risk-max-losing')?.textContent || '--').trim();
-                const riskExpectancyOverall = (document.getElementById('risk-expectancy-overall')?.textContent || '--').trim();
+            let detailsText = '';
+            if(singleDayMode && periodSummary.byDay.length === 1){
+                const day = periodSummary.byDay[0];
+                const fmtLeg = (v) => (v === '' || v === null || v === undefined) ? '--' : formatCurrency(Number(v || 0));
+                detailsText =
+`\n*Operações do Dia* (${formatDateShort(parseISODateLocal(day.iso))})
+• 25/50 → T1 ${fmtLeg(day.blocks.t2550.legs.leg1)} | T2 ${fmtLeg(day.blocks.t2550.legs.leg2)} | Total ${formatCurrency(day.blocks.t2550.legs.subtotal)}
+• 40/80 → T1 ${fmtLeg(day.blocks.t4080.legs.leg1)} | T2 ${fmtLeg(day.blocks.t4080.legs.leg2)} | Total ${formatCurrency(day.blocks.t4080.legs.subtotal)}
+• Condução Técnica → T1 ${fmtLeg(day.blocks.ct.legs.leg1)} | T2 ${fmtLeg(day.blocks.ct.legs.leg2)} | Total ${formatCurrency(day.blocks.ct.legs.subtotal)}`;
+            }
 
-                strategyText =
+            const strategyText =
 `\n*Breakdown por Estratégia*
-• 25/50: ${formatCurrency(strat.t2550.total)} | WR ${Math.round((strat.t2550.winRate||0)*100)}% | Exp ${formatCurrency(strat.t2550.expectancy||0)}
-• 40/80: ${formatCurrency(strat.t4080.total)} | WR ${Math.round((strat.t4080.winRate||0)*100)}% | Exp ${formatCurrency(strat.t4080.expectancy||0)}
-• Condução Técnica: ${formatCurrency(strat.ct.total)} | WR ${Math.round((strat.ct.winRate||0)*100)}% | Exp ${formatCurrency(strat.ct.expectancy||0)}`;
+• 25/50: ${formatCurrency(strat.t2550.total)} | Trades ${strat.t2550.trades} (${strat.t2550.wins}/${strat.t2550.losses}) | WR ${Math.round((strat.t2550.winRate||0)*100)}% | Exp ${formatCurrency(strat.t2550.expectancy||0)}
+• 40/80: ${formatCurrency(strat.t4080.total)} | Trades ${strat.t4080.trades} (${strat.t4080.wins}/${strat.t4080.losses}) | WR ${Math.round((strat.t4080.winRate||0)*100)}% | Exp ${formatCurrency(strat.t4080.expectancy||0)}
+• Condução Técnica: ${formatCurrency(strat.ct.total)} | Trades ${strat.ct.trades} (${strat.ct.wins}/${strat.ct.losses}) | WR ${Math.round((strat.ct.winRate||0)*100)}% | Exp ${formatCurrency(strat.ct.expectancy||0)}`;
 
-                riskText =
+            const riskText =
 `\n*Risco & Consistência*
 • Max Losing Streak: ${riskMaxLosing}
 • Profit Factor: ${kpiPF}
 • MaxDD: ${kpiMaxDD}
 • Expectancy Geral: ${riskExpectancyOverall}`;
 
-                let conclusion = [];
-                conclusion.push(`Melhor estratégia: ${bestStrategy?.label || '--'} (${formatCurrency(bestStrategy?.total || 0)})`);
-                conclusion.push(`Pior estratégia: ${worstStrategy?.label || '--'} (${formatCurrency(worstStrategy?.total || 0)})`);
-                if ((bestStrategy?.total || 0) > 0 && (worstStrategy?.total || 0) < 0) {
-                    conclusion.push('Houve edge seletivo, mas a perda concentrada em uma estratégia contaminou o resultado final.');
-                } else if ((bestStrategy?.total || 0) <= 0) {
-                    conclusion.push('Nenhuma estratégia entregou edge consistente no período.');
-                } else {
-                    conclusion.push('O período foi construtivo, com espaço para calibrar melhor a distribuição de risco.');
-                }
-
-                conclusionText =
-`\n*Leitura Executiva*
-• ${conclusion.join('\n• ')}`;
-            }catch(e){}
+            let conclusion = [];
+            conclusion.push(`Melhor estratégia: ${bestStrategy?.label || '--'} (${formatCurrency(bestStrategy?.total || 0)})`);
+            conclusion.push(`Pior estratégia: ${worstStrategy?.label || '--'} (${formatCurrency(worstStrategy?.total || 0)})`);
+            if(singleDayMode){
+                conclusion.push('Leitura de 1 dia: usar este resumo como evidência operacional, não como validação estatística definitiva.');
+            } else if ((bestStrategy?.total || 0) > 0 && (worstStrategy?.total || 0) < 0) {
+                conclusion.push('Houve edge seletivo, mas a perda concentrada em uma estratégia contaminou o resultado final.');
+            } else if ((bestStrategy?.total || 0) <= 0) {
+                conclusion.push('Nenhuma estratégia entregou edge consistente no período.');
+            } else {
+                conclusion.push('O período foi construtivo, com espaço para calibrar melhor a distribuição de risco.');
+            }
 
             const text =
 `*Performance Report - DF Strategic* 📊
@@ -5632,13 +5682,10 @@ ${period} • ${(acc?.name || 'Conta')}
 
 *Resultado:* ${res}
 *Win Rate:* ${win}
-*Melhor Dia:* ${best}
-*Pior Dia:* ${worst}
+*Trades:* ${kpiTrades}${detailsText}${strategyText}${riskText}
 
-*KPIs Gerais*
-• Trades: ${kpiTrades}
-• Profit Factor: ${kpiPF}
-• MaxDD: ${kpiMaxDD}${strategyText}${riskText}${conclusionText}`;
+*Leitura Executiva*
+• ${conclusion.join('\n• ')}`;
 
             if (navigator.share) {
                 navigator.share({ title: 'Performance Report', text }).catch(console.error);
@@ -5664,7 +5711,7 @@ ${period} • ${(acc?.name || 'Conta')}
             try { filterReport(); } catch(e) {}
 
             const acc = getActive();
-            const title = 'Analise por Periodo';
+            const title = 'Análise por Período';
             const rangeText = `${formatDateShort(parseISODateLocal(start))} - ${formatDateShort(parseISODateLocal(end))} • ${acc?.name || 'Conta'}`;
             const metricResult = (els.customResult?.textContent || '--').trim();
             const metricWin = (els.customWinrate?.textContent || '--').trim();
@@ -5688,6 +5735,8 @@ ${period} • ${(acc?.name || 'Conta')}
             const riskMaxWinning = (document.getElementById('risk-max-winning')?.textContent || '--').trim();
             const riskExpectancyOverall = (document.getElementById('risk-expectancy-overall')?.textContent || '--').trim();
             const riskDaysBalance = (document.getElementById('risk-days-balance')?.textContent || '--').trim();
+            const periodSummary = _periodTradeSummary(acc, start, end);
+            const singleDayMode = periodSummary.tradedDays <= 1;
 
             const ensureJsPDF = () => new Promise((resolve, reject)=>{
                 try{
@@ -5726,7 +5775,6 @@ ${period} • ${(acc?.name || 'Conta')}
                     let chartLabels = [];
                     let chartData = [];
                     let cumSum = 0;
-
                     Object.keys(acc.data || {}).sort().forEach(iso => {
                         if (iso < start || iso > end) return;
                         const e = acc.data[iso] || {};
@@ -5738,45 +5786,20 @@ ${period} • ${(acc?.name || 'Conta')}
                             chartData.push(cumSum);
                         }
                     });
-
                     if (!chartLabels.length) return null;
                     if (chartLabels.length === 1) {
                         chartLabels.unshift('Início');
                         chartData.unshift(0);
                     }
-
                     const canvas = document.createElement('canvas');
                     canvas.width = chartPxW;
                     canvas.height = chartPxH;
                     const ctx = canvas.getContext('2d');
-
                     const tmpChart = new Chart(ctx, {
                         type: 'line',
-                        data: {
-                            labels: chartLabels,
-                            datasets: [{
-                                label: 'Lucro Acumulado',
-                                data: chartData,
-                                borderColor: '#4f46e5',
-                                backgroundColor: 'rgba(79, 70, 229, 0.10)',
-                                borderWidth: 3,
-                                pointRadius: chartData.length <= 2 ? 4 : 2,
-                                fill: true,
-                                tension: 0.35,
-                                cubicInterpolationMode: 'monotone'
-                            }]
-                        },
-                        options: {
-                            responsive: false,
-                            animation: false,
-                            plugins: { legend: { display: false } },
-                            scales: {
-                                y: { grid: { color: '#e5e7eb' }, ticks: { color: '#64748b' } },
-                                x: { grid: { display: false }, ticks: { color: '#64748b', maxRotation: 45, minRotation: 45 } }
-                            }
-                        }
+                        data: { labels: chartLabels, datasets: [{ data: chartData, borderColor:'#4f46e5', backgroundColor:'rgba(79,70,229,0.10)', borderWidth:3, pointRadius:chartData.length<=2?4:2, fill:true, tension:0.35, cubicInterpolationMode:'monotone' }] },
+                        options: { responsive:false, animation:false, plugins:{ legend:{ display:false } }, scales:{ y:{ grid:{ color:'#e5e7eb' }, ticks:{ color:'#64748b' } }, x:{ grid:{ display:false }, ticks:{ color:'#64748b', maxRotation:45, minRotation:45 } } } }
                     });
-
                     tmpChart.update();
                     await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
                     const url = canvas.toDataURL('image/png', 1.0);
@@ -5785,198 +5808,144 @@ ${period} • ${(acc?.name || 'Conta')}
                 } catch (e) { return null; }
             };
 
-            const buildConclusion = () => {
-                let lines = [];
-                lines.push(`Melhor estratégia: ${bestStrategy?.label || '--'} (${formatCurrency(bestStrategy?.total || 0)})`);
-                lines.push(`Estratégia mais fraca: ${worstStrategy?.label || '--'} (${formatCurrency(worstStrategy?.total || 0)})`);
-                if ((bestStrategy?.total || 0) > 0 && (worstStrategy?.total || 0) < 0) {
-                    lines.push('O período mostra edge seletivo: houve geração de alpha em blocos específicos, mas a perda concentrada contaminou o resultado final.');
-                } else if ((bestStrategy?.total || 0) <= 0) {
-                    lines.push('Nenhuma estratégia entregou edge consistente no período. A prioridade é reduzir frequência e revisar critérios de entrada.');
-                } else {
-                    lines.push('O período manteve viés construtivo, mas a distribuição de risco entre estratégias ainda pode ser melhor calibrada.');
-                }
-                if ((worstStrategy?.label || '').includes('Condução')) {
-                    lines.push('Condução Técnica foi o principal foco de deterioração. Vale revisar contexto, timing e critérios de permanência.');
-                }
-                return lines;
-            };
-
             ensureJsPDF().then(async (JsPDF)=>{
                 chartDataUrl = await buildChartImageForRange();
                 const doc = new JsPDF({ unit:'pt', format:'letter' });
-                const pageW = 612;
-                const pageH = 792;
-                const margin = 34;
-                const contentW = pageW - margin*2;
+                const pageW = 612, pageH = 792, margin = 34, contentW = pageW - margin*2;
                 let y = 42;
-
-                const addPage = () => {
-                    doc.addPage();
-                    y = 42;
-                };
-
-                const drawSectionTitle = (txt) => {
-                    doc.setFont('helvetica','bold');
-                    doc.setFontSize(11);
-                    doc.setTextColor(15, 23, 42);
-                    doc.text(txt, margin, y);
-                    y += 12;
-                };
 
                 const drawCard = (x, y0, w, h, titleTxt, valueTxt, color=[17,24,39]) => {
                     doc.setDrawColor(226,232,240);
                     doc.setFillColor(248,250,252);
                     doc.roundedRect(x, y0, w, h, 8, 8, 'FD');
-                    doc.setFont('helvetica','normal');
-                    doc.setFontSize(9);
-                    doc.setTextColor(100,116,139);
+                    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(100,116,139);
                     doc.text(titleTxt, x+12, y0+18);
-                    doc.setFont('helvetica','bold');
-                    doc.setFontSize(14);
-                    doc.setTextColor(color[0], color[1], color[2]);
-                    doc.text(valueTxt, x+12, y0+38);
+                    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(color[0], color[1], color[2]);
+                    doc.text(valueTxt, x+12, y0+37);
                 };
 
-                const drawSmallMetric = (x, y0, labelTxt, valueTxt, color=[17,24,39]) => {
-                    doc.setFont('helvetica','normal');
-                    doc.setFontSize(8.5);
-                    doc.setTextColor(100,116,139);
+                const drawMetric = (x, y0, labelTxt, valueTxt, color=[17,24,39]) => {
+                    doc.setFont('helvetica','normal'); doc.setFontSize(8.3); doc.setTextColor(100,116,139);
                     doc.text(labelTxt, x, y0);
-                    doc.setFont('helvetica','bold');
-                    doc.setFontSize(10);
-                    doc.setTextColor(color[0], color[1], color[2]);
-                    doc.text(valueTxt, x, y0+14);
+                    doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(color[0], color[1], color[2]);
+                    doc.text(valueTxt, x, y0+13);
                 };
 
                 const drawStrategyTable = (rows) => {
-                    const tableX = margin;
-                    const tableW = contentW;
-                    const rowH = 22;
+                    const tableX = margin, tableW = contentW, rowH = 20;
                     const cols = [
-                        { key:'label', x: tableX + 10, align:'left',  title:'Estratégia' },
-                        { key:'total', x: tableX + 210, align:'right', title:'Resultado' },
-                        { key:'trades', x: tableX + 300, align:'right', title:'Trades' },
-                        { key:'winRate', x: tableX + 382, align:'right', title:'Win%' },
-                        { key:'payoff', x: tableX + 455, align:'right', title:'Payoff' },
-                        { key:'expectancy', x: tableX + 530, align:'right', title:'Expect.' }
+                        { x: tableX + 10,  title:'Estratégia', align:'left' },
+                        { x: tableX + 205, title:'Resultado', align:'right' },
+                        { x: tableX + 285, title:'Trades', align:'right' },
+                        { x: tableX + 360, title:'Win%', align:'right' },
+                        { x: tableX + 430, title:'Payoff', align:'right' },
+                        { x: tableX + 505, title:'Expect.', align:'right' }
                     ];
-
+                    const totalH = rowH * (rows.length + 1) + 8;
                     doc.setDrawColor(226,232,240);
                     doc.setFillColor(248,250,252);
-                    doc.roundedRect(tableX, y, tableW, rowH * (rows.length + 1) + 8, 8, 8, 'FD');
-
-                    let yy = y + 16;
-                    doc.setFont('helvetica','bold');
-                    doc.setFontSize(8.5);
-                    doc.setTextColor(100,116,139);
+                    doc.roundedRect(tableX, y, tableW, totalH, 8, 8, 'FD');
+                    let yy = y + 15;
+                    doc.setFont('helvetica','bold'); doc.setFontSize(8.2); doc.setTextColor(100,116,139);
                     cols.forEach(c => doc.text(c.title, c.x, yy, { align:c.align }));
-                    yy += 12;
-                    doc.setLineWidth(0.4);
-                    doc.setDrawColor(226,232,240);
-                    doc.line(tableX + 8, yy, tableX + tableW - 8, yy);
-
-                    yy += 16;
+                    yy += 10;
+                    doc.line(tableX+8, yy, tableX+tableW-8, yy);
+                    yy += 14;
                     rows.forEach((r, idx) => {
-                        doc.setFont('helvetica','normal');
-                        doc.setFontSize(9);
-                        doc.setTextColor(15,23,42);
+                        doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(15,23,42);
                         doc.text(r.label, cols[0].x, yy, { align:'left' });
-
-                        const totalColor = r.total >= 0 ? [5,150,105] : [220,38,38];
-                        doc.setFont('helvetica','bold');
-                        doc.setTextColor(totalColor[0], totalColor[1], totalColor[2]);
+                        const tc = r.total >= 0 ? [5,150,105] : [220,38,38];
+                        doc.setFont('helvetica','bold'); doc.setTextColor(tc[0], tc[1], tc[2]);
                         doc.text(formatCurrency(r.total), cols[1].x, yy, { align:'right' });
                         doc.setTextColor(15,23,42);
                         doc.text(String(r.trades), cols[2].x, yy, { align:'right' });
                         doc.text(`${Math.round((r.winRate||0)*100)}%`, cols[3].x, yy, { align:'right' });
-                        doc.text((r.payoff===Infinity ? '∞' : Number(r.payoff||0).toFixed(2)), cols[4].x, yy, { align:'right' });
+                        doc.text(r.payoff === null ? '--' : (r.payoff === Infinity ? '∞' : Number(r.payoff||0).toFixed(2)), cols[4].x, yy, { align:'right' });
                         doc.text(formatCurrency(r.expectancy || 0), cols[5].x, yy, { align:'right' });
-
-                        if (idx < rows.length - 1) {
+                        if(idx < rows.length - 1){
                             doc.setDrawColor(241,245,249);
-                            doc.line(tableX + 8, yy + 8, tableX + tableW - 8, yy + 8);
+                            doc.line(tableX+8, yy+7, tableX+tableW-8, yy+7);
                         }
-                        yy += 22;
+                        yy += rowH;
                     });
-                    y = yy + 6;
+                    y += totalH + 16;
                 };
 
-                drawSectionTitle('Análise por Período');
-                doc.setFont('helvetica','bold');
-                doc.setFontSize(18);
-                doc.setTextColor(15,23,42);
-                doc.text(title, margin, y);
-                y += 18;
-                doc.setFont('helvetica','normal');
-                doc.setFontSize(10);
-                doc.setTextColor(100,116,139);
-                doc.text(rangeText, margin, y);
-                y += 18;
+                // Header
+                doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(15,23,42);
+                doc.text(title, margin, y); y += 18;
+                doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(100,116,139);
+                doc.text(rangeText, margin, y); y += 16;
 
-                if (chartDataUrl) {
-                    const imgW = contentW;
-                    const imgH = Math.min(190, imgW * (420/1200));
-                    doc.addImage(chartDataUrl, 'PNG', margin, y, imgW, imgH);
-                    y += imgH + 18;
+                // Top cards first, graph smaller after
+                const gap = 12, cardW = (contentW - gap) / 2;
+                drawCard(margin, y, cardW, 48, 'Resultado do Período', metricResult, metricResult.trim().startsWith('-') ? [220,38,38] : [5,150,105]);
+                drawCard(margin + cardW + gap, y, cardW, 48, 'Taxa de Acerto', metricWin, [79,70,229]);
+                y += 60;
+
+                if(!singleDayMode){
+                    drawCard(margin, y, cardW, 48, 'Melhor Dia', metricBest, [5,150,105]);
+                    drawCard(margin + cardW + gap, y, cardW, 48, 'Pior Dia', metricWorst, [220,38,38]);
+                    y += 60;
                 }
 
-                const cardGap = 12;
-                const cardW = (contentW - cardGap) / 2;
-                drawCard(margin, y, cardW, 52, 'Resultado do Período', metricResult, metricResult.trim().startsWith('-') ? [220,38,38] : [5,150,105]);
-                drawCard(margin + cardW + cardGap, y, cardW, 52, 'Taxa de Acerto', metricWin, [79,70,229]);
-                y += 66;
+                if(chartDataUrl){
+                    const imgW = contentW;
+                    const imgH = 135;
+                    doc.addImage(chartDataUrl, 'PNG', margin, y, imgW, imgH);
+                    y += imgH + 14;
+                }
 
-                drawCard(margin, y, cardW, 52, 'Melhor Dia', metricBest, [5,150,105]);
-                drawCard(margin + cardW + cardGap, y, cardW, 52, 'Pior Dia', metricWorst, [220,38,38]);
-                y += 74;
+                doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(15,23,42);
+                doc.text('KPIs Gerais', margin, y); y += 14;
+                const col1 = margin + 6, col2 = margin + contentW/2 + 6;
+                drawMetric(col1, y, 'Trades (W/L)', kpiTrades);
+                drawMetric(col1, y+26, 'Avg Trade', kpiAvgTrade);
+                drawMetric(col1, y+52, 'Avg Win / Avg Loss', kpiAvgWinLoss);
+                drawMetric(col1, y+78, 'Profit Factor', kpiPF);
+                drawMetric(col2, y, 'Dias operados', kpiDays);
+                drawMetric(col2, y+26, 'Dias verdes / vermelhos', kpiDaysGR);
+                drawMetric(col2, y+52, 'Avg por dia', kpiAvgDay);
+                drawMetric(col2, y+78, 'Max Drawdown', kpiMaxDD, [220,38,38]);
+                y += 116;
 
-                drawSectionTitle('KPIs Gerais');
-                const col1 = margin + 8;
-                const col2 = margin + contentW/2 + 8;
-                drawSmallMetric(col1, y, 'Trades (W/L)', kpiTrades);
-                drawSmallMetric(col1, y+30, 'Avg Trade', kpiAvgTrade);
-                drawSmallMetric(col1, y+60, 'Avg Win / Avg Loss', kpiAvgWinLoss);
-                drawSmallMetric(col1, y+90, 'Profit Factor', kpiPF);
-
-                drawSmallMetric(col2, y, 'Dias operados', kpiDays);
-                drawSmallMetric(col2, y+30, 'Dias verdes / vermelhos', kpiDaysGR);
-                drawSmallMetric(col2, y+60, 'Avg por dia', kpiAvgDay);
-                drawSmallMetric(col2, y+90, 'Max Drawdown', kpiMaxDD, [220,38,38]);
-                y += 132;
-
-                drawSectionTitle('Breakdown por Estratégia');
+                doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(15,23,42);
+                doc.text('Breakdown por Estratégia', margin, y); y += 10;
                 drawStrategyTable(strategies);
 
-                drawSectionTitle('Risco & Consistência');
-                drawCard(margin, y, cardW, 62, 'Max Losing Streak', riskMaxLosing, [220,38,38]);
-                drawCard(margin + cardW + cardGap, y, cardW, 62, 'Max Winning Streak', riskMaxWinning, [5,150,105]);
-                y += 76;
-                drawCard(margin, y, cardW, 62, 'Expectancy Geral', riskExpectancyOverall, [15,23,42]);
-                drawCard(margin + cardW + cardGap, y, cardW, 62, 'Dias Verdes/Vermelhos', riskDaysBalance, [15,23,42]);
-                y += 86;
+                doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(15,23,42);
+                doc.text('Risco & Consistência', margin, y); y += 12;
+                drawCard(margin, y, cardW, 54, 'Max Losing Streak', riskMaxLosing, [220,38,38]);
+                drawCard(margin + cardW + gap, y, cardW, 54, 'Max Winning Streak', riskMaxWinning, [5,150,105]);
+                y += 66;
+                drawCard(margin, y, cardW, 54, 'Expectancy Geral', riskExpectancyOverall, [15,23,42]);
+                drawCard(margin + cardW + gap, y, cardW, 54, 'Dias Verdes/Vermelhos', riskDaysBalance, [15,23,42]);
+                y += 70;
 
-                drawSectionTitle('Leitura Executiva');
-                const noteLines = buildConclusion();
+                doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(15,23,42);
+                doc.text('Leitura Executiva', margin, y); y += 10;
                 doc.setDrawColor(226,232,240);
                 doc.setFillColor(248,250,252);
-                doc.roundedRect(margin, y, contentW, 74, 8, 8, 'FD');
-                doc.setFont('helvetica','normal');
-                doc.setFontSize(9.5);
-                doc.setTextColor(51,65,85);
-                let ny = y + 18;
-                noteLines.forEach(line => {
-                    const lines = doc.splitTextToSize('• ' + line, contentW - 20);
-                    lines.forEach(part => {
-                        doc.text(part, margin + 10, ny);
-                        ny += 12;
-                    });
+                const noteH = singleDayMode ? 58 : 72;
+                doc.roundedRect(margin, y, contentW, noteH, 8, 8, 'FD');
+                doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(51,65,85);
+                const lines = [
+                    `• Melhor estratégia: ${bestStrategy?.label || '--'} (${formatCurrency(bestStrategy?.total || 0)})`,
+                    `• Pior estratégia: ${worstStrategy?.label || '--'} (${formatCurrency(worstStrategy?.total || 0)})`,
+                    singleDayMode
+                        ? '• Leitura de 1 dia: este resultado serve como evidência operacional, não como validação estatística definitiva.'
+                        : ((bestStrategy?.total || 0) > 0 && (worstStrategy?.total || 0) < 0
+                            ? '• Houve edge seletivo, mas a perda concentrada em uma estratégia contaminou o resultado final.'
+                            : '• O período foi construtivo, com espaço para calibrar melhor a distribuição de risco.')
+                ];
+                let ly = y + 18;
+                lines.forEach(line => {
+                    const split = doc.splitTextToSize(line, contentW - 20);
+                    split.forEach(part => { doc.text(part, margin + 10, ly); ly += 11; });
                 });
 
-                doc.setFont('helvetica','normal');
-                doc.setFontSize(8);
-                doc.setTextColor(148,163,184);
-                doc.text('Relatório analítico DF Strategic • métricas do período filtrado • versão compacta profissional', margin, pageH - 22);
+                doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(148,163,184);
+                doc.text('Relatório analítico DF Strategic • métricas do período filtrado • versão compacta profissional', margin, pageH - 20);
                 doc.save(buildFileName());
             }).catch((err)=>{
                 console.warn('Falha ao gerar PDF analítico:', err);
