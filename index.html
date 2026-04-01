@@ -1012,7 +1012,23 @@ tr.bg-green-50 td {
                     </div>
                 </div>
 
-                <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="accounts-overview-strategy-cards">
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
+                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">25/50</div>
+                        <div id="accounts-overview-2550" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
+                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">40/80</div>
+                        <div id="accounts-overview-4080" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
+                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">Condução Técnica</div>
+                        <div id="accounts-overview-ct" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
+                    </div>
+                </div>
+
+<div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
                     <div id="accounts-overview-table-scroll" class="overflow-x-auto">
                         <table class="min-w-[1100px] w-full text-sm">
                            <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-xs dark:bg-slate-800 dark:text-slate-400">
@@ -1109,7 +1125,29 @@ tr.bg-green-50 td {
                     <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Pior Dia</span><span id="custom-worst" class="font-bold text-red-600">--</span></div>
                 </div>
                 
+                
                 <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+                    <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
+                        <i data-lucide="layers-3" class="w-3.5 h-3.5 text-emerald-600"></i>
+                        <span>Estratégias no Período</span>
+                    </div>
+                    <div class="space-y-2 text-xs">
+                        <div class="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700">
+                            <div class="flex items-center justify-between"><span class="text-slate-500 dark:text-slate-400">25/50</span><span id="strategy-2550-total" class="font-bold text-slate-800 dark:text-slate-100">--</span></div>
+                            <div class="mt-1 flex items-center justify-between"><span class="text-slate-400">Trades</span><span id="strategy-2550-trades" class="font-semibold text-slate-600 dark:text-slate-300">--</span></div>
+                        </div>
+                        <div class="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700">
+                            <div class="flex items-center justify-between"><span class="text-slate-500 dark:text-slate-400">40/80</span><span id="strategy-4080-total" class="font-bold text-slate-800 dark:text-slate-100">--</span></div>
+                            <div class="mt-1 flex items-center justify-between"><span class="text-slate-400">Trades</span><span id="strategy-4080-trades" class="font-semibold text-slate-600 dark:text-slate-300">--</span></div>
+                        </div>
+                        <div class="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700">
+                            <div class="flex items-center justify-between"><span class="text-slate-500 dark:text-slate-400">Condução Técnica</span><span id="strategy-ct-total" class="font-bold text-slate-800 dark:text-slate-100">--</span></div>
+                            <div class="mt-1 flex items-center justify-between"><span class="text-slate-400">Trades</span><span id="strategy-ct-trades" class="font-semibold text-slate-600 dark:text-slate-300">--</span></div>
+                        </div>
+                    </div>
+                </div>
+
+<div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
                     <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
                         <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-indigo-600"></i>
                         <span>KPIs do Período</span>
@@ -1381,8 +1419,8 @@ tr.bg-green-50 td {
                             <tr>
                                 <th>Data</th>
                                 <th>25/50</th>
-                                <th>Trade 1</th>
-                                <th>Trade 2</th>
+                                <th>40/80</th>
+                                <th>Condução Técnica</th>
                                 <th>Total</th>
                                 <th>Nota</th>
                             </tr>
@@ -3224,6 +3262,25 @@ function _openPrintWindow(htmlStr){
 
             // Chart paging (max 15 contas por grupo) — mantém o gráfico legível sem “quebrar” a tabela completa
             const computedAll = computed.slice();
+
+            try{
+                let s2550 = 0, s4080 = 0, sct = 0;
+                computedAll.forEach(({acc})=>{
+                    Object.keys(acc.data || {}).forEach((iso)=>{
+                        const e = acc.data[iso] || {};
+                        if(e.holiday) return;
+                        s2550 += Number(e.t0 || 0);
+                        s4080 += Number(e.t1 || 0);
+                        sct += Number(e.t2 || 0);
+                    });
+                });
+                const _2550 = document.getElementById('accounts-overview-2550');
+                const _4080 = document.getElementById('accounts-overview-4080');
+                const _ct = document.getElementById('accounts-overview-ct');
+                if(_2550) _2550.textContent = formatCurrency(s2550);
+                if(_4080) _4080.textContent = formatCurrency(s4080);
+                if(_ct) _ct.textContent = formatCurrency(sct);
+            }catch(e){}
             const pageSize = Math.max(1, Number(prefs.pageSize) || 15);
             const totalPages = Math.max(1, Math.ceil(computedAll.length / pageSize));
             prefs.pageSize = pageSize;
@@ -4113,7 +4170,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
         window.exportCSV = () => {
             const acc = getActive();
-            let csvContent = "data:text/csv;charset=utf-8,Data,Abertura,Trade 1,Trade 2,Total Dia,Notas\n";
+            let csvContent = "data:text/csv;charset=utf-8,Data,25/50,40/80,Condução Técnica,Total Dia,Notas\n";
             const dates = Object.keys(acc.data).sort();
             dates.forEach(iso => {
                 const d = acc.data[iso] || {};
@@ -4482,6 +4539,14 @@ if (chartLabels.length === 1 && chartData.length === 1) {
     chartData = [0, chartData[0]];
 }
 updateChart(chartLabels, chartData);
+
+const strat = _computeStrategySummary(acc, start, end);
+if(document.getElementById('strategy-2550-total')) document.getElementById('strategy-2550-total').textContent = formatCurrency(strat.t2550.total);
+if(document.getElementById('strategy-2550-trades')) document.getElementById('strategy-2550-trades').textContent = String(strat.t2550.trades);
+if(document.getElementById('strategy-4080-total')) document.getElementById('strategy-4080-total').textContent = formatCurrency(strat.t4080.total);
+if(document.getElementById('strategy-4080-trades')) document.getElementById('strategy-4080-trades').textContent = String(strat.t4080.trades);
+if(document.getElementById('strategy-ct-total')) document.getElementById('strategy-ct-total').textContent = formatCurrency(strat.ct.total);
+if(document.getElementById('strategy-ct-trades')) document.getElementById('strategy-ct-trades').textContent = String(strat.ct.trades);
 
 // --- KPIs do Período (Trades + Dias) ---
 const avgTrade = totalTrades > 0 ? (sum / totalTrades) : 0;
@@ -7710,6 +7775,40 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             return { start: toISODateLocal(start), end: toISODateLocal(end) };
         }
 
+        
+        function _computeStrategySummary(acc, startISO, endISO){
+            const start = parseISODateLocal(startISO);
+            const end = parseISODateLocal(endISO);
+            const out = {
+                t2550: { total: 0, trades: 0 },
+                t4080: { total: 0, trades: 0 },
+                ct:    { total: 0, trades: 0 }
+            };
+
+            for(let d = new Date(start); d <= end; d.setDate(d.getDate()+1)){
+                const dow = d.getDay();
+                if(dow === 0 || dow === 6) continue;
+                const iso = toISODateLocal(d);
+                const e = (acc.data && acc.data[iso]) ? acc.data[iso] : {};
+                if(e.holiday) continue;
+
+                const buckets = [
+                    ['t2550', Number(e.t0 || 0)],
+                    ['t4080', Number(e.t1 || 0)],
+                    ['ct', Number(e.t2 || 0)]
+                ];
+
+                buckets.forEach(([key, val]) => {
+                    if(!isNaN(val) && val !== 0){
+                        out[key].total += val;
+                        out[key].trades += 1;
+                    }
+                });
+            }
+            return out;
+        }
+
+
         function _buildPeriodRows(acc, startISO, endISO){
             const start = parseISODateLocal(startISO);
             const end = parseISODateLocal(endISO);
@@ -7772,7 +7871,8 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
             ttl.textContent = title || "Detalhes do período";
             rng.textContent = `${_formatDM(startISO)} – ${_formatDM(endISO)} • ${acc.name || (CURRENT_LANG==='en'?'Account':'Conta')}`;
-            sum.textContent = `Dias com trade: ${res.tradedDays} • Feriados ignorados no total: ${res.holidayDays}`;
+            const strat = _computeStrategySummary(acc, startISO, endISO);
+            sum.textContent = `Dias com trade: ${res.tradedDays} • 25/50: ${formatCurrency(strat.t2550.total)} • 40/80: ${formatCurrency(strat.t4080.total)} • CT: ${formatCurrency(strat.ct.total)}`;
             tot.textContent = `Total: ${formatCurrency(res.total)}`;
 
             tbody.innerHTML = '';
@@ -7861,11 +7961,16 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                     doc.text(String(range||''), 40, y);
                     y += 14;
 
+                    const strat = _computeStrategySummary(acc, startISO, endISO);
                     const totalTxt = `Total do período: ${formatCurrency(res.total)}`;
                     doc.setFont('helvetica','bold');
                     doc.setFontSize(11);
                     doc.text(totalTxt, 40, y);
                     y += 16;
+                    doc.setFont('helvetica','normal');
+                    doc.setFontSize(9);
+                    doc.text(`25/50: ${formatCurrency(strat.t2550.total)}   •   40/80: ${formatCurrency(strat.t4080.total)}   •   Condução Técnica: ${formatCurrency(strat.ct.total)}`, 40, y);
+                    y += 18;
 
                     // Header + layout profissional (nota em bloco abaixo da linha)
                     const pageW = 612; // letter width in pt
@@ -7886,9 +7991,9 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                         doc.setFont('helvetica','bold');
                         doc.setFontSize(10);
                         doc.text('Data',     colDate, y);
-                        doc.text('Abertura', colT0,   y, { align:'right' });
-                        doc.text('Trade 1',  colT1,   y, { align:'right' });
-                        doc.text('Trade 2',  colT2,   y, { align:'right' });
+                        doc.text('25/50', colT0,   y, { align:'right' });
+                        doc.text('40/80',  colT1,   y, { align:'right' });
+                        doc.text('Condução',  colT2,   y, { align:'right' });
                         doc.text('Total',    colTot,  y, { align:'right' });
                         y += 10;
                         doc.setLineWidth(0.5);
