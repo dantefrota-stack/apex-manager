@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DF Apex Manager V2 - Importador</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen">
+  <div id="app" class="min-h-screen">
+    <header class="bg-slate-950 text-white border-b border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
+        <div>
+          <div class="text-xs uppercase tracking-[0.2em] text-slate-400">DF Apex Manager V2</div>
+          <h1 class="text-xl md:text-2xl font-extrabold">Importador da Nova Arquitetura</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="authBadge" class="hidden text-xs px-3 py-2 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-400/20"></span>
+          <button id="loginBtn" class="px-4 py-2 rounded-xl bg-white text-slate-900 font-bold hover:bg-slate-200">Entrar com Google</button>
+          <button id="logoutBtn" class="hidden px-4 py-2 rounded-xl bg-slate-800 text-white font-bold hover:bg-slate-700">Sair</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      <section id="accessNotice" class="bg-amber-50 border border-amber-200 rounded-2xl shadow-sm p-6">
+        <h2 class="text-lg font-bold text-amber-900">Acesso necessário</h2>
+        <p class="mt-2 text-sm text-amber-800">Entre com uma conta autorizada para validar o arquivo exportado e importar os dados para a nova estrutura do Firestore.</p>
+      </section>
+
+      <section class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div class="xl:col-span-2 space-y-6">
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+            <div class="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <h2 class="text-lg font-bold">1. Selecionar arquivo de exportação</h2>
+                <p class="text-sm text-slate-500 mt-1">Aceita arquivos no formato <code class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">legacy-export-v1</code>.</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <button id="downloadTemplateBtn" class="px-3 py-2 text-sm rounded-xl border border-slate-300 hover:bg-slate-50 font-semibold">Baixar exemplo</button>
+              </div>
+            </div>
+            <div class="mt-5 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 p-8 text-center">
+              <input id="fileInput" type="file" accept=".json,application/json" class="hidden" />
+              <button id="pickFileBtn" class="px-5 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700">Escolher arquivo JSON</button>
+              <p id="selectedFileName" class="mt-3 text-sm text-slate-500">Nenhum arquivo selecionado.</p>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+            <div class="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <h2 class="text-lg font-bold">2. Pré-validação</h2>
+                <p class="text-sm text-slate-500 mt-1">Confere integridade antes de gravar qualquer dado.</p>
+              </div>
+              <button id="validateBtn" class="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Validar arquivo</button>
+            </div>
+            <div id="validationBox" class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 min-h-[120px] text-sm text-slate-500">
+              Aguardando arquivo.
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+            <div class="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <h2 class="text-lg font-bold">3. Importação para a nova estrutura</h2>
+                <p class="text-sm text-slate-500 mt-1">Cria documentos em <code class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">companies</code>, <code class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">accounts</code>, <code class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">periods</code>, <code class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">payouts</code>, <code class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">notes</code>, <code class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">imports</code> e <code class="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded">audit_logs</code>.</p>
+              </div>
+              <button id="importBtn" class="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed" disabled>Importar para Firestore</button>
+            </div>
+            <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label class="rounded-xl border border-slate-200 p-4 flex items-start gap-3 bg-slate-50">
+                <input id="dryRunCheckbox" type="checkbox" class="mt-1" checked>
+                <div>
+                  <div class="font-semibold">Dry run primeiro</div>
+                  <div class="text-sm text-slate-500">Simula a importação e gera o plano de gravação sem escrever no Firestore.</div>
+                </div>
+              </label>
+              <label class="rounded-xl border border-slate-200 p-4 flex items-start gap-3 bg-slate-50">
+                <input id="overwriteCheckbox" type="checkbox" class="mt-1">
+                <div>
+                  <div class="font-semibold">Permitir overwrite de conta existente</div>
+                  <div class="text-sm text-slate-500">Substitui o documento principal da conta se já existir. Subcoleções continuam com merge controlado por ID.</div>
+                </div>
+              </label>
+            </div>
+            <div id="importBox" class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 min-h-[150px] text-sm text-slate-500">
+              Nenhuma operação executada.
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+            <h2 class="text-lg font-bold">Resumo do arquivo</h2>
+            <div id="summaryGrid" class="mt-4 grid grid-cols-2 gap-3">
+              <div class="rounded-xl bg-slate-50 border border-slate-200 p-4"><div class="text-xs uppercase text-slate-400 font-bold">Schema</div><div id="summarySchema" class="mt-1 text-lg font-extrabold">—</div></div>
+              <div class="rounded-xl bg-slate-50 border border-slate-200 p-4"><div class="text-xs uppercase text-slate-400 font-bold">Contas</div><div id="summaryAccounts" class="mt-1 text-lg font-extrabold">—</div></div>
+              <div class="rounded-xl bg-slate-50 border border-slate-200 p-4"><div class="text-xs uppercase text-slate-400 font-bold">Empresas</div><div id="summaryCompanies" class="mt-1 text-lg font-extrabold">—</div></div>
+              <div class="rounded-xl bg-slate-50 border border-slate-200 p-4"><div class="text-xs uppercase text-slate-400 font-bold">Dias</div><div id="summaryDays" class="mt-1 text-lg font-extrabold">—</div></div>
+              <div class="rounded-xl bg-slate-50 border border-slate-200 p-4"><div class="text-xs uppercase text-slate-400 font-bold">Payouts</div><div id="summaryPayouts" class="mt-1 text-lg font-extrabold">—</div></div>
+              <div class="rounded-xl bg-slate-50 border border-slate-200 p-4"><div class="text-xs uppercase text-slate-400 font-bold">Notas</div><div id="summaryNotes" class="mt-1 text-lg font-extrabold">—</div></div>
+            </div>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+            <h2 class="text-lg font-bold">Coleções de destino</h2>
+            <ul class="mt-4 space-y-2 text-sm text-slate-600">
+              <li><span class="font-semibold text-slate-900">companies</span> — grupos/empresas únicos</li>
+              <li><span class="font-semibold text-slate-900">accounts</span> — cadastro principal</li>
+              <li><span class="font-semibold text-slate-900">accounts/{id}/periods</span> — dias agrupados por mês</li>
+              <li><span class="font-semibold text-slate-900">accounts/{id}/payouts</span> — histórico de saques</li>
+              <li><span class="font-semibold text-slate-900">accounts/{id}/notes</span> — notas indexadas</li>
+              <li><span class="font-semibold text-slate-900">imports</span> — rastreio da importação</li>
+              <li><span class="font-semibold text-slate-900">audit_logs</span> — trilha de auditoria</li>
+            </ul>
+          </div>
+
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6">
+            <h2 class="text-lg font-bold">Regras de segurança</h2>
+            <ul class="mt-4 space-y-2 text-sm text-slate-600 list-disc pl-5">
+              <li>Sem arquivo válido, nada é gravado.</li>
+              <li>Sem login autorizado, nada é gravado.</li>
+              <li>O dry run mostra o plano completo antes da importação real.</li>
+              <li>Cada importação gera log com totais e timestamp.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import {
+      getFirestore,
+      doc,
+      setDoc,
+      getDoc,
+      writeBatch,
+      serverTimestamp,
+      collection
+    } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    import {
+      getAuth,
+      GoogleAuthProvider,
+      onAuthStateChanged,
+      signInWithPopup,
+      signOut
+    } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey: 'AIzaSyCu5pQrMnrpSj45lto_GXKx9xIWq2kyDjg',
+      authDomain: 'df-apex-manager.firebaseapp.com',
+      projectId: 'df-apex-manager',
+      storageBucket: 'df-apex-manager.firebasestorage.app',
+      messagingSenderId: '761037562102',
+      appId: '1:761037562102:web:a7622dca93a157dc21ccd7'
+    };
+
+    const AUTHORIZED_EMAILS = new Set([
+      'dantefrota@gmail.com',
+      'fellipemendonca87@gmail.com'
+    ]);
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    const state = {
+      user: null,
+      fileName: '',
+      rawText: '',
+      parsed: null,
+      validation: null
+    };
+
+    const el = {
+      loginBtn: document.getElementById('loginBtn'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      authBadge: document.getElementById('authBadge'),
+      accessNotice: document.getElementById('accessNotice'),
+      fileInput: document.getElementById('fileInput'),
+      pickFileBtn: document.getElementById('pickFileBtn'),
+      selectedFileName: document.getElementById('selectedFileName'),
+      validateBtn: document.getElementById('validateBtn'),
+      validationBox: document.getElementById('validationBox'),
+      importBtn: document.getElementById('importBtn'),
+      importBox: document.getElementById('importBox'),
+      dryRunCheckbox: document.getElementById('dryRunCheckbox'),
+      overwriteCheckbox: document.getElementById('overwriteCheckbox'),
+      summarySchema: document.getElementById('summarySchema'),
+      summaryAccounts: document.getElementById('summaryAccounts'),
+      summaryCompanies: document.getElementById('summaryCompanies'),
+      summaryDays: document.getElementById('summaryDays'),
+      summaryPayouts: document.getElementById('summaryPayouts'),
+      summaryNotes: document.getElementById('summaryNotes'),
+      downloadTemplateBtn: document.getElementById('downloadTemplateBtn')
+    };
+
+    function formatNumber(value) {
+      return new Intl.NumberFormat('pt-BR').format(Number(value || 0));
+    }
+
+    function formatDateTime(value) {
+      if (!value) return '—';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+      return new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'medium' }).format(d);
+    }
+
+    function sanitizeId(input, fallback = 'item') {
+      return String(input || fallback)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '') || fallback;
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function updateAuthUi() {
+      const authorized = !!(state.user && AUTHORIZED_EMAILS.has(state.user.email || ''));
+      el.loginBtn.classList.toggle('hidden', !!state.user);
+      el.logoutBtn.classList.toggle('hidden', !state.user);
+      el.authBadge.classList.toggle('hidden', !state.user);
+      el.accessNotice.classList.toggle('hidden', authorized);
+      if (state.user) {
+        el.authBadge.textContent = `${state.user.email}${authorized ? ' • autorizado' : ' • sem acesso'}`;
+      } else {
+        el.authBadge.textContent = '';
+      }
+      syncButtons();
+    }
+
+    function syncButtons() {
+      const authorized = !!(state.user && AUTHORIZED_EMAILS.has(state.user.email || ''));
+      const hasFile = !!state.parsed;
+      const isValid = !!(state.validation && state.validation.ok);
+      el.validateBtn.disabled = !hasFile;
+      el.importBtn.disabled = !(authorized && hasFile && isValid);
+    }
+
+    function setSummaryFromPayload(payload) {
+      if (!payload) {
+        el.summarySchema.textContent = '—';
+        el.summaryAccounts.textContent = '—';
+        el.summaryCompanies.textContent = '—';
+        el.summaryDays.textContent = '—';
+        el.summaryPayouts.textContent = '—';
+        el.summaryNotes.textContent = '—';
+        return;
+      }
+      const accounts = Array.isArray(payload.accounts) ? payload.accounts : [];
+      const companies = Array.isArray(payload.companies) ? payload.companies : [];
+      let totalDays = 0;
+      let totalPayouts = 0;
+      let totalNotes = 0;
+      accounts.forEach((account) => {
+        totalDays += Array.isArray(account.dailyData) ? account.dailyData.length : 0;
+        totalPayouts += Array.isArray(account.payouts) ? account.payouts.length : 0;
+        totalNotes += Array.isArray(account.notes) ? account.notes.length : 0;
+      });
+      el.summarySchema.textContent = payload.schemaVersion || '—';
+      el.summaryAccounts.textContent = formatNumber(accounts.length);
+      el.summaryCompanies.textContent = formatNumber(companies.length);
+      el.summaryDays.textContent = formatNumber(totalDays);
+      el.summaryPayouts.textContent = formatNumber(totalPayouts);
+      el.summaryNotes.textContent = formatNumber(totalNotes);
+    }
+
+    function validatePayload(payload) {
+      const errors = [];
+      const warnings = [];
+      if (!payload || typeof payload !== 'object') {
+        errors.push('Arquivo JSON inválido.');
+        return { ok: false, errors, warnings };
+      }
+      if (payload.schemaVersion !== 'legacy-export-v1') {
+        errors.push(`schemaVersion inválido: ${payload.schemaVersion || 'ausente'}`);
+      }
+      if (!Array.isArray(payload.accounts)) {
+        errors.push('Campo accounts ausente ou inválido.');
+      }
+      if (!Array.isArray(payload.companies)) {
+        warnings.push('Campo companies ausente ou inválido. Será recalculado a partir das contas.');
+      }
+
+      const accountIds = new Set();
+      const computed = {
+        accounts: 0,
+        companies: new Set(),
+        days: 0,
+        payouts: 0,
+        notes: 0,
+        totalPnL: 0
+      };
+
+      for (const [index, account] of (payload.accounts || []).entries()) {
+        if (!account || typeof account !== 'object') {
+          errors.push(`Conta na posição ${index} é inválida.`);
+          continue;
+        }
+        if (!account.id) errors.push(`Conta ${account.name || index} sem id.`);
+        if (account.id && accountIds.has(account.id)) errors.push(`ID de conta duplicado: ${account.id}`);
+        if (account.id) accountIds.add(account.id);
+        if (!Array.isArray(account.dailyData)) warnings.push(`Conta ${account.name || account.id}: dailyData ausente. Será tratado como vazio.`);
+        if (!Array.isArray(account.payouts)) warnings.push(`Conta ${account.name || account.id}: payouts ausente. Será tratado como vazio.`);
+        if (!Array.isArray(account.notes)) warnings.push(`Conta ${account.name || account.id}: notes ausente. Será tratado como vazio.`);
+
+        computed.accounts += 1;
+        computed.companies.add(account.companyGroup || 'Sem grupo');
+        computed.days += Array.isArray(account.dailyData) ? account.dailyData.length : 0;
+        computed.payouts += Array.isArray(account.payouts) ? account.payouts.length : 0;
+        computed.notes += Array.isArray(account.notes) ? account.notes.length : 0;
+        computed.totalPnL += Number(account?.stats?.totalPnL || 0);
+      }
+
+      if (payload.validation) {
+        if (Number(payload.validation.accountCount || 0) !== computed.accounts) {
+          warnings.push(`validation.accountCount (${payload.validation.accountCount}) difere do calculado (${computed.accounts}).`);
+        }
+        if (Number(payload.validation.totalTradingDays || 0) !== computed.days) {
+          warnings.push(`validation.totalTradingDays (${payload.validation.totalTradingDays}) difere do calculado (${computed.days}).`);
+        }
+      }
+
+      return {
+        ok: errors.length === 0,
+        errors,
+        warnings,
+        computed
+      };
+    }
+
+    function renderValidation() {
+      if (!state.validation) {
+        el.validationBox.innerHTML = 'Aguardando validação.';
+        return;
+      }
+      const { ok, errors, warnings, computed } = state.validation;
+      el.validationBox.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex items-center gap-2">
+            <span class="inline-flex px-3 py-1 rounded-full text-xs font-bold ${ok ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
+              ${ok ? 'Arquivo válido' : 'Arquivo com problemas'}
+            </span>
+            ${computed ? `<span class="text-xs text-slate-500">Contas calculadas: ${formatNumber(computed.accounts)} • Dias: ${formatNumber(computed.days)} • Payouts: ${formatNumber(computed.payouts)} • Notas: ${formatNumber(computed.notes)}</span>` : ''}
+          </div>
+          <div>
+            <div class="font-semibold text-slate-800">Erros</div>
+            <ul class="mt-2 space-y-1 text-sm ${errors.length ? 'text-red-700' : 'text-emerald-700'}">
+              ${errors.length ? errors.map((item) => `<li>• ${escapeHtml(item)}</li>`).join('') : '<li>• Nenhum erro encontrado.</li>'}
+            </ul>
+          </div>
+          <div>
+            <div class="font-semibold text-slate-800">Avisos</div>
+            <ul class="mt-2 space-y-1 text-sm ${warnings.length ? 'text-amber-700' : 'text-emerald-700'}">
+              ${warnings.length ? warnings.map((item) => `<li>• ${escapeHtml(item)}</li>`).join('') : '<li>• Nenhum aviso relevante.</li>'}
+            </ul>
+          </div>
+        </div>
+      `;
+    }
+
+    function chunkArray(items, size) {
+      const out = [];
+      for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+      return out;
+    }
+
+    function buildPeriodsMap(dailyData) {
+      const periods = {};
+      for (const rawDay of Array.isArray(dailyData) ? dailyData : []) {
+        const day = rawDay || {};
+        const date = String(day.date || '').trim();
+        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+        const periodId = date.slice(0, 7);
+        if (!periods[periodId]) {
+          periods[periodId] = {
+            id: periodId,
+            month: periodId,
+            dailyData: {},
+            stats: { tradingDays: 0, holidays: 0, totalPnL: 0 }
+          };
+        }
+        const val = Number(day.val || 0);
+        const holiday = !!day.holiday;
+        periods[periodId].dailyData[date] = {
+          date,
+          open: Number(day.open || 0),
+          t1: Number(day.t1 || 0),
+          t2: Number(day.t2 || 0),
+          val,
+          holiday,
+          note: typeof day.note === 'string' ? day.note : ''
+        };
+        if (holiday) periods[periodId].stats.holidays += 1;
+        if (!holiday) periods[periodId].stats.tradingDays += 1;
+        periods[periodId].stats.totalPnL += val;
+      }
+      return periods;
+    }
+
+    function buildImportPlan(payload) {
+      const accounts = Array.isArray(payload.accounts) ? payload.accounts : [];
+      const companyNames = new Set(Array.isArray(payload.companies) ? payload.companies : []);
+      accounts.forEach((a) => companyNames.add(a.companyGroup || 'Sem grupo'));
+      const companies = [...companyNames].filter(Boolean).map((name) => ({
+        id: sanitizeId(name, 'sem_grupo'),
+        name,
+        code: sanitizeId(name, 'sem_grupo').toUpperCase()
+      }));
+
+      const plan = {
+        companies,
+        accounts: [],
+        totals: {
+          accounts: 0,
+          periods: 0,
+          payouts: 0,
+          notes: 0,
+          companies: companies.length,
+          writes: 0
+        }
+      };
+
+      for (const rawAccount of accounts) {
+        const account = rawAccount || {};
+        const companyName = account.companyGroup || 'Sem grupo';
+        const companyId = sanitizeId(companyName, 'sem_grupo');
+        const periodsMap = buildPeriodsMap(account.dailyData || []);
+        const periodItems = Object.values(periodsMap);
+        const payoutItems = (Array.isArray(account.payouts) ? account.payouts : []).map((payout, index) => ({
+          id: payout?.id || `payout_${index + 1}_${sanitizeId(account.id || account.name || 'account')}`,
+          ...payout,
+          importedAt: new Date().toISOString()
+        }));
+        const noteItems = (Array.isArray(account.notes) ? account.notes : []).map((note, index) => ({
+          id: note?.id || `${note?.date || 'note'}_${index + 1}`,
+          date: note?.date || null,
+          note: typeof note?.note === 'string' ? note.note : '',
+          importedAt: new Date().toISOString()
+        }));
+
+        plan.accounts.push({
+          accountDoc: {
+            id: account.id,
+            name: account.name || 'Sem nome',
+            size: account.size || null,
+            monthType: account.monthType ?? null,
+            favorite: !!account.favorite,
+            createdAtLegacy: account.createdAt || null,
+            status: account.status || 'active',
+            type: 'legacy-import',
+            companyId,
+            companyName,
+            sourceSchemaVersion: payload.schemaVersion,
+            importedFromLegacyAt: payload.exportedAt || null,
+            stats: {
+              tradingDays: Number(account?.stats?.tradingDays || 0),
+              noteCount: Number(account?.stats?.noteCount || 0),
+              payoutCount: Number(account?.stats?.payoutCount || 0),
+              totalPnL: Number(account?.stats?.totalPnL || 0)
+            }
+          },
+          periods: periodItems,
+          payouts: payoutItems,
+          notes: noteItems
+        });
+
+        plan.totals.accounts += 1;
+        plan.totals.periods += periodItems.length;
+        plan.totals.payouts += payoutItems.length;
+        plan.totals.notes += noteItems.length;
+      }
+
+      plan.totals.writes = plan.totals.companies + plan.totals.accounts + plan.totals.periods + plan.totals.payouts + plan.totals.notes + 2;
+      return plan;
+    }
+
+    function renderPlan(plan, dryRun = true) {
+      el.importBox.innerHTML = `
+        <div class="space-y-4">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="inline-flex px-3 py-1 rounded-full text-xs font-bold ${dryRun ? 'bg-sky-100 text-sky-700' : 'bg-emerald-100 text-emerald-700'}">${dryRun ? 'Dry run' : 'Importação executada'}</span>
+            <span class="text-xs text-slate-500">Empresas: ${formatNumber(plan.totals.companies)} • Contas: ${formatNumber(plan.totals.accounts)} • Períodos: ${formatNumber(plan.totals.periods)} • Payouts: ${formatNumber(plan.totals.payouts)} • Notas: ${formatNumber(plan.totals.notes)}</span>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-white p-4">
+            <div class="font-semibold text-slate-800">Plano de gravação</div>
+            <div class="mt-2 text-sm text-slate-600">Escritas estimadas: <strong>${formatNumber(plan.totals.writes)}</strong></div>
+            <div class="mt-3 text-sm text-slate-600">Primeiras contas:</div>
+            <ul class="mt-2 space-y-1 text-sm text-slate-700">
+              ${plan.accounts.slice(0, 5).map((item) => `<li>• ${escapeHtml(item.accountDoc.name)} (${escapeHtml(item.accountDoc.id)}) — períodos ${item.periods.length}, payouts ${item.payouts.length}, notas ${item.notes.length}</li>`).join('') || '<li>• Nenhuma conta.</li>'}
+            </ul>
+          </div>
+        </div>
+      `;
+    }
+
+    async function ensureAuthorized() {
+      if (!state.user) throw new Error('Faça login antes de importar.');
+      if (!AUTHORIZED_EMAILS.has(state.user.email || '')) {
+        throw new Error('Usuário sem permissão para importar.');
+      }
+    }
+
+    async function runImport({ dryRun, allowOverwrite }) {
+      await ensureAuthorized();
+      if (!state.parsed || !state.validation?.ok) throw new Error('Arquivo inválido para importação.');
+
+      const payload = state.parsed;
+      const plan = buildImportPlan(payload);
+      renderPlan(plan, dryRun);
+      if (dryRun) return;
+
+      const importId = `import_${Date.now()}`;
+      const operator = {
+        uid: state.user.uid,
+        email: state.user.email || null,
+        displayName: state.user.displayName || null
+      };
+
+      const writeOps = [];
+
+      for (const company of plan.companies) {
+        writeOps.push(async (batch) => {
+          const ref = doc(db, 'companies', company.id);
+          batch.set(ref, {
+            name: company.name,
+            code: company.code,
+            importedFrom: 'legacy-export-v1',
+            updatedAt: serverTimestamp(),
+            createdByImport: importId
+          }, { merge: true });
+        });
+      }
+
+      for (const accountBundle of plan.accounts) {
+        writeOps.push(async (batch) => {
+          const ref = doc(db, 'accounts', accountBundle.accountDoc.id);
+          if (!allowOverwrite) {
+            const snap = await getDoc(ref);
+            if (snap.exists()) {
+              throw new Error(`Conta já existe em accounts/${accountBundle.accountDoc.id}. Ative overwrite para substituir o documento principal.`);
+            }
+          }
+          batch.set(ref, {
+            ...accountBundle.accountDoc,
+            updatedAt: serverTimestamp(),
+            createdAt: serverTimestamp(),
+            importId,
+            operator
+          }, { merge: allowOverwrite });
+        });
+
+        for (const period of accountBundle.periods) {
+          writeOps.push(async (batch) => {
+            const ref = doc(db, 'accounts', accountBundle.accountDoc.id, 'periods', period.id);
+            batch.set(ref, {
+              month: period.month,
+              dailyData: period.dailyData,
+              stats: period.stats,
+              importId,
+              updatedAt: serverTimestamp(),
+              operator
+            }, { merge: true });
+          });
+        }
+
+        for (const payout of accountBundle.payouts) {
+          writeOps.push(async (batch) => {
+            const ref = doc(db, 'accounts', accountBundle.accountDoc.id, 'payouts', sanitizeId(payout.id, `payout_${Date.now()}`));
+            batch.set(ref, {
+              ...payout,
+              importId,
+              updatedAt: serverTimestamp(),
+              operator
+            }, { merge: true });
+          });
+        }
+
+        for (const note of accountBundle.notes) {
+          writeOps.push(async (batch) => {
+            const ref = doc(db, 'accounts', accountBundle.accountDoc.id, 'notes', sanitizeId(note.id, `note_${Date.now()}`));
+            batch.set(ref, {
+              ...note,
+              importId,
+              updatedAt: serverTimestamp(),
+              operator
+            }, { merge: true });
+          });
+        }
+      }
+
+      writeOps.push(async (batch) => {
+        const ref = doc(db, 'imports', importId);
+        batch.set(ref, {
+          importId,
+          sourceSchemaVersion: payload.schemaVersion,
+          exportedAt: payload.exportedAt || null,
+          importedAt: serverTimestamp(),
+          operator,
+          totals: plan.totals,
+          fileName: state.fileName || null,
+          activeLegacyAccountId: payload?.meta?.activeId || null
+        }, { merge: true });
+      });
+
+      writeOps.push(async (batch) => {
+        const ref = doc(collection(db, 'audit_logs'));
+        batch.set(ref, {
+          type: 'legacy_import',
+          importId,
+          createdAt: serverTimestamp(),
+          operator,
+          totals: plan.totals,
+          fileName: state.fileName || null,
+          message: 'Importação concluída para nova arquitetura.'
+        });
+      });
+
+      const chunks = chunkArray(writeOps, 200);
+      for (const chunk of chunks) {
+        const batch = writeBatch(db);
+        for (const op of chunk) {
+          await op(batch);
+        }
+        await batch.commit();
+      }
+
+      renderPlan(plan, false);
+      el.importBox.innerHTML += `
+        <div class="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-sm text-emerald-800">
+          Importação concluída com sucesso.<br>
+          Import ID: <strong>${escapeHtml(importId)}</strong><br>
+          Executado em: <strong>${escapeHtml(formatDateTime(new Date().toISOString()))}</strong>
+        </div>
+      `;
+    }
+
+    async function handleFile(file) {
+      state.fileName = file?.name || '';
+      state.rawText = '';
+      state.parsed = null;
+      state.validation = null;
+      el.selectedFileName.textContent = state.fileName || 'Nenhum arquivo selecionado.';
+      el.validationBox.textContent = 'Lendo arquivo...';
+      el.importBox.textContent = 'Nenhuma operação executada.';
+
+      if (!file) {
+        setSummaryFromPayload(null);
+        syncButtons();
+        return;
+      }
+
+      try {
+        state.rawText = await file.text();
+        state.parsed = JSON.parse(state.rawText);
+        setSummaryFromPayload(state.parsed);
+        el.validationBox.textContent = 'Arquivo carregado. Clique em Validar arquivo.';
+      } catch (error) {
+        state.parsed = null;
+        state.validation = null;
+        setSummaryFromPayload(null);
+        el.validationBox.innerHTML = `<span class="text-red-700 font-semibold">Erro ao ler arquivo:</span> ${escapeHtml(error.message || String(error))}`;
+      }
+      syncButtons();
+    }
+
+    function downloadTemplate() {
+      const template = {
+        schemaVersion: 'legacy-export-v1',
+        exportedAt: new Date().toISOString(),
+        source: { app: 'DF Apex Manager', format: 'legacy-store-json' },
+        meta: { activeId: 'acc_example', exportedMonthView: new Date().toISOString() },
+        companies: ['DF'],
+        accounts: [
+          {
+            id: 'acc_example',
+            name: 'Conta Exemplo',
+            size: '50k',
+            monthType: 4,
+            favorite: false,
+            createdAt: new Date().toISOString(),
+            status: 'active',
+            companyGroup: 'DF',
+            dailyData: [
+              { date: '2026-04-01', open: 0, t1: 100, t2: -25, val: 75, holiday: false, note: 'Exemplo.' }
+            ],
+            payouts: [
+              { id: 'pay_1', amount: 500, date: '2026-04-05', status: 'paid' }
+            ],
+            notes: [
+              { id: 'note_1', date: '2026-04-01', note: 'Exemplo de nota.' }
+            ],
+            stats: { tradingDays: 1, noteCount: 1, payoutCount: 1, totalPnL: 75 }
+          }
+        ],
+        validation: { accountCount: 1, companyCount: 1, totalTradingDays: 1, totalNotes: 1, totalPayouts: 1, totalPnL: 75 }
+      };
+      const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'legacy-export-v1-template.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }
+
+    el.loginBtn.addEventListener('click', async () => {
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        alert(`Erro no login: ${error.message || error}`);
+      }
+    });
+
+    el.logoutBtn.addEventListener('click', async () => {
+      await signOut(auth);
+    });
+
+    el.pickFileBtn.addEventListener('click', () => el.fileInput.click());
+    el.fileInput.addEventListener('change', async (event) => {
+      const file = event.target.files?.[0];
+      await handleFile(file);
+    });
+
+    el.validateBtn.addEventListener('click', () => {
+      state.validation = validatePayload(state.parsed);
+      renderValidation();
+      syncButtons();
+    });
+
+    el.importBtn.addEventListener('click', async () => {
+      try {
+        el.importBox.textContent = 'Processando importação...';
+        await runImport({
+          dryRun: !!el.dryRunCheckbox.checked,
+          allowOverwrite: !!el.overwriteCheckbox.checked
+        });
+      } catch (error) {
+        el.importBox.innerHTML = `<div class="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700"><strong>Falha:</strong> ${escapeHtml(error.message || String(error))}</div>`;
+      }
+    });
+
+    el.downloadTemplateBtn.addEventListener('click', downloadTemplate);
+
+    onAuthStateChanged(auth, (user) => {
+      state.user = user;
+      updateAuthUi();
+    });
+
+    setSummaryFromPayload(null);
+    syncButtons();
+  </script>
+</body>
+</html>
