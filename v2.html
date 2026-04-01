@@ -283,7 +283,7 @@
     }
 
     function sortPeriods(periods) {
-      return [...periods].sort((a, b) => String(b.id).localeCompare(String(a.id)));
+      return [...periods].sort((a, b) => String(b.id || b.month).localeCompare(String(a.id || a.month)));
     }
 
     function flattenDaily(periods) {
@@ -359,7 +359,7 @@
       const monthly = new Map();
       state.accounts.forEach((acc) => {
         (acc.periods || []).forEach((period) => {
-          const key = period.id;
+          const key = period.id || period.month;
           monthly.set(key, (monthly.get(key) || 0) + Number(period.stats?.totalPnL || 0));
         });
       });
