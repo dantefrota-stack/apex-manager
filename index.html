@@ -4477,6 +4477,10 @@ els.customWinrate.textContent = `${rate}`;
 els.customBest.textContent = best > -Infinity ? formatCurrency(best) : "--";
 els.customWorst.textContent = worst < Infinity ? formatCurrency(worst) : "--";
 
+if (chartLabels.length === 1 && chartData.length === 1) {
+    chartLabels = ['Início', chartLabels[0]];
+    chartData = [0, chartData[0]];
+}
 updateChart(chartLabels, chartData);
 
 // --- KPIs do Período (Trades + Dias) ---
@@ -4512,7 +4516,7 @@ if (els.kpiMaxDD) els.kpiMaxDD.textContent = tradedDays ? formatCurrency(maxDDNe
             const textColor = isDark ? '#94a3b8' : '#64748b';
             chartInstance = new Chart(ctx, {
                 type: 'line', 
-                data: { labels: labels, datasets: [{ label: (CURRENT_LANG==='en' ? 'Cumulative Profit' : 'Lucro Acumulado'), data: data, borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 2.5, pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 10, fill: true, tension: 0.45,
+                data: { labels: labels, datasets: [{ label: (CURRENT_LANG==='en' ? 'Cumulative Profit' : 'Lucro Acumulado'), data: data, borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.1)', borderWidth: 2.5, pointRadius: (data && data.length <= 2) ? 4 : 0, pointHoverRadius: 5, pointHitRadius: 12, fill: true, tension: 0.45,
                                 cubicInterpolationMode: 'monotone', borderJoinStyle: 'round', borderCapStyle: 'round', spanGaps: true }] },
                 options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: gridColor }, ticks: { color: textColor } }, x: { grid: { display: false }, ticks: { color: textColor } } } }
             });
