@@ -3057,6 +3057,49 @@ tr.bg-green-50 td {
 
   ${groupsHtml}
 
+
+<script>
+(function(){
+  function unlockTradeInputs(){
+    try{
+      document.querySelectorAll('#calendar-body tr.day-details-row input[type="number"]').forEach((inp)=>{
+        inp.removeAttribute('readonly');
+        inp.removeAttribute('disabled');
+        inp.style.pointerEvents = 'auto';
+        inp.style.userSelect = 'text';
+        inp.style.webkitUserSelect = 'text';
+        inp.style.position = 'relative';
+        inp.style.zIndex = '20';
+        inp.style.cursor = 'text';
+        inp.addEventListener('click', function(e){ e.stopPropagation(); this.focus(); if(this.select){ this.select(); } }, {capture:true});
+        inp.addEventListener('mousedown', function(e){ e.stopPropagation(); }, {capture:true});
+        inp.addEventListener('focus', function(e){ e.stopPropagation(); }, {capture:true});
+      });
+    }catch(e){}
+  }
+
+  const origToggle = window.toggleDayDetails;
+  if (typeof origToggle === 'function' && !window.__tradeInputWrapped) {
+    window.__tradeInputWrapped = true;
+    window.toggleDayDetails = function(){
+      const res = origToggle.apply(this, arguments);
+      setTimeout(unlockTradeInputs, 30);
+      setTimeout(unlockTradeInputs, 200);
+      return res;
+    };
+  }
+
+  document.addEventListener('click', function(){
+    setTimeout(unlockTradeInputs, 30);
+  }, true);
+
+  window.addEventListener('load', function(){
+    setTimeout(unlockTradeInputs, 200);
+    setTimeout(unlockTradeInputs, 800);
+  });
+})();
+</script>
+
 </body>
 </html>`;
         }
@@ -4922,11 +4965,11 @@ function renderCalendar(acc) {
                                     <div class="space-y-2">
                                         <label class="flex items-center justify-between gap-2">
                                             <span class="text-slate-500">Trade 1</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block2550.leg1}" onblur="window.updateTradeLeg('${iso}','t0',1,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
+                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block2550.leg1}" onblur="window.updateTradeLeg('${iso}','t0',1,this.value)" onclick="event.stopPropagation();this.focus();if(this.select){this.select();}" onfocus="event.stopPropagation();" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){this.blur();}">
                                         </label>
                                         <label class="flex items-center justify-between gap-2">
                                             <span class="text-slate-500">Trade 2</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block2550.leg2}" onblur="window.updateTradeLeg('${iso}','t0',2,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
+                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block2550.leg2}" onblur="window.updateTradeLeg('${iso}','t0',2,this.value)" onclick="event.stopPropagation();this.focus();if(this.select){this.select();}" onfocus="event.stopPropagation();" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){this.blur();}">
                                         </label>
                                         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
                                             <span>Total</span>
@@ -4939,11 +4982,11 @@ function renderCalendar(acc) {
                                     <div class="space-y-2">
                                         <label class="flex items-center justify-between gap-2">
                                             <span class="text-slate-500">Trade 1</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block4080.leg1}" onblur="window.updateTradeLeg('${iso}','t1',1,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
+                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block4080.leg1}" onblur="window.updateTradeLeg('${iso}','t1',1,this.value)" onclick="event.stopPropagation();this.focus();if(this.select){this.select();}" onfocus="event.stopPropagation();" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){this.blur();}">
                                         </label>
                                         <label class="flex items-center justify-between gap-2">
                                             <span class="text-slate-500">Trade 2</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block4080.leg2}" onblur="window.updateTradeLeg('${iso}','t1',2,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
+                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block4080.leg2}" onblur="window.updateTradeLeg('${iso}','t1',2,this.value)" onclick="event.stopPropagation();this.focus();if(this.select){this.select();}" onfocus="event.stopPropagation();" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){this.blur();}">
                                         </label>
                                         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
                                             <span>Total</span>
@@ -4956,11 +4999,11 @@ function renderCalendar(acc) {
                                     <div class="space-y-2">
                                         <label class="flex items-center justify-between gap-2">
                                             <span class="text-slate-500">Trade 1</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${blockCT.leg1}" onblur="window.updateTradeLeg('${iso}','t2',1,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
+                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${blockCT.leg1}" onblur="window.updateTradeLeg('${iso}','t2',1,this.value)" onclick="event.stopPropagation();this.focus();if(this.select){this.select();}" onfocus="event.stopPropagation();" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){this.blur();}">
                                         </label>
                                         <label class="flex items-center justify-between gap-2">
                                             <span class="text-slate-500">Trade 2</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${blockCT.leg2}" onblur="window.updateTradeLeg('${iso}','t2',2,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
+                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${blockCT.leg2}" onblur="window.updateTradeLeg('${iso}','t2',2,this.value)" onclick="event.stopPropagation();this.focus();if(this.select){this.select();}" onfocus="event.stopPropagation();" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){this.blur();}">
                                         </label>
                                         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
                                             <span>Total</span>
