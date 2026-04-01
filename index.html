@@ -439,6 +439,75 @@ tr.today-row > td {
   border-bottom-color: transparent !important;
 }
 
+
+/* Linha do dia atual e detalhes sem quebra visual */
+.calendar-body-custom tr:not(.week-separator):not(.day-details-row) td {
+  border-top: 1px solid #f1f5f9;
+}
+body.dark .calendar-body-custom tr:not(.week-separator):not(.day-details-row) td {
+  border-top: 1px solid #334155;
+}
+.calendar-body-custom tr:first-child td,
+.calendar-body-custom tr.week-separator + tr td,
+.calendar-body-custom tr.today-row td,
+.calendar-body-custom tr.today-row + tr td {
+  border-top-color: transparent !important;
+}
+
+tr.today-row,
+tr.today-row > td {
+  background: #eefaf5 !important;
+}
+tr.today-row * {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+tr.today-row > td:first-child {
+  box-shadow: inset 4px 0 0 #22c55e !important;
+}
+tr.today-row > td {
+  border-top-color: transparent !important;
+  border-bottom-color: transparent !important;
+}
+tr.today-row + tr.day-details-row td {
+  background: #eefaf5 !important;
+  border-top: none !important;
+  padding-top: 0 !important;
+}
+tr.today-row + tr.day-details-row td > div {
+  padding-top: 12px !important;
+}
+tr.today-row + tr.day-details-row .rounded-xl {
+  background-color: #ffffff !important;
+}
+body.dark tr.today-row + tr.day-details-row td {
+  background: rgba(16,185,129,0.12) !important;
+}
+body.dark tr.today-row + tr.day-details-row .rounded-xl {
+  background-color: rgba(15,23,42,0.65) !important;
+}
+
+/* Garantir clique e foco nos campos dos trades */
+.day-details-row,
+.day-details-row td,
+.day-details-row .rounded-xl,
+.day-details-row input,
+.day-details-row button,
+.day-details-row label {
+  pointer-events: auto !important;
+}
+.day-details-row input[type="number"] {
+  position: relative !important;
+  z-index: 2 !important;
+  cursor: text !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  background-color: #ffffff !important;
+}
+body.dark .day-details-row input[type="number"] {
+  background-color: #0f172a !important;
+}
+
 </style>
 
 <style id="d2-info-modal-styles">
