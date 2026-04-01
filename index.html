@@ -341,7 +341,22 @@ body.dark .df-scroll-always:hover::-webkit-scrollbar-thumb{background: rgba(148,
 .day-details-row td{background:rgba(99,102,241,0.04);border-top:1px dashed rgba(148,163,184,0.6);}
 .dark .day-details-row td{background:rgba(99,102,241,0.08);border-top:1px dashed rgba(71,85,105,0.8);}
 
-</style>
+
+    .trade-row-expanded,
+    .trade-row-expanded > td,
+    .trade-row-expanded + tr,
+    .trade-row-expanded + tr > td {
+      background-color: #eefaf5 !important;
+      box-shadow: none !important;
+    }
+    .trade-row-expanded td::before,
+    .trade-row-expanded td::after,
+    .trade-row-expanded + tr td::before,
+    .trade-row-expanded + tr td::after {
+      display: none !important;
+    }
+
+  </style>
 
 <style id="d2-info-modal-styles">
   .info-icon-btn{
@@ -2837,6 +2852,32 @@ const total = listAll.length;
   </div>
 
   ${groupsHtml}
+
+
+<script>
+(function(){
+  function applyExpandedRowFix(){
+    try{
+      const rows = document.querySelectorAll('tr');
+      rows.forEach((row) => row.classList.remove('trade-row-expanded'));
+      rows.forEach((row) => {
+        const hasExpanded = row.querySelector('svg.rotate-180, .rotate-180');
+        if(hasExpanded){
+          row.classList.add('trade-row-expanded');
+          const next = row.nextElementSibling;
+          if(next) next.classList.add('trade-row-expanded');
+        }
+      });
+    }catch(e){}
+  }
+  const _raf = window.requestAnimationFrame || ((fn)=>setTimeout(fn,16));
+  const runFix = ()=>_raf(applyExpandedRowFix);
+  document.addEventListener('click', runFix, true);
+  window.addEventListener('load', runFix);
+  setTimeout(runFix, 300);
+  setTimeout(runFix, 900);
+})();
+</script>
 
 </body>
 </html>`;
