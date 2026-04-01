@@ -406,6 +406,21 @@ body.dark tr.today-row + tr.day-details-row .rounded-xl {
   background-color: rgba(15,23,42,0.65) !important;
 }
 
+
+/* Calendário: separadores próprios para evitar quebra visual na linha verde */
+.calendar-body-custom tr:not(.week-separator):not(.day-details-row) td {
+  border-top: 1px solid #f1f5f9;
+}
+body.dark .calendar-body-custom tr:not(.week-separator):not(.day-details-row) td {
+  border-top: 1px solid #334155;
+}
+.calendar-body-custom tr:first-child td,
+.calendar-body-custom tr.week-separator + tr td,
+.calendar-body-custom tr.today-row td,
+.calendar-body-custom tr.today-row + tr td {
+  border-top-color: transparent !important;
+}
+
 </style>
 
 <style id="d2-info-modal-styles">
@@ -1226,7 +1241,7 @@ tr.bg-green-50 td {
                             <th class="px-1 py-3 text-center w-10"><i data-lucide="coffee" class="w-3 h-3 mx-auto"></i></th>
                         </tr>
                     </thead>
-                    <tbody id="calendar-body" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
+                    <tbody id="calendar-body" class="calendar-body-custom"></tbody>
                 </table>
             </div>
         </div>
