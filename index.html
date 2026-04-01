@@ -440,7 +440,7 @@ tr.today-row > td {
 }
 
 
-/* Visual approved fixes */
+/* Calendário: separadores próprios para evitar quebra visual na linha verde */
 .calendar-body-custom tr:not(.week-separator):not(.day-details-row) td {
   border-top: 1px solid #f1f5f9;
 }
@@ -453,6 +453,8 @@ body.dark .calendar-body-custom tr:not(.week-separator):not(.day-details-row) td
 .calendar-body-custom tr.today-row + tr td {
   border-top-color: transparent !important;
 }
+
+/* Força a linha do dia atual a ficar visualmente contínua */
 tr.today-row,
 tr.today-row > td {
   background: #eefaf5 !important;
@@ -468,6 +470,8 @@ tr.today-row > td {
   border-top-color: transparent !important;
   border-bottom-color: transparent !important;
 }
+
+/* Integra a linha do dia atual com a área expandida abaixo */
 tr.today-row + tr.day-details-row td {
   background: #eefaf5 !important;
   border-top: none !important;
@@ -486,20 +490,25 @@ body.dark tr.today-row + tr.day-details-row .rounded-xl {
   background-color: rgba(15,23,42,0.65) !important;
 }
 
-/* Destravar edição dos inputs dos blocos */
-.day-details-row input[type="number"]{
-  pointer-events:auto !important;
-  position:relative !important;
-  z-index:30 !important;
-  cursor:text !important;
-  user-select:text !important;
-  -webkit-user-select:text !important;
-}
+/* Garantir clique e foco nos campos dos trades */
 .day-details-row,
 .day-details-row td,
 .day-details-row .rounded-xl,
+.day-details-row input,
+.day-details-row button,
 .day-details-row label {
-  pointer-events:auto !important;
+  pointer-events: auto !important;
+}
+.day-details-row input[type="number"] {
+  position: relative !important;
+  z-index: 20 !important;
+  cursor: text !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  background-color: #ffffff !important;
+}
+body.dark .day-details-row input[type="number"] {
+  background-color: #0f172a !important;
 }
 
 </style>
@@ -3050,49 +3059,6 @@ tr.bg-green-50 td {
   </div>
 
   ${groupsHtml}
-
-
-<script>
-(function(){
-  function unlockTradeInputs(){
-    try{
-      document.querySelectorAll('#calendar-body tr.day-details-row input[type="number"]').forEach(function(inp){
-        inp.disabled = false;
-        inp.readOnly = false;
-        inp.style.pointerEvents = 'auto';
-        inp.style.cursor = 'text';
-        inp.style.zIndex = '30';
-        inp.addEventListener('click', function(e){ e.stopPropagation(); }, {capture:true});
-        inp.addEventListener('mousedown', function(e){ e.stopPropagation(); }, {capture:true});
-      });
-    }catch(e){}
-  }
-
-  function afterUiUpdate(){
-    setTimeout(unlockTradeInputs, 0);
-    setTimeout(unlockTradeInputs, 80);
-    setTimeout(unlockTradeInputs, 250);
-  }
-
-  document.addEventListener('click', function(){
-    afterUiUpdate();
-  }, true);
-
-  window.addEventListener('load', function(){
-    afterUiUpdate();
-  });
-
-  if (typeof window.toggleDayDetails === 'function' && !window.__toggleWrappedTradeInputs) {
-    const original = window.toggleDayDetails;
-    window.toggleDayDetails = function(){
-      const result = original.apply(this, arguments);
-      afterUiUpdate();
-      return result;
-    };
-    window.__toggleWrappedTradeInputs = true;
-  }
-})();
-</script>
 
 </body>
 </html>`;
@@ -5927,50 +5893,7 @@ tr.bg-green-50 td {
                       <tr><td><b>Max Drawdown</b></td><td>${kpiMaxDD}</td></tr>
                     </table>
 
-                    
-<script>
-(function(){
-  function unlockTradeInputs(){
-    try{
-      document.querySelectorAll('#calendar-body tr.day-details-row input[type="number"]').forEach(function(inp){
-        inp.disabled = false;
-        inp.readOnly = false;
-        inp.style.pointerEvents = 'auto';
-        inp.style.cursor = 'text';
-        inp.style.zIndex = '30';
-        inp.addEventListener('click', function(e){ e.stopPropagation(); }, {capture:true});
-        inp.addEventListener('mousedown', function(e){ e.stopPropagation(); }, {capture:true});
-      });
-    }catch(e){}
-  }
-
-  function afterUiUpdate(){
-    setTimeout(unlockTradeInputs, 0);
-    setTimeout(unlockTradeInputs, 80);
-    setTimeout(unlockTradeInputs, 250);
-  }
-
-  document.addEventListener('click', function(){
-    afterUiUpdate();
-  }, true);
-
-  window.addEventListener('load', function(){
-    afterUiUpdate();
-  });
-
-  if (typeof window.toggleDayDetails === 'function' && !window.__toggleWrappedTradeInputs) {
-    const original = window.toggleDayDetails;
-    window.toggleDayDetails = function(){
-      const result = original.apply(this, arguments);
-      afterUiUpdate();
-      return result;
-    };
-    window.__toggleWrappedTradeInputs = true;
-  }
-})();
-</script>
-
-</body></html>`;
+                    </body></html>`;
                     w.document.open();
                     w.document.write(html);
                     w.document.close();
@@ -11077,14 +11000,15 @@ tr.bg-green-50 td {
 (function(){
   function unlockTradeInputs(){
     try{
-      document.querySelectorAll('#calendar-body tr.day-details-row input[type="number"]').forEach(function(inp){
-        inp.disabled = false;
-        inp.readOnly = false;
+      document.querySelectorAll('#calendar-body tr.day-details-row input[type="number"]').forEach((inp)=>{
+        inp.removeAttribute('readonly');
+        inp.removeAttribute('disabled');
         inp.style.pointerEvents = 'auto';
+        inp.style.userSelect = 'text';
+        inp.style.webkitUserSelect = 'text';
+        inp.style.position = 'relative';
+        inp.style.zIndex = '20';
         inp.style.cursor = 'text';
-        inp.style.zIndex = '30';
-        inp.addEventListener('click', function(e){ e.stopPropagation(); }, {capture:true});
-        inp.addEventListener('mousedown', function(e){ e.stopPropagation(); }, {capture:true});
       });
     }catch(e){}
   }
@@ -11095,22 +11019,25 @@ tr.bg-green-50 td {
     setTimeout(unlockTradeInputs, 250);
   }
 
-  document.addEventListener('click', function(){
-    afterUiUpdate();
+  document.addEventListener('click', function(e){
+    const t = e.target;
+    if (t && (t.closest('#calendar-body') || t.closest('#details-') || t.closest('.day-details-row'))) {
+      afterUiUpdate();
+    }
   }, true);
 
   window.addEventListener('load', function(){
     afterUiUpdate();
   });
 
-  if (typeof window.toggleDayDetails === 'function' && !window.__toggleWrappedTradeInputs) {
+  if (typeof window.toggleDayDetails === 'function' && !window.__toggleWrappedTradeInputsSafe) {
     const original = window.toggleDayDetails;
     window.toggleDayDetails = function(){
       const result = original.apply(this, arguments);
       afterUiUpdate();
       return result;
     };
-    window.__toggleWrappedTradeInputs = true;
+    window.__toggleWrappedTradeInputsSafe = true;
   }
 })();
 </script>
