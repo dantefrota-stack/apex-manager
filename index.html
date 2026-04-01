@@ -440,7 +440,7 @@ tr.today-row > td {
 }
 
 
-/* Linha do dia atual e detalhes sem quebra visual */
+/* Visual approved fixes */
 .calendar-body-custom tr:not(.week-separator):not(.day-details-row) td {
   border-top: 1px solid #f1f5f9;
 }
@@ -453,7 +453,6 @@ body.dark .calendar-body-custom tr:not(.week-separator):not(.day-details-row) td
 .calendar-body-custom tr.today-row + tr td {
   border-top-color: transparent !important;
 }
-
 tr.today-row,
 tr.today-row > td {
   background: #eefaf5 !important;
@@ -487,25 +486,20 @@ body.dark tr.today-row + tr.day-details-row .rounded-xl {
   background-color: rgba(15,23,42,0.65) !important;
 }
 
-/* Garantir clique e foco nos campos dos trades */
+/* Destravar edição dos inputs dos blocos */
+.day-details-row input[type="number"]{
+  pointer-events:auto !important;
+  position:relative !important;
+  z-index:30 !important;
+  cursor:text !important;
+  user-select:text !important;
+  -webkit-user-select:text !important;
+}
 .day-details-row,
 .day-details-row td,
 .day-details-row .rounded-xl,
-.day-details-row input,
-.day-details-row button,
 .day-details-row label {
-  pointer-events: auto !important;
-}
-.day-details-row input[type="number"] {
-  position: relative !important;
-  z-index: 2 !important;
-  cursor: text !important;
-  user-select: text !important;
-  -webkit-user-select: text !important;
-  background-color: #ffffff !important;
-}
-body.dark .day-details-row input[type="number"] {
-  background-color: #0f172a !important;
+  pointer-events:auto !important;
 }
 
 </style>
@@ -3062,41 +3056,41 @@ tr.bg-green-50 td {
 (function(){
   function unlockTradeInputs(){
     try{
-      document.querySelectorAll('#calendar-body tr.day-details-row input[type="number"]').forEach((inp)=>{
-        inp.removeAttribute('readonly');
-        inp.removeAttribute('disabled');
+      document.querySelectorAll('#calendar-body tr.day-details-row input[type="number"]').forEach(function(inp){
+        inp.disabled = false;
+        inp.readOnly = false;
         inp.style.pointerEvents = 'auto';
-        inp.style.userSelect = 'text';
-        inp.style.webkitUserSelect = 'text';
-        inp.style.position = 'relative';
-        inp.style.zIndex = '20';
         inp.style.cursor = 'text';
-        inp.addEventListener('click', function(e){ e.stopPropagation(); this.focus(); if(this.select){ this.select(); } }, {capture:true});
+        inp.style.zIndex = '30';
+        inp.addEventListener('click', function(e){ e.stopPropagation(); }, {capture:true});
         inp.addEventListener('mousedown', function(e){ e.stopPropagation(); }, {capture:true});
-        inp.addEventListener('focus', function(e){ e.stopPropagation(); }, {capture:true});
       });
     }catch(e){}
   }
 
-  const origToggle = window.toggleDayDetails;
-  if (typeof origToggle === 'function' && !window.__tradeInputWrapped) {
-    window.__tradeInputWrapped = true;
-    window.toggleDayDetails = function(){
-      const res = origToggle.apply(this, arguments);
-      setTimeout(unlockTradeInputs, 30);
-      setTimeout(unlockTradeInputs, 200);
-      return res;
-    };
+  function afterUiUpdate(){
+    setTimeout(unlockTradeInputs, 0);
+    setTimeout(unlockTradeInputs, 80);
+    setTimeout(unlockTradeInputs, 250);
   }
 
   document.addEventListener('click', function(){
-    setTimeout(unlockTradeInputs, 30);
+    afterUiUpdate();
   }, true);
 
   window.addEventListener('load', function(){
-    setTimeout(unlockTradeInputs, 200);
-    setTimeout(unlockTradeInputs, 800);
+    afterUiUpdate();
   });
+
+  if (typeof window.toggleDayDetails === 'function' && !window.__toggleWrappedTradeInputs) {
+    const original = window.toggleDayDetails;
+    window.toggleDayDetails = function(){
+      const result = original.apply(this, arguments);
+      afterUiUpdate();
+      return result;
+    };
+    window.__toggleWrappedTradeInputs = true;
+  }
 })();
 </script>
 
@@ -4965,11 +4959,11 @@ function renderCalendar(acc) {
                                     <div class="space-y-2">
                                         <label class="flex items-center justify-between gap-2">
                                             <span class="text-slate-500">Trade 1</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block2550.leg1}" onblur="window.updateTradeLeg('${iso}','t0',1,this.value)" onclick="event.stopPropagation();this.focus();if(this.select){this.select();}" onfocus="event.stopPropagation();" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){this.blur();}">
+                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block2550.leg1}" onblur="window.updateTradeLeg('${iso}','t0',1,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
                                         </label>
                                         <label class="flex items-center justify-between gap-2">
                                             <span class="text-slate-500">Trade 2</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block2550.leg2}" onblur="window.updateTradeLeg('${iso}','t0',2,this.value)" onclick="event.stopPropagation();this.focus();if(this.select){this.select();}" onfocus="event.stopPropagation();" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){this.blur();}">
+                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block2550.leg2}" onblur="window.updateTradeLeg('${iso}','t0',2,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
                                         </label>
                                         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
                                             <span>Total</span>
@@ -4982,11 +4976,11 @@ function renderCalendar(acc) {
                                     <div class="space-y-2">
                                         <label class="flex items-center justify-between gap-2">
                                             <span class="text-slate-500">Trade 1</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block4080.leg1}" onblur="window.updateTradeLeg('${iso}','t1',1,this.value)" onclick="event.stopPropagation();this.focus();if(this.select){this.select();}" onfocus="event.stopPropagation();" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){this.blur();}">
+                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block4080.leg1}" onblur="window.updateTradeLeg('${iso}','t1',1,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
                                         </label>
                                         <label class="flex items-center justify-between gap-2">
                                             <span class="text-slate-500">Trade 2</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block4080.leg2}" onblur="window.updateTradeLeg('${iso}','t1',2,this.value)" onclick="event.stopPropagation();this.focus();if(this.select){this.select();}" onfocus="event.stopPropagation();" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){this.blur();}">
+                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block4080.leg2}" onblur="window.updateTradeLeg('${iso}','t1',2,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
                                         </label>
                                         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
                                             <span>Total</span>
@@ -4999,11 +4993,11 @@ function renderCalendar(acc) {
                                     <div class="space-y-2">
                                         <label class="flex items-center justify-between gap-2">
                                             <span class="text-slate-500">Trade 1</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${blockCT.leg1}" onblur="window.updateTradeLeg('${iso}','t2',1,this.value)" onclick="event.stopPropagation();this.focus();if(this.select){this.select();}" onfocus="event.stopPropagation();" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){this.blur();}">
+                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${blockCT.leg1}" onblur="window.updateTradeLeg('${iso}','t2',1,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
                                         </label>
                                         <label class="flex items-center justify-between gap-2">
                                             <span class="text-slate-500">Trade 2</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${blockCT.leg2}" onblur="window.updateTradeLeg('${iso}','t2',2,this.value)" onclick="event.stopPropagation();this.focus();if(this.select){this.select();}" onfocus="event.stopPropagation();" onmousedown="event.stopPropagation();" onkeydown="event.stopPropagation();if(event.key==='Enter'){this.blur();}">
+                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${blockCT.leg2}" onblur="window.updateTradeLeg('${iso}','t2',2,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
                                         </label>
                                         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
                                             <span>Total</span>
@@ -5933,7 +5927,50 @@ tr.bg-green-50 td {
                       <tr><td><b>Max Drawdown</b></td><td>${kpiMaxDD}</td></tr>
                     </table>
 
-                    </body></html>`;
+                    
+<script>
+(function(){
+  function unlockTradeInputs(){
+    try{
+      document.querySelectorAll('#calendar-body tr.day-details-row input[type="number"]').forEach(function(inp){
+        inp.disabled = false;
+        inp.readOnly = false;
+        inp.style.pointerEvents = 'auto';
+        inp.style.cursor = 'text';
+        inp.style.zIndex = '30';
+        inp.addEventListener('click', function(e){ e.stopPropagation(); }, {capture:true});
+        inp.addEventListener('mousedown', function(e){ e.stopPropagation(); }, {capture:true});
+      });
+    }catch(e){}
+  }
+
+  function afterUiUpdate(){
+    setTimeout(unlockTradeInputs, 0);
+    setTimeout(unlockTradeInputs, 80);
+    setTimeout(unlockTradeInputs, 250);
+  }
+
+  document.addEventListener('click', function(){
+    afterUiUpdate();
+  }, true);
+
+  window.addEventListener('load', function(){
+    afterUiUpdate();
+  });
+
+  if (typeof window.toggleDayDetails === 'function' && !window.__toggleWrappedTradeInputs) {
+    const original = window.toggleDayDetails;
+    window.toggleDayDetails = function(){
+      const result = original.apply(this, arguments);
+      afterUiUpdate();
+      return result;
+    };
+    window.__toggleWrappedTradeInputs = true;
+  }
+})();
+</script>
+
+</body></html>`;
                     w.document.open();
                     w.document.write(html);
                     w.document.close();
@@ -11035,5 +11072,48 @@ tr.bg-green-50 td {
   else boot();
 })();
 </script>
+
+<script>
+(function(){
+  function unlockTradeInputs(){
+    try{
+      document.querySelectorAll('#calendar-body tr.day-details-row input[type="number"]').forEach(function(inp){
+        inp.disabled = false;
+        inp.readOnly = false;
+        inp.style.pointerEvents = 'auto';
+        inp.style.cursor = 'text';
+        inp.style.zIndex = '30';
+        inp.addEventListener('click', function(e){ e.stopPropagation(); }, {capture:true});
+        inp.addEventListener('mousedown', function(e){ e.stopPropagation(); }, {capture:true});
+      });
+    }catch(e){}
+  }
+
+  function afterUiUpdate(){
+    setTimeout(unlockTradeInputs, 0);
+    setTimeout(unlockTradeInputs, 80);
+    setTimeout(unlockTradeInputs, 250);
+  }
+
+  document.addEventListener('click', function(){
+    afterUiUpdate();
+  }, true);
+
+  window.addEventListener('load', function(){
+    afterUiUpdate();
+  });
+
+  if (typeof window.toggleDayDetails === 'function' && !window.__toggleWrappedTradeInputs) {
+    const original = window.toggleDayDetails;
+    window.toggleDayDetails = function(){
+      const result = original.apply(this, arguments);
+      afterUiUpdate();
+      return result;
+    };
+    window.__toggleWrappedTradeInputs = true;
+  }
+})();
+</script>
+
 </body>
 </html>
