@@ -5569,32 +5569,83 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
 
                 function shareReportInternal() {
             const acc = getActive();
-            const res = (els.customResult?.textContent || '--').trim();
-
             const hasRange = !!(els.filterStart?.value && els.filterEnd?.value);
+            const start = els.filterStart?.value || '';
+            const end = els.filterEnd?.value || '';
+
             const period = hasRange
-                ? `(${formatDateShort(parseISODateLocal(els.filterStart.value))} - ${formatDateShort(parseISODateLocal(els.filterEnd.value))})`
+                ? `(${formatDateShort(parseISODateLocal(start))} - ${formatDateShort(parseISODateLocal(end))})`
                 : "(Geral)";
 
+            const res = (els.customResult?.textContent || '--').trim();
+            const win = (els.customWinrate?.textContent || '--').trim();
+            const best = (els.customBest?.textContent || '--').trim();
+            const worst = (els.customWorst?.textContent || '--').trim();
             const kpiTrades = (els.kpiTrades?.textContent || '--').trim();
             const kpiPF = (els.kpiPF?.textContent || '--').trim();
             const kpiMaxDD = (els.kpiMaxDD?.textContent || '--').trim();
+
+            let strategyText = '';
+            let riskText = '';
+            let conclusionText = '';
+
+            try{
+                const strat = _computeStrategyAnalytics(acc, start, end);
+                const strategies = [strat.t2550, strat.t4080, strat.ct];
+                const bestStrategy = strategies.slice().sort((a,b)=> b.total - a.total)[0];
+                const worstStrategy = strategies.slice().sort((a,b)=> a.total - b.total)[0];
+                const riskMaxLosing = (document.getElementById('risk-max-losing')?.textContent || '--').trim();
+                const riskExpectancyOverall = (document.getElementById('risk-expectancy-overall')?.textContent || '--').trim();
+
+                strategyText =
+`\n*Breakdown por Estratégia*
+• 25/50: ${formatCurrency(strat.t2550.total)} | WR ${Math.round((strat.t2550.winRate||0)*100)}% | Exp ${formatCurrency(strat.t2550.expectancy||0)}
+• 40/80: ${formatCurrency(strat.t4080.total)} | WR ${Math.round((strat.t4080.winRate||0)*100)}% | Exp ${formatCurrency(strat.t4080.expectancy||0)}
+• Condução Técnica: ${formatCurrency(strat.ct.total)} | WR ${Math.round((strat.ct.winRate||0)*100)}% | Exp ${formatCurrency(strat.ct.expectancy||0)}`;
+
+                riskText =
+`\n*Risco & Consistência*
+• Max Losing Streak: ${riskMaxLosing}
+• Profit Factor: ${kpiPF}
+• MaxDD: ${kpiMaxDD}
+• Expectancy Geral: ${riskExpectancyOverall}`;
+
+                let conclusion = [];
+                conclusion.push(`Melhor estratégia: ${bestStrategy?.label || '--'} (${formatCurrency(bestStrategy?.total || 0)})`);
+                conclusion.push(`Pior estratégia: ${worstStrategy?.label || '--'} (${formatCurrency(worstStrategy?.total || 0)})`);
+                if ((bestStrategy?.total || 0) > 0 && (worstStrategy?.total || 0) < 0) {
+                    conclusion.push('Houve edge seletivo, mas a perda concentrada em uma estratégia contaminou o resultado final.');
+                } else if ((bestStrategy?.total || 0) <= 0) {
+                    conclusion.push('Nenhuma estratégia entregou edge consistente no período.');
+                } else {
+                    conclusion.push('O período foi construtivo, com espaço para calibrar melhor a distribuição de risco.');
+                }
+
+                conclusionText =
+`\n*Leitura Executiva*
+• ${conclusion.join('\n• ')}`;
+            }catch(e){}
 
             const text =
 `*Performance Report - DF Strategic* 📊
 ${period} • ${(acc?.name || 'Conta')}
 
 *Resultado:* ${res}
-*Win Rate:* ${(els.customWinrate?.textContent || '--').trim()}
-*Melhor Dia:* ${(els.customBest?.textContent || '--').trim()}
-*Pior Dia:* ${(els.customWorst?.textContent || '--').trim()}
+*Win Rate:* ${win}
+*Melhor Dia:* ${best}
+*Pior Dia:* ${worst}
 
-*KPIs:* Trades ${kpiTrades} • PF ${kpiPF} • MaxDD ${kpiMaxDD}`;
+*KPIs Gerais*
+• Trades: ${kpiTrades}
+• Profit Factor: ${kpiPF}
+• MaxDD: ${kpiMaxDD}${strategyText}${riskText}${conclusionText}`;
 
             if (navigator.share) {
-                navigator.share({ title: 'Performance Report', text: text }).catch(console.error);
-            } else {
+                navigator.share({ title: 'Performance Report', text }).catch(console.error);
+            } else if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text).then(() => alert(translateString("Resumo copiado!")));
+            } else {
+                alert(text);
             }
         }
 
@@ -5610,12 +5661,11 @@ ${period} • ${(acc?.name || 'Conta')}
                 return;
             }
 
-            // Recalcula para garantir que grafico/metricas estejam atualizados
             try { filterReport(); } catch(e) {}
 
             const acc = getActive();
             const title = 'Analise por Periodo';
-            const rangeText = `${formatDateShort(parseISODateLocal(start))} - ${formatDateShort(parseISODateLocal(end))} • ${acc?.name || (CURRENT_LANG==='en'?'Account':'Conta')}`;
+            const rangeText = `${formatDateShort(parseISODateLocal(start))} - ${formatDateShort(parseISODateLocal(end))} • ${acc?.name || 'Conta'}`;
             const metricResult = (els.customResult?.textContent || '--').trim();
             const metricWin = (els.customWinrate?.textContent || '--').trim();
             const metricBest = (els.customBest?.textContent || '--').trim();
@@ -5629,6 +5679,15 @@ ${period} • ${(acc?.name || 'Conta')}
             const kpiDaysGR = (els.kpiDaysGR?.textContent || '--').trim();
             const kpiAvgDay = (els.kpiAvgDay?.textContent || '--').trim();
             const kpiMaxDD = (els.kpiMaxDD?.textContent || '--').trim();
+
+            const strat = _computeStrategyAnalytics(acc, start, end);
+            const strategies = [strat.t2550, strat.t4080, strat.ct];
+            const bestStrategy = strategies.slice().sort((a,b)=> b.total - a.total)[0];
+            const worstStrategy = strategies.slice().sort((a,b)=> a.total - b.total)[0];
+            const riskMaxLosing = (document.getElementById('risk-max-losing')?.textContent || '--').trim();
+            const riskMaxWinning = (document.getElementById('risk-max-winning')?.textContent || '--').trim();
+            const riskExpectancyOverall = (document.getElementById('risk-expectancy-overall')?.textContent || '--').trim();
+            const riskDaysBalance = (document.getElementById('risk-days-balance')?.textContent || '--').trim();
 
             const ensureJsPDF = () => new Promise((resolve, reject)=>{
                 try{
@@ -5657,62 +5716,51 @@ ${period} • ${(acc?.name || 'Conta')}
                 return `${a}_Analise_${r}`.slice(0,110) + '.pdf';
             };
 
-            // Gráfico no PDF: gera imagem OFFSCREEN usando o MESMO intervalo (evita discrepâncias)
             let chartDataUrl = null;
-            let chartPxW = 1200;
-            let chartPxH = 420;
+            const chartPxW = 1200;
+            const chartPxH = 420;
 
             const buildChartImageForRange = async () => {
                 try {
                     if (!window.Chart) return null;
-                    const acc = getActive();
                     let chartLabels = [];
                     let chartData = [];
                     let cumSum = 0;
 
-                    Object.keys(acc.data).sort().forEach(iso => {
-    if (iso >= start && iso <= end) {
-        const e = acc.data[iso];
-        const val = parseFloat(e.val) || 0;
-        const t1n = parseFloat(e.t1);
-        const t2n = parseFloat(e.t2);
-        const hasT1 = !isNaN(t1n) && t1n !== 0;
-        const hasT2 = !isNaN(t2n) && t2n !== 0;
-
-        let dayTotal = 0;
-        if (val !== 0) dayTotal = val;
-        else if (hasT1 || hasT2) dayTotal = (isNaN(t1n) ? 0 : t1n) + (isNaN(t2n) ? 0 : t2n);
-
-        if (!e.holiday && dayTotal !== 0) {
-            cumSum += dayTotal;
-            chartLabels.push(formatDateShort(parseISODateLocal(iso)));
-            chartData.push(cumSum);
-        }
-    }
-});
+                    Object.keys(acc.data || {}).sort().forEach(iso => {
+                        if (iso < start || iso > end) return;
+                        const e = acc.data[iso] || {};
+                        if (e.holiday) return;
+                        const dayTotal = Number(e.val || 0) || Number(e.t0 || 0) + Number(e.t1 || 0) + Number(e.t2 || 0);
+                        if (dayTotal !== 0) {
+                            cumSum += dayTotal;
+                            chartLabels.push(formatDateShort(parseISODateLocal(iso)));
+                            chartData.push(cumSum);
+                        }
+                    });
 
                     if (!chartLabels.length) return null;
+                    if (chartLabels.length === 1) {
+                        chartLabels.unshift('Início');
+                        chartData.unshift(0);
+                    }
 
                     const canvas = document.createElement('canvas');
                     canvas.width = chartPxW;
                     canvas.height = chartPxH;
                     const ctx = canvas.getContext('2d');
 
-                    const isDark = document.body.classList.contains('dark');
-                    const gridColor = isDark ? '#334155' : '#e5e7eb';
-                    const textColor = isDark ? '#94a3b8' : '#64748b';
-
                     const tmpChart = new Chart(ctx, {
                         type: 'line',
                         data: {
                             labels: chartLabels,
                             datasets: [{
-                                label: (CURRENT_LANG==='en' ? 'Cumulative Profit' : 'Lucro Acumulado'),
+                                label: 'Lucro Acumulado',
                                 data: chartData,
                                 borderColor: '#4f46e5',
                                 backgroundColor: 'rgba(79, 70, 229, 0.10)',
                                 borderWidth: 3,
-                                pointRadius: 4,
+                                pointRadius: chartData.length <= 2 ? 4 : 2,
                                 fill: true,
                                 tension: 0.35,
                                 cubicInterpolationMode: 'monotone'
@@ -5723,8 +5771,8 @@ ${period} • ${(acc?.name || 'Conta')}
                             animation: false,
                             plugins: { legend: { display: false } },
                             scales: {
-                                y: { grid: { color: gridColor }, ticks: { color: textColor } },
-                                x: { grid: { display: false }, ticks: { color: textColor } }
+                                y: { grid: { color: '#e5e7eb' }, ticks: { color: '#64748b' } },
+                                x: { grid: { display: false }, ticks: { color: '#64748b', maxRotation: 45, minRotation: 45 } }
                             }
                         }
                     });
@@ -5734,229 +5782,205 @@ ${period} • ${(acc?.name || 'Conta')}
                     const url = canvas.toDataURL('image/png', 1.0);
                     tmpChart.destroy();
                     return (url && url.startsWith('data:image/png')) ? url : null;
-                } catch (e) {
-                    return null;
-                }
-            };
-
-            // Fallback: captura do canvas visível (se necessário)
-            const captureVisibleChartDataUrl = async () => {
-                try {
-                    const canvas = document.getElementById('equityChart');
-                    if (!canvas) return null;
-
-                    // garante um "frame" antes de capturar
-                    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
-                    const url = canvas.toDataURL('image/png', 1.0);
-                    return (url && url.startsWith('data:image/png')) ? url : null;
                 } catch (e) { return null; }
             };
 
+            const buildConclusion = () => {
+                let lines = [];
+                lines.push(`Melhor estratégia: ${bestStrategy?.label || '--'} (${formatCurrency(bestStrategy?.total || 0)})`);
+                lines.push(`Estratégia mais fraca: ${worstStrategy?.label || '--'} (${formatCurrency(worstStrategy?.total || 0)})`);
+                if ((bestStrategy?.total || 0) > 0 && (worstStrategy?.total || 0) < 0) {
+                    lines.push('O período mostra edge seletivo: houve geração de alpha em blocos específicos, mas a perda concentrada contaminou o resultado final.');
+                } else if ((bestStrategy?.total || 0) <= 0) {
+                    lines.push('Nenhuma estratégia entregou edge consistente no período. A prioridade é reduzir frequência e revisar critérios de entrada.');
+                } else {
+                    lines.push('O período manteve viés construtivo, mas a distribuição de risco entre estratégias ainda pode ser melhor calibrada.');
+                }
+                if ((worstStrategy?.label || '').includes('Condução')) {
+                    lines.push('Condução Técnica foi o principal foco de deterioração. Vale revisar contexto, timing e critérios de permanência.');
+                }
+                return lines;
+            };
+
             ensureJsPDF().then(async (JsPDF)=>{
-                if(!JsPDF) throw new Error('jsPDF indisponivel');
                 chartDataUrl = await buildChartImageForRange();
-                if(!chartDataUrl) chartDataUrl = await captureVisibleChartDataUrl();
                 const doc = new JsPDF({ unit:'pt', format:'letter' });
                 const pageW = 612;
                 const pageH = 792;
-                const margin = 40;
+                const margin = 34;
                 const contentW = pageW - margin*2;
-                let y = 54;
+                let y = 42;
 
-                // Header
+                const addPage = () => {
+                    doc.addPage();
+                    y = 42;
+                };
+
+                const drawSectionTitle = (txt) => {
+                    doc.setFont('helvetica','bold');
+                    doc.setFontSize(11);
+                    doc.setTextColor(15, 23, 42);
+                    doc.text(txt, margin, y);
+                    y += 12;
+                };
+
+                const drawCard = (x, y0, w, h, titleTxt, valueTxt, color=[17,24,39]) => {
+                    doc.setDrawColor(226,232,240);
+                    doc.setFillColor(248,250,252);
+                    doc.roundedRect(x, y0, w, h, 8, 8, 'FD');
+                    doc.setFont('helvetica','normal');
+                    doc.setFontSize(9);
+                    doc.setTextColor(100,116,139);
+                    doc.text(titleTxt, x+12, y0+18);
+                    doc.setFont('helvetica','bold');
+                    doc.setFontSize(14);
+                    doc.setTextColor(color[0], color[1], color[2]);
+                    doc.text(valueTxt, x+12, y0+38);
+                };
+
+                const drawSmallMetric = (x, y0, labelTxt, valueTxt, color=[17,24,39]) => {
+                    doc.setFont('helvetica','normal');
+                    doc.setFontSize(8.5);
+                    doc.setTextColor(100,116,139);
+                    doc.text(labelTxt, x, y0);
+                    doc.setFont('helvetica','bold');
+                    doc.setFontSize(10);
+                    doc.setTextColor(color[0], color[1], color[2]);
+                    doc.text(valueTxt, x, y0+14);
+                };
+
+                const drawStrategyTable = (rows) => {
+                    const tableX = margin;
+                    const tableW = contentW;
+                    const rowH = 22;
+                    const cols = [
+                        { key:'label', x: tableX + 10, align:'left',  title:'Estratégia' },
+                        { key:'total', x: tableX + 210, align:'right', title:'Resultado' },
+                        { key:'trades', x: tableX + 300, align:'right', title:'Trades' },
+                        { key:'winRate', x: tableX + 382, align:'right', title:'Win%' },
+                        { key:'payoff', x: tableX + 455, align:'right', title:'Payoff' },
+                        { key:'expectancy', x: tableX + 530, align:'right', title:'Expect.' }
+                    ];
+
+                    doc.setDrawColor(226,232,240);
+                    doc.setFillColor(248,250,252);
+                    doc.roundedRect(tableX, y, tableW, rowH * (rows.length + 1) + 8, 8, 8, 'FD');
+
+                    let yy = y + 16;
+                    doc.setFont('helvetica','bold');
+                    doc.setFontSize(8.5);
+                    doc.setTextColor(100,116,139);
+                    cols.forEach(c => doc.text(c.title, c.x, yy, { align:c.align }));
+                    yy += 12;
+                    doc.setLineWidth(0.4);
+                    doc.setDrawColor(226,232,240);
+                    doc.line(tableX + 8, yy, tableX + tableW - 8, yy);
+
+                    yy += 16;
+                    rows.forEach((r, idx) => {
+                        doc.setFont('helvetica','normal');
+                        doc.setFontSize(9);
+                        doc.setTextColor(15,23,42);
+                        doc.text(r.label, cols[0].x, yy, { align:'left' });
+
+                        const totalColor = r.total >= 0 ? [5,150,105] : [220,38,38];
+                        doc.setFont('helvetica','bold');
+                        doc.setTextColor(totalColor[0], totalColor[1], totalColor[2]);
+                        doc.text(formatCurrency(r.total), cols[1].x, yy, { align:'right' });
+                        doc.setTextColor(15,23,42);
+                        doc.text(String(r.trades), cols[2].x, yy, { align:'right' });
+                        doc.text(`${Math.round((r.winRate||0)*100)}%`, cols[3].x, yy, { align:'right' });
+                        doc.text((r.payoff===Infinity ? '∞' : Number(r.payoff||0).toFixed(2)), cols[4].x, yy, { align:'right' });
+                        doc.text(formatCurrency(r.expectancy || 0), cols[5].x, yy, { align:'right' });
+
+                        if (idx < rows.length - 1) {
+                            doc.setDrawColor(241,245,249);
+                            doc.line(tableX + 8, yy + 8, tableX + tableW - 8, yy + 8);
+                        }
+                        yy += 22;
+                    });
+                    y = yy + 6;
+                };
+
+                drawSectionTitle('Análise por Período');
                 doc.setFont('helvetica','bold');
-                doc.setFontSize(16);
-                doc.text('Analise por Periodo', margin, y);
+                doc.setFontSize(18);
+                doc.setTextColor(15,23,42);
+                doc.text(title, margin, y);
                 y += 18;
-
                 doc.setFont('helvetica','normal');
                 doc.setFontSize(10);
+                doc.setTextColor(100,116,139);
                 doc.text(rangeText, margin, y);
                 y += 18;
 
-                // Chart
-                if(chartDataUrl){
-                    try{
-                        // calcula proporcao
-                        const pxW = chartPxW || 800;
-                        const pxH = chartPxH || 300;
-                        let imgW = contentW;
-                        let imgH = imgW * (pxH/pxW);
-                        const maxH = 260;
-                        if(imgH > maxH){
-                            imgH = maxH;
-                            imgW = imgH * (pxW/pxH);
-                        }
-                        const x = margin + (contentW - imgW)/2;
-                        doc.addImage(chartDataUrl, 'PNG', x, y, imgW, imgH);
-                        y += imgH + 18;
-                    }catch(e){
-                        // ignora se nao conseguir inserir
-                        y += 10;
-                    }
-                } else {
-                    doc.setFont('helvetica','italic');
-                    doc.setFontSize(9);
-                    doc.text('Grafico indisponivel para exportacao (tente novamente).', margin, y);
-                    y += 18;
+                if (chartDataUrl) {
+                    const imgW = contentW;
+                    const imgH = Math.min(190, imgW * (420/1200));
+                    doc.addImage(chartDataUrl, 'PNG', margin, y, imgW, imgH);
+                    y += imgH + 18;
                 }
 
-                // Metrics box
-                const boxX = margin;
-                const boxW = contentW;
-                const boxH = 350;
-                if(y + boxH > pageH - margin) y = pageH - margin - boxH;
+                const cardGap = 12;
+                const cardW = (contentW - cardGap) / 2;
+                drawCard(margin, y, cardW, 52, 'Resultado do Período', metricResult, metricResult.trim().startsWith('-') ? [220,38,38] : [5,150,105]);
+                drawCard(margin + cardW + cardGap, y, cardW, 52, 'Taxa de Acerto', metricWin, [79,70,229]);
+                y += 66;
 
-                doc.setDrawColor(210);
-                doc.setFillColor(248, 250, 252);
-                doc.roundedRect(boxX, y, boxW, boxH, 8, 8, 'FD');
+                drawCard(margin, y, cardW, 52, 'Melhor Dia', metricBest, [5,150,105]);
+                drawCard(margin + cardW + cardGap, y, cardW, 52, 'Pior Dia', metricWorst, [220,38,38]);
+                y += 74;
 
-                const leftX = boxX + 16;
-                const rightX = boxX + boxW/2 + 8;
-                let yy = y + 28;
+                drawSectionTitle('KPIs Gerais');
+                const col1 = margin + 8;
+                const col2 = margin + contentW/2 + 8;
+                drawSmallMetric(col1, y, 'Trades (W/L)', kpiTrades);
+                drawSmallMetric(col1, y+30, 'Avg Trade', kpiAvgTrade);
+                drawSmallMetric(col1, y+60, 'Avg Win / Avg Loss', kpiAvgWinLoss);
+                drawSmallMetric(col1, y+90, 'Profit Factor', kpiPF);
 
-                const label = (txt, x, yPos)=>{
-                    doc.setFont('helvetica','normal');
-                    doc.setFontSize(10);
-                    doc.setTextColor(100);
-                    doc.text(txt, x, yPos);
-                };
-                const value = (txt, x, yPos)=>{
-                    doc.setFont('helvetica','bold');
-                    doc.setFontSize(12);
-                    doc.setTextColor(20);
-                    doc.text(txt, x, yPos);
-                };
+                drawSmallMetric(col2, y, 'Dias operados', kpiDays);
+                drawSmallMetric(col2, y+30, 'Dias verdes / vermelhos', kpiDaysGR);
+                drawSmallMetric(col2, y+60, 'Avg por dia', kpiAvgDay);
+                drawSmallMetric(col2, y+90, 'Max Drawdown', kpiMaxDD, [220,38,38]);
+                y += 132;
 
-                label('Resultado do Periodo', leftX, yy);
-                value(metricResult, leftX, yy + 16);
+                drawSectionTitle('Breakdown por Estratégia');
+                drawStrategyTable(strategies);
 
-                label('Taxa de Acerto (Trades)', rightX, yy);
-                value(metricWin, rightX, yy + 16);
+                drawSectionTitle('Risco & Consistência');
+                drawCard(margin, y, cardW, 62, 'Max Losing Streak', riskMaxLosing, [220,38,38]);
+                drawCard(margin + cardW + cardGap, y, cardW, 62, 'Max Winning Streak', riskMaxWinning, [5,150,105]);
+                y += 76;
+                drawCard(margin, y, cardW, 62, 'Expectancy Geral', riskExpectancyOverall, [15,23,42]);
+                drawCard(margin + cardW + cardGap, y, cardW, 62, 'Dias Verdes/Vermelhos', riskDaysBalance, [15,23,42]);
+                y += 86;
 
-                yy += 52;
+                drawSectionTitle('Leitura Executiva');
+                const noteLines = buildConclusion();
+                doc.setDrawColor(226,232,240);
+                doc.setFillColor(248,250,252);
+                doc.roundedRect(margin, y, contentW, 74, 8, 8, 'FD');
+                doc.setFont('helvetica','normal');
+                doc.setFontSize(9.5);
+                doc.setTextColor(51,65,85);
+                let ny = y + 18;
+                noteLines.forEach(line => {
+                    const lines = doc.splitTextToSize('• ' + line, contentW - 20);
+                    lines.forEach(part => {
+                        doc.text(part, margin + 10, ny);
+                        ny += 12;
+                    });
+                });
 
-                label('Melhor Dia', leftX, yy);
-                value(metricBest, leftX, yy + 16);
-
-                label('Pior Dia', rightX, yy);
-                value(metricWorst, rightX, yy + 16);
-
-                // KPIs
-                yy += 44;
-                doc.setFont('helvetica','bold');
-                doc.setFontSize(10);
-                doc.setTextColor(55);
-                doc.text('KPIs do Periodo', leftX, yy);
-                yy += 16;
-
-                const kLabel = (txt, x, yPos)=>{ doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(110); doc.text(txt, x, yPos); };
-                const kVal   = (txt, x, yPos)=>{ doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(25); doc.text(txt, x, yPos); };
-
-                // Left column (Trades)
-                kLabel('Trades (W/L)', leftX, yy);
-                kVal(kpiTrades, leftX, yy + 14);
-
-                kLabel('Avg Trade', leftX, yy + 32);
-                kVal(kpiAvgTrade, leftX, yy + 46);
-
-                kLabel('Avg Win / Avg Loss', leftX, yy + 64);
-                kVal(kpiAvgWinLoss, leftX, yy + 78);
-
-                // Right column (Dias)
-                kLabel('Dias operados', rightX, yy);
-                kVal(kpiDays, rightX, yy + 14);
-
-                kLabel('Dias verdes / vermelhos', rightX, yy + 32);
-                kVal(kpiDaysGR, rightX, yy + 46);
-
-                kLabel('Avg por dia', rightX, yy + 64);
-                kVal(kpiAvgDay, rightX, yy + 78);
-
-                // Bottom row
-                kLabel('Profit Factor', leftX, yy + 96);
-                kVal(kpiPF, leftX, yy + 110);
-
-                kLabel('Payoff Ratio', rightX, yy + 96);
-                kVal(kpiExp, rightX, yy + 110);
-
-                kLabel('Max Drawdown', leftX, yy + 128);
-                doc.setTextColor(200, 30, 30);
-                doc.setFont('helvetica','bold');
-                doc.setFontSize(10);
-                doc.text(kpiMaxDD, leftX, yy + 142);
-                doc.setTextColor(25);
-
-
-                // Footer
                 doc.setFont('helvetica','normal');
                 doc.setFontSize(8);
-                doc.setTextColor(140);
-                doc.text('Resumo gerado pelo DF Strategic • Sem dados ao vivo • Apenas valores do app', margin, pageH - 28);
-
+                doc.setTextColor(148,163,184);
+                doc.text('Relatório analítico DF Strategic • métricas do período filtrado • versão compacta profissional', margin, pageH - 22);
                 doc.save(buildFileName());
             }).catch((err)=>{
-                console.warn('Falha ao gerar PDF resumo:', err);
-                // Fallback: abrir pagina simples para imprimir (pode depender do browser)
-                try{
-                    const w = window.open('', '_blank');
-                    if(!w) throw new Error('Popup bloqueado');
-                    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Analise por Periodo</title>
-                    <style>body{font-family:Arial,Helvetica,sans-serif;padding:24px}h1{margin:0 0 6px}p{margin:0 0 14px;color:#555}img{max-width:100%;height:auto;border:1px solid #ddd;border-radius:10px}table{margin-top:14px;width:100%;border-collapse:collapse}td{padding:8px;border-top:1px solid #eee}td:first-child{color:#666}
-/* Corrige faixa verde COMPLETA (linha inteira) */
-tr.bg-green-50 {
-  background-color: #eefaf5 !important;
-}
-
-tr.bg-green-50 > td {
-  background-color: #eefaf5 !important;
-}
-
-/* Remove qualquer fundo branco interno */
-tr.bg-green-50 td div {
-  background: transparent !important;
-}
-
-/* Garante que a borda lateral não quebre o bloco */
-tr.bg-green-50 > td:first-child {
-  border-left: 3px solid #22c55e;
-}
-
-/* Remove possíveis gaps */
-tr.bg-green-50 td {
-  box-shadow: none !important;
-  border-bottom: none !important;
-}
-
-</style></head>
-                    <body><h1>Analise por Periodo</h1><p>${rangeText}</p>
-                    ${chartDataUrl ? ("<img src=\""+chartDataUrl+"\"/>") : ""}
-                    <table>
-                      <tr><td><b>Resultado do Periodo</b></td><td>${metricResult}</td></tr>
-                      <tr><td><b>Taxa de Acerto</b></td><td>${metricWin}</td></tr>
-                      <tr><td><b>Melhor Dia</b></td><td>${metricBest}</td></tr>
-                      <tr><td><b>Pior Dia</b></td><td>${metricWorst}</td></tr>
-                      <tr><td colspan="2" style="padding-top:10px"><b>KPIs do Período</b></td></tr>
-                      <tr><td><b>Trades (W/L)</b></td><td>${kpiTrades}</td></tr>
-                      <tr><td><b>Avg Trade</b></td><td>${kpiAvgTrade}</td></tr>
-                      <tr><td><b>Avg Win / Avg Loss</b></td><td>${kpiAvgWinLoss}</td></tr>
-                      <tr><td><b>Profit Factor</b></td><td>${kpiPF}</td></tr>
-                      <tr><td><b>Payoff Ratio</b></td><td>${kpiExp}</td></tr>
-                      <tr><td><b>Dias operados</b></td><td>${kpiDays}</td></tr>
-                      <tr><td><b>Dias verdes / vermelhos</b></td><td>${kpiDaysGR}</td></tr>
-                      <tr><td><b>Avg por dia</b></td><td>${kpiAvgDay}</td></tr>
-                      <tr><td><b>Max Drawdown</b></td><td>${kpiMaxDD}</td></tr>
-                    </table>
-
-                    </body></html>`;
-                    w.document.open();
-                    w.document.write(html);
-                    w.document.close();
-                    try{ setTimeout(()=>{ try{ w.focus(); w.print(); }catch(_){} }, 350); }catch(_){}
-                }catch(e2){
-                    alert(translateString('Nao foi possivel gerar o PDF (verifique conexao/billing).'));
-                }
+                console.warn('Falha ao gerar PDF analítico:', err);
+                alert('Falha ao gerar o PDF analítico. Tente novamente.');
             });
         }
 
