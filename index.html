@@ -1048,7 +1048,7 @@ tr.bg-green-50 td {
                 </div>
 
                 <div class="text-[11px] text-slate-500 dark:text-slate-400">
-                    * “Days Traded” = business days with any record (Trade 1, Trade 2, or Total), excluding holidays marked in the app.
+                    * “Days Traded” = business days with any record (Trade 1, Trade 2, Trade 3, or Total), excluding holidays marked in the app.
                 </div>
             </div>
         </div>
@@ -2201,7 +2201,7 @@ async function callOpenAI(question){
             const instructions = [
                 'Você é um assistente dentro de um aplicativo de performance (trading) baseado em regras da Apex Trader Funding.',
                 'Responda no mesmo idioma da pergunta (português ou inglês).',
-                'Você deve ajudar o usuário a entender e analisar os números e informações armazenadas no aplicativo (trades, ciclos, médias, filtros, relatórios, campos de Trade 1/Trade 2, etc.).',
+                'Você deve ajudar o usuário a entender e analisar os números e informações armazenadas no aplicativo (trades, ciclos, médias, filtros, relatórios, campos de Trade 1/Trade 2/Trade 3, etc.).',
                 'Use SOMENTE o contexto JSON fornecido (monthEntries, recentEntries, analysisRangeEntries, stats, questionRangeEntries). Não invente dados.',
                 'Se o usuário pedir um relatório por período, priorize o intervalo informado em analysisFilter/start-end e/ou analysisRangeSummary. Se o usuário mencionar um intervalo na pergunta, use questionRangeSummary/questionRangeEntries.',
                 'Você não tem acesso a preços ao vivo. Se pedirem cotação atual, explique essa limitação e sugira consultar a corretora.',
@@ -4011,10 +4011,13 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const cleanVal = (rawVal === '' || rawVal === null || rawVal === undefined) ? '' : (parseFloat(String(rawVal).replace(',', '.')) || 0);
             entry[metaKey][`leg${legIndex}`] = cleanVal;
 
-            const hasExplicitLegs = Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg1') || Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg2');
+            const hasExplicitLegs = Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg1')
+                || Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg2')
+                || Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg3');
             const leg1 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg1) || 0) : (parseFloat(entry[legKey]) || 0);
             const leg2 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg2) || 0) : 0;
-            const subtotal = leg1 + leg2;
+            const leg3 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg3) || 0) : 0;
+            const subtotal = leg1 + leg2 + leg3;
 
             entry[legKey] = subtotal === 0 ? '' : subtotal;
 
@@ -4027,25 +4030,64 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             scheduleSaveToCloud();
         };
 
+        window.updateTradeBreakout = (iso, legKey, legIndex, checked) => {
+            const acc = getActive();
+            if (!acc) return;
+            if (!acc.data) acc.data = {};
+            if (!acc.data[iso]) acc.data[iso] = {};
+
+            const entry = acc.data[iso];
+            const metaKey = `${legKey}meta`;
+            if (!entry[metaKey]) entry[metaKey] = {};
+            entry[metaKey][`breakout${legIndex}`] = !!checked;
+
+            renderDashboard();
+            scheduleSaveToCloud();
+        };
+
         function getTradeLegValues(entry, legKey){
             const metaKey = `${legKey}meta`;
             const meta = entry[metaKey] || {};
-            const hasExplicitLegs = Object.prototype.hasOwnProperty.call(meta, 'leg1') || Object.prototype.hasOwnProperty.call(meta, 'leg2');
+            const hasExplicitLegs = Object.prototype.hasOwnProperty.call(meta, 'leg1')
+                || Object.prototype.hasOwnProperty.call(meta, 'leg2')
+                || Object.prototype.hasOwnProperty.call(meta, 'leg3');
+
+            const breakout1 = !!meta.breakout1;
+            const breakout2 = !!meta.breakout2;
+            const breakout3 = !!meta.breakout3;
+
             if (hasExplicitLegs) {
                 const v1 = (meta.leg1 === '' || meta.leg1 === null || meta.leg1 === undefined) ? '' : meta.leg1;
                 const v2 = (meta.leg2 === '' || meta.leg2 === null || meta.leg2 === undefined) ? '' : meta.leg2;
+                const v3 = (meta.leg3 === '' || meta.leg3 === null || meta.leg3 === undefined) ? '' : meta.leg3;
                 return {
                     leg1: v1,
                     leg2: v2,
-                    subtotal: (parseFloat(v1) || 0) + (parseFloat(v2) || 0)
+                    leg3: v3,
+                    breakout1,
+                    breakout2,
+                    breakout3,
+                    subtotal: (parseFloat(v1) || 0) + (parseFloat(v2) || 0) + (parseFloat(v3) || 0)
                 };
             }
             const legacy = (entry[legKey] === '' || entry[legKey] === null || entry[legKey] === undefined) ? '' : entry[legKey];
             return {
                 leg1: legacy,
                 leg2: '',
+                leg3: '',
+                breakout1,
+                breakout2,
+                breakout3,
                 subtotal: parseFloat(legacy) || 0
             };
+        }
+
+        function formatTradeLegDisplay(legs, legIndex){
+            const rawVal = legs?.[`leg${legIndex}`];
+            const base = (rawVal === '' || rawVal === null || rawVal === undefined)
+                ? '--'
+                : formatCurrency(Number(rawVal || 0));
+            return `${base}${legs?.[`breakout${legIndex}`] ? ' ✅' : ''}`;
         }
 
 
@@ -4069,7 +4111,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         };
 
 
-        // Abrir/fechar detalhes do Trade 1/Trade 2 (por dia) — somente no clique
+        // Abrir/fechar detalhes do Trade 1/Trade 2/Trade 3 (por dia) — somente no clique
         window.toggleTradeDetails = (iso, which) => {
             const acc = getActive();
             if (!store.tradeDetailsOpen) store.tradeDetailsOpen = {};
@@ -4458,7 +4500,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const blocks = _strategyBlocksForDay(e || {});
             const out = [];
             Object.entries(blocks).forEach(([key, block]) => {
-                const legVals = [block.legs.leg1, block.legs.leg2]
+                const legVals = [block.legs.leg1, block.legs.leg2, block.legs.leg3]
                     .map(v => (v === '' || v === null || v === undefined) ? null : Number(v))
                     .filter(v => v !== null && !isNaN(v) && v !== 0);
                 legVals.forEach((v, idx) => out.push({ strategy:key, tradeIndex: idx + 1, value:v }));
@@ -4525,7 +4567,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 Object.entries(blocks).forEach(([key, block]) => {
                     const s = strategies[key];
                     const subtotal = Number(block.legs.subtotal || 0);
-                    const legs = [block.legs.leg1, block.legs.leg2]
+                    const legs = [block.legs.leg1, block.legs.leg2, block.legs.leg3]
                         .map(v => (v === '' || v === null || v === undefined) ? null : Number(v))
                         .filter(v => v !== null && !isNaN(v) && v !== 0);
 
@@ -4984,6 +5026,20 @@ function renderCalendar(acc) {
                 const block2550 = getTradeLegValues(entry, 't0');
                 const block4080 = getTradeLegValues(entry, 't1');
                 const blockCT = getTradeLegValues(entry, 't2');
+                const hasBlockTrades = (block) => [block.leg1, block.leg2, block.leg3].some(v => v !== '' && v !== null && v !== undefined);
+                const breakoutLabel = CURRENT_LANG === 'en' ? 'Breakout' : 'Romp.';
+                const renderTradeEditorRows = (block, strategyKey) => [1, 2, 3].map((idx) => `
+                                        <label class="flex items-center justify-between gap-2">
+                                            <span class="text-slate-500">Trade ${idx}</span>
+                                            <div class="flex items-center gap-3">
+                                                <label class="inline-flex items-center gap-1 text-[11px] text-slate-500 select-none cursor-pointer">
+                                                    <input type="checkbox" class="rounded border-slate-300 dark:border-slate-600" ${block[`breakout${idx}`] ? 'checked' : ''} onchange="window.updateTradeBreakout('${iso}','${strategyKey}',${idx},this.checked)">
+                                                    <span>${breakoutLabel}</span>
+                                                </label>
+                                                <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block[`leg${idx}`] ?? ''}" onblur="window.updateTradeLeg('${iso}','${strategyKey}',${idx},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
+                                            </div>
+                                        </label>
+                                    `).join('');
                 const displayVal = (parseFloat(entry.val) || 0) || (block2550.subtotal + block4080.subtotal + blockCT.subtotal);
 
                 let colorClass = 'val-zero';
@@ -5004,10 +5060,10 @@ function renderCalendar(acc) {
                         </button>
                         <span>${dayLabel}</span>
                     </td>
-                    <td class="px-2 py-2 text-center w-28"><span class="font-semibold ${block2550.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${block2550.leg1!=='' || block2550.leg2!=='' ? formatCurrency(block2550.subtotal) : '--'}</span></td>
-                    <td class="px-2 py-2 text-center w-28"><span class="font-semibold ${block4080.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${block4080.leg1!=='' || block4080.leg2!=='' ? formatCurrency(block4080.subtotal) : '--'}</span></td>
-                    <td class="px-2 py-2 text-center w-28"><span class="font-semibold ${blockCT.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${blockCT.leg1!=='' || blockCT.leg2!=='' ? formatCurrency(blockCT.subtotal) : '--'}</span></td>
-                    <td class="px-4 py-2 text-right"><span class="font-bold text-sm ${colorClass}">${(block2550.leg1!=='' || block2550.leg2!=='' || block4080.leg1!=='' || block4080.leg2!=='' || blockCT.leg1!=='' || blockCT.leg2!=='' || displayVal !== 0) ? formatCurrency(displayVal) : '--'}</span></td>
+                    <td class="px-2 py-2 text-center w-28"><span class="font-semibold ${block2550.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${hasBlockTrades(block2550) ? formatCurrency(block2550.subtotal) : '--'}</span></td>
+                    <td class="px-2 py-2 text-center w-28"><span class="font-semibold ${block4080.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${hasBlockTrades(block4080) ? formatCurrency(block4080.subtotal) : '--'}</span></td>
+                    <td class="px-2 py-2 text-center w-28"><span class="font-semibold ${blockCT.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${hasBlockTrades(blockCT) ? formatCurrency(blockCT.subtotal) : '--'}</span></td>
+                    <td class="px-4 py-2 text-right"><span class="font-bold text-sm ${colorClass}">${(hasBlockTrades(block2550) || hasBlockTrades(block4080) || hasBlockTrades(blockCT) || displayVal !== 0) ? formatCurrency(displayVal) : '--'}</span></td>
                     <td class="px-4 py-2 text-center w-16">
                         <button onclick="openNoteModal('${iso}', false)" class="p-1.5 rounded-lg border transition ${noteBtnClass}" title="Editar Nota">
                             <i data-lucide="${noteIcon}" class="w-4 h-4"></i>
@@ -5027,14 +5083,7 @@ function renderCalendar(acc) {
                                 <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
                                     <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">25/50</div>
                                     <div class="space-y-2">
-                                        <label class="flex items-center justify-between gap-2">
-                                            <span class="text-slate-500">Trade 1</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block2550.leg1}" onblur="window.updateTradeLeg('${iso}','t0',1,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
-                                        </label>
-                                        <label class="flex items-center justify-between gap-2">
-                                            <span class="text-slate-500">Trade 2</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block2550.leg2}" onblur="window.updateTradeLeg('${iso}','t0',2,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
-                                        </label>
+                                        ${renderTradeEditorRows(block2550, 't0')}
                                         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
                                             <span>Total</span>
                                             <span class="${block2550.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block2550.subtotal)}</span>
@@ -5044,14 +5093,7 @@ function renderCalendar(acc) {
                                 <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
                                     <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">40/80</div>
                                     <div class="space-y-2">
-                                        <label class="flex items-center justify-between gap-2">
-                                            <span class="text-slate-500">Trade 1</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block4080.leg1}" onblur="window.updateTradeLeg('${iso}','t1',1,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
-                                        </label>
-                                        <label class="flex items-center justify-between gap-2">
-                                            <span class="text-slate-500">Trade 2</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block4080.leg2}" onblur="window.updateTradeLeg('${iso}','t1',2,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
-                                        </label>
+                                        ${renderTradeEditorRows(block4080, 't1')}
                                         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
                                             <span>Total</span>
                                             <span class="${block4080.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block4080.subtotal)}</span>
@@ -5061,14 +5103,7 @@ function renderCalendar(acc) {
                                 <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
                                     <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">Condução Técnica</div>
                                     <div class="space-y-2">
-                                        <label class="flex items-center justify-between gap-2">
-                                            <span class="text-slate-500">Trade 1</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${blockCT.leg1}" onblur="window.updateTradeLeg('${iso}','t2',1,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
-                                        </label>
-                                        <label class="flex items-center justify-between gap-2">
-                                            <span class="text-slate-500">Trade 2</span>
-                                            <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${blockCT.leg2}" onblur="window.updateTradeLeg('${iso}','t2',2,this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
-                                        </label>
+                                        ${renderTradeEditorRows(blockCT, 't2')}
                                         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
                                             <span>Total</span>
                                             <span class="${blockCT.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(blockCT.subtotal)}</span>
@@ -5642,12 +5677,13 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             let detailsText = '';
             if(singleDayMode && periodSummary.byDay.length === 1){
                 const day = periodSummary.byDay[0];
-                const fmtLeg = (v) => (v === '' || v === null || v === undefined) ? '--' : formatCurrency(Number(v || 0));
+                const fmtLeg = (legs, idx) => formatTradeLegDisplay(legs, idx);
                 detailsText =
-`\n*Operações do Dia* (${formatDateShort(parseISODateLocal(day.iso))})
-• 25/50 → T1 ${fmtLeg(day.blocks.t2550.legs.leg1)} | T2 ${fmtLeg(day.blocks.t2550.legs.leg2)} | Total ${formatCurrency(day.blocks.t2550.legs.subtotal)}
-• 40/80 → T1 ${fmtLeg(day.blocks.t4080.legs.leg1)} | T2 ${fmtLeg(day.blocks.t4080.legs.leg2)} | Total ${formatCurrency(day.blocks.t4080.legs.subtotal)}
-• Condução Técnica → T1 ${fmtLeg(day.blocks.ct.legs.leg1)} | T2 ${fmtLeg(day.blocks.ct.legs.leg2)} | Total ${formatCurrency(day.blocks.ct.legs.subtotal)}`;
+`
+*Operações do Dia* (${formatDateShort(parseISODateLocal(day.iso))})
+• 25/50 → T1 ${fmtLeg(day.blocks.t2550.legs, 1)} | T2 ${fmtLeg(day.blocks.t2550.legs, 2)} | T3 ${fmtLeg(day.blocks.t2550.legs, 3)} | Total ${formatCurrency(day.blocks.t2550.legs.subtotal)}
+• 40/80 → T1 ${fmtLeg(day.blocks.t4080.legs, 1)} | T2 ${fmtLeg(day.blocks.t4080.legs, 2)} | T3 ${fmtLeg(day.blocks.t4080.legs, 3)} | Total ${formatCurrency(day.blocks.t4080.legs.subtotal)}
+• Condução Técnica → T1 ${fmtLeg(day.blocks.ct.legs, 1)} | T2 ${fmtLeg(day.blocks.ct.legs, 2)} | T3 ${fmtLeg(day.blocks.ct.legs, 3)} | Total ${formatCurrency(day.blocks.ct.legs.subtotal)}`;
             }
 
             const strategyText =
@@ -7129,7 +7165,7 @@ async function saveToCloudNow() {
   "Pré-visualizar automaticamente": "Auto-preview",
   "“Cancelar” marca o saque como cancelado (não apaga). “Apagar”/“Limpar” só aparece para Super Admin.": "“Cancel” marks the withdrawal as canceled (does not delete). “Delete”/“Clear” shows only for Super Admin.",
   "\"Cancelar\" marca o saque como cancelado (não apaga). \"Apagar\"/\"Limpar\" só aparece para Super Admin.": "\"Cancel\" marks the withdrawal as canceled (does not delete). \"Delete\"/\"Clear\" shows only for Super Admin.",
-  "* “Days Traded” = business days with any record (Trade 1, Trade 2, or Total), excluding holidays marked in the app.": "* “Days Traded” = business days with any entry (Trade 1, Trade 2, or Total), excluding holidays marked in the app.",
+  "* “Days Traded” = business days with any record (Trade 1, Trade 2, Trade 3, or Total), excluding holidays marked in the app.": "* “Days Traded” = business days with any entry (Trade 1, Trade 2, Trade 3, or Total), excluding holidays marked in the app.",
   "Esta área mostra e permite gerenciar informações (ex.: saques/histórico/ações) somente da conta selecionada. Isso evita misturar transações de todas as accounts em uma lista única, mantendo o admin limpo e fácil de auditar.": "This area shows and lets you manage info (e.g., withdrawals/history/actions) only for the selected account. This avoids mixing all accounts’ transactions in one list, keeping the admin clean and easy to audit.",
   "Formato: Performance<X>.csv. O app identifica a conta pelo sufixo X (tudo após 'Performance' e antes de '.csv'). Usa a coluna 'pnl' por trade e agrupa por dia: T1 = primeiro trade do dia; T2 = soma do 2º trade em diante; Total = T1 + T2. X pode ser qualquer combinação de letras/números.": "Format: Performance<X>.csv. The app identifies the account by suffix X (everything after 'Performance' and before '.csv'). It uses the 'pnl' column per trade and groups by day: T1 = first trade of the day; T2 = sum of trade #2 onward; Total = T1 + T2. X can be any mix of letters/numbers.",
   "Formato: Cash History<X>.csv. O app identifica a conta pelo sufixo X (tudo após 'Cash History' e antes de '.csv') e atualiza os days automaticamente. X pode ser qualquer combinação de letras/números.": "Format: Cash History<X>.csv. The app identifies the account by suffix X (everything after 'Cash History' and before '.csv') and updates the days automatically. X can be any mix of letters/numbers.",
@@ -7224,8 +7260,8 @@ async function saveToCloudNow() {
                  '* "Cancel" marks the withdrawal as canceled (does not delete). "Delete"/"Clear" appears only for Super Admin.'],
                 ['* "Cancelar" marca o saque como cancelado (não apaga). "Apagar"/"Limpar" só aparece para Super Admin.',
                  '* "Cancel" marks the withdrawal as canceled (does not delete). "Delete"/"Clear" appears only for Super Admin.'],
-                ['* “Days Traded” = business days with any record (Trade 1, Trade 2, or Total), excluding holidays marked in the app.',
-                 '* "Days Traded" = business days with any record (Trade 1, Trade 2, or Total), excluding holidays marked in the app.'],
+                ['* “Days Traded” = business days with any record (Trade 1, Trade 2, Trade 3, or Total), excluding holidays marked in the app.',
+                 '* "Days Traded" = business days with any record (Trade 1, Trade 2, Trade 3, or Total), excluding holidays marked in the app.'],
                 ['Pré-visualizar automaticamente', 'Auto preview'],
                 ['Pré-visualizar', 'Preview'],
                 ['Importar e Salvar', 'Import & Save'],
@@ -7657,7 +7693,7 @@ if (!store.activeId) {
             // Defaults (métricas internas)
             const generic = {
                 title: rawTitle || "Ajuda",
-                body: "Este card é um resumo calculado a partir do seu registro diário (Trade 1 + Trade 2). Ele ajuda a acompanhar sua evolução e reduzir erros antes de solicitar payout.",
+                body: "Este card é um resumo calculado a partir do seu registro diário (Trade 1 + Trade 2 + Trade 3). Ele ajuda a acompanhar sua evolução e reduzir erros antes de solicitar payout.",
                 link: LINKS.paRules
             };
 
@@ -7713,7 +7749,7 @@ if (!store.activeId) {
             if(t.includes("performance") || t.includes("ciclos")){
                 return {
                     title: "Performance (Ciclos / Semana / Mensal)",
-                    body: "Cálculos feitos somando Trade 1 + Trade 2 por dia (dias úteis). ‘Mensal’ soma o mês. ‘Ciclo 10/15/20 a …’ soma do dia N do mês anterior até dia N do mês atual. As semanas seguem a divisão Seg–Dom usada no resumo.",
+                    body: "Cálculos feitos somando Trade 1 + Trade 2 + Trade 3 por dia (dias úteis). ‘Mensal’ soma o mês. ‘Ciclo 10/15/20 a …’ soma do dia N do mês anterior até dia N do mês atual. As semanas seguem a divisão Seg–Dom usada no resumo.",
                     link: LINKS.paRules
                 };
             }
@@ -7721,7 +7757,7 @@ if (!store.activeId) {
             if(t.includes("media") || t.includes("médias")){
                 return {
                     title: "Médias",
-                    body: "Média dos seus resultados diários (Trade 1 + Trade 2) nos últimos X dias operados. É uma métrica interna para consistência — não substitui a checagem de regras de payout/consistência da Apex.",
+                    body: "Média dos seus resultados diários (Trade 1 + Trade 2 + Trade 3) nos últimos X dias operados. É uma métrica interna para consistência — não substitui a checagem de regras de payout/consistência da Apex.",
                     link: LINKS.paRules
                 };
             }
@@ -8226,8 +8262,8 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                             <tr>
                                 <th style="text-align:left;border-bottom:1px solid #ccc;padding:6px;">Data</th>
                                 <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">25/50</th>
-                                <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">Trade 1</th>
-                                <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">Trade 2</th>
+                                <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">40/80</th>
+                                <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">Condução Técnica</th>
                                 <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">Total</th>
                                 <th style="text-align:left;border-bottom:1px solid #ccc;padding:6px;">Nota</th>
                             </tr>
