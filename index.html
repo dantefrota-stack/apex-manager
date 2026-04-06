@@ -5027,15 +5027,16 @@ function renderCalendar(acc) {
                 const block4080 = getTradeLegValues(entry, 't1');
                 const blockCT = getTradeLegValues(entry, 't2');
                 const hasBlockTrades = (block) => [block.leg1, block.leg2, block.leg3].some(v => v !== '' && v !== null && v !== undefined);
-                const breakoutLabel = CURRENT_LANG === 'en' ? 'Breakout' : 'Romp.';
-                const renderTradeEditorRows = (block, strategyKey) => [1, 2, 3].map((idx) => `
+                const breakoutLabel = CURRENT_LANG === 'en' ? 'Breakout' : 'Rompimento';
+                const renderTradeEditorRows = (block, strategyKey, showBreakout = false) => [1, 2, 3].map((idx) => `
                                         <label class="flex items-center justify-between gap-2">
                                             <span class="text-slate-500">Trade ${idx}</span>
                                             <div class="flex items-center gap-3">
+                                                ${showBreakout ? `
                                                 <label class="inline-flex items-center gap-1 text-[11px] text-slate-500 select-none cursor-pointer">
                                                     <input type="checkbox" class="rounded border-slate-300 dark:border-slate-600" ${block[`breakout${idx}`] ? 'checked' : ''} onchange="window.updateTradeBreakout('${iso}','${strategyKey}',${idx},this.checked)">
                                                     <span>${breakoutLabel}</span>
-                                                </label>
+                                                </label>` : ''}
                                                 <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block[`leg${idx}`] ?? ''}" onblur="window.updateTradeLeg('${iso}','${strategyKey}',${idx},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
                                             </div>
                                         </label>
@@ -5083,7 +5084,7 @@ function renderCalendar(acc) {
                                 <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
                                     <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">25/50</div>
                                     <div class="space-y-2">
-                                        ${renderTradeEditorRows(block2550, 't0')}
+                                        ${renderTradeEditorRows(block2550, 't0', true)}
                                         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
                                             <span>Total</span>
                                             <span class="${block2550.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block2550.subtotal)}</span>
@@ -5093,7 +5094,7 @@ function renderCalendar(acc) {
                                 <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
                                     <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">40/80</div>
                                     <div class="space-y-2">
-                                        ${renderTradeEditorRows(block4080, 't1')}
+                                        ${renderTradeEditorRows(block4080, 't1', false)}
                                         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
                                             <span>Total</span>
                                             <span class="${block4080.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block4080.subtotal)}</span>
@@ -5103,7 +5104,7 @@ function renderCalendar(acc) {
                                 <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
                                     <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">Condução Técnica</div>
                                     <div class="space-y-2">
-                                        ${renderTradeEditorRows(blockCT, 't2')}
+                                        ${renderTradeEditorRows(blockCT, 't2', false)}
                                         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
                                             <span>Total</span>
                                             <span class="${blockCT.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(blockCT.subtotal)}</span>
