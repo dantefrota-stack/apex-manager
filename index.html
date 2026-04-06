@@ -932,10 +932,14 @@ tr.bg-green-50 td {
             </div>
 
             <div id="accounts-overview-body" class="p-5 space-y-4 overflow-y-auto max-h-[calc(90vh-70px)]">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-3" id="accounts-overview-strategy-cards">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-3" id="accounts-overview-strategy-cards">
                     <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
                         <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">25/50</div>
                         <div id="accounts-overview-2550" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
+                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">40/40</div>
+                        <div id="accounts-overview-4040" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
                     </div>
                     <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
                         <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">40/80</div>
@@ -1326,6 +1330,7 @@ tr.bg-green-50 td {
                         <tr>
                             <th class="px-2 py-3 md:px-4">Data</th>
                             <th class="px-1 py-3 text-center min-w-[90px]">25/50</th>
+                            <th class="px-1 py-3 text-center min-w-[90px]">40/40</th>
                             <th class="px-1 py-3 text-center min-w-[90px]">40/80</th>
                             <th class="px-1 py-3 text-center min-w-[90px]">Condução Técnica</th>
                             <th class="px-2 py-3 md:px-4 text-right">Total</th>
@@ -1439,6 +1444,7 @@ tr.bg-green-50 td {
                             <tr>
                                 <th>Data</th>
                                 <th>25/50</th>
+                                <th>40/40</th>
                                 <th>40/80</th>
                                 <th>Condução Técnica</th>
                                 <th>Total</th>
@@ -1922,10 +1928,12 @@ let isOffline = false;
 
                 function normalizeEntry(iso){
                     const e = (acc.data && acc.data[iso]) ? acc.data[iso] : {};
+                    const t0 = (e.t0 === '' || e.t0 === null || e.t0 === undefined) ? 0 : (parseFloat(e.t0) || 0);
                     const t1 = (e.t1 === '' || e.t1 === null || e.t1 === undefined) ? 0 : (parseFloat(e.t1) || 0);
                     const t2 = (e.t2 === '' || e.t2 === null || e.t2 === undefined) ? 0 : (parseFloat(e.t2) || 0);
+                    const t3 = (e.t3 === '' || e.t3 === null || e.t3 === undefined) ? 0 : (parseFloat(e.t3) || 0);
                     const hasVal = !(e.val === undefined || e.val === null || e.val === '');
-                    const total = hasVal ? (parseFloat(e.val) || 0) : (t1 + t2);
+                    const total = hasVal ? (parseFloat(e.val) || 0) : (t0 + t1 + t2 + t3);
                     const note = (e.note || '').toString();
                     const holiday = !!e.holiday;
                     const t1meta = e.t1meta || { add:false, targetPts:0, riskPts:0, viability:'', exit2r:'', breakeven:'', above2rPts:0, retraceAfter2rPts:0 };
@@ -1935,12 +1943,14 @@ let isOffline = false;
                         !!(t1meta && (t1meta.add || Number(t1meta.targetPts) || Number(t1meta.riskPts) || (t1meta.viability||'').trim())) ||
                         !!(t2meta && (t2meta.add || Number(t2meta.targetPts) || Number(t2meta.riskPts) || (t2meta.viability||'').trim()));
 
-                    const hasActivity = (t1 !== 0 || t2 !== 0 || total !== 0 || note.trim() || holiday || hasMeta);
+                    const hasActivity = (t0 !== 0 || t1 !== 0 || t2 !== 0 || t3 !== 0 || total !== 0 || note.trim() || holiday || hasMeta);
 
                     return {
                         date: iso,
+                        t0,
                         t1,
                         t2,
+                        t3,
                         total,
                         holiday,
                         note: note.slice(0, 800),
@@ -3284,20 +3294,23 @@ function _openPrintWindow(htmlStr){
             const computedAll = computed.slice();
 
             try{
-                let s2550 = 0, s4080 = 0, sct = 0;
+                let s2550 = 0, s4040 = 0, s4080 = 0, sct = 0;
                 computedAll.forEach(({acc})=>{
                     Object.keys(acc.data || {}).forEach((iso)=>{
                         const e = acc.data[iso] || {};
                         if(e.holiday) return;
                         s2550 += Number(e.t0 || 0);
+                        s4040 += Number(e.t3 || 0);
                         s4080 += Number(e.t1 || 0);
                         sct += Number(e.t2 || 0);
                     });
                 });
                 const el2550 = document.getElementById('accounts-overview-2550');
+                const el4040 = document.getElementById('accounts-overview-4040');
                 const el4080 = document.getElementById('accounts-overview-4080');
                 const elct = document.getElementById('accounts-overview-ct');
                 if(el2550) el2550.textContent = formatCurrency(s2550);
+                if(el4040) el4040.textContent = formatCurrency(s4040);
                 if(el4080) el4080.textContent = formatCurrency(s4080);
                 if(elct) elct.textContent = formatCurrency(sct);
             }catch(e){}
@@ -3951,18 +3964,19 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             }
 
             // Para T1/T2: se o campo ficar vazio, mantenha vazio (nao virar 0)
-            if (type === 't0' || type === 't1' || type === 't2') {
+            if (type === 't0' || type === 't1' || type === 't2' || type === 't3') {
                 if (val === '' || val === null || val === undefined) {
                     acc.data[iso][type] = '';
                     const t0 = parseFloat(acc.data[iso].t0) || 0;
                     const t1 = parseFloat(acc.data[iso].t1) || 0;
                     const t2 = parseFloat(acc.data[iso].t2) || 0;
-                    acc.data[iso].val = t0 + t1 + t2;
+                    const t3 = parseFloat(acc.data[iso].t3) || 0;
+                    acc.data[iso].val = t0 + t1 + t2 + t3;
                     return;
                 }
             }
 
-            if (['val', 't0', 't1', 't2', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes(type)) {
+            if (['val', 't0', 't1', 't2', 't3', 'stopPts', 'stopCount', 'targetPts', 'riskPts'].includes(type)) {
                 if(val === '' || val === null) val = 0;
                 else if(typeof val === 'string') {
                     val = parseFloat(val.replace(',', '.')) || 0;
@@ -3975,11 +3989,12 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 acc.data[iso].stopCount = parseInt(acc.data[iso].stopCount || 0, 10) || 0;
             }
 
-            if (type === 't0' || type === 't1' || type === 't2') {
+            if (type === 't0' || type === 't1' || type === 't2' || type === 't3') {
                 const t0 = parseFloat(acc.data[iso].t0) || 0;
                 const t1 = parseFloat(acc.data[iso].t1) || 0;
                 const t2 = parseFloat(acc.data[iso].t2) || 0;
-                acc.data[iso].val = t0 + t1 + t2;
+                const t3 = parseFloat(acc.data[iso].t3) || 0;
+                acc.data[iso].val = t0 + t1 + t2 + t3;
             }
         }
 
@@ -4026,7 +4041,8 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const t0 = parseFloat(entry.t0) || 0;
             const t1 = parseFloat(entry.t1) || 0;
             const t2 = parseFloat(entry.t2) || 0;
-            entry.val = t0 + t1 + t2;
+            const t3 = parseFloat(entry.t3) || 0;
+            entry.val = t0 + t1 + t2 + t3;
 
             renderDashboard();
             scheduleSaveToCloud();
@@ -4243,7 +4259,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const acc = getActive();
             const fs = (document.getElementById('filter-start') || {}).value || '';
             const fe = (document.getElementById('filter-end') || {}).value || '';
-            let csvContent = "data:text/csv;charset=utf-8,Data,25/50,40/80,Condução Técnica,Total Dia,Notas\n";
+            let csvContent = "data:text/csv;charset=utf-8,Data,25/50,40/40,40/80,Condução Técnica,Total Dia,Notas\n";
             const dates = Object.keys(acc.data).sort();
             dates.forEach(iso => {
                 if(fs && iso < fs) return;
@@ -4500,6 +4516,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         function _strategyBlocksForDay(e){
             return {
                 t2550: { label:'25/50', key:'t0', legs: getTradeLegValues(e || {}, 't0') },
+                t4040: { label:'40/40', key:'t3', legs: getTradeLegValues(e || {}, 't3') },
                 t4080: { label:'40/80', key:'t1', legs: getTradeLegValues(e || {}, 't1') },
                 ct:    { label:'Condução Técnica', key:'t2', legs: getTradeLegValues(e || {}, 't2') }
             };
@@ -4546,6 +4563,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         function _tradeTripletForDay(e){
             return {
                 t2550: Number(e?.t0 || 0),
+                t4040: Number(e?.t3 || 0),
                 t4080: Number(e?.t1 || 0),
                 ct: Number(e?.t2 || 0)
             };
@@ -4563,6 +4581,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         function _computeStrategyAnalytics(acc, startISO, endISO){
             const strategies = {
                 t2550: { label: '25/50', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
+                t4040: { label: '40/40', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
                 t4080: { label: '40/80', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
                 ct:    { label: 'Condução Técnica', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 }
             };
@@ -4725,6 +4744,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 if(tradesEl) tradesEl.textContent = `${obj.trades} (${obj.wins}/${obj.losses})`;
             };
             fillStrategy('2550', strat.t2550);
+            fillStrategy('4040', strat.t4040);
             fillStrategy('4080', strat.t4080);
             fillStrategy('ct', strat.ct);
 
@@ -5016,15 +5036,16 @@ function renderCalendar(acc) {
                     sepTr.className = "week-separator";
                     const dayStr = String(cur.getDate()).padStart(2, '0');
                     const monthStr = String(cur.getMonth() + 1).padStart(2, '0');
-                    sepTr.innerHTML = `<td colspan="7">${(CURRENT_LANG==='en'?'WEEK':'SEMANA')} ${weekNum} • ${(CURRENT_LANG==='en'?'START':'INÍCIO')} (${dayStr}.${monthStr})</td>`;
+                    sepTr.innerHTML = `<td colspan="8">${(CURRENT_LANG==='en'?'WEEK':'SEMANA')} ${weekNum} • ${(CURRENT_LANG==='en'?'START':'INÍCIO')} (${dayStr}.${monthStr})</td>`;
                     els.calendarBody.appendChild(sepTr);
                 }
 
                 const iso = cur.toISOString().split('T')[0];
-                const entry = acc.data[iso] || { val: 0, t0: '', t1: '', t2: '', note: '', holiday: false };
+                const entry = acc.data[iso] || { val: 0, t0: '', t1: '', t2: '', t3: '', note: '', holiday: false };
                 if (!entry.t0meta) entry.t0meta = {};
                 if (!entry.t1meta) entry.t1meta = {};
                 if (!entry.t2meta) entry.t2meta = {};
+                if (!entry.t3meta) entry.t3meta = {};
 
                 const isOutsideMonth = cur.getMonth() !== m;
                 const isToday = (iso === getTodayISO());
@@ -5033,6 +5054,7 @@ function renderCalendar(acc) {
                 tr.className = `dark:border-slate-700 ${isOutsideMonth ? 'opacity-60 bg-slate-50 dark:bg-slate-800/40' : ''} ${isToday ? 'today-row' : ''}`;
 
                 const block2550 = getTradeLegValues(entry, 't0');
+                const block4040 = getTradeLegValues(entry, 't3');
                 const block4080 = getTradeLegValues(entry, 't1');
                 const blockCT = getTradeLegValues(entry, 't2');
                 const hasBlockTrades = (block) => [block.leg1, block.leg2, block.leg3, block.leg4].some(v => v !== '' && v !== null && v !== undefined);
@@ -5050,7 +5072,7 @@ function renderCalendar(acc) {
                                             </div>
                                         </label>
                                     `).join('');
-                const displayVal = (parseFloat(entry.val) || 0) || (block2550.subtotal + block4080.subtotal + blockCT.subtotal);
+                const displayVal = (parseFloat(entry.val) || 0) || (block2550.subtotal + block4040.subtotal + block4080.subtotal + blockCT.subtotal);
 
                 let colorClass = 'val-zero';
                 if (displayVal > 0) colorClass = 'val-pos';
@@ -5071,9 +5093,10 @@ function renderCalendar(acc) {
                         <span>${dayLabel}</span>
                     </td>
                     <td class="px-2 py-2 text-center w-28"><span class="font-semibold ${block2550.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${hasBlockTrades(block2550) ? formatCurrency(block2550.subtotal) : '--'}</span></td>
+                    <td class="px-2 py-2 text-center w-28"><span class="font-semibold ${block4040.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${hasBlockTrades(block4040) ? formatCurrency(block4040.subtotal) : '--'}</span></td>
                     <td class="px-2 py-2 text-center w-28"><span class="font-semibold ${block4080.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${hasBlockTrades(block4080) ? formatCurrency(block4080.subtotal) : '--'}</span></td>
                     <td class="px-2 py-2 text-center w-28"><span class="font-semibold ${blockCT.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${hasBlockTrades(blockCT) ? formatCurrency(blockCT.subtotal) : '--'}</span></td>
-                    <td class="px-4 py-2 text-right"><span class="font-bold text-sm ${colorClass}">${(hasBlockTrades(block2550) || hasBlockTrades(block4080) || hasBlockTrades(blockCT) || displayVal !== 0) ? formatCurrency(displayVal) : '--'}</span></td>
+                    <td class="px-4 py-2 text-right"><span class="font-bold text-sm ${colorClass}">${(hasBlockTrades(block2550) || hasBlockTrades(block4040) || hasBlockTrades(block4080) || hasBlockTrades(blockCT) || displayVal !== 0) ? formatCurrency(displayVal) : '--'}</span></td>
                     <td class="px-4 py-2 text-center w-16">
                         <button onclick="openNoteModal('${iso}', false)" class="p-1.5 rounded-lg border transition ${noteBtnClass}" title="Editar Nota">
                             <i data-lucide="${noteIcon}" class="w-4 h-4"></i>
@@ -5087,9 +5110,9 @@ function renderCalendar(acc) {
                 detailsTr.id = `details-${iso}`;
                 detailsTr.className = `day-details-row ${isOpen ? '' : 'hidden'} ${isOutsideMonth ? 'opacity-60' : ''}`;
                 detailsTr.innerHTML = `
-                    <td colspan="7" class="px-4 py-3">
+                    <td colspan="8" class="px-4 py-3">
                         <div class="space-y-4">
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
                                 <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
                                     <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">25/50</div>
                                     <div class="space-y-2">
@@ -5097,6 +5120,16 @@ function renderCalendar(acc) {
                                         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
                                             <span>Total</span>
                                             <span class="${block2550.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block2550.subtotal)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
+                                    <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">40/40</div>
+                                    <div class="space-y-2">
+                                        ${renderTradeEditorRows(block4040, 't3', false)}
+                                        <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
+                                            <span>Total</span>
+                                            <span class="${block4040.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block4040.subtotal)}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -5678,7 +5711,7 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             const riskExpectancyOverall = (document.getElementById('risk-expectancy-overall')?.textContent || '--').trim();
 
             const strat = _computeStrategyAnalytics(acc, start, end);
-            const strategies = [strat.t2550, strat.t4080, strat.ct];
+            const strategies = [strat.t2550, strat.t4040, strat.t4080, strat.ct];
             const bestStrategy = strategies.slice().sort((a,b)=> b.total - a.total)[0];
             const worstStrategy = strategies.slice().sort((a,b)=> a.total - b.total)[0];
             const periodSummary = _periodTradeSummary(acc, start, end);
@@ -5692,6 +5725,7 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
 `
 *Operações do Dia* (${formatDateShort(parseISODateLocal(day.iso))})
 • 25/50 → T1 ${fmtLeg(day.blocks.t2550.legs, 1)} | T2 ${fmtLeg(day.blocks.t2550.legs, 2)} | T3 ${fmtLeg(day.blocks.t2550.legs, 3)} | T4 ${fmtLeg(day.blocks.t2550.legs, 4)} | Total ${formatCurrency(day.blocks.t2550.legs.subtotal)}
+• 40/40 → T1 ${fmtLeg(day.blocks.t4040.legs, 1)} | T2 ${fmtLeg(day.blocks.t4040.legs, 2)} | T3 ${fmtLeg(day.blocks.t4040.legs, 3)} | T4 ${fmtLeg(day.blocks.t4040.legs, 4)} | Total ${formatCurrency(day.blocks.t4040.legs.subtotal)}
 • 40/80 → T1 ${fmtLeg(day.blocks.t4080.legs, 1)} | T2 ${fmtLeg(day.blocks.t4080.legs, 2)} | T3 ${fmtLeg(day.blocks.t4080.legs, 3)} | T4 ${fmtLeg(day.blocks.t4080.legs, 4)} | Total ${formatCurrency(day.blocks.t4080.legs.subtotal)}
 • Condução Técnica → T1 ${fmtLeg(day.blocks.ct.legs, 1)} | T2 ${fmtLeg(day.blocks.ct.legs, 2)} | T3 ${fmtLeg(day.blocks.ct.legs, 3)} | T4 ${fmtLeg(day.blocks.ct.legs, 4)} | Total ${formatCurrency(day.blocks.ct.legs.subtotal)}`;
             }
@@ -5699,6 +5733,7 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             const strategyText =
 `\n*Breakdown por Estratégia*
 • 25/50: ${formatCurrency(strat.t2550.total)} | Trades ${strat.t2550.trades} (${strat.t2550.wins}/${strat.t2550.losses}) | WR ${Math.round((strat.t2550.winRate||0)*100)}% | Exp ${formatCurrency(strat.t2550.expectancy||0)}
+• 40/40: ${formatCurrency(strat.t4040.total)} | Trades ${strat.t4040.trades} (${strat.t4040.wins}/${strat.t4040.losses}) | WR ${Math.round((strat.t4040.winRate||0)*100)}% | Exp ${formatCurrency(strat.t4040.expectancy||0)}
 • 40/80: ${formatCurrency(strat.t4080.total)} | Trades ${strat.t4080.trades} (${strat.t4080.wins}/${strat.t4080.losses}) | WR ${Math.round((strat.t4080.winRate||0)*100)}% | Exp ${formatCurrency(strat.t4080.expectancy||0)}
 • Condução Técnica: ${formatCurrency(strat.ct.total)} | Trades ${strat.ct.trades} (${strat.ct.wins}/${strat.ct.losses}) | WR ${Math.round((strat.ct.winRate||0)*100)}% | Exp ${formatCurrency(strat.ct.expectancy||0)}`;
 
@@ -5774,7 +5809,7 @@ ${period} • ${(acc?.name || 'Conta')}
             const kpiMaxDD = (els.kpiMaxDD?.textContent || '--').trim();
 
             const strat = _computeStrategyAnalytics(acc, start, end);
-            const strategies = [strat.t2550, strat.t4080, strat.ct];
+            const strategies = [strat.t2550, strat.t4040, strat.t4080, strat.ct];
             const bestStrategy = strategies.slice().sort((a,b)=> b.total - a.total)[0];
             const worstStrategy = strategies.slice().sort((a,b)=> a.total - b.total)[0];
             const riskMaxLosing = (document.getElementById('risk-max-losing')?.textContent || '--').trim();
@@ -7963,26 +7998,28 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
                 // Compat: versões antigas tinham apenas t1/t2 (sem t0).
                 let t0 = Number(e.t0 || 0);
+                let t3 = Number(e.t3 || 0);
                 let t1 = Number(e.t1 || 0);
                 let t2 = Number(e.t2 || 0);
-                if(e.t0 === undefined && (e.t1 !== undefined || e.t2 !== undefined)){
+                if(e.t0 === undefined && (e.t1 !== undefined || e.t2 !== undefined || e.t3 !== undefined)){
                     t0 = 0;
+                    t3 = Number(e.t3 || 0);
                     t1 = Number(e.t1 || 0);
                     t2 = Number(e.t2 || 0);
                 }
 
-                const val = (e.val !== undefined && e.val !== null) ? Number(e.val || 0) : (t0 + t1 + t2);
+                const val = (e.val !== undefined && e.val !== null) ? Number(e.val || 0) : (t0 + t3 + t1 + t2);
                 const note = (e.note || '').toString();
 
                 const isHoliday = !!e.holiday;
                 if(isHoliday) holidayDays += 1;
 
                 if(!isHoliday) total += val;
-                if((t0 !== 0) || (t1 !== 0) || (t2 !== 0) || (val !== 0)) tradedDays += 1;
+                if((t0 !== 0) || (t3 !== 0) || (t1 !== 0) || (t2 !== 0) || (val !== 0)) tradedDays += 1;
 
                 rows.push({
                     iso,
-                    t0, t1, t2, val,
+                    t0, t3, t1, t2, val,
                     note: isHoliday ? (note ? `Feriado • ${note}` : "Feriado") : note
                 });
             }
@@ -8008,7 +8045,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             ttl.textContent = title || "Detalhes do período";
             rng.textContent = `${_formatDM(startISO)} – ${_formatDM(endISO)} • ${acc.name || (CURRENT_LANG==='en'?'Account':'Conta')}`;
             const strat = _computeStrategyAnalytics(acc, startISO, endISO);
-            sum.textContent = `Dias com trade: ${res.tradedDays} • 25/50 ${formatCurrency(strat.t2550.total)} • 40/80 ${formatCurrency(strat.t4080.total)} • CT ${formatCurrency(strat.ct.total)}`;
+            sum.textContent = `Dias com trade: ${res.tradedDays} • 25/50 ${formatCurrency(strat.t2550.total)} • 40/40 ${formatCurrency(strat.t4040.total)} • 40/80 ${formatCurrency(strat.t4080.total)} • CT ${formatCurrency(strat.ct.total)}`;
             tot.textContent = `Total: ${formatCurrency(res.total)}`;
 
             tbody.innerHTML = '';
@@ -8017,6 +8054,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                 tr.innerHTML = `
                     <td>${_formatDM(r.iso)} (${r.iso})</td>
                     <td>${formatCurrency(r.t0)}</td>
+                    <td>${formatCurrency(r.t3)}</td>
                     <td>${formatCurrency(r.t1)}</td>
                     <td>${formatCurrency(r.t2)}</td>
                     <td><span class="${r.val>=0?'val-pos':'val-neg'}">${formatCurrency(r.val)}</span></td>
@@ -8105,7 +8143,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                     y += 16;
                     doc.setFont('helvetica','normal');
                     doc.setFontSize(9);
-                    doc.text(`25/50: ${formatCurrency(strat.t2550.total)}   •   40/80: ${formatCurrency(strat.t4080.total)}   •   Condução Técnica: ${formatCurrency(strat.ct.total)}`, 40, y);
+                    doc.text(`25/50: ${formatCurrency(strat.t2550.total)}   •   40/40: ${formatCurrency(strat.t4040.total)}   •   40/80: ${formatCurrency(strat.t4080.total)}   •   Condução Técnica: ${formatCurrency(strat.ct.total)}`, 40, y);
                     y += 18;
 
                     // Header + layout profissional (nota em bloco abaixo da linha)
@@ -8118,9 +8156,10 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
                     // Colunas numéricas (Nota vai em bloco abaixo)
                     const colDate = marginL;
-                    const colT0   = marginL + 260;
-                    const colT1   = marginL + 350;
-                    const colT2   = marginL + 440;
+                    const colT0   = marginL + 190;
+                    const colT3   = marginL + 275;
+                    const colT1   = marginL + 360;
+                    const colT2   = marginL + 445;
                     const colTot  = marginL + contentW;
 
                     const drawTableHeader = ()=>{
@@ -8128,6 +8167,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                         doc.setFontSize(10);
                         doc.text('Data',     colDate, y);
                         doc.text('25/50', colT0,   y, { align:'right' });
+                        doc.text('40/40', colT3,   y, { align:'right' });
                         doc.text('40/80',  colT1,   y, { align:'right' });
                         doc.text('Condução',  colT2,   y, { align:'right' });
                         doc.text('Total',    colTot,  y, { align:'right' });
@@ -8163,6 +8203,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                     for(const r of res.rows){
                         const day = _formatDM(r.iso); // dd/mm
                         const t0 = formatCurrency(r.t0);
+                        const t3 = formatCurrency(r.t3);
                         const t1 = formatCurrency(r.t1);
                         const t2 = formatCurrency(r.t2);
                         const tt = formatCurrency(r.val);
@@ -8187,6 +8228,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                         doc.setFontSize(9);
                         doc.text(day, colDate, y);
                         doc.text(t0, colT0, y, { align:'right' });
+                        doc.text(t3, colT3, y, { align:'right' });
                         doc.text(t1, colT1, y, { align:'right' });
                         doc.text(t2, colT2, y, { align:'right' });
                         doc.setFont('helvetica','bold');
@@ -8244,6 +8286,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                 <tr>
                     <td>${_formatDM(r.iso)} (${r.iso})</td>
                     <td style="text-align:right;">${formatCurrency(r.t0)}</td>
+                    <td style="text-align:right;">${formatCurrency(r.t3)}</td>
                     <td style="text-align:right;">${formatCurrency(r.t1)}</td>
                     <td style="text-align:right;">${formatCurrency(r.t2)}</td>
                     <td style="text-align:right;">${formatCurrency(r.val)}</td>
@@ -8272,6 +8315,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                             <tr>
                                 <th style="text-align:left;border-bottom:1px solid #ccc;padding:6px;">Data</th>
                                 <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">25/50</th>
+                                <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">40/40</th>
                                 <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">40/80</th>
                                 <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">Condução Técnica</th>
                                 <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">Total</th>
