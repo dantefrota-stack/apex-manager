@@ -938,7 +938,7 @@ tr.bg-green-50 td {
                         <div id="accounts-overview-2550" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
                     </div>
                     <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
-                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">40/40</div>
+                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">30/60</div>
                         <div id="accounts-overview-4040" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
                     </div>
                     <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
@@ -1330,7 +1330,7 @@ tr.bg-green-50 td {
                         <tr>
                             <th class="px-2 py-3 md:px-4">Data</th>
                             <th class="px-1 py-3 text-center min-w-[90px]">25/50</th>
-                            <th class="px-1 py-3 text-center min-w-[90px]">40/40</th>
+                            <th class="px-1 py-3 text-center min-w-[90px]">30/60</th>
                             <th class="px-1 py-3 text-center min-w-[90px]">40/80</th>
                             <th class="px-1 py-3 text-center min-w-[90px]">Condução Técnica</th>
                             <th class="px-2 py-3 md:px-4 text-right">Total</th>
@@ -1444,7 +1444,7 @@ tr.bg-green-50 td {
                             <tr>
                                 <th>Data</th>
                                 <th>25/50</th>
-                                <th>40/40</th>
+                                <th>30/60</th>
                                 <th>40/80</th>
                                 <th>Condução Técnica</th>
                                 <th>Total</th>
@@ -4259,7 +4259,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const acc = getActive();
             const fs = (document.getElementById('filter-start') || {}).value || '';
             const fe = (document.getElementById('filter-end') || {}).value || '';
-            let csvContent = "data:text/csv;charset=utf-8,Data,25/50,40/40,40/80,Condução Técnica,Total Dia,Notas\n";
+            let csvContent = "data:text/csv;charset=utf-8,Data,25/50,30/60,40/80,Condução Técnica,Total Dia,Notas\n";
             const dates = Object.keys(acc.data).sort();
             dates.forEach(iso => {
                 if(fs && iso < fs) return;
@@ -4516,7 +4516,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         function _strategyBlocksForDay(e){
             return {
                 t2550: { label:'25/50', key:'t0', legs: getTradeLegValues(e || {}, 't0') },
-                t4040: { label:'40/40', key:'t3', legs: getTradeLegValues(e || {}, 't3') },
+                t4040: { label:'30/60', key:'t3', legs: getTradeLegValues(e || {}, 't3') },
                 t4080: { label:'40/80', key:'t1', legs: getTradeLegValues(e || {}, 't1') },
                 ct:    { label:'Condução Técnica', key:'t2', legs: getTradeLegValues(e || {}, 't2') }
             };
@@ -4581,7 +4581,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         function _computeStrategyAnalytics(acc, startISO, endISO){
             const strategies = {
                 t2550: { label: '25/50', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
-                t4040: { label: '40/40', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
+                t4040: { label: '30/60', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
                 t4080: { label: '40/80', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
                 ct:    { label: 'Condução Técnica', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 }
             };
@@ -5124,7 +5124,7 @@ function renderCalendar(acc) {
                                     </div>
                                 </div>
                                 <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
-                                    <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">40/40</div>
+                                    <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">30/60</div>
                                     <div class="space-y-2">
                                         ${renderTradeEditorRows(block4040, 't3', false)}
                                         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
@@ -5725,7 +5725,7 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
 `
 *Operações do Dia* (${formatDateShort(parseISODateLocal(day.iso))})
 • 25/50 → T1 ${fmtLeg(day.blocks.t2550.legs, 1)} | T2 ${fmtLeg(day.blocks.t2550.legs, 2)} | T3 ${fmtLeg(day.blocks.t2550.legs, 3)} | T4 ${fmtLeg(day.blocks.t2550.legs, 4)} | Total ${formatCurrency(day.blocks.t2550.legs.subtotal)}
-• 40/40 → T1 ${fmtLeg(day.blocks.t4040.legs, 1)} | T2 ${fmtLeg(day.blocks.t4040.legs, 2)} | T3 ${fmtLeg(day.blocks.t4040.legs, 3)} | T4 ${fmtLeg(day.blocks.t4040.legs, 4)} | Total ${formatCurrency(day.blocks.t4040.legs.subtotal)}
+• 30/60 → T1 ${fmtLeg(day.blocks.t4040.legs, 1)} | T2 ${fmtLeg(day.blocks.t4040.legs, 2)} | T3 ${fmtLeg(day.blocks.t4040.legs, 3)} | T4 ${fmtLeg(day.blocks.t4040.legs, 4)} | Total ${formatCurrency(day.blocks.t4040.legs.subtotal)}
 • 40/80 → T1 ${fmtLeg(day.blocks.t4080.legs, 1)} | T2 ${fmtLeg(day.blocks.t4080.legs, 2)} | T3 ${fmtLeg(day.blocks.t4080.legs, 3)} | T4 ${fmtLeg(day.blocks.t4080.legs, 4)} | Total ${formatCurrency(day.blocks.t4080.legs.subtotal)}
 • Condução Técnica → T1 ${fmtLeg(day.blocks.ct.legs, 1)} | T2 ${fmtLeg(day.blocks.ct.legs, 2)} | T3 ${fmtLeg(day.blocks.ct.legs, 3)} | T4 ${fmtLeg(day.blocks.ct.legs, 4)} | Total ${formatCurrency(day.blocks.ct.legs.subtotal)}`;
             }
@@ -5733,7 +5733,7 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             const strategyText =
 `\n*Breakdown por Estratégia*
 • 25/50: ${formatCurrency(strat.t2550.total)} | Trades ${strat.t2550.trades} (${strat.t2550.wins}/${strat.t2550.losses}) | WR ${Math.round((strat.t2550.winRate||0)*100)}% | Exp ${formatCurrency(strat.t2550.expectancy||0)}
-• 40/40: ${formatCurrency(strat.t4040.total)} | Trades ${strat.t4040.trades} (${strat.t4040.wins}/${strat.t4040.losses}) | WR ${Math.round((strat.t4040.winRate||0)*100)}% | Exp ${formatCurrency(strat.t4040.expectancy||0)}
+• 30/60: ${formatCurrency(strat.t4040.total)} | Trades ${strat.t4040.trades} (${strat.t4040.wins}/${strat.t4040.losses}) | WR ${Math.round((strat.t4040.winRate||0)*100)}% | Exp ${formatCurrency(strat.t4040.expectancy||0)}
 • 40/80: ${formatCurrency(strat.t4080.total)} | Trades ${strat.t4080.trades} (${strat.t4080.wins}/${strat.t4080.losses}) | WR ${Math.round((strat.t4080.winRate||0)*100)}% | Exp ${formatCurrency(strat.t4080.expectancy||0)}
 • Condução Técnica: ${formatCurrency(strat.ct.total)} | Trades ${strat.ct.trades} (${strat.ct.wins}/${strat.ct.losses}) | WR ${Math.round((strat.ct.winRate||0)*100)}% | Exp ${formatCurrency(strat.ct.expectancy||0)}`;
 
@@ -8045,7 +8045,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             ttl.textContent = title || "Detalhes do período";
             rng.textContent = `${_formatDM(startISO)} – ${_formatDM(endISO)} • ${acc.name || (CURRENT_LANG==='en'?'Account':'Conta')}`;
             const strat = _computeStrategyAnalytics(acc, startISO, endISO);
-            sum.textContent = `Dias com trade: ${res.tradedDays} • 25/50 ${formatCurrency(strat.t2550.total)} • 40/40 ${formatCurrency(strat.t4040.total)} • 40/80 ${formatCurrency(strat.t4080.total)} • CT ${formatCurrency(strat.ct.total)}`;
+            sum.textContent = `Dias com trade: ${res.tradedDays} • 25/50 ${formatCurrency(strat.t2550.total)} • 30/60 ${formatCurrency(strat.t4040.total)} • 40/80 ${formatCurrency(strat.t4080.total)} • CT ${formatCurrency(strat.ct.total)}`;
             tot.textContent = `Total: ${formatCurrency(res.total)}`;
 
             tbody.innerHTML = '';
@@ -8143,7 +8143,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                     y += 16;
                     doc.setFont('helvetica','normal');
                     doc.setFontSize(9);
-                    doc.text(`25/50: ${formatCurrency(strat.t2550.total)}   •   40/40: ${formatCurrency(strat.t4040.total)}   •   40/80: ${formatCurrency(strat.t4080.total)}   •   Condução Técnica: ${formatCurrency(strat.ct.total)}`, 40, y);
+                    doc.text(`25/50: ${formatCurrency(strat.t2550.total)}   •   30/60: ${formatCurrency(strat.t4040.total)}   •   40/80: ${formatCurrency(strat.t4080.total)}   •   Condução Técnica: ${formatCurrency(strat.ct.total)}`, 40, y);
                     y += 18;
 
                     // Header + layout profissional (nota em bloco abaixo da linha)
@@ -8167,7 +8167,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                         doc.setFontSize(10);
                         doc.text('Data',     colDate, y);
                         doc.text('25/50', colT0,   y, { align:'right' });
-                        doc.text('40/40', colT3,   y, { align:'right' });
+                        doc.text('30/60', colT3,   y, { align:'right' });
                         doc.text('40/80',  colT1,   y, { align:'right' });
                         doc.text('Condução',  colT2,   y, { align:'right' });
                         doc.text('Total',    colTot,  y, { align:'right' });
@@ -8315,7 +8315,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                             <tr>
                                 <th style="text-align:left;border-bottom:1px solid #ccc;padding:6px;">Data</th>
                                 <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">25/50</th>
-                                <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">40/40</th>
+                                <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">30/60</th>
                                 <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">40/80</th>
                                 <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">Condução Técnica</th>
                                 <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">Total</th>
