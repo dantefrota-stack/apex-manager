@@ -455,6 +455,11 @@ body.dark tr.today-row + tr.day-details-row .rounded-xl {
   background-color: rgba(15,23,42,0.65) !important;
 }
 
+
+/* Day details grid stays aligned after adding 35/70 */
+.day-details-row .trade-strategy-grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:1rem;}
+@media (min-width: 768px){.day-details-row .trade-strategy-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media (min-width: 1280px){.day-details-row .trade-strategy-grid{grid-template-columns:repeat(5,minmax(0,1fr));}}
 </style>
 
 <style id="d2-info-modal-styles">
@@ -932,7 +937,7 @@ tr.bg-green-50 td {
             </div>
 
             <div id="accounts-overview-body" class="p-5 space-y-4 overflow-y-auto max-h-[calc(90vh-70px)]">
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-3" id="accounts-overview-strategy-cards">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3" id="accounts-overview-strategy-cards">
                     <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
                         <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">25/50</div>
                         <div id="accounts-overview-2550" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
@@ -5080,15 +5085,15 @@ function renderCalendar(acc) {
                 const hasBlockTrades = (block) => [block.leg1, block.leg2, block.leg3, block.leg4].some(v => v !== '' && v !== null && v !== undefined);
                 const breakoutLabel = CURRENT_LANG === 'en' ? 'Breakout' : 'Rompimento';
                 const renderTradeEditorRows = (block, strategyKey, showBreakout = false) => [1, 2, 3, 4].map((idx) => `
-                                        <label class="flex items-center justify-between gap-2">
-                                            <span class="text-slate-500">Trade ${idx}</span>
-                                            <div class="flex items-center gap-3">
+                                        <label class="flex items-center justify-between gap-2 min-w-0">
+                                            <span class="text-slate-500 shrink-0">Trade ${idx}</span>
+                                            <div class="flex items-center gap-2 min-w-0 flex-1 justify-end">
                                                 ${showBreakout ? `
-                                                <label class="inline-flex items-center gap-1 text-[11px] text-slate-500 select-none cursor-pointer">
+                                                <label class="inline-flex items-center gap-1 text-[11px] text-slate-500 select-none cursor-pointer shrink-0">
                                                     <input type="checkbox" class="rounded border-slate-300 dark:border-slate-600" ${block[`breakout${idx}`] ? 'checked' : ''} onchange="window.updateTradeBreakout('${iso}','${strategyKey}',${idx},this.checked)">
                                                     <span>${breakoutLabel}</span>
                                                 </label>` : ''}
-                                                <input type="number" placeholder="0" class="w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200" value="${block[`leg${idx}`] ?? ''}" onblur="window.updateTradeLeg('${iso}','${strategyKey}',${idx},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
+                                                <input type="number" placeholder="0" class="w-20 md:w-24 xl:w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 min-w-0" value="${block[`leg${idx}`] ?? ''}" onblur="window.updateTradeLeg('${iso}','${strategyKey}',${idx},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
                                             </div>
                                         </label>
                                     `).join('');
@@ -5133,7 +5138,7 @@ function renderCalendar(acc) {
                 detailsTr.innerHTML = `
                     <td colspan="9" class="px-4 py-3">
                         <div class="space-y-4">
-                            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 text-xs">
+                            <div class="trade-strategy-grid text-xs">
                                 <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
                                     <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">25/50</div>
                                     <div class="space-y-2">
