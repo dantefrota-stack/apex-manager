@@ -4614,10 +4614,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
         function _computeStrategyAnalytics(acc, startISO, endISO){
             const strategies = {
-                t3570: { label: '35/70', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
-                t4080: { label: '40/80', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
                 t2550: { label: '25/50', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
                 t4040: { label: '30/60', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
+                t3570: { label: '35/70', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
+                t4080: { label: '40/80', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
                 ct:    { label: 'Condução Técnica', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 }
             };
 
@@ -4710,12 +4710,12 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             let peak = 0;
             let maxDD = 0;
 
-            const strategyCum = { t3570: 0, t4080: 0, t2550: 0, t4040: 0, ct: 0 };
+            const strategyCum = { t2550: 0, t4040: 0, t3570: 0, t4080: 0, ct: 0 };
             const strategySeries = {
-                t3570: { label: '35/70', data: [] },
-                t4080: { label: '40/80', data: [] },
                 t2550: { label: '25/50', data: [] },
                 t4040: { label: '30/60', data: [] },
+                t3570: { label: '35/70', data: [] },
+                t4080: { label: '40/80', data: [] },
                 ct: { label: 'Condução Técnica', data: [] }
             };
 
@@ -4756,7 +4756,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                     if (dd > maxDD) maxDD = dd;
 
                     chartLabels.push(formatDateShort(parseISODateLocal(iso)));
-                    ['t3570','t4080','t2550','t4040','ct'].forEach((key) => {
+                    ['t2550','t4040','t3570','t4080','ct'].forEach((key) => {
                         strategyCum[key] += Number(blocks[key].legs.subtotal || 0);
                         strategySeries[key].data.push(strategyCum[key]);
                     });
@@ -5205,26 +5205,7 @@ function renderCalendar(acc) {
                     <td colspan="8" class="px-4 py-3">
                         <div class="space-y-4">
                             <div class="trade-strategy-grid text-xs">
-                                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
-                                    <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">35/70</div>
-                                    <div class="space-y-2">
-                                        ${renderTradeEditorRows(block3570, 't4', false)}
-                                        <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
-                                            <span>Total</span>
-                                            <span class="${block3570.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block3570.subtotal)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
-                                    <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">40/80</div>
-                                    <div class="space-y-2">
-                                        ${renderTradeEditorRows(block4080, 't1', false)}
-                                        <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
-                                            <span>Total</span>
-                                            <span class="${block4080.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block4080.subtotal)}</span>
-                                        </div>
-                                    </div>
-                                </div>
+                                
                                 <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
                                     <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">25/50</div>
                                     <div class="space-y-2">
@@ -5242,6 +5223,25 @@ function renderCalendar(acc) {
                                         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
                                             <span>Total</span>
                                             <span class="${block4040.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block4040.subtotal)}</span>
+                                        </div>
+                                    </div>
+                                </div><div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
+                                    <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">35/70</div>
+                                    <div class="space-y-2">
+                                        ${renderTradeEditorRows(block3570, 't4', false)}
+                                        <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
+                                            <span>Total</span>
+                                            <span class="${block3570.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block3570.subtotal)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
+                                    <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">40/80</div>
+                                    <div class="space-y-2">
+                                        ${renderTradeEditorRows(block4080, 't1', false)}
+                                        <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
+                                            <span>Total</span>
+                                            <span class="${block4080.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block4080.subtotal)}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -5813,7 +5813,7 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             const riskExpectancyOverall = (document.getElementById('risk-expectancy-overall')?.textContent || '--').trim();
 
             const strat = _computeStrategyAnalytics(acc, start, end);
-            const strategies = [strat.t3570, strat.t4080, strat.t2550, strat.t4040, strat.ct];
+            const strategies = [strat.t2550, strat.t4040, strat.t3570, strat.t4080, strat.ct];
             const bestStrategy = strategies.slice().sort((a,b)=> b.total - a.total)[0];
             const worstStrategy = strategies.slice().sort((a,b)=> a.total - b.total)[0];
             const periodSummary = _periodTradeSummary(acc, start, end);
@@ -5913,7 +5913,7 @@ ${period} • ${(acc?.name || 'Conta')}
             const kpiMaxDD = (els.kpiMaxDD?.textContent || '--').trim();
 
             const strat = _computeStrategyAnalytics(acc, start, end);
-            const strategies = [strat.t3570, strat.t4080, strat.t2550, strat.t4040, strat.ct];
+            const strategies = [strat.t2550, strat.t4040, strat.t3570, strat.t4080, strat.ct];
             const bestStrategy = strategies.slice().sort((a,b)=> b.total - a.total)[0];
             const worstStrategy = strategies.slice().sort((a,b)=> a.total - b.total)[0];
             const riskMaxLosing = (document.getElementById('risk-max-losing')?.textContent || '--').trim();
@@ -5958,7 +5958,7 @@ ${period} • ${(acc?.name || 'Conta')}
                 try {
                     if (!window.Chart) return null;
                     let chartLabels = [];
-                    const strategyCum = { t3570: 0, t4080: 0, t2550: 0, t4040: 0, ct: 0 };
+                    const strategyCum = { t2550: 0, t4040: 0, t3570: 0, t4080: 0, ct: 0 };
                     const datasets = [
                         { key:'t2550', label:'25/50', borderColor:'#2563eb', data:[] },
                         { key:'t4040', label:'30/60', borderColor:'#7c3aed', data:[] },
@@ -8159,7 +8159,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             ttl.textContent = title || "Detalhes do período";
             rng.textContent = `${_formatDM(startISO)} – ${_formatDM(endISO)} • ${acc.name || (CURRENT_LANG==='en'?'Account':'Conta')}`;
             const strat = _computeStrategyAnalytics(acc, startISO, endISO);
-            sum.textContent = `Dias com trade: ${res.tradedDays} • 25/50 ${formatCurrency(strat.t2550.total)} • 30/60 ${formatCurrency(strat.t4040.total)} • 35/70 ${formatCurrency(strat.t3570.total)} • 40/80 ${formatCurrency(strat.t4080.total)} • CT ${formatCurrency(strat.ct.total)}`;
+            
             tot.textContent = CURRENT_LANG==='en' ? "Independent strategy view" : "Estratégias independentes";
 
             tbody.innerHTML = '';
@@ -8167,10 +8167,10 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${_formatDM(r.iso)} (${r.iso})</td>
-                    <td>${formatCurrency(r.t4)}</td>
-                    <td>${formatCurrency(r.t1)}</td>
                     <td>${formatCurrency(r.t0)}</td>
                     <td>${formatCurrency(r.t3)}</td>
+                    <td>${formatCurrency(r.t4)}</td>
+                    <td>${formatCurrency(r.t1)}</td>
                     <td>${formatCurrency(r.t2)}</td>
                     <td>${(r.note || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
                 `;
@@ -8280,10 +8280,10 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                         doc.setFont('helvetica','bold');
                         doc.setFontSize(10);
                         doc.text('Data',     colDate, y);
-                        doc.text('35/70',  colT4,   y, { align:'right' });
-                        doc.text('40/80',  colT1,   y, { align:'right' });
                         doc.text('25/50',  colT0,   y, { align:'right' });
-                        doc.text('30/60', colT3,   y, { align:'right' });
+                        doc.text('30/60',  colT3,   y, { align:'right' });
+                        doc.text('35/70', colT4,   y, { align:'right' });
+                        doc.text('40/80', colT1,   y, { align:'right' });
                         doc.text('Condução',  colT2,   y, { align:'right' });
                         y += 10;
                         doc.setLineWidth(0.5);
@@ -8316,10 +8316,10 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
                     for(const r of res.rows){
                         const day = _formatDM(r.iso); // dd/mm
-                        const t4 = formatCurrency(r.t4);
-                        const t1 = formatCurrency(r.t1);
                         const t0 = formatCurrency(r.t0);
                         const t3 = formatCurrency(r.t3);
+                        const t4 = formatCurrency(r.t4);
+                        const t1 = formatCurrency(r.t1);
                         const t2 = formatCurrency(r.t2);
                         const note = (r.note||'').toString().trim();
 
