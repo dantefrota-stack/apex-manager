@@ -697,6 +697,64 @@ tr.bg-green-50 td {
                 </div>
 
                 <!-- PANE: LOGS -->
+
+                <div id="admin-pane-strategy" class="hidden space-y-3">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                <i data-lucide="sliders-horizontal" class="w-4 h-4 text-indigo-500"></i> Gerenciador de Estratégias
+                            </h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Versione nomes, ordem, ativação e visibilidade por data, sem alterar o histórico anterior.</p>
+                        </div>
+                        <div class="text-[11px] text-slate-400">Slots internos preservados: t0, t3, t4, t1, t2</div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-[260px_minmax(0,1fr)] gap-4">
+                        <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Versões salvas</div>
+                                <button type="button" onclick="window.strategyManagerNewVersion()" class="px-2.5 py-1.5 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Nova versão</button>
+                            </div>
+                            <div id="strategy-version-list" class="space-y-2 max-h-[420px] overflow-y-auto"></div>
+                        </div>
+
+                        <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/20 p-4 space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div>
+                                    <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Data de vigência</label>
+                                    <input id="strategy-effective-date" type="date" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+                                </div>
+                                <div class="md:col-span-2 flex items-end">
+                                    <div id="strategy-editor-hint" class="text-xs text-slate-500 dark:text-slate-400">Os reports usam a versão válida para cada data. Histórico antigo permanece com a nomenclatura anterior.</div>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-[760px] w-full text-sm">
+                                    <thead>
+                                        <tr class="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                            <th class="py-2">Slot</th>
+                                            <th class="py-2">Nome exibido</th>
+                                            <th class="py-2 text-center">Ordem</th>
+                                            <th class="py-2 text-center">Ativa</th>
+                                            <th class="py-2 text-center">Visível</th>
+                                            <th class="py-2">Observação</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="strategy-editor-body"></tbody>
+                                </table>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 flex-wrap pt-2 border-t border-slate-200 dark:border-slate-700">
+                                <div id="strategy-manager-status" class="text-xs text-slate-500 dark:text-slate-400">Sem alterações.</div>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" onclick="window.strategyManagerDuplicateSelected()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-semibold">Duplicar versão</button>
+                                    <button type="button" onclick="window.strategyManagerDeleteSelected()" class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold">Excluir versão</button>
+                                    <button type="button" onclick="window.strategyManagerSave()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Salvar versão</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="admin-pane-logs" class="hidden space-y-3">
                     <div class="flex items-start justify-between gap-3">
                         <div>
@@ -954,23 +1012,23 @@ tr.bg-green-50 td {
             <div id="accounts-overview-body" class="p-5 space-y-4 overflow-y-auto max-h-[calc(90vh-70px)]">
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3" id="accounts-overview-strategy-cards">
                     <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
-                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">25/50</div>
+                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold" id="accounts-overview-label-t0">25/50</div>
                         <div id="accounts-overview-2550" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
                     </div>
                     <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
-                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">30/60</div>
+                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold" id="accounts-overview-label-t3">30/60</div>
                         <div id="accounts-overview-4040" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
                     </div>
                     <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
-                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">35/70</div>
+                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold" id="accounts-overview-label-t4">35/70</div>
                         <div id="accounts-overview-3570" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
                     </div>
                     <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
-                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">40/80</div>
+                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold" id="accounts-overview-label-t1">40/80</div>
                         <div id="accounts-overview-4080" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
                     </div>
                     <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
-                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold">Condução Técnica</div>
+                        <div class="text-[11px] uppercase tracking-wide text-slate-400 font-bold" id="accounts-overview-label-t2">Condução Técnica</div>
                         <div id="accounts-overview-ct" class="mt-2 text-lg font-extrabold text-slate-800 dark:text-slate-100">--</div>
                     </div>
                 </div>
@@ -1860,9 +1918,11 @@ let isOffline = false;
             adminPassword: document.getElementById('admin-password'),
             adminTabPayouts: document.getElementById('admin-tab-payouts'),
             adminTabLogs: document.getElementById('admin-tab-logs'),
+            adminTabStrategy: document.getElementById('admin-tab-strategy'),
             adminTabAI: document.getElementById('admin-tab-ai'),
             adminPanePayouts: document.getElementById('admin-pane-payouts'),
             adminPaneLogs: document.getElementById('admin-pane-logs'),
+            adminPaneStrategy: document.getElementById('admin-pane-strategy'),
             adminPaneAI: document.getElementById('admin-pane-ai'),
             adminLogsList: document.getElementById('admin-logs-list'),
             adminClearPayoutsBtn: document.getElementById('admin-clear-payouts-btn'),
@@ -1886,7 +1946,11 @@ let isOffline = false;
             accountMetaModal: document.getElementById('account-meta-modal'),
             accountMetaSubtitle: document.getElementById('account-meta-subtitle'),
             accountMetaStatus: document.getElementById('account-meta-status'),
-            accountMetaGroup: document.getElementById('account-meta-group'),};
+            accountMetaGroup: document.getElementById('account-meta-group'),
+            strategyVersionList: document.getElementById('strategy-version-list'),
+            strategyEffectiveDate: document.getElementById('strategy-effective-date'),
+            strategyEditorBody: document.getElementById('strategy-editor-body'),
+            strategyManagerStatus: document.getElementById('strategy-manager-status'),};
 
 
 
@@ -3330,6 +3394,9 @@ function _openPrintWindow(htmlStr){
                         sct += Number(e.t2 || 0);
                     });
                 });
+                const lblMap = getStrategyLabelMapForDate(getTodayISO());
+                const setLbl=(id,slot)=>{ const el=document.getElementById(id); if(el) el.textContent = lblMap[slot] || strategyMetaBySlot(slot).defaultLabel; };
+                setLbl('accounts-overview-label-t0','t0'); setLbl('accounts-overview-label-t3','t3'); setLbl('accounts-overview-label-t4','t4'); setLbl('accounts-overview-label-t1','t1'); setLbl('accounts-overview-label-t2','t2');
                 const el2550 = document.getElementById('accounts-overview-2550');
                 const el4040 = document.getElementById('accounts-overview-4040');
                 const el3570 = document.getElementById('accounts-overview-3570');
@@ -3731,6 +3798,7 @@ function _openPrintWindow(htmlStr){
             return `${y}-${m}-${day}`;
         }
 
+        ensureStrategyConfigs();
         window.createAccount = () => { const name = prompt(translateString("Nome:")); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [], createdAt: new Date().toISOString(), favorite: false, status: 'active', companyGroup: 'Sem grupo' }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); };
         window.renameAccount = () => { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } };
         
@@ -3828,6 +3896,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             try { renderPayoutHistory(getActive()); } catch(e) {}
             renderAdminLogsList();
             try { refreshAIUI(); } catch(e) {}
+            try { renderStrategyManager(); } catch(e) {}
             try { ntImportInitDefaults(); } catch(e) {}
 // Tab atual
             setAdminTab(_adminTab);
@@ -3857,6 +3926,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
             if(els.adminPanePayouts) els.adminPanePayouts.classList.toggle('hidden', tab !== 'payouts');
             if(els.adminPaneLogs) els.adminPaneLogs.classList.toggle('hidden', tab !== 'logs');
+            if(els.adminPaneStrategy) els.adminPaneStrategy.classList.toggle('hidden', tab !== 'strategy');
             if(els.adminPaneAI) els.adminPaneAI.classList.toggle('hidden', tab !== 'ai');
 
             if(els.adminTabPayouts){
@@ -3866,6 +3936,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(els.adminTabLogs){
                 els.adminTabLogs.className = "px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 " + 
                     (tab === 'logs' ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100");
+            }
+            if(els.adminTabStrategy){
+                els.adminTabStrategy.className = "px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 " + 
+                    (tab === 'strategy' ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100");
             }
             if(els.adminTabAI){
                 els.adminTabAI.className = "px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 " + 
@@ -4289,41 +4363,45 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const acc = getActive();
             const fs = (document.getElementById('filter-start') || {}).value || '';
             const fe = (document.getElementById('filter-end') || {}).value || '';
-            let csvContent = "data:text/csv;charset=utf-8,Data,25/50,30/60,35/70,40/80,Condução Técnica,Notas\n";
+            const headerLabels = getStrategiesForDate(fe || fs || getTodayISO(), { includeInactive:false, includeHidden:false }).map(s => s.label);
+            let csvContent = `data:text/csv;charset=utf-8,Data,${headerLabels.join(',')},Notas
+`;
             const dates = Object.keys(acc.data).sort();
             dates.forEach(iso => {
                 if(fs && iso < fs) return;
                 if(fe && iso > fe) return;
                 const d = acc.data[iso] || {};
                 const dateStr = formatDateShort(parseISODateLocal(iso));
-                const v0 = Number(d.t0 || 0);
-                const v1 = Number(d.t1 || 0);
-                const v2 = Number(d.t2 || 0);
-                const v3 = Number(d.t3 || 0);
-                const v4 = Number(d.t4 || 0);
-                const valNum = (d.val !== undefined && d.val !== null && d.val !== '') ? (parseFloat(d.val) || 0) : (v0 + v3 + v4 + v1 + v2);
-                const note = (d.note || '').replace(/[\r\n]+/g, " ").replace(/,/g, ";");
-                if (v0 !== 0 || v1 !== 0 || v2 !== 0 || v3 !== 0 || v4 !== 0 || valNum !== 0 || note !== '') {
-                    csvContent += `${dateStr},${v4.toFixed(2)},${v1.toFixed(2)},${v0.toFixed(2)},${v3.toFixed(2)},${v2.toFixed(2)},${note}\n`;
+                const blocks = getVisibleStrategyEntriesForDay(d, iso);
+                const note = (d.note || '').replace(/[
+]+/g, " ").replace(/,/g, ";");
+                const hasValues = blocks.some(b => Number(b.subtotal || 0) !== 0) || note !== '';
+                if (hasValues) {
+                    csvContent += `${dateStr},${blocks.map(b => Number(b.subtotal || 0).toFixed(2)).join(',')},${note}
+`;
                 }
             });
 
             if(fs && fe){
-                const strat = _computeStrategyAnalytics(acc, fs, fe);
-                csvContent += `\nResumo por Estratégia,,,,,\n`;
-                csvContent += `Estratégia,Resultado,Trades,Win Rate,Payoff,Expectancy,\n`;
-                [['25/50',strat.t2550],['30/60',strat.t4040],['35/70',strat.t3570],['40/80',strat.t4080],['Condução Técnica',strat.ct]].forEach(([label,s])=>{
+                const rows = getStrategyRowsForPeriod(acc, fs, fe, { includeInactive:false, includeHidden:false });
+                csvContent += `
+Resumo por Estratégia,,,,,
+`;
+                csvContent += `Estratégia,Resultado,Trades,Win Rate,Payoff,Expectancy
+`;
+                rows.forEach((s)=>{
                     const wr = s.trades > 0 ? `${(s.winRate*100).toFixed(0)}%` : '--';
                     const payoff = (s.payoff === null || !isFinite(s.payoff)) ? '--' : s.payoff.toFixed(2);
                     const expectancy = s.trades > 0 ? formatCurrency(s.expectancy) : '--';
-                    csvContent += `${label},${s.total.toFixed(2)},${s.trades},${wr},${payoff},${String(expectancy).replace(/,/g,';')}\n`;
+                    csvContent += `${s.label},${s.total.toFixed(2)},${s.trades},${wr},${payoff},${String(expectancy).replace(/,/g,';')}
+`;
                 });
             }
 
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `Relatorio_${acc.name}_${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute("download", `${getActive().name || 'report'}_${(fe || getTodayISO())}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -4543,26 +4621,319 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             els.filterStart.value = fmt(start); els.filterEnd.value = fmt(end);
         }
 
+        const STRATEGY_SLOT_META = [
+            { slot:'t0', defaultLabel:'25/50', defaultOrder:1, color:'#2563eb', legacyKey:'t2550', breakout:true },
+            { slot:'t3', defaultLabel:'30/60', defaultOrder:2, color:'#7c3aed', legacyKey:'t4040', breakout:false },
+            { slot:'t4', defaultLabel:'35/70', defaultOrder:3, color:'#059669', legacyKey:'t3570', breakout:false },
+            { slot:'t1', defaultLabel:'40/80', defaultOrder:4, color:'#ea580c', legacyKey:'t4080', breakout:false },
+            { slot:'t2', defaultLabel:'Condução Técnica', defaultOrder:5, color:'#dc2626', legacyKey:'ct', breakout:false }
+        ];
+        const STRATEGY_BREAKDOWN_SLOT_MAP = { t2550:'t0', t4040:'t3', t3570:'t4', t4080:'t1', ct:'t2' };
+        let __strategyManagerSelectedVersionId = null;
 
-        
-        function _strategyBlocksForDay(e){
+        function strategyMetaBySlot(slot){
+            return STRATEGY_SLOT_META.find(s => s.slot === slot) || STRATEGY_SLOT_META[0];
+        }
+        function strategyDefaultVersion(){
             return {
-                t2550: { label:'25/50', key:'t0', legs: getTradeLegValues(e || {}, 't0') },
-                t4040: { label:'30/60', key:'t3', legs: getTradeLegValues(e || {}, 't3') },
-                t3570: { label:'35/70', key:'t4', legs: getTradeLegValues(e || {}, 't4') },
-                t4080: { label:'40/80', key:'t1', legs: getTradeLegValues(e || {}, 't1') },
-                ct:    { label:'Condução Técnica', key:'t2', legs: getTradeLegValues(e || {}, 't2') }
+                id: 'base-default',
+                effectiveFrom: '1900-01-01',
+                strategies: STRATEGY_SLOT_META.map(meta => ({
+                    slot: meta.slot,
+                    label: meta.defaultLabel,
+                    order: meta.defaultOrder,
+                    active: true,
+                    visible: true
+                }))
             };
         }
+        function normalizeStrategyVersion(ver, idx=0){
+            const base = strategyDefaultVersion();
+            const incoming = (ver && Array.isArray(ver.strategies)) ? ver.strategies : [];
+            const merged = STRATEGY_SLOT_META.map(meta => {
+                const found = incoming.find(s => s && s.slot === meta.slot) || {};
+                return {
+                    slot: meta.slot,
+                    label: String(found.label || meta.defaultLabel).trim() || meta.defaultLabel,
+                    order: Number(found.order) || meta.defaultOrder,
+                    active: found.active !== false,
+                    visible: found.visible !== false
+                };
+            }).sort((a,b) => (a.order - b.order) || (strategyMetaBySlot(a.slot).defaultOrder - strategyMetaBySlot(b.slot).defaultOrder));
+            return {
+                id: String((ver && ver.id) || `strategy-version-${idx+1}`),
+                effectiveFrom: String((ver && ver.effectiveFrom) || base.effectiveFrom),
+                strategies: merged
+            };
+        }
+        function ensureStrategyConfigs(){
+            if (!store.strategyConfigs || !Array.isArray(store.strategyConfigs) || !store.strategyConfigs.length) {
+                store.strategyConfigs = [strategyDefaultVersion()];
+            } else {
+                store.strategyConfigs = store.strategyConfigs.map((v, idx) => normalizeStrategyVersion(v, idx))
+                    .sort((a,b) => String(a.effectiveFrom).localeCompare(String(b.effectiveFrom)));
+            }
+            return store.strategyConfigs;
+        }
+        function getStrategyVersions(){
+            return ensureStrategyConfigs();
+        }
+        function getStrategyVersionForDate(iso){
+            const target = String(iso || getTodayISO());
+            const versions = getStrategyVersions();
+            let found = versions[0];
+            versions.forEach(v => {
+                if (String(v.effectiveFrom) <= target) found = v;
+            });
+            return normalizeStrategyVersion(found);
+        }
+        function getStrategiesForDate(iso, opts={}){
+            const { includeInactive=false, includeHidden=false } = opts;
+            const version = getStrategyVersionForDate(iso);
+            return version.strategies
+                .filter(s => includeInactive || s.active !== false)
+                .filter(s => includeHidden || s.visible !== false)
+                .map(s => ({ ...s, ...(strategyMetaBySlot(s.slot) || {}) }))
+                .sort((a,b) => (a.order - b.order) || (strategyMetaBySlot(a.slot).defaultOrder - strategyMetaBySlot(b.slot).defaultOrder));
+        }
+        function getStrategyEntriesForDay(e, iso, opts={}){
+            return getStrategiesForDate(iso, opts).map(cfg => {
+                const legs = getTradeLegValues(e || {}, cfg.slot);
+                return { ...cfg, key: cfg.slot, legs, subtotal: Number(legs.subtotal || 0) };
+            });
+        }
+        function getVisibleStrategyEntriesForDay(e, iso){
+            return getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false });
+        }
+        function getStrategyLabelForSlot(slot, iso){
+            const entry = getStrategiesForDate(iso, { includeInactive:true, includeHidden:true }).find(s => s.slot === slot);
+            return entry ? entry.label : (strategyMetaBySlot(slot).defaultLabel);
+        }
+        function getStrategyLabelMapForDate(iso){
+            const map = {};
+            getStrategiesForDate(iso, { includeInactive:true, includeHidden:true }).forEach(s => map[s.slot] = s.label);
+            return map;
+        }
+        function getStrategyRowsForPeriod(acc, startISO, endISO, opts={}){
+            const bucketMap = new Map();
+            const includeInactive = !!opts.includeInactive;
+            const includeHidden = !!opts.includeHidden;
+            Object.keys(acc.data || {}).sort().forEach(iso => {
+                if (iso < startISO || iso > endISO) return;
+                const e = acc.data[iso] || {};
+                if (e.holiday) return;
+                getStrategyEntriesForDay(e, iso, { includeInactive, includeHidden }).forEach(entry => {
+                    const bucketKey = `${entry.slot}__${entry.label}`;
+                    if (!bucketMap.has(bucketKey)) {
+                        bucketMap.set(bucketKey, {
+                            key: bucketKey,
+                            slot: entry.slot,
+                            label: entry.label,
+                            order: entry.order,
+                            color: entry.color,
+                            total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0,
+                            winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0,
+                            maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0,
+                            curveLabels:[], curveData:[], cum:0, peak:0
+                        });
+                    }
+                    const s = bucketMap.get(bucketKey);
+                    const subtotal = Number(entry.legs.subtotal || 0);
+                    const legs = [entry.legs.leg1, entry.legs.leg2, entry.legs.leg3, entry.legs.leg4]
+                        .map(v => (v === '' || v === null || v === undefined) ? null : Number(v))
+                        .filter(v => v !== null && !isNaN(v) && v !== 0);
+                    if (subtotal > 0) s.greenDays += 1;
+                    else if (subtotal < 0) s.redDays += 1;
+                    legs.forEach(v => {
+                        s.trades += 1;
+                        if (v > 0) {
+                            s.wins += 1; s.grossWin += v; s.winSum += v; s.winCount += 1;
+                            s.currentWinningStreak += 1; s.currentLosingStreak = 0;
+                        } else if (v < 0) {
+                            s.losses += 1; s.grossLoss += Math.abs(v); s.lossSum += v; s.lossCount += 1;
+                            s.currentLosingStreak += 1; s.currentWinningStreak = 0;
+                        }
+                        if (s.currentWinningStreak > s.maxWinningStreak) s.maxWinningStreak = s.currentWinningStreak;
+                        if (s.currentLosingStreak > s.maxLosingStreak) s.maxLosingStreak = s.currentLosingStreak;
+                    });
+                    if (subtotal !== 0 || legs.length) {
+                        s.total += subtotal;
+                        s.cum += subtotal;
+                        if (s.cum > s.peak) s.peak = s.cum;
+                        const dd = s.peak - s.cum;
+                        if (dd > s.maxDD) s.maxDD = dd;
+                        s.curveLabels.push(formatDateShort(parseISODateLocal(iso)));
+                        s.curveData.push(s.cum);
+                    }
+                });
+            });
+            const rows = Array.from(bucketMap.values()).sort((a,b) => (a.order - b.order) || String(a.label).localeCompare(String(b.label)));
+            rows.forEach(s => {
+                s.winRate = s.trades > 0 ? (s.wins / s.trades) : 0;
+                s.avgWin = s.winCount > 0 ? (s.winSum / s.winCount) : 0;
+                s.avgLoss = s.lossCount > 0 ? (s.lossSum / s.lossCount) : 0;
+                s.payoff = (!s.avgLoss || s.avgLoss === 0) ? null : (s.avgWin / Math.abs(s.avgLoss));
+                s.expectancy = (s.winRate * s.avgWin) - ((1 - s.winRate) * Math.abs(s.avgLoss));
+            });
+            return rows;
+        }
+        function getStrategySummaryForDate(iso){
+            const map = {};
+            getStrategiesForDate(iso, { includeInactive:true, includeHidden:true }).forEach(s => map[s.slot] = s.label);
+            return STRATEGY_SLOT_META.map(meta => map[meta.slot] || meta.defaultLabel);
+        }
+        function updateCalendarHeaderLabels(iso){
+            try{
+                const row = document.querySelector('#calendar-body')?.closest('table')?.querySelector('thead tr');
+                if(!row) return;
+                const strategies = getStrategiesForDate(iso || getTodayISO(), { includeInactive:false, includeHidden:false });
+                row.innerHTML = `<th class="px-2 py-3 md:px-4">Data</th>`
+                    + strategies.map(s => `<th class="px-1 py-3 text-center min-w-[90px]">${escapeHtml(s.label)}</th>`).join('')
+                    + `<th class="px-1 py-3 text-center w-10">Nota</th>
+                       <th class="px-1 py-3 text-center w-10"><i data-lucide="coffee" class="w-3 h-3 mx-auto"></i></th>`;
+            }catch(e){}
+        }
+        function renderStrategyVersionList(){
+            if(!els.strategyVersionList) return;
+            const versions = getStrategyVersions();
+            const selectedId = __strategyManagerSelectedVersionId || (versions[versions.length-1] && versions[versions.length-1].id);
+            __strategyManagerSelectedVersionId = selectedId;
+            els.strategyVersionList.innerHTML = versions.map(v => {
+                const selected = v.id === selectedId;
+                const labels = normalizeStrategyVersion(v).strategies.sort((a,b)=>a.order-b.order).map(s => s.label).join(' • ');
+                return `<button type="button" onclick="window.strategyManagerSelectVersion('${v.id}')" class="w-full text-left rounded-lg border px-3 py-2 transition ${selected ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-indigo-300'}">
+                            <div class="font-bold text-xs">${escapeHtml(v.effectiveFrom)}</div>
+                            <div class="mt-1 text-[11px] ${selected ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'}">${escapeHtml(labels)}</div>
+                        </button>`;
+            }).join('');
+        }
+        function strategyManagerSelectedVersion(){
+            const versions = getStrategyVersions();
+            const found = versions.find(v => v.id === __strategyManagerSelectedVersionId);
+            return normalizeStrategyVersion(found || versions[versions.length-1]);
+        }
+        function renderStrategyManager(){
+            if(!els.strategyEditorBody || !els.strategyEffectiveDate) return;
+            ensureStrategyConfigs();
+            renderStrategyVersionList();
+            const version = strategyManagerSelectedVersion();
+            els.strategyEffectiveDate.value = version.effectiveFrom;
+            els.strategyEditorBody.innerHTML = version.strategies.sort((a,b)=>a.order-b.order).map(s => {
+                const meta = strategyMetaBySlot(s.slot);
+                return `<tr data-slot="${s.slot}" class="border-t border-slate-100 dark:border-slate-700">
+                    <td class="py-2 pr-3 align-middle">
+                        <div class="font-bold text-slate-700 dark:text-slate-200">${s.slot}</div>
+                        <div class="text-[11px] text-slate-400">${escapeHtml(meta.defaultLabel)}</div>
+                    </td>
+                    <td class="py-2 pr-3">
+                        <input type="text" value="${escapeHtml(s.label)}" data-field="label" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+                    </td>
+                    <td class="py-2 pr-3 text-center">
+                        <input type="number" min="1" max="5" value="${Number(s.order)||1}" data-field="order" class="w-20 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-center">
+                    </td>
+                    <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="active" ${s.active ? 'checked' : ''}></td>
+                    <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="visible" ${s.visible ? 'checked' : ''}></td>
+                    <td class="py-2 text-[11px] text-slate-500 dark:text-slate-400">${meta.breakout ? 'Mantém checkbox de rompimento' : 'Padrão'}</td>
+                </tr>`;
+            }).join('');
+            if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Pronto para salvar.';
+        }
+        function readStrategyEditorVersion(){
+            const rows = Array.from((els.strategyEditorBody || document.createElement('tbody')).querySelectorAll('tr[data-slot]'));
+            const seenOrders = new Set();
+            const strategies = rows.map((tr, idx) => {
+                const slot = tr.getAttribute('data-slot');
+                const label = (tr.querySelector('[data-field="label"]')?.value || '').trim() || strategyMetaBySlot(slot).defaultLabel;
+                let order = Number(tr.querySelector('[data-field="order"]')?.value || idx+1);
+                if(order < 1) order = idx+1;
+                while(seenOrders.has(order)) order += 1;
+                seenOrders.add(order);
+                return {
+                    slot,
+                    label,
+                    order,
+                    active: !!tr.querySelector('[data-field="active"]')?.checked,
+                    visible: !!tr.querySelector('[data-field="visible"]')?.checked
+                };
+            });
+            return normalizeStrategyVersion({
+                id: __strategyManagerSelectedVersionId || `strategy-version-${Date.now()}`,
+                effectiveFrom: (els.strategyEffectiveDate?.value || getTodayISO()),
+                strategies
+            });
+        }
+        window.strategyManagerSelectVersion = function(id){
+            __strategyManagerSelectedVersionId = id;
+            renderStrategyManager();
+        };
+        window.strategyManagerNewVersion = function(){
+            const latest = normalizeStrategyVersion(strategyManagerSelectedVersion());
+            __strategyManagerSelectedVersionId = `strategy-version-${Date.now()}`;
+            const tomorrow = getTodayISO();
+            const clone = { ...latest, id: __strategyManagerSelectedVersionId, effectiveFrom: tomorrow, strategies: latest.strategies.map(s => ({...s})) };
+            store.strategyConfigs.push(clone);
+            store.strategyConfigs = getStrategyVersions();
+            renderStrategyManager();
+        };
+        window.strategyManagerDuplicateSelected = function(){
+            const latest = normalizeStrategyVersion(strategyManagerSelectedVersion());
+            __strategyManagerSelectedVersionId = `strategy-version-${Date.now()}`;
+            store.strategyConfigs.push({ ...latest, id: __strategyManagerSelectedVersionId, strategies: latest.strategies.map(s => ({...s})) });
+            store.strategyConfigs = getStrategyVersions();
+            renderStrategyManager();
+        };
+        window.strategyManagerDeleteSelected = function(){
+            const versions = getStrategyVersions();
+            if(versions.length <= 1){ alert('É necessário manter pelo menos uma versão.'); return; }
+            if(!confirm('Excluir a versão selecionada? O histórico dos dados não será apagado, mas essa configuração deixará de existir.')) return;
+            store.strategyConfigs = versions.filter(v => v.id !== __strategyManagerSelectedVersionId);
+            __strategyManagerSelectedVersionId = store.strategyConfigs[store.strategyConfigs.length-1].id;
+            saveToCloud();
+            renderStrategyManager();
+            renderCalendar(getActive());
+            filterReportInternal();
+        };
+        window.strategyManagerSave = function(){
+            try{
+                const version = readStrategyEditorVersion();
+                if(!version.effectiveFrom){ alert('Defina a data de vigência.'); return; }
+                const activeVisible = version.strategies.filter(s => s.active && s.visible);
+                if(!activeVisible.length){ alert('Pelo menos uma estratégia ativa e visível é necessária.'); return; }
+                const versions = getStrategyVersions().filter(v => v.id !== version.id && v.effectiveFrom !== version.effectiveFrom);
+                versions.push(version);
+                store.strategyConfigs = versions.map((v,idx)=>normalizeStrategyVersion(v,idx)).sort((a,b)=>String(a.effectiveFrom).localeCompare(String(b.effectiveFrom)));
+                __strategyManagerSelectedVersionId = version.id;
+                saveToCloud();
+                if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = `Versão salva com vigência em ${version.effectiveFrom}.`;
+                renderStrategyManager();
+                renderCalendar(getActive());
+                filterReportInternal();
+                renderSidebar();
+            }catch(err){
+                alert('Não foi possível salvar a versão das estratégias.');
+            }
+        };
 
-        function _individualTradeValuesForDay(e){
-            const blocks = _strategyBlocksForDay(e || {});
+        function _strategyBlocksForDay(e, iso){
+            const map = {};
+            STRATEGY_SLOT_META.forEach(meta => {
+                const label = getStrategyLabelForSlot(meta.slot, iso || getTodayISO());
+                const block = { label, key: meta.slot, slot: meta.slot, legs: getTradeLegValues(e || {}, meta.slot) };
+                map[meta.legacyKey] = block;
+                map[meta.slot] = block;
+            });
+            return map;
+        }
+
+
+        function _individualTradeValuesForDay(e, iso){
+            const blocks = getStrategyEntriesForDay(e || {}, iso || getTodayISO(), { includeInactive:false, includeHidden:false });
             const out = [];
-            Object.entries(blocks).forEach(([key, block]) => {
+            blocks.forEach((block) => {
                 const legVals = [block.legs.leg1, block.legs.leg2, block.legs.leg3, block.legs.leg4]
                     .map(v => (v === '' || v === null || v === undefined) ? null : Number(v))
                     .filter(v => v !== null && !isNaN(v) && v !== 0);
-                legVals.forEach((v, idx) => out.push({ strategy:key, tradeIndex: idx + 1, value:v }));
+                legVals.forEach((v, idx) => out.push({ strategy:block.slot, tradeIndex: idx + 1, value:v, label:block.label }));
             });
             return out;
         }
@@ -4578,9 +4949,9 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 const e = acc.data[iso] || {};
                 if (e.holiday) return;
 
-                const blocks = _strategyBlocksForDay(e);
-                const total = Object.values(blocks).reduce((sum, b) => sum + (Number(b.legs.subtotal) || 0), 0);
-                const trades = _individualTradeValuesForDay(e);
+                const blocks = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false });
+                const total = blocks.reduce((sum, b) => sum + (Number(b.legs.subtotal) || 0), 0);
+                const trades = _individualTradeValuesForDay(e, iso);
                 if (total !== 0 || trades.length) {
                     tradedDays += 1;
                     if(!firstTradeDay) firstTradeDay = iso;
@@ -4613,72 +4984,15 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         }
 
         function _computeStrategyAnalytics(acc, startISO, endISO){
-            const strategies = {
-                t2550: { label: '25/50', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
-                t4040: { label: '30/60', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
-                t3570: { label: '35/70', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
-                t4080: { label: '40/80', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 },
-                ct:    { label: 'Condução Técnica', total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0, winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0, maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0, curveLabels:[], curveData:[], cum:0, peak:0 }
-            };
-
-            Object.keys(acc.data || {}).sort().forEach(iso => {
-                if (iso < startISO || iso > endISO) return;
-                const e = acc.data[iso] || {};
-                if (e.holiday) return;
-                const blocks = _strategyBlocksForDay(e);
-
-                Object.entries(blocks).forEach(([key, block]) => {
-                    const s = strategies[key];
-                    const subtotal = Number(block.legs.subtotal || 0);
-                    const legs = [block.legs.leg1, block.legs.leg2, block.legs.leg3, block.legs.leg4]
-                        .map(v => (v === '' || v === null || v === undefined) ? null : Number(v))
-                        .filter(v => v !== null && !isNaN(v) && v !== 0);
-
-                    if (subtotal > 0) s.greenDays += 1;
-                    else if (subtotal < 0) s.redDays += 1;
-
-                    legs.forEach(v => {
-                        s.trades += 1;
-                        if (v > 0) {
-                            s.wins += 1;
-                            s.grossWin += v;
-                            s.winSum += v;
-                            s.winCount += 1;
-                            s.currentWinningStreak += 1;
-                            s.currentLosingStreak = 0;
-                        } else if (v < 0) {
-                            s.losses += 1;
-                            s.grossLoss += Math.abs(v);
-                            s.lossSum += v;
-                            s.lossCount += 1;
-                            s.currentLosingStreak += 1;
-                            s.currentWinningStreak = 0;
-                        }
-                        if (s.currentWinningStreak > s.maxWinningStreak) s.maxWinningStreak = s.currentWinningStreak;
-                        if (s.currentLosingStreak > s.maxLosingStreak) s.maxLosingStreak = s.currentLosingStreak;
-                    });
-
-                    if (subtotal !== 0 || legs.length) {
-                        s.total += subtotal;
-                        s.cum += subtotal;
-                        if (s.cum > s.peak) s.peak = s.cum;
-                        const dd = s.peak - s.cum;
-                        if (dd > s.maxDD) s.maxDD = dd;
-                        s.curveLabels.push(formatDateShort(parseISODateLocal(iso)));
-                        s.curveData.push(s.cum);
-                    }
-                });
+            const rows = getStrategyRowsForPeriod(acc, startISO, endISO, { includeInactive:false, includeHidden:false });
+            const byKey = {};
+            rows.forEach(row => {
+                const legacyKey = (strategyMetaBySlot(row.slot) || {}).legacyKey || row.slot;
+                byKey[legacyKey] = row;
+                byKey[row.slot] = row;
             });
-
-            Object.values(strategies).forEach((s) => {
-                s.winRate = s.trades > 0 ? (s.wins / s.trades) : 0;
-                s.avgWin = s.winCount > 0 ? (s.winSum / s.winCount) : 0;
-                s.avgLoss = s.lossCount > 0 ? (s.lossSum / s.lossCount) : 0;
-                s.payoff = _safePayoff(s.avgWin, s.avgLoss);
-                s.expectancy = _safeExpectancy(s.winRate, s.avgWin, s.avgLoss);
-            });
-
-            return strategies;
+            byKey.__rows = rows;
+            return byKey;
         }
 
 
@@ -5109,6 +5423,7 @@ function renderCalendar(acc) {
             const months = (CURRENT_LANG === 'en') ? monthsEn : monthsPt;
             els.calendarTitle.textContent = `${months[m]} ${y}`;
             els.calendarBody.innerHTML = '';
+            updateCalendarHeaderLabels(getTodayISO());
 
             const { rangeStart, rangeEnd } = getMonthWeekRange(y, m);
             let weekNum = 0;
@@ -5120,23 +5435,22 @@ function renderCalendar(acc) {
                 const dayOfWeek = cur.getDay();
                 if (dayOfWeek === 0 || dayOfWeek === 6) continue;
 
+                const iso = cur.toISOString().split('T')[0];
+                const strategies = getStrategiesForDate(iso, { includeInactive:false, includeHidden:false });
+                const colCount = strategies.length + 3;
+
                 if (dayOfWeek === 1) {
                     weekNum++;
                     const sepTr = document.createElement('tr');
                     sepTr.className = "week-separator";
                     const dayStr = String(cur.getDate()).padStart(2, '0');
                     const monthStr = String(cur.getMonth() + 1).padStart(2, '0');
-                    sepTr.innerHTML = `<td colspan="8">${(CURRENT_LANG==='en'?'WEEK':'SEMANA')} ${weekNum} • ${(CURRENT_LANG==='en'?'START':'INÍCIO')} (${dayStr}.${monthStr})</td>`;
+                    sepTr.innerHTML = `<td colspan="${colCount}">${(CURRENT_LANG==='en'?'WEEK':'SEMANA')} ${weekNum} • ${(CURRENT_LANG==='en'?'START':'INÍCIO')} (${dayStr}.${monthStr})</td>`;
                     els.calendarBody.appendChild(sepTr);
                 }
 
-                const iso = cur.toISOString().split('T')[0];
                 const entry = acc.data[iso] || { val: 0, t0: '', t1: '', t2: '', t3: '', t4: '', note: '', holiday: false };
-                if (!entry.t0meta) entry.t0meta = {};
-                if (!entry.t1meta) entry.t1meta = {};
-                if (!entry.t2meta) entry.t2meta = {};
-                if (!entry.t3meta) entry.t3meta = {};
-                if (!entry.t4meta) entry.t4meta = {};
+                ['t0','t1','t2','t3','t4'].forEach(slot => { if (!entry[`${slot}meta`]) entry[`${slot}meta`] = {}; });
 
                 const isOutsideMonth = cur.getMonth() !== m;
                 const isToday = (iso === getTodayISO());
@@ -5144,31 +5458,22 @@ function renderCalendar(acc) {
                 const tr = document.createElement('tr');
                 tr.className = `dark:border-slate-700 ${isOutsideMonth ? 'opacity-60 bg-slate-50 dark:bg-slate-800/40' : ''} ${isToday ? 'today-row' : ''}`;
 
-                const block2550 = getTradeLegValues(entry, 't0');
-                const block4040 = getTradeLegValues(entry, 't3');
-                const block3570 = getTradeLegValues(entry, 't4');
-                const block4080 = getTradeLegValues(entry, 't1');
-                const blockCT = getTradeLegValues(entry, 't2');
-                const hasBlockTrades = (block) => [block.leg1, block.leg2, block.leg3, block.leg4].some(v => v !== '' && v !== null && v !== undefined);
+                const visibleBlocks = getVisibleStrategyEntriesForDay(entry, iso);
+                const hasBlockTrades = (block) => [block.legs.leg1, block.legs.leg2, block.legs.leg3, block.legs.leg4].some(v => v !== '' && v !== null && v !== undefined);
                 const breakoutLabel = CURRENT_LANG === 'en' ? 'Breakout' : 'Rompimento';
-                const renderTradeEditorRows = (block, strategyKey, showBreakout = false) => [1, 2, 3, 4].map((idx) => `
+                const renderTradeEditorRows = (block) => [1, 2, 3, 4].map((idx) => `
                                         <label class="flex items-center justify-between gap-2 min-w-0">
                                             <span class="text-slate-500 shrink-0">Trade ${idx}</span>
                                             <div class="flex items-center gap-2 min-w-0 flex-1 justify-end">
-                                                ${showBreakout ? `
+                                                ${block.breakout ? `
                                                 <label class="inline-flex items-center gap-1 text-[11px] text-slate-500 select-none cursor-pointer shrink-0">
-                                                    <input type="checkbox" class="rounded border-slate-300 dark:border-slate-600" ${block[`breakout${idx}`] ? 'checked' : ''} onchange="window.updateTradeBreakout('${iso}','${strategyKey}',${idx},this.checked)">
+                                                    <input type="checkbox" class="rounded border-slate-300 dark:border-slate-600" ${block.legs[`breakout${idx}`] ? 'checked' : ''} onchange="window.updateTradeBreakout('${iso}','${block.slot}',${idx},this.checked)">
                                                     <span>${breakoutLabel}</span>
                                                 </label>` : ''}
-                                                <input type="number" placeholder="0" class="w-20 md:w-24 xl:w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 min-w-0" value="${block[`leg${idx}`] ?? ''}" onblur="window.updateTradeLeg('${iso}','${strategyKey}',${idx},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
+                                                <input type="number" placeholder="0" class="w-20 md:w-24 xl:w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 min-w-0" value="${block.legs[`leg${idx}`] ?? ''}" onblur="window.updateTradeLeg('${iso}','${block.slot}',${idx},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
                                             </div>
                                         </label>
                                     `).join('');
-                const displayVal = (parseFloat(entry.val) || 0) || (block3570.subtotal + block4080.subtotal + block2550.subtotal + block4040.subtotal + blockCT.subtotal);
-
-                let colorClass = 'val-zero';
-                if (displayVal > 0) colorClass = 'val-pos';
-                else if (displayVal < 0) colorClass = 'val-neg';
 
                 const hasNote = entry.note && entry.note.trim().length > 0;
                 const noteIcon = hasNote ? 'message-circle' : 'message-square';
@@ -5184,11 +5489,7 @@ function renderCalendar(acc) {
                         </button>
                         <span>${dayLabel}</span>
                     </td>
-                    <td class="px-2 py-2 text-center w-28"><span class="font-semibold ${block2550.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${hasBlockTrades(block2550) ? formatCurrency(block2550.subtotal) : '--'}</span></td>
-                    <td class="px-2 py-2 text-center w-28"><span class="font-semibold ${block4040.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${hasBlockTrades(block4040) ? formatCurrency(block4040.subtotal) : '--'}</span></td>
-                    <td class="px-2 py-2 text-center w-28"><span class="font-semibold ${block3570.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${hasBlockTrades(block3570) ? formatCurrency(block3570.subtotal) : '--'}</span></td>
-                    <td class="px-2 py-2 text-center w-28"><span class="font-semibold ${block4080.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${hasBlockTrades(block4080) ? formatCurrency(block4080.subtotal) : '--'}</span></td>
-                    <td class="px-2 py-2 text-center w-28"><span class="font-semibold ${blockCT.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${hasBlockTrades(blockCT) ? formatCurrency(blockCT.subtotal) : '--'}</span></td>
+                    ${visibleBlocks.map(block => `<td class="px-2 py-2 text-center w-28"><span class="font-semibold ${block.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${hasBlockTrades(block) ? formatCurrency(block.subtotal) : '--'}</span></td>`).join('')}
                     <td class="px-4 py-2 text-center w-16">
                         <button onclick="openNoteModal('${iso}', false)" class="p-1.5 rounded-lg border transition ${noteBtnClass}" title="Editar Nota">
                             <i data-lucide="${noteIcon}" class="w-4 h-4"></i>
@@ -5202,65 +5503,27 @@ function renderCalendar(acc) {
                 detailsTr.id = `details-${iso}`;
                 detailsTr.className = `day-details-row ${isOpen ? '' : 'hidden'} ${isOutsideMonth ? 'opacity-60' : ''}`;
                 detailsTr.innerHTML = `
-                    <td colspan="8" class="px-4 py-3">
+                    <td colspan="${colCount}" class="px-4 py-3">
                         <div class="space-y-4">
                             <div class="trade-strategy-grid text-xs">
+                                ${visibleBlocks.map(block => `
                                 <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
-                                    <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">25/50</div>
+                                    <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">${block.label}</div>
                                     <div class="space-y-2">
-                                        ${renderTradeEditorRows(block2550, 't0', true)}
+                                        ${renderTradeEditorRows(block)}
                                         <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
                                             <span>Total</span>
-                                            <span class="${block2550.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block2550.subtotal)}</span>
+                                            <span class="${block.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block.subtotal)}</span>
                                         </div>
                                     </div>
-                                </div>
-                                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
-                                    <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">30/60</div>
-                                    <div class="space-y-2">
-                                        ${renderTradeEditorRows(block4040, 't3', false)}
-                                        <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
-                                            <span>Total</span>
-                                            <span class="${block4040.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block4040.subtotal)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
-                                    <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">35/70</div>
-                                    <div class="space-y-2">
-                                        ${renderTradeEditorRows(block3570, 't4', false)}
-                                        <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
-                                            <span>Total</span>
-                                            <span class="${block3570.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block3570.subtotal)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
-                                    <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">40/80</div>
-                                    <div class="space-y-2">
-                                        ${renderTradeEditorRows(block4080, 't1', false)}
-                                        <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
-                                            <span>Total</span>
-                                            <span class="${block4080.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block4080.subtotal)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="rounded-xl border border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900/40">
-                                    <div class="font-semibold text-slate-700 dark:text-slate-200 mb-3">Condução Técnica</div>
-                                    <div class="space-y-2">
-                                        ${renderTradeEditorRows(blockCT, 't2', false)}
-                                        <div class="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-700 font-semibold">
-                                            <span>Total</span>
-                                            <span class="${blockCT.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(blockCT.subtotal)}</span>
-                                        </div>
-                                    </div>
-                                </div>
+                                </div>`).join('')}
                             </div>
                         </div>
                     </td>
                 `;
                 els.calendarBody.appendChild(detailsTr);
             }
+            lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions();
         }
 
 function renderGlobalInsights(){
