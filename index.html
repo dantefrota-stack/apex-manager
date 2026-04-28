@@ -3798,7 +3798,6 @@ function _openPrintWindow(htmlStr){
             return `${y}-${m}-${day}`;
         }
 
-        ensureStrategyConfigs();
         window.createAccount = () => { const name = prompt(translateString("Nome:")); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [], createdAt: new Date().toISOString(), favorite: false, status: 'active', companyGroup: 'Sem grupo' }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); };
         window.renameAccount = () => { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } };
         
@@ -4677,6 +4676,7 @@ Resumo por Estratégia,,,,,
         function getStrategyVersions(){
             return ensureStrategyConfigs();
         }
+        ensureStrategyConfigs();
         function getStrategyVersionForDate(iso){
             const target = String(iso || getTodayISO());
             const versions = getStrategyVersions();
