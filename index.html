@@ -5025,14 +5025,10 @@ Resumo por Estratégia,,,,,
             let peak = 0;
             let maxDD = 0;
 
-            const strategyCum = { t2550: 0, t4040: 0, t3570: 0, t4080: 0, ct: 0 };
-            const strategySeries = {
-                t2550: { label: '25/50', data: [] },
-                t4040: { label: '30/60', data: [] },
-                t3570: { label: '35/70', data: [] },
-                t4080: { label: '40/80', data: [] },
-                ct: { label: 'Condução Técnica', data: [] }
-            };
+            const chartStrategyDefs = getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
+                .map(cfg => ({ ...cfg, legacyKey: cfg.legacyKey || cfg.slot, data: [] }));
+            const strategyCum = {};
+            chartStrategyDefs.forEach(cfg => { strategyCum[cfg.legacyKey] = 0; });
 
             Object.keys(acc.data || {}).sort().forEach(iso => {
                 if(iso < start || iso > end) return;
@@ -5071,19 +5067,22 @@ Resumo por Estratégia,,,,,
                     if (dd > maxDD) maxDD = dd;
 
                     chartLabels.push(formatDateShort(parseISODateLocal(iso)));
-                    ['t3570','t4080','t2550','t4040','ct'].forEach((key) => {
-                        strategyCum[key] += Number(blocks[key].legs.subtotal || 0);
-                        strategySeries[key].data.push(strategyCum[key]);
+                    chartStrategyDefs.forEach(cfg => {
+                        const key = cfg.legacyKey;
+                        const block = blocks[key] || blocks[cfg.slot];
+                        strategyCum[key] += Number(block?.legs?.subtotal || 0);
+                        cfg.data.push(strategyCum[key]);
                     });
                 }
             });
-            chartDatasets = [
-                { label: '25/50', data: strategySeries.t2550.data, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.10)' },
-                { label: '30/60', data: strategySeries.t4040.data, borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.10)' },
-                { label: '35/70', data: strategySeries.t3570.data, borderColor: '#059669', backgroundColor: 'rgba(5,150,105,0.10)' },
-                { label: '40/80', data: strategySeries.t4080.data, borderColor: '#ea580c', backgroundColor: 'rgba(234,88,12,0.10)' },
-                { label: 'Condução Técnica', data: strategySeries.ct.data, borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.10)' }
-            ].filter(ds => ds.data.some(v => Number(v || 0) !== 0));
+            chartDatasets = chartStrategyDefs
+                .map(cfg => ({
+                    label: cfg.label,
+                    data: cfg.data,
+                    borderColor: cfg.color || (strategyMetaBySlot(cfg.slot)?.color) || '#4f46e5',
+                    backgroundColor: 'rgba(79,70,229,0.10)'
+                }))
+                .filter(ds => ds.data.some(v => Number(v || 0) !== 0));
 
             els.customResult.textContent = formatCurrency(sum); 
             els.customResult.className = sum >= 0 ? "font-bold text-green-600" : "font-bold text-red-600";
@@ -6222,14 +6221,17 @@ ${period} • ${(acc?.name || 'Conta')}
                 try {
                     if (!window.Chart) return null;
                     let chartLabels = [];
-                    const strategyCum = { t2550: 0, t4040: 0, t3570: 0, t4080: 0, ct: 0 };
-                    const datasets = [
-                        { key:'t2550', label:'25/50', borderColor:'#2563eb', data:[] },
-                        { key:'t4040', label:'30/60', borderColor:'#7c3aed', data:[] },
-                        { key:'t3570', label:'35/70', borderColor:'#059669', data:[] },
-                        { key:'t4080', label:'40/80', borderColor:'#ea580c', data:[] },
-                        { key:'ct', label:'Condução Técnica', borderColor:'#dc2626', data:[] }
-                    ];
+                    const pdfChartStrategyDefs = getStrategiesForDate(endISO, { includeInactive:false, includeHidden:false })
+                        .map(cfg => ({
+                            ...cfg,
+                            key: cfg.legacyKey || cfg.slot,
+                            label: cfg.label,
+                            borderColor: cfg.color || (strategyMetaBySlot(cfg.slot)?.color) || '#4f46e5',
+                            data:[]
+                        }));
+                    const strategyCum = {};
+                    pdfChartStrategyDefs.forEach(ds => { strategyCum[ds.key] = 0; });
+                    const datasets = pdfChartStrategyDefs;
                     Object.keys(acc.data || {}).sort().forEach(iso => {
                         if (iso < start || iso > end) return;
                         const e = acc.data[iso] || {};
@@ -6239,7 +6241,8 @@ ${period} • ${(acc?.name || 'Conta')}
                         if (dayTotal === 0) return;
                         chartLabels.push(formatDateShort(parseISODateLocal(iso)));
                         datasets.forEach(ds => {
-                            strategyCum[ds.key] += Number(blocks[ds.key].legs.subtotal || 0);
+                            const block = blocks[ds.key] || blocks[ds.slot];
+                            strategyCum[ds.key] += Number(block?.legs?.subtotal || 0);
                             ds.data.push(strategyCum[ds.key]);
                         });
                     });
@@ -8540,15 +8543,16 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                     const colT1   = marginL + 430;
                     const colT2   = marginL + 510;
 
+                    const pdfLabelMap = getStrategyLabelMapForDate(endISO);
                     const drawTableHeader = ()=>{
                         doc.setFont('helvetica','bold');
                         doc.setFontSize(10);
                         doc.text('Data',     colDate, y);
-                        doc.text('25/50',  colT0,   y, { align:'right' });
-                        doc.text('30/60', colT3,   y, { align:'right' });
-                        doc.text('35/70',  colT4,   y, { align:'right' });
-                        doc.text('40/80',  colT1,   y, { align:'right' });
-                        doc.text('Condução',  colT2,   y, { align:'right' });
+                        doc.text(String(pdfLabelMap.t0 || '25/50').slice(0,12),  colT0,   y, { align:'right' });
+                        doc.text(String(pdfLabelMap.t3 || '30/60').slice(0,12), colT3,   y, { align:'right' });
+                        doc.text(String(pdfLabelMap.t4 || '35/70').slice(0,12),  colT4,   y, { align:'right' });
+                        doc.text(String(pdfLabelMap.t1 || '40/80').slice(0,12),  colT1,   y, { align:'right' });
+                        doc.text(String(pdfLabelMap.t2 || 'Condução').slice(0,12),  colT2,   y, { align:'right' });
                         y += 10;
                         doc.setLineWidth(0.5);
                         doc.line(marginL, y, marginL + contentW, y);
