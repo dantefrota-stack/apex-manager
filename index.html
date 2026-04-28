@@ -4373,8 +4373,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 const d = acc.data[iso] || {};
                 const dateStr = formatDateShort(parseISODateLocal(iso));
                 const blocks = getVisibleStrategyEntriesForDay(d, iso);
-                const note = (d.note || '').replace(/[
-]+/g, " ").replace(/,/g, ";");
+                const note = (d.note || '').replace(/[\n\r]+/g, " ").replace(/,/g, ";");
                 const hasValues = blocks.some(b => Number(b.subtotal || 0) !== 0) || note !== '';
                 if (hasValues) {
                     csvContent += `${dateStr},${blocks.map(b => Number(b.subtotal || 0).toFixed(2)).join(',')},${note}
