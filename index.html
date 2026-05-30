@@ -5036,8 +5036,9 @@ Resumo por Estratégia,,,,,
                 if(e.holiday) return;
 
                 const tradeVals = _individualTradeValuesForDay(e).map(t => Number(t.value || 0)).filter(v => !isNaN(v) && v !== 0);
-                const blocks = _strategyBlocksForDay(e);
-                const dayTotal = Object.values(blocks).reduce((s,b)=> s + (Number(b.legs.subtotal) || 0), 0);
+                const blocks = _strategyBlocksForDay(e, iso);
+                const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false });
+                const dayTotal = dayEntries.reduce((s,b)=> s + (Number(b.legs.subtotal) || 0), 0);
 
                 tradeVals.forEach(tv => {
                     totalTrades += 1;
@@ -6236,8 +6237,9 @@ ${period} • ${(acc?.name || 'Conta')}
                         if (iso < start || iso > end) return;
                         const e = acc.data[iso] || {};
                         if (e.holiday) return;
-                        const blocks = _strategyBlocksForDay(e);
-                        const dayTotal = Object.values(blocks).reduce((sum,b)=> sum + (Number(b.legs.subtotal) || 0), 0);
+                        const blocks = _strategyBlocksForDay(e, iso);
+                        const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false });
+                        const dayTotal = dayEntries.reduce((sum,b)=> sum + (Number(b.legs.subtotal) || 0), 0);
                         if (dayTotal === 0) return;
                         chartLabels.push(formatDateShort(parseISODateLocal(iso)));
                         datasets.forEach(ds => {
