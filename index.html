@@ -704,7 +704,7 @@ tr.bg-green-50 td {
                     <div class="flex items-start justify-between gap-3">
                         <div>
                             <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                <i data-lucide="sliders-horizontal" class="w-4 h-4 text-indigo-500"></i> Gerenciador de Estratégias • modo simplificado
+                                <i data-lucide="sliders-horizontal" class="w-4 h-4 text-indigo-500"></i> Gerenciador de Estratégias
                             </h4>
                             <p class="text-xs text-slate-500 dark:text-slate-400">Versione nomes, ordem, ativação e visibilidade por data, sem alterar o histórico anterior.</p>
                         </div>
@@ -747,10 +747,10 @@ tr.bg-green-50 td {
                             </div>
                             <div class="flex items-center justify-between gap-3 flex-wrap pt-2 border-t border-slate-200 dark:border-slate-700">
                                 <div id="strategy-manager-status" class="text-xs text-slate-500 dark:text-slate-400">Sem alterações.</div>
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <button type="button" onclick="window.strategyManagerHardReset()" class="px-3 py-2 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold shadow-md shadow-rose-700/20">Limpar tudo e reiniciar (manter contas)</button>
-                                    <button type="button" onclick="window.strategyManagerSave()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Salvar nova estrutura</button>
-                                    <button type="button" onclick="window.strategyManagerHideAllInEditor()" class="px-3 py-2 rounded-lg bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/40 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-100 text-xs font-semibold">Desmarcar todas</button>
+                                <div class="flex items-center gap-2">
+                                    <button type="button" onclick="window.strategyManagerDuplicateSelected()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-semibold">Duplicar versão</button>
+                                    <button type="button" onclick="window.strategyManagerDeleteSelected()" class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold">Excluir versão</button>
+                                    <button type="button" onclick="window.strategyManagerSave()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Salvar versão</button>
                                 </div>
                             </div>
                         </div>
@@ -1284,31 +1284,7 @@ tr.bg-green-50 td {
                     </div>
                 </div>
 
-
-                <div id="detailed-period-report" class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700 hidden">
-                    <div class="flex items-center justify-between gap-3 mb-2 flex-wrap">
-                        <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
-                            <i data-lucide="list-tree" class="w-3.5 h-3.5 text-indigo-600"></i>
-                            <span>Relatório Detalhado do Período</span>
-                        </div>
-                        <div class="flex gap-2 no-print flex-wrap">
-                            <button id="toggle-detailed-notes-btn" onclick="toggleDetailedNotes()" class="py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-300"><i data-lucide="sticky-note" class="w-3 h-3"></i> Mostrar Notas</button>
-                            <button onclick="exportDetailedCSV()" class="py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400"><i data-lucide="download" class="w-3 h-3"></i> CSV Detalhado</button>
-                            <button onclick="printDetailedReport()" class="py-2 px-3 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 flex justify-center items-center gap-1 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"><i data-lucide="printer" class="w-3 h-3"></i> PDF Detalhado</button>
-                        </div>
-                    </div>
-                    <div id="detailed-report-summary" class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs mb-3">
-                        <div class="p-2 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700"><div class="text-slate-500 dark:text-slate-400">Dias com operação</div><div id="detailed-days" class="font-bold text-slate-800 dark:text-white">--</div></div>
-                        <div class="p-2 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700"><div class="text-slate-500 dark:text-slate-400">Operações</div><div id="detailed-trades" class="font-bold text-slate-800 dark:text-white">--</div></div>
-                        <div class="p-2 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700"><div class="text-slate-500 dark:text-slate-400">Positivas</div><div id="detailed-positive" class="font-bold text-emerald-600">--</div></div>
-                        <div class="p-2 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700"><div class="text-slate-500 dark:text-slate-400">Negativas</div><div id="detailed-negative" class="font-bold text-red-600">--</div></div>
-                    </div>
-                    <div id="detailed-report-container" class="space-y-3 text-xs"></div>
-                </div>
-
-
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 no-print mt-auto pt-4">
-                     <button onclick="toggleDetailedReport()" id="toggle-detailed-report-btn" class="col-span-1 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-indigo-900/30 dark:border-indigo-800 dark:text-indigo-300"><i data-lucide="list-tree" class="w-3 h-3"></i> Ver Detalhado</button>
+                <div class="grid grid-cols-3 gap-2 no-print mt-auto pt-4">
                      <button onclick="shareReport()" class="col-span-1 py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400" title="WhatsApp"><i data-lucide="share-2" class="w-3 h-3"></i> Zap</button>
                      <button onclick="pdfFilteredReport()" class="col-span-1 py-2 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 flex justify-center items-center gap-1 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"><i data-lucide="printer" class="w-3 h-3"></i> PDF</button>
                      <button onclick="exportCSV()" class="col-span-1 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400"><i data-lucide="download" class="w-3 h-3"></i> CSV</button>
@@ -1675,23 +1651,7 @@ tr.bg-green-50 td {
         }
     };
 
-    
-    function hydrateStoreFromLocalBackupIfAvailable(){
-        try{
-            const raw = localStorage.getItem('df_backup_local');
-            if(!raw) return false;
-            const parsed = JSON.parse(raw);
-            if(!parsed || typeof parsed !== 'object' || !parsed.accounts || typeof parsed.accounts !== 'object') return false;
-            store = parsed;
-            try{ store.date = new Date(store.date || new Date()); }catch(e){ store.date = new Date(); }
-            try{ delete store.dayDetailsOpen; delete store.tradeDetailsOpen; }catch(e){}
-            const ts = Number(localStorage.getItem('df_backup_local_ts') || 0) || 0;
-            if(ts && (!store.last_update_ms || Number(store.last_update_ms||0) < ts)) store.last_update_ms = ts;
-            return true;
-        }catch(err){ console.warn('Falha ao hidratar backup local', err); return false; }
-    }
-
-// --- FUNÇÃO DE SINCRONIZAÇÃO SEGURA ---
+    // --- FUNÇÃO DE SINCRONIZAÇÃO SEGURA ---
     // Esta função substitui a lógica antiga de carregar dados soltos
     async function startAppSync() {
         const loader = document.getElementById('app-loader');
@@ -1699,9 +1659,6 @@ tr.bg-green-50 td {
         if (statusEl) statusEl.textContent = "Sincronizando dados...";
 
         try {
-            // 0) Pré-hidrata do backup local para evitar rollback do cloud sobre mudanças locais
-            try { hydrateStoreFromLocalBackupIfAvailable(); } catch(e) { console.warn("local pre-hydrate failed", e); }
-
             // 1) Hidrata do Firestore uma vez (define __cloudHydrated e popula store)
             await loadFromCloud();
             // Migra backup antigo embutido no documento principal para um documento separado
@@ -3205,191 +3162,6 @@ tr.bg-green-50 td {
 
   ${groupsHtml}
 
-
-<script>
-(function(){
-  function smMeta(slot){
-    try{ return (window.STRATEGY_SLOT_META || []).find(s => s.slot===slot) || {slot:slot, defaultLabel:slot, defaultOrder:1}; }catch(e){ return {slot:slot, defaultLabel:slot, defaultOrder:1}; }
-  }
-  function smAllSlots(){ return (window.STRATEGY_SLOT_META || []).map(s => s.slot); }
-  function smBuildVersionFromEditor(){
-    const tbody = (window.els && els.strategyEditorBody) ? els.strategyEditorBody : null;
-    const rows = tbody ? Array.from(tbody.querySelectorAll('tr[data-slot]')) : [];
-    const rowMap = new Map(rows.map(tr => [tr.getAttribute('data-slot'), tr]));
-    const seen = new Set();
-    const strategies = smAllSlots().map((slot, idx) => {
-      const meta = smMeta(slot);
-      const tr = rowMap.get(slot);
-      const rawLabel = tr ? String((tr.querySelector('[data-field="label"]')||{}).value || '').trim() : '';
-      let order = tr ? Number((tr.querySelector('[data-field="order"]')||{}).value || (idx+1)) : (idx+1);
-      if(!Number.isFinite(order) || order < 1) order = idx+1;
-      while(seen.has(order)) order += 1;
-      seen.add(order);
-      const active = tr ? !!((tr.querySelector('[data-field="active"]')||{}).checked) : false;
-      const visible = tr ? !!((tr.querySelector('[data-field="visible"]')||{}).checked) : false;
-      return {
-        slot,
-        label: rawLabel,
-        order,
-        active,
-        visible
-      };
-    });
-    const effectiveFrom = (window.els && els.strategyEffectiveDate && els.strategyEffectiveDate.value) ? els.strategyEffectiveDate.value : (typeof getTodayISO==='function' ? getTodayISO() : new Date().toISOString().slice(0,10));
-    const version = {
-      id: 'strategy-version-' + Date.now(),
-      effectiveFrom,
-      strategies
-    };
-    return (typeof normalizeStrategyVersion === 'function') ? normalizeStrategyVersion(version) : version;
-  }
-  function smPersistLocal(){
-    try{
-      if(typeof buildLocalBackupStore === 'function'){
-        localStorage.setItem('df_backup_local', JSON.stringify(buildLocalBackupStore()));
-      } else if(typeof getPersistableStore === 'function'){
-        localStorage.setItem('df_backup_local', JSON.stringify(getPersistableStore()));
-      } else {
-        localStorage.setItem('df_backup_local', JSON.stringify(window.store || {}));
-      }
-      localStorage.setItem('df_backup_local_ts', String(Date.now()));
-      localStorage.setItem('df_last_activeId', String((window.store && store.activeId) || ''));
-      return true;
-    }catch(err){ console.warn('smPersistLocal fail', err); return false; }
-  }
-  window.renderStrategyVersionList = function(){
-    try{
-      if(!(window.els && els.strategyVersionList)) return;
-      const versions = (typeof getStrategyVersions === 'function' ? getStrategyVersions() : (store.strategyConfigs || [])).slice().sort((a,b)=>String(a.effectiveFrom).localeCompare(String(b.effectiveFrom)));
-      const selectedId = window.__strategyManagerSelectedVersionId || (versions[versions.length-1] && versions[versions.length-1].id);
-      window.__strategyManagerSelectedVersionId = selectedId;
-      els.strategyVersionList.innerHTML = versions.map(v => {
-        const selected = v.id === selectedId;
-        const labels = ((v && Array.isArray(v.strategies) ? v.strategies : [])
-          .slice().sort((a,b)=>(Number(a?.order||0)-Number(b?.order||0)))
-          .filter(s => s && s.active !== false && s.visible !== false && String(s.label || '').trim())
-          .map(s => String(s.label || '').trim())
-        ).join(' • ') || 'Sem estratégias visíveis';
-        return `<button type="button" onclick="window.strategyManagerSelectVersion('${String(v.id).replace(/'/g,"\'")}')" class="w-full text-left rounded-lg border px-3 py-2 transition ${selected ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-indigo-300'}"><div class="font-bold text-xs">${(typeof escapeHtml==='function'?escapeHtml(v.effectiveFrom):v.effectiveFrom)}</div><div class="mt-1 text-[11px] ${selected ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'}">${(typeof escapeHtml==='function'?escapeHtml(labels):labels)}</div></button>`;
-      }).join('');
-    }catch(err){ console.error('renderStrategyVersionList override fail', err); }
-  };
-  window.renderStrategyManager = function(){
-    try{
-      if(!(window.els && els.strategyEditorBody && els.strategyEffectiveDate)) return;
-      if(typeof ensureStrategyConfigs==='function') ensureStrategyConfigs();
-      if(typeof window.renderStrategyVersionList==='function') window.renderStrategyVersionList();
-      const version = (typeof strategyManagerSelectedVersion==='function') ? strategyManagerSelectedVersion() : ((store.strategyConfigs||[]).slice(-1)[0]);
-      if(!version) return;
-      els.strategyEffectiveDate.value = version.effectiveFrom || '';
-      const sorted = (version.strategies||[]).slice().sort((a,b)=>(Number(a?.order||0)-Number(b?.order||0)) || (Number(smMeta(a?.slot).defaultOrder)-Number(smMeta(b?.slot).defaultOrder)));
-      els.strategyEditorBody.innerHTML = sorted.map(s => {
-        const meta = smMeta(s.slot);
-        return `<tr data-slot="${s.slot}" class="border-t border-slate-100 dark:border-slate-700"><td class="py-2 pr-3 align-middle"><div class="font-bold text-slate-700 dark:text-slate-200">${s.slot}</div></td><td class="py-2 pr-3"><input type="text" value="${(typeof escapeHtml==='function'?escapeHtml(String(s.label||'')):String(s.label||''))}" data-field="label" placeholder="Estratégia (${meta.defaultLabel})" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"></td><td class="py-2 pr-3 text-center"><input type="number" min="1" max="5" value="${Number(s.order)||1}" data-field="order" class="w-20 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-center"></td><td class="py-2 pr-3 text-center"><input type="checkbox" data-field="active" ${s.active ? 'checked':''}></td><td class="py-2 pr-3 text-center"><input type="checkbox" data-field="visible" ${s.visible ? 'checked':''}></td><td class="py-2 text-[11px] text-slate-500 dark:text-slate-400">${meta.breakout ? 'Rompimento' : ''}</td></tr>`;
-      }).join('');
-      if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Pronto para salvar.';
-    }catch(err){ console.error('renderStrategyManager override fail', err); }
-  };
-  window.strategyManagerSelectVersion = function(id){ window.__strategyManagerSelectedVersionId=id; if(typeof window.renderStrategyManager==='function') window.renderStrategyManager(); };
-  window.strategyManagerNewVersion = function(){
-    const base = smBuildVersionFromEditor();
-    base.id = 'strategy-version-' + Date.now();
-    base.effectiveFrom = (typeof getTodayISO==='function' ? getTodayISO() : new Date().toISOString().slice(0,10));
-    base.strategies = base.strategies.map((s, idx) => ({...s, label:'', order: idx+1, active:false, visible:false}));
-    window.store.strategyConfigs = [base];
-    window.__strategyManagerSelectedVersionId = base.id;
-    window.renderStrategyManager();
-  };
-  window.strategyManagerHideAllInEditor = function(){
-    try{
-      (els.strategyEditorBody ? Array.from(els.strategyEditorBody.querySelectorAll('tr[data-slot]')) : []).forEach(tr => {
-        const active = tr.querySelector('[data-field="active"]'); if(active) active.checked = false;
-        const visible = tr.querySelector('[data-field="visible"]'); if(visible) visible.checked = false;
-        const label = tr.querySelector('[data-field="label"]'); if(label) label.value = '';
-      });
-      if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Todas desmarcadas.';
-    }catch(err){ console.error(err); }
-  };
-  window.strategyManagerSave = async function(){
-    try{
-      const version = smBuildVersionFromEditor();
-      const visibleActive = version.strategies.filter(s => s.active && s.visible && String(s.label||'').trim());
-      if(!version.effectiveFrom){ alert('Defina a data de vigência.'); return; }
-      if(!visibleActive.length){ alert('Ative e deixe visível pelo menos uma estratégia com nome preenchido.'); return; }
-      version.strategies = version.strategies.map((s,idx)=>({
-        ...s,
-        label: String(s.label||'').trim(),
-        order: Number(s.order)||idx+1,
-        active: !!s.active,
-        visible: !!s.visible
-      }));
-      store.strategyConfigs = [version];
-      window.__strategyManagerSelectedVersionId = version.id;
-      store.last_update_ms = Date.now();
-      smPersistLocal();
-      if(typeof window.renderStrategyManager==='function') window.renderStrategyManager();
-      try{ if(typeof renderSidebar==='function') renderSidebar(); }catch(e){}
-      try{ if(typeof renderCalendar==='function') renderCalendar(getActive()); }catch(e){}
-      try{ if(typeof filterReportInternal==='function') filterReportInternal(); }catch(e){}
-      let cloudMsg = '';
-      try{ if(typeof window.saveToCloud==='function') await window.saveToCloud(); }
-      catch(e){ console.warn('saveToCloud failed; local persisted', e); cloudMsg = ' A nuvem falhou, mas ficou salvo localmente neste navegador.'; }
-      if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Estrutura salva.' + cloudMsg;
-      alert('Estrutura salva com sucesso.' + cloudMsg);
-    }catch(err){ console.error('strategyManagerSave override failed', err); alert('Não foi possível salvar a versão das estratégias. Detalhe: ' + (err && err.message ? err.message : err)); }
-  };
-  window.strategyManagerHardReset = async function(){
-    try{
-      const accounts = store.accounts || {};
-      const ids = Object.keys(accounts);
-      if(!ids.length){ alert('Não há contas para resetar.'); return; }
-      const version = smBuildVersionFromEditor();
-      const visibleActive = version.strategies.filter(s => s.active && s.visible && String(s.label||'').trim());
-      if(!visibleActive.length){ alert('Defina pelo menos uma estratégia ativa e visível antes do reset.'); return; }
-      if(!confirm('Isso vai limpar TODO o histórico operacional e manter apenas as contas. Continuar?')) return;
-      const typed = prompt('Digite RESET para confirmar:');
-      if((typed||'').trim().toUpperCase() !== 'RESET') return;
-      const preserved = {};
-      ids.forEach(id => {
-        const acc = accounts[id] || {};
-        preserved[id] = {
-          id,
-          name: acc.name || 'Conta',
-          size: acc.size || '50k',
-          monthType: Number(acc.monthType || 1),
-          createdAt: acc.createdAt || new Date().toISOString(),
-          favorite: !!acc.favorite,
-          status: acc.status || 'active',
-          companyGroup: acc.companyGroup || 'Sem grupo',
-          data: {}, payouts: [], payoutHistory: [], notes: {}, periodNotes: {}, noteDrafts: {}, archivedPayouts: []
-        };
-      });
-      store.accounts = preserved;
-      store.activeId = ids.includes(store.activeId) ? store.activeId : ids[0];
-      store.strategyConfigs = [version];
-      store.dayDetailsOpen = {};
-      store.tradeDetailsOpen = {};
-      store.noteDrafts = {};
-      store.payoutRequests = [];
-      store.payoutHistory = [];
-      store.periodAnalysisCache = {};
-      store.adminLogs = [];
-      store.last_update_ms = Date.now();
-      window.__strategyManagerSelectedVersionId = version.id;
-      smPersistLocal();
-      try{ if(typeof window.renderStrategyManager==='function') window.renderStrategyManager(); }catch(e){}
-      try{ if(typeof renderSidebar==='function') renderSidebar(); }catch(e){}
-      try{ if(typeof loadAccount==='function' && store.activeId) loadAccount(store.activeId); else if(typeof renderCalendar==='function') renderCalendar(getActive()); }catch(e){}
-      try{ if(typeof filterReportInternal==='function') filterReportInternal(); }catch(e){}
-      let cloudMsg = '';
-      try{ if(typeof window.saveToCloud==='function') await window.saveToCloud(); }
-      catch(e){ console.warn('hard reset cloud failed; local persisted', e); cloudMsg = ' A nuvem falhou, mas o reset ficou salvo localmente neste navegador.'; }
-      alert('Reset concluído.' + cloudMsg);
-    }catch(err){ console.error('strategyManagerHardReset override failed', err); alert('Não foi possível concluir o reset completo. Detalhe: ' + (err && err.message ? err.message : err)); }
-  };
-  setTimeout(function(){ try{ if(typeof window.renderStrategyManager==='function') window.renderStrategyManager(); }catch(e){} }, 0);
-})();
-</script>
 </body>
 </html>`;
         }
@@ -5095,27 +4867,6 @@ Resumo por Estratégia,,,,,
             __strategyManagerSelectedVersionId = id;
             renderStrategyManager();
         };
-
-        function persistStrategyConfigLocally(){
-            try{
-                if(typeof buildLocalBackupStore === 'function'){
-                    localStorage.setItem('df_backup_local', JSON.stringify(buildLocalBackupStore()));
-                    localStorage.setItem('df_backup_local_ts', String(Date.now()));
-                } else if(typeof getPersistableStore === 'function'){
-                    localStorage.setItem('df_backup_local', JSON.stringify(getPersistableStore()));
-                    localStorage.setItem('df_backup_local_ts', String(Date.now()));
-                } else {
-                    localStorage.setItem('df_backup_local', JSON.stringify(store));
-                    localStorage.setItem('df_backup_local_ts', String(Date.now()));
-                }
-                localStorage.setItem('df_last_activeId', String(store.activeId || ''));
-                return true;
-            }catch(err){
-                console.warn('Falha ao persistir localmente strategy config', err);
-                return false;
-            }
-        }
-
         window.strategyManagerNewVersion = function(){
             const latest = normalizeStrategyVersion(strategyManagerSelectedVersion());
             __strategyManagerSelectedVersionId = `strategy-version-${Date.now()}`;
@@ -5143,190 +4894,24 @@ Resumo por Estratégia,,,,,
             renderCalendar(getActive());
             filterReportInternal();
         };
-        window.strategyManagerHideAllInEditor = function(){
-            const rows = Array.from((els.strategyEditorBody || document.createElement('tbody')).querySelectorAll('tr[data-slot]'));
-            if(!rows.length) return;
-            rows.forEach(tr => {
-                const active = tr.querySelector('[data-field="active"]');
-                const visible = tr.querySelector('[data-field="visible"]');
-                if(active) active.checked = false;
-                if(visible) visible.checked = false;
-            });
-            if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Todas as estratégias desta versão foram inativadas/ocultadas no editor. Revise e salve.';
-        };
-        window.strategyManagerArchiveOlder = function(){
-            const versions = getStrategyVersions();
-            const selected = strategyManagerSelectedVersion();
-            const cutoff = (els.strategyEffectiveDate?.value || selected.effectiveFrom || '').trim();
-            if(!cutoff){ alert('Defina a data de vigência da versão antes de limpar o histórico anterior.'); return; }
-            const older = versions.filter(v => v.id !== selected.id && String(v.effectiveFrom) < String(cutoff));
-            if(!older.length){ alert('Não há versões anteriores a essa data para apagar.'); return; }
-            const msg = `Apagar ${older.length} versão(ões) anterior(es) a ${cutoff}?
-
-Os dados lançados não serão apagados. Apenas o histórico antigo de configuração de estratégias será removido.`;
-            if(!confirm(msg)) return;
-            store.strategyConfigs = versions.filter(v => !(v.id !== selected.id && String(v.effectiveFrom) < String(cutoff)));
-            __strategyManagerSelectedVersionId = selected.id;
-            saveToCloud();
-            if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = `${older.length} versão(ões) anterior(es) removida(s).`;
-            renderStrategyManager();
-            renderCalendar(getActive());
-            filterReportInternal();
-            renderSidebar();
-        };
-        window.strategyManagerHardReset = async function(){
-            try{
-                const accountIds = Object.keys(store.accounts || {});
-                if(!accountIds.length){ alert('Não há contas para resetar.'); return; }
-                const version = readStrategyEditorVersion();
-                if(!version.effectiveFrom){ alert('Defina a data de vigência antes do reset completo.'); return; }
-                const activeVisible = (version.strategies || []).filter(s => s.active && s.visible && String(s.label||'').trim());
-                if(!activeVisible.length){ alert('Ative e deixe visível pelo menos uma estratégia com nome preenchido antes do reset completo.'); return; }
-
-                const explain = [
-                    'RESET COMPLETO',
-                    '',
-                    'Isso vai limpar:',
-                    '• todos os lançamentos/calendário',
-                    '• gráficos e análise por período',
-                    '• saques e notas',
-                    '• histórico antigo de versões de estratégias',
-                    '',
-                    'Isso NÃO vai apagar:',
-                    '• as contas',
-                    '• nome/tamanho/status/favoritos',
-                    '',
-                    'A estrutura salva no editor será mantida como única versão.'
-                ].join('\n');
-                if(!confirm(explain)) return;
-                const typed = prompt('Digite RESET para confirmar o reset completo e limpar todo o histórico, mantendo apenas as contas:');
-                if((typed || '').trim().toUpperCase() !== 'RESET') return;
-
-                const preservedAccounts = {};
-                accountIds.forEach(id => {
-                    const acc = (store.accounts && store.accounts[id]) ? store.accounts[id] : {};
-                    preservedAccounts[id] = {
-                        ...acc,
-                        id: acc.id || id,
-                        name: acc.name || 'Conta',
-                        size: acc.size || '50k',
-                        monthType: Number(acc.monthType || 1),
-                        favorite: !!acc.favorite,
-                        status: acc.status || 'active',
-                        companyGroup: acc.companyGroup || 'Sem grupo',
-                        createdAt: acc.createdAt || new Date().toISOString(),
-
-                        // limpeza operacional
-                        data: {},
-                        payouts: [],
-                        payoutHistory: [],
-                        notes: {},
-                        periodNotes: {},
-                        noteDrafts: {},
-                        archivedPayouts: []
-                    };
-                });
-
-                const freshVersion = normalizeStrategyVersion({
-                    ...version,
-                    id: `strategy-version-${Date.now()}`,
-                    effectiveFrom: String(version.effectiveFrom || getTodayISO()),
-                    strategies: (version.strategies || []).map(s => ({ ...s }))
-                });
-
-                // limpa estado operacional global, preservando contas e configuração nova
-                store.accounts = preservedAccounts;
-                store.strategyConfigs = [freshVersion];
-                store.activeId = (store.activeId && preservedAccounts[store.activeId]) ? store.activeId : accountIds[0];
-                store.dayDetailsOpen = {};
-                store.tradeDetailsOpen = {};
-                store.noteDrafts = {};
-                store.payoutRequests = [];
-                store.payoutHistory = [];
-                store.adminLogs = [];
-                store.periodAnalysisCache = {};
-                __strategyManagerSelectedVersionId = freshVersion.id;
-
-                try { syncDatesToView(); } catch(e) {}
-                try {
-                    if(els.filterStart) els.filterStart.value = freshVersion.effectiveFrom;
-                    if(els.filterEnd) els.filterEnd.value = freshVersion.effectiveFrom;
-                } catch(e) {}
-
-                // persistência local imediata
-                try {
-                    if(typeof buildLocalBackupStore === 'function'){
-                        localStorage.setItem('df_backup_local', JSON.stringify(buildLocalBackupStore()));
-                        localStorage.setItem('df_backup_local_ts', String(Date.now()));
-                    } else if(typeof getPersistableStore === 'function'){
-                        localStorage.setItem('df_backup_local', JSON.stringify(getPersistableStore()));
-                        localStorage.setItem('df_backup_local_ts', String(Date.now()));
-                    }
-                    localStorage.setItem('df_last_activeId', String(store.activeId || ''));
-                } catch(e) {
-                    console.warn('Falha ao salvar reset no localStorage', e);
-                }
-
-                // tenta persistir na nuvem, mas não bloqueia o reset local
-                let cloudError = null;
-                try {
-                    if(typeof window.saveToCloud === 'function') await window.saveToCloud();
-                } catch(e) {
-                    cloudError = e;
-                    console.warn('Reset salvo localmente, mas falhou na nuvem.', e);
-                }
-
-                try {
-                    if(els.strategyManagerStatus) {
-                        els.strategyManagerStatus.textContent = cloudError
-                            ? 'Reset concluído localmente. A sincronização na nuvem falhou.'
-                            : 'Reset completo executado. Histórico apagado, contas preservadas e nova estrutura aplicada.';
-                    }
-                } catch(e){}
-
-                alert(cloudError
-                    ? 'Reset completo concluído localmente. As contas foram preservadas e o histórico operacional foi limpo. A sincronização na nuvem falhou nesta tentativa.'
-                    : 'Reset completo concluído com sucesso. As contas foram preservadas e todo o histórico operacional foi limpo.');
-
-                location.reload();
-            }catch(err){
-                console.error('strategyManagerHardReset failed', err);
-                alert('Não foi possível concluir o reset completo. Detalhe: ' + (err && err.message ? err.message : String(err)));
-            }
-        };
-                window.strategyManagerSave = async function(){
+        window.strategyManagerSave = function(){
             try{
                 const version = readStrategyEditorVersion();
                 if(!version.effectiveFrom){ alert('Defina a data de vigência.'); return; }
-                const activeVisible = version.strategies.filter(s => s.active && s.visible && String(s.label || '').trim());
-                if(!activeVisible.length){ alert('Deixe pelo menos uma estratégia ativa e visível com nome preenchido.'); return; }
-
+                const activeVisible = version.strategies.filter(s => s.active && s.visible);
+                if(!activeVisible.length){ alert('Pelo menos uma estratégia ativa e visível é necessária.'); return; }
                 const versions = getStrategyVersions().filter(v => v.id !== version.id && v.effectiveFrom !== version.effectiveFrom);
                 versions.push(version);
                 store.strategyConfigs = versions.map((v,idx)=>normalizeStrategyVersion(v,idx)).sort((a,b)=>String(a.effectiveFrom).localeCompare(String(b.effectiveFrom)));
                 __strategyManagerSelectedVersionId = version.id;
-
-                persistStrategyConfigLocally();
-
-                if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = `Estrutura salva localmente com vigência em ${version.effectiveFrom}.`;
+                saveToCloud();
+                if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = `Versão salva com vigência em ${version.effectiveFrom}.`;
                 renderStrategyManager();
                 renderCalendar(getActive());
                 filterReportInternal();
                 renderSidebar();
-
-                try{
-                    if(typeof window.saveToCloud === 'function'){
-                        await window.saveToCloud();
-                    }
-                    if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = `Estrutura salva com sucesso em ${version.effectiveFrom}.`;
-                }catch(cloudErr){
-                    console.warn('Estratégias salvas localmente, mas a nuvem falhou.', cloudErr);
-                    if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Estrutura salva localmente. A nuvem falhou nesta tentativa.';
-                    alert('Estrutura salva localmente. A sincronização na nuvem falhou nesta tentativa, mas suas mudanças ficaram gravadas neste navegador.');
-                }
             }catch(err){
-                console.error('strategyManagerSave failed', err);
-                alert('Não foi possível salvar a versão das estratégias. Detalhe: ' + (err && err.message ? err.message : String(err)));
+                alert('Não foi possível salvar a versão das estratégias.');
             }
         };
 
@@ -5618,227 +5203,7 @@ Os dados lançados não serão apagados. Apenas o histórico antigo de configura
             const worstRow = document.querySelector('span#custom-worst')?.closest('div');
             if(bestRow) bestRow.style.display = singleDayMode ? 'none' : '';
             if(worstRow) worstRow.style.display = singleDayMode ? 'none' : '';
-
-            renderDetailedPeriodReport(acc, start, end);
         }
-
-
-        function buildDetailedPeriodRows(acc, startISO, endISO){
-            const rows = [];
-            let days = 0, trades = 0, positive = 0, negative = 0;
-            Object.keys(acc.data || {}).sort().forEach(iso => {
-                if (iso < startISO || iso > endISO) return;
-                const e = acc.data[iso] || {};
-                if (e.holiday) return;
-                const entries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false });
-                const dayTotal = entries.reduce((s, entry) => s + (Number(entry.legs.subtotal) || 0), 0);
-                const strategyRows = [];
-                entries.forEach(entry => {
-                    const legs = [
-                        {idx:1, value: entry.legs.leg1, breakout: !!entry.legs.b1},
-                        {idx:2, value: entry.legs.leg2, breakout: !!entry.legs.b2},
-                        {idx:3, value: entry.legs.leg3, breakout: !!entry.legs.b3},
-                        {idx:4, value: entry.legs.leg4, breakout: !!entry.legs.b4}
-                    ].map(x => ({...x, value: (x.value === '' || x.value === null || x.value === undefined) ? null : Number(x.value)}))
-                     .filter(x => x.value !== null && !isNaN(x.value) && x.value !== 0);
-                    if(!legs.length && Number(entry.legs.subtotal || 0) === 0) return;
-                    const subtotal = Number(entry.legs.subtotal || 0);
-                    const item = {
-                        dateISO: iso,
-                        dateLabel: formatDateShort(parseISODateLocal(iso)),
-                        strategy: entry.label,
-                        slot: entry.slot,
-                        subtotal,
-                        dayTotal,
-                        note: String(e.note || '').trim(),
-                        trades: legs.map(leg => {
-                            trades += 1;
-                            if(leg.value > 0) positive += 1;
-                            if(leg.value < 0) negative += 1;
-                            return {
-                                tradeLabel: `Trade ${leg.idx}`,
-                                value: leg.value,
-                                breakout: leg.breakout
-                            };
-                        })
-                    };
-                    strategyRows.push(item);
-                    rows.push(item);
-                });
-                if(strategyRows.length) days += 1;
-            });
-            return { rows, days, trades, positive, negative };
-        }
-
-
-        window.__detailedShowNotes = false;
-
-        function syncDetailedButtons(){
-            const wrap = document.getElementById('detailed-period-report');
-            const btn = document.getElementById('toggle-detailed-report-btn');
-            const notesBtn = document.getElementById('toggle-detailed-notes-btn');
-            const isOpen = wrap && !wrap.classList.contains('hidden');
-            if(btn) btn.innerHTML = `<i data-lucide="list-tree" class="w-3 h-3"></i> ${isOpen ? 'Ocultar Detalhado' : 'Ver Detalhado'}`;
-            if(notesBtn){
-                notesBtn.innerHTML = `<i data-lucide="sticky-note" class="w-3 h-3"></i> ${window.__detailedShowNotes ? 'Ocultar Notas' : 'Mostrar Notas'}`;
-                notesBtn.classList.toggle('bg-amber-100', window.__detailedShowNotes);
-            }
-            try{ if(window.lucide) lucide.createIcons(); }catch(e){}
-        }
-
-        window.toggleDetailedReport = function(forceOpen){
-            const wrap = document.getElementById('detailed-period-report');
-            if(!wrap) return;
-            const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : wrap.classList.contains('hidden');
-            wrap.classList.toggle('hidden', !shouldOpen);
-            syncDetailedButtons();
-            if(shouldOpen){
-                wrap.scrollIntoView({behavior:'smooth', block:'start'});
-            }
-        };
-
-        window.toggleDetailedNotes = function(){
-            window.__detailedShowNotes = !window.__detailedShowNotes;
-            syncDetailedButtons();
-            const acc = getSelectedAccount();
-            const start = document.getElementById('period-start')?.value;
-            const end = document.getElementById('period-end')?.value;
-            if(acc && start && end) renderDetailedPeriodReport(acc, start, end);
-        };
-
-        function renderDetailedPeriodReport(acc, startISO, endISO){
-            const container = document.getElementById('detailed-report-container');
-            if(!container) return;
-            const daysEl = document.getElementById('detailed-days');
-            const tradesEl = document.getElementById('detailed-trades');
-            const posEl = document.getElementById('detailed-positive');
-            const negEl = document.getElementById('detailed-negative');
-            const data = buildDetailedPeriodRows(acc, startISO, endISO);
-            window.__lastDetailedPeriodReport = { startISO, endISO, ...data };
-            if(daysEl) daysEl.textContent = String(data.days);
-            if(tradesEl) tradesEl.textContent = String(data.trades);
-            if(posEl) posEl.textContent = String(data.positive);
-            if(negEl) negEl.textContent = String(data.negative);
-            if(!data.rows.length){
-                container.innerHTML = '<div class="p-3 rounded-lg bg-white border border-slate-200 text-slate-500 dark:bg-slate-900/40 dark:border-slate-700 dark:text-slate-400">Nenhuma operação encontrada no período selecionado.</div>';
-                return;
-            }
-            const grouped = [];
-            data.rows.forEach(row => {
-                let g = grouped[grouped.length-1];
-                if(!g || g.dateISO !== row.dateISO){
-                    g = { dateISO: row.dateISO, dateLabel: row.dateLabel, dayTotal: row.dayTotal, note: row.note, strategies: [] };
-                    grouped.push(g);
-                }
-                g.strategies.push(row);
-            });
-            container.innerHTML = grouped.map(day => `
-                <div class="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900/40">
-                    <div class="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-                        <div class="font-bold text-slate-800 dark:text-white">${day.dateLabel}</div>
-                        <div class="${day.dayTotal >= 0 ? 'text-emerald-600' : 'text-red-600'} font-extrabold">Total do Dia: ${formatCurrency(day.dayTotal)}</div>
-                    </div>
-                    ${window.__detailedShowNotes && day.note ? `<div class="px-3 py-2 text-[11px] text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800"><span class="font-semibold">Nota:</span> ${escapeHtml(day.note)}</div>` : ''}
-                    <div class="divide-y divide-slate-100 dark:divide-slate-800">
-                        ${day.strategies.map(s => `
-                            <div class="px-3 py-2">
-                                <div class="flex items-center justify-between mb-2">
-                                    <div class="font-semibold text-slate-700 dark:text-slate-200">${escapeHtml(s.strategy)}</div>
-                                    <div class="${s.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'} font-bold">Subtotal: ${formatCurrency(s.subtotal)}</div>
-                                </div>
-                                <div class="overflow-x-auto">
-                                    <table class="w-full text-[11px]">
-                                        <thead>
-                                            <tr class="text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                                                <th class="text-left py-1">Operação</th>
-                                                <th class="text-left py-1">Rompimento</th>
-                                                <th class="text-right py-1">Valor</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${s.trades.map(t => `
-                                                <tr>
-                                                    <td class="py-1">${t.tradeLabel}</td>
-                                                    <td class="py-1">${t.breakout ? 'Sim' : 'Não'}</td>
-                                                    <td class="py-1 text-right ${t.value >= 0 ? 'text-emerald-600' : 'text-red-600'} font-semibold">${formatCurrency(t.value)}</td>
-                                                </tr>
-                                            `).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `).join('');
-            syncDetailedButtons();
-            try{ if(window.lucide) lucide.createIcons(); }catch(e){}
-        }
-
-        window.exportDetailedCSV = function(){
-            const data = window.__lastDetailedPeriodReport;
-            if(!data || !data.rows || !data.rows.length){ alert('Gere a Análise por Período primeiro.'); return; }
-            const lines = [['Data','Estratégia','Operação','Rompimento','Valor','Subtotal Estratégia','Total do Dia','Nota']];
-            data.rows.forEach(row => {
-                row.trades.forEach(t => {
-                    lines.push([
-                        row.dateISO,
-                        row.strategy,
-                        t.tradeLabel,
-                        t.breakout ? 'Sim' : 'Não',
-                        Number(t.value || 0).toFixed(2),
-                        Number(row.subtotal || 0).toFixed(2),
-                        Number(row.dayTotal || 0).toFixed(2),
-                        row.note || ''
-                    ]);
-                });
-            });
-            const csv = lines.map(cols => cols.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-            const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `relatorio_detalhado_${data.startISO}_${data.endISO}.csv`;
-            a.click();
-            setTimeout(()=>URL.revokeObjectURL(a.href), 500);
-        };
-
-        window.printDetailedReport = function(){
-            const data = window.__lastDetailedPeriodReport;
-            const container = document.getElementById('detailed-report-container');
-            if(!data || !container || !data.rows || !data.rows.length){ alert('Gere a Análise por Período primeiro.'); return; }
-            const safeStart = String(data.startISO || '').replace(/[^0-9-]/g,'');
-            const safeEnd = String(data.endISO || '').replace(/[^0-9-]/g,'');
-            const accountName = (window.currentAccount && window.currentAccount.name) ? String(window.currentAccount.name) : 'Conta';
-            const safeAccount = accountName.replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'') || 'Conta';
-            const pdfTitle = `Relatorio_Detalhado_${safeAccount}_${safeStart}_a_${safeEnd}`;
-            const w = window.open('', '_blank');
-            if(!w) return;
-            w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${pdfTitle}</title>
-                <style>
-                    body{font-family:Arial,sans-serif;padding:20px;color:#111}
-                    h1{font-size:20px;margin:0 0 8px}
-                    .meta{font-size:12px;color:#555;margin-bottom:16px}
-                    .day{border:1px solid #ccc;border-radius:10px;margin-bottom:16px;overflow:hidden}
-                    .dayhead{display:flex;justify-content:space-between;padding:10px 12px;background:#f5f5f5;font-weight:bold}
-                    .note{padding:8px 12px;font-size:12px;color:#444;border-top:1px solid #eee}
-                    .strategy{padding:10px 12px;border-top:1px solid #eee}
-                    .sub{float:right;font-weight:bold}
-                    table{width:100%;border-collapse:collapse;margin-top:6px}
-                    th,td{padding:6px 4px;border-bottom:1px solid #eee;font-size:12px}
-                    th{text-align:left;color:#666}
-                    td.r{text-align:right}
-                    .pos{color:#14803c;font-weight:bold}.neg{color:#b91c1c;font-weight:bold}
-                </style></head><body>
-                <h1>Relatório Detalhado do Período</h1>
-                <div class="meta">${accountName} • ${data.startISO} até ${data.endISO}</div>
-                ${container.innerHTML}
-                </body></html>`);
-            w.document.close();
-            try{ w.document.title = pdfTitle; }catch(e){}
-            w.focus();
-            setTimeout(()=>w.print(), 300);
-        };
-
 
         function updateChart(labels, datasets) {
             const ctx = document.getElementById('equityChart').getContext('2d');
