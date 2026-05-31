@@ -751,6 +751,7 @@ tr.bg-green-50 td {
                                     <button type="button" onclick="window.strategyManagerDuplicateSelected()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-semibold">Duplicar versão</button>
                                     <button type="button" onclick="window.strategyManagerHideAllInEditor()" class="px-3 py-2 rounded-lg bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/40 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-100 text-xs font-semibold">Inativar/ocultar todas</button>
                                     <button type="button" onclick="window.strategyManagerArchiveOlder()" class="px-3 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold">Apagar versões anteriores</button>
+                                    <button type="button" onclick="window.strategyManagerHardReset()" class="px-3 py-2 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold">Reset completo (manter contas)</button>
                                     <button type="button" onclick="window.strategyManagerDeleteSelected()" class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold">Excluir versão</button>
                                     <button type="button" onclick="window.strategyManagerSave()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Salvar versão</button>
                                 </div>
@@ -4950,6 +4951,82 @@ Os dados lançados não serão apagados. Apenas o histórico antigo de configura
             renderCalendar(getActive());
             filterReportInternal();
             renderSidebar();
+        };
+        window.strategyManagerHardReset = async function(){
+            try{
+                const accountIds = Object.keys(store.accounts || {});
+                if(!accountIds.length){ alert('Não há contas para resetar.'); return; }
+                const version = readStrategyEditorVersion();
+                if(!version.effectiveFrom){ alert('Defina a data de vigência antes do reset completo.'); return; }
+                const activeVisible = version.strategies.filter(s => s.active && s.visible);
+                if(!activeVisible.length){ alert('Ative e deixe visível pelo menos uma estratégia antes do reset completo.'); return; }
+
+                const explain = [
+                    'RESET COMPLETO',
+                    '',
+                    'Isso vai limpar:',
+                    '• todos os lançamentos/calendário',
+                    '• gráficos e análise por período',
+                    '• saques e notas',
+                    '• histórico antigo de versões de estratégias',
+                    '',
+                    'Isso NÃO vai apagar:',
+                    '• as contas',
+                    '• nome/tamanho/status/favoritos',
+                    '',
+                    'A nova estrutura salva no editor será mantida como única versão.'
+                ].join('\n');
+                if(!confirm(explain)) return;
+                const typed = prompt('Digite RESET para confirmar o reset completo e limpar todo o histórico, mantendo apenas as contas:');
+                if((typed || '').trim().toUpperCase() !== 'RESET') return;
+
+                const preservedAccounts = {};
+                accountIds.forEach(id => {
+                    const acc = store.accounts[id] || {};
+                    preservedAccounts[id] = {
+                        id: acc.id || id,
+                        name: acc.name || 'Conta',
+                        size: acc.size || '50k',
+                        monthType: Number(acc.monthType || 1),
+                        data: {},
+                        payouts: [],
+                        createdAt: acc.createdAt || new Date().toISOString(),
+                        favorite: !!acc.favorite,
+                        status: acc.status || 'active',
+                        companyGroup: acc.companyGroup || 'Sem grupo'
+                    };
+                });
+
+                const freshVersion = normalizeStrategyVersion({
+                    ...version,
+                    id: version.id || `strategy-version-${Date.now()}`,
+                    effectiveFrom: String(version.effectiveFrom || getTodayISO()),
+                    strategies: version.strategies.map(s => ({...s}))
+                });
+
+                store.accounts = preservedAccounts;
+                store.strategyConfigs = [freshVersion];
+                __strategyManagerSelectedVersionId = freshVersion.id;
+                const activeId = store.activeId && preservedAccounts[store.activeId] ? store.activeId : accountIds[0];
+                store.activeId = activeId;
+                try{ syncDatesToView(); }catch(e){}
+                try{
+                    if(els.filterStart) els.filterStart.value = freshVersion.effectiveFrom;
+                    if(els.filterEnd) els.filterEnd.value = freshVersion.effectiveFrom;
+                }catch(e){}
+
+                await saveToCloud();
+
+                if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Reset completo executado. Histórico apagado, contas preservadas e nova estrutura aplicada.';
+                renderStrategyManager();
+                renderSidebar();
+                loadAccount(activeId);
+                try{ filterReportInternal(); }catch(e){}
+                alert('Reset completo concluído com sucesso. As contas foram preservadas e todo o histórico operacional foi limpo.');
+            }catch(err){
+                console.error('strategyManagerHardReset failed', err);
+                alert('Não foi possível concluir o reset completo.');
+            }
         };
         window.strategyManagerSave = function(){
             try{
