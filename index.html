@@ -704,7 +704,7 @@ tr.bg-green-50 td {
                     <div class="flex items-start justify-between gap-3">
                         <div>
                             <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                <i data-lucide="sliders-horizontal" class="w-4 h-4 text-indigo-500"></i> Gerenciador de Estratégias
+                                <i data-lucide="sliders-horizontal" class="w-4 h-4 text-indigo-500"></i> Gerenciador de Estratégias • modo simplificado
                             </h4>
                             <p class="text-xs text-slate-500 dark:text-slate-400">Versione nomes, ordem, ativação e visibilidade por data, sem alterar o histórico anterior.</p>
                         </div>
@@ -748,12 +748,9 @@ tr.bg-green-50 td {
                             <div class="flex items-center justify-between gap-3 flex-wrap pt-2 border-t border-slate-200 dark:border-slate-700">
                                 <div id="strategy-manager-status" class="text-xs text-slate-500 dark:text-slate-400">Sem alterações.</div>
                                 <div class="flex items-center gap-2 flex-wrap">
-                                    <button type="button" onclick="window.strategyManagerHardReset()" class="px-3 py-2 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold shadow-md shadow-rose-700/20">Reset completo (manter contas)</button>
-                                    <button type="button" onclick="window.strategyManagerSave()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Salvar versão</button>
-                                    <button type="button" onclick="window.strategyManagerDuplicateSelected()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-semibold">Duplicar versão</button>
-                                    <button type="button" onclick="window.strategyManagerHideAllInEditor()" class="px-3 py-2 rounded-lg bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/40 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-100 text-xs font-semibold">Inativar/ocultar todas</button>
-                                    <button type="button" onclick="window.strategyManagerArchiveOlder()" class="px-3 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold">Apagar versões anteriores</button>
-                                    <button type="button" onclick="window.strategyManagerDeleteSelected()" class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold">Excluir versão</button>
+                                    <button type="button" onclick="window.strategyManagerHardReset()" class="px-3 py-2 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold shadow-md shadow-rose-700/20">Limpar tudo e reiniciar (manter contas)</button>
+                                    <button type="button" onclick="window.strategyManagerSave()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Salvar nova estrutura</button>
+                                    <button type="button" onclick="window.strategyManagerHideAllInEditor()" class="px-3 py-2 rounded-lg bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/40 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-100 text-xs font-semibold">Desmarcar todas</button>
                                 </div>
                             </div>
                         </div>
@@ -4894,6 +4891,27 @@ Resumo por Estratégia,,,,,
             __strategyManagerSelectedVersionId = id;
             renderStrategyManager();
         };
+
+        function persistStrategyConfigLocally(){
+            try{
+                if(typeof buildLocalBackupStore === 'function'){
+                    localStorage.setItem('df_backup_local', JSON.stringify(buildLocalBackupStore()));
+                    localStorage.setItem('df_backup_local_ts', String(Date.now()));
+                } else if(typeof getPersistableStore === 'function'){
+                    localStorage.setItem('df_backup_local', JSON.stringify(getPersistableStore()));
+                    localStorage.setItem('df_backup_local_ts', String(Date.now()));
+                } else {
+                    localStorage.setItem('df_backup_local', JSON.stringify(store));
+                    localStorage.setItem('df_backup_local_ts', String(Date.now()));
+                }
+                localStorage.setItem('df_last_activeId', String(store.activeId || ''));
+                return true;
+            }catch(err){
+                console.warn('Falha ao persistir localmente strategy config', err);
+                return false;
+            }
+        }
+
         window.strategyManagerNewVersion = function(){
             const latest = normalizeStrategyVersion(strategyManagerSelectedVersion());
             __strategyManagerSelectedVersionId = `strategy-version-${Date.now()}`;
@@ -5072,24 +5090,39 @@ Os dados lançados não serão apagados. Apenas o histórico antigo de configura
                 alert('Não foi possível concluir o reset completo. Detalhe: ' + (err && err.message ? err.message : String(err)));
             }
         };
-                window.strategyManagerSave = function(){
+                window.strategyManagerSave = async function(){
             try{
                 const version = readStrategyEditorVersion();
                 if(!version.effectiveFrom){ alert('Defina a data de vigência.'); return; }
-                const activeVisible = version.strategies.filter(s => s.active && s.visible);
-                if(!activeVisible.length){ alert('Pelo menos uma estratégia ativa e visível é necessária.'); return; }
+                const activeVisible = version.strategies.filter(s => s.active && s.visible && String(s.label || '').trim());
+                if(!activeVisible.length){ alert('Deixe pelo menos uma estratégia ativa e visível com nome preenchido.'); return; }
+
                 const versions = getStrategyVersions().filter(v => v.id !== version.id && v.effectiveFrom !== version.effectiveFrom);
                 versions.push(version);
                 store.strategyConfigs = versions.map((v,idx)=>normalizeStrategyVersion(v,idx)).sort((a,b)=>String(a.effectiveFrom).localeCompare(String(b.effectiveFrom)));
                 __strategyManagerSelectedVersionId = version.id;
-                saveToCloud();
-                if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = `Versão salva com vigência em ${version.effectiveFrom}.`;
+
+                persistStrategyConfigLocally();
+
+                if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = `Estrutura salva localmente com vigência em ${version.effectiveFrom}.`;
                 renderStrategyManager();
                 renderCalendar(getActive());
                 filterReportInternal();
                 renderSidebar();
+
+                try{
+                    if(typeof window.saveToCloud === 'function'){
+                        await window.saveToCloud();
+                    }
+                    if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = `Estrutura salva com sucesso em ${version.effectiveFrom}.`;
+                }catch(cloudErr){
+                    console.warn('Estratégias salvas localmente, mas a nuvem falhou.', cloudErr);
+                    if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Estrutura salva localmente. A nuvem falhou nesta tentativa.';
+                    alert('Estrutura salva localmente. A sincronização na nuvem falhou nesta tentativa, mas suas mudanças ficaram gravadas neste navegador.');
+                }
             }catch(err){
-                alert('Não foi possível salvar a versão das estratégias.');
+                console.error('strategyManagerSave failed', err);
+                alert('Não foi possível salvar a versão das estratégias. Detalhe: ' + (err && err.message ? err.message : String(err)));
             }
         };
 
