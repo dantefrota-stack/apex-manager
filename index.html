@@ -4958,8 +4958,8 @@ Os dados lançados não serão apagados. Apenas o histórico antigo de configura
                 if(!accountIds.length){ alert('Não há contas para resetar.'); return; }
                 const version = readStrategyEditorVersion();
                 if(!version.effectiveFrom){ alert('Defina a data de vigência antes do reset completo.'); return; }
-                const activeVisible = version.strategies.filter(s => s.active && s.visible);
-                if(!activeVisible.length){ alert('Ative e deixe visível pelo menos uma estratégia antes do reset completo.'); return; }
+                const activeVisible = (version.strategies || []).filter(s => s.active && s.visible && String(s.label||'').trim());
+                if(!activeVisible.length){ alert('Ative e deixe visível pelo menos uma estratégia com nome preenchido antes do reset completo.'); return; }
 
                 const explain = [
                     'RESET COMPLETO',
@@ -4974,7 +4974,7 @@ Os dados lançados não serão apagados. Apenas o histórico antigo de configura
                     '• as contas',
                     '• nome/tamanho/status/favoritos',
                     '',
-                    'A nova estrutura salva no editor será mantida como única versão.'
+                    'A estrutura salva no editor será mantida como única versão.'
                 ].join('\n');
                 if(!confirm(explain)) return;
                 const typed = prompt('Digite RESET para confirmar o reset completo e limpar todo o histórico, mantendo apenas as contas:');
@@ -4982,53 +4982,97 @@ Os dados lançados não serão apagados. Apenas o histórico antigo de configura
 
                 const preservedAccounts = {};
                 accountIds.forEach(id => {
-                    const acc = store.accounts[id] || {};
+                    const acc = (store.accounts && store.accounts[id]) ? store.accounts[id] : {};
                     preservedAccounts[id] = {
+                        ...acc,
                         id: acc.id || id,
                         name: acc.name || 'Conta',
                         size: acc.size || '50k',
                         monthType: Number(acc.monthType || 1),
-                        data: {},
-                        payouts: [],
-                        createdAt: acc.createdAt || new Date().toISOString(),
                         favorite: !!acc.favorite,
                         status: acc.status || 'active',
-                        companyGroup: acc.companyGroup || 'Sem grupo'
+                        companyGroup: acc.companyGroup || 'Sem grupo',
+                        createdAt: acc.createdAt || new Date().toISOString(),
+
+                        // limpeza operacional
+                        data: {},
+                        payouts: [],
+                        payoutHistory: [],
+                        notes: {},
+                        periodNotes: {},
+                        noteDrafts: {},
+                        archivedPayouts: []
                     };
                 });
 
                 const freshVersion = normalizeStrategyVersion({
                     ...version,
-                    id: version.id || `strategy-version-${Date.now()}`,
+                    id: `strategy-version-${Date.now()}`,
                     effectiveFrom: String(version.effectiveFrom || getTodayISO()),
-                    strategies: version.strategies.map(s => ({...s}))
+                    strategies: (version.strategies || []).map(s => ({ ...s }))
                 });
 
+                // limpa estado operacional global, preservando contas e configuração nova
                 store.accounts = preservedAccounts;
                 store.strategyConfigs = [freshVersion];
+                store.activeId = (store.activeId && preservedAccounts[store.activeId]) ? store.activeId : accountIds[0];
+                store.dayDetailsOpen = {};
+                store.tradeDetailsOpen = {};
+                store.noteDrafts = {};
+                store.payoutRequests = [];
+                store.payoutHistory = [];
+                store.adminLogs = [];
+                store.periodAnalysisCache = {};
                 __strategyManagerSelectedVersionId = freshVersion.id;
-                const activeId = store.activeId && preservedAccounts[store.activeId] ? store.activeId : accountIds[0];
-                store.activeId = activeId;
-                try{ syncDatesToView(); }catch(e){}
-                try{
+
+                try { syncDatesToView(); } catch(e) {}
+                try {
                     if(els.filterStart) els.filterStart.value = freshVersion.effectiveFrom;
                     if(els.filterEnd) els.filterEnd.value = freshVersion.effectiveFrom;
-                }catch(e){}
+                } catch(e) {}
 
-                await saveToCloud();
+                // persistência local imediata
+                try {
+                    if(typeof buildLocalBackupStore === 'function'){
+                        localStorage.setItem('df_backup_local', JSON.stringify(buildLocalBackupStore()));
+                        localStorage.setItem('df_backup_local_ts', String(Date.now()));
+                    } else if(typeof getPersistableStore === 'function'){
+                        localStorage.setItem('df_backup_local', JSON.stringify(getPersistableStore()));
+                        localStorage.setItem('df_backup_local_ts', String(Date.now()));
+                    }
+                    localStorage.setItem('df_last_activeId', String(store.activeId || ''));
+                } catch(e) {
+                    console.warn('Falha ao salvar reset no localStorage', e);
+                }
 
-                if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Reset completo executado. Histórico apagado, contas preservadas e nova estrutura aplicada.';
-                renderStrategyManager();
-                renderSidebar();
-                loadAccount(activeId);
-                try{ filterReportInternal(); }catch(e){}
-                alert('Reset completo concluído com sucesso. As contas foram preservadas e todo o histórico operacional foi limpo.');
+                // tenta persistir na nuvem, mas não bloqueia o reset local
+                let cloudError = null;
+                try {
+                    if(typeof window.saveToCloud === 'function') await window.saveToCloud();
+                } catch(e) {
+                    cloudError = e;
+                    console.warn('Reset salvo localmente, mas falhou na nuvem.', e);
+                }
+
+                try {
+                    if(els.strategyManagerStatus) {
+                        els.strategyManagerStatus.textContent = cloudError
+                            ? 'Reset concluído localmente. A sincronização na nuvem falhou.'
+                            : 'Reset completo executado. Histórico apagado, contas preservadas e nova estrutura aplicada.';
+                    }
+                } catch(e){}
+
+                alert(cloudError
+                    ? 'Reset completo concluído localmente. As contas foram preservadas e o histórico operacional foi limpo. A sincronização na nuvem falhou nesta tentativa.'
+                    : 'Reset completo concluído com sucesso. As contas foram preservadas e todo o histórico operacional foi limpo.');
+
+                location.reload();
             }catch(err){
                 console.error('strategyManagerHardReset failed', err);
-                alert('Não foi possível concluir o reset completo.');
+                alert('Não foi possível concluir o reset completo. Detalhe: ' + (err && err.message ? err.message : String(err)));
             }
         };
-        window.strategyManagerSave = function(){
+                window.strategyManagerSave = function(){
             try{
                 const version = readStrategyEditorVersion();
                 if(!version.effectiveFrom){ alert('Defina a data de vigência.'); return; }
