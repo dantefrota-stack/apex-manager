@@ -663,9 +663,7 @@ tr.bg-green-50 td {
                     <button id="admin-tab-logs" onclick="setAdminTab('logs')" class="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         <i data-lucide="file-text" class="w-4 h-4"></i> Logs
                     </button>
-                    <button id="admin-tab-strategy" onclick="setAdminTab('strategy')" class="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                        <i data-lucide="sliders-horizontal" class="w-4 h-4"></i> Estratégias
-                    </button>
+                    
                 </div>
 
                 <!-- PANE: PAYOUTS -->
@@ -1281,6 +1279,55 @@ tr.bg-green-50 td {
                             <div class="mt-1 flex justify-between"><span class="text-slate-500 dark:text-slate-400">Pior Estratégia</span><span id="risk-worst-strategy" class="font-bold text-red-600">--</span></div>
                             <div class="mt-1 flex justify-between"><span class="text-slate-500 dark:text-slate-400">Dias Verdes/Vermelhos</span><span id="risk-days-balance" class="font-bold text-slate-800 dark:text-white">--</span></div>
                         </div>
+                    </div>
+                </div>
+
+                <div id="detailed-period-card" class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center justify-between gap-3 mb-2 flex-wrap">
+                        <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2">
+                            <i data-lucide="list-tree" class="w-3.5 h-3.5 text-indigo-600"></i>
+                            <span>Relatório Detalhado do Período</span>
+                        </div>
+                        <div class="flex items-center gap-2 no-print">
+                            <button onclick="exportDetailedCSV()" class="py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400"><i data-lucide="download" class="w-3 h-3"></i> CSV Detalhado</button>
+                            <button onclick="pdfDetailedReport()" class="py-2 px-3 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 flex justify-center items-center gap-1 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"><i data-lucide="printer" class="w-3 h-3"></i> PDF Detalhado</button>
+                        </div>
+                    </div>
+                    <div class="text-[11px] text-slate-500 dark:text-slate-400 mb-3">Mostra cada operação individual por dia e estratégia, com agrupamento visual por data, subtotais por estratégia e total consolidado do dia.</div>
+                    <div id="detailed-period-stats" class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+                        <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 px-3 py-2">
+                            <div class="text-[10px] uppercase tracking-wide text-slate-400 font-bold">Dias com operação</div>
+                            <div id="detailed-stat-days" class="mt-1 text-sm font-extrabold text-slate-800 dark:text-slate-100">--</div>
+                        </div>
+                        <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 px-3 py-2">
+                            <div class="text-[10px] uppercase tracking-wide text-slate-400 font-bold">Operações</div>
+                            <div id="detailed-stat-ops" class="mt-1 text-sm font-extrabold text-slate-800 dark:text-slate-100">--</div>
+                        </div>
+                        <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 px-3 py-2">
+                            <div class="text-[10px] uppercase tracking-wide text-slate-400 font-bold">Positivas</div>
+                            <div id="detailed-stat-pos" class="mt-1 text-sm font-extrabold text-emerald-600">--</div>
+                        </div>
+                        <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 px-3 py-2">
+                            <div class="text-[10px] uppercase tracking-wide text-slate-400 font-bold">Negativas</div>
+                            <div id="detailed-stat-neg" class="mt-1 text-sm font-extrabold text-red-600">--</div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900/40">
+                        <table class="w-full text-[11px] min-w-[980px]">
+                            <thead class="bg-slate-50 dark:bg-slate-800/70">
+                                <tr class="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+                                    <th class="text-left py-2 px-3">Data</th>
+                                    <th class="text-left py-2 px-3">Estratégia</th>
+                                    <th class="text-left py-2 px-3">Operação</th>
+                                    <th class="text-right py-2 px-3">Valor</th>
+                                    <th class="text-right py-2 px-3">Subtotal Estratégia</th>
+                                    <th class="text-right py-2 px-3">Total do Dia</th>
+                                    <th class="text-center py-2 px-3">Rompimento</th>
+                                    <th class="text-left py-2 px-3">Nota</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detailed-period-body" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -3800,6 +3847,7 @@ function _openPrintWindow(htmlStr){
             return `${y}-${m}-${day}`;
         }
 
+        ensureStrategyConfigs();
         window.createAccount = () => { const name = prompt(translateString("Nome:")); if(!name)return; const id = 'acc_' + Date.now(); store.accounts[id] = { id, name, size: '50k', monthType: 1, data: {}, payouts: [], createdAt: new Date().toISOString(), favorite: false, status: 'active', companyGroup: 'Sem grupo' }; saveToCloud(); renderSidebar(); loadAccount(id); toggleSidebar(); };
         window.renameAccount = () => { const acc = getActive(); const newName = prompt("Nome:", acc.name); if(newName){ acc.name = newName; saveToCloud(); renderSidebar(); els.activeName.textContent = newName; } };
         
@@ -4374,7 +4422,8 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 const d = acc.data[iso] || {};
                 const dateStr = formatDateShort(parseISODateLocal(iso));
                 const blocks = getVisibleStrategyEntriesForDay(d, iso);
-                const note = (d.note || '').replace(/[\n\r]+/g, " ").replace(/,/g, ";");
+                const note = (d.note || '').replace(/[
+]+/g, " ").replace(/,/g, ";");
                 const hasValues = blocks.some(b => Number(b.subtotal || 0) !== 0) || note !== '';
                 if (hasValues) {
                     csvContent += `${dateStr},${blocks.map(b => Number(b.subtotal || 0).toFixed(2)).join(',')},${note}
@@ -4678,7 +4727,6 @@ Resumo por Estratégia,,,,,
         function getStrategyVersions(){
             return ensureStrategyConfigs();
         }
-        ensureStrategyConfigs();
         function getStrategyVersionForDate(iso){
             const target = String(iso || getTodayISO());
             const versions = getStrategyVersions();
@@ -4785,7 +4833,7 @@ Resumo por Estratégia,,,,,
         }
         function updateCalendarHeaderLabels(iso){
             try{
-                const row = document.querySelector('#calendar-body')?.closest('table')?.querySelector('thead tr');
+                const row = document.querySelector('table thead tr');
                 if(!row) return;
                 const strategies = getStrategiesForDate(iso || getTodayISO(), { includeInactive:false, includeHidden:false });
                 row.innerHTML = `<th class="px-2 py-3 md:px-4">Data</th>`
@@ -4830,7 +4878,7 @@ Resumo por Estratégia,,,,,
                         <input type="text" value="${escapeHtml(s.label)}" data-field="label" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
                     </td>
                     <td class="py-2 pr-3 text-center">
-                        <input type="number" min="1" max="5" value="${Number(s.order)||1}" data-field="order" class="w-20 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-center">
+                        <input type="number" min="1" max="5" value="${int(s.order)}" data-field="order" class="w-20 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-center">
                     </td>
                     <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="active" ${s.active ? 'checked' : ''}></td>
                     <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="visible" ${s.visible ? 'checked' : ''}></td>
@@ -4997,6 +5045,225 @@ Resumo por Estratégia,,,,,
         }
 
 
+        let lastDetailedPeriodRows = [];
+        let lastDetailedPeriodTitle = '';
+
+        function renderDetailedPeriodReport(acc, start, end){
+            const tbody = document.getElementById('detailed-period-body');
+            if(!tbody) return;
+            const periodSummary = _periodTradeSummary(acc, start, end);
+            const rows = [];
+            tbody.innerHTML = '';
+
+            let dayCount = 0;
+            let operationCount = 0;
+            let positiveCount = 0;
+            let negativeCount = 0;
+
+            const statDays = document.getElementById('detailed-stat-days');
+            const statOps = document.getElementById('detailed-stat-ops');
+            const statPos = document.getElementById('detailed-stat-pos');
+            const statNeg = document.getElementById('detailed-stat-neg');
+
+            periodSummary.byDay.forEach(day => {
+                const note = String((acc.data?.[day.iso]?.note || '')).trim();
+                const blocks = getStrategyEntriesForDay(acc.data?.[day.iso] || {}, day.iso, { includeInactive:false, includeHidden:false });
+                const activeBlocks = blocks.filter(block => {
+                    const legs = [block.legs.leg1, block.legs.leg2, block.legs.leg3, block.legs.leg4];
+                    return legs.some(v => !(v === '' || v === null || v === undefined || Number(v) === 0)) || Number(block.legs.subtotal || 0) !== 0;
+                });
+                if(!activeBlocks.length) return;
+
+                dayCount += 1;
+                const dayRow = document.createElement('tr');
+                dayRow.className = 'bg-slate-50/90 dark:bg-slate-800/60';
+                dayRow.innerHTML = `
+                    <td colspan="8" class="py-2.5 px-3 border-t border-b border-slate-200 dark:border-slate-700">
+                        <div class="flex items-center justify-between gap-3 flex-wrap">
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center justify-center w-2.5 h-2.5 rounded-full ${Number(day.total||0) >= 0 ? 'bg-emerald-500' : 'bg-red-500'}"></span>
+                                <span class="font-extrabold text-slate-800 dark:text-slate-100">${formatDateShort(parseISODateLocal(day.iso))}</span>
+                                <span class="text-[10px] font-bold uppercase tracking-wide text-slate-400">${activeBlocks.length} estratégia${activeBlocks.length===1?'':'s'}</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-[10px] uppercase tracking-wide text-slate-400 font-bold">Total do Dia</div>
+                                <div class="text-sm font-extrabold ${Number(day.total||0) >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(Number(day.total||0))}</div>
+                            </div>
+                        </div>
+                        ${note ? `<div class="mt-1 text-[10px] text-slate-500 dark:text-slate-400"><span class="font-bold">Nota:</span> ${note.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>` : ''}
+                    </td>`;
+                tbody.appendChild(dayRow);
+
+                activeBlocks.forEach(block => {
+                    const legs = [block.legs.leg1, block.legs.leg2, block.legs.leg3, block.legs.leg4].map(v => (v === '' || v === null || v === undefined) ? null : Number(v));
+                    let strategyRows = 0;
+                    legs.forEach((val, idx) => {
+                        if(val === null || Number.isNaN(val) || val === 0) return;
+                        strategyRows += 1;
+                        operationCount += 1;
+                        if(val > 0) positiveCount += 1;
+                        if(val < 0) negativeCount += 1;
+                        const breakout = !!(block.legs && block.legs.breakouts && block.legs.breakouts[idx]);
+                        const tr = document.createElement('tr');
+                        tr.className = 'hover:bg-slate-50/70 dark:hover:bg-slate-800/30';
+                        tr.innerHTML = `
+                            <td class="py-2 px-3 whitespace-nowrap text-slate-400">↳ ${formatDateShort(parseISODateLocal(day.iso))}</td>
+                            <td class="py-2 px-3 font-semibold text-slate-700 dark:text-slate-200">${block.label}</td>
+                            <td class="py-2 px-3">Trade ${idx+1}</td>
+                            <td class="py-2 px-3 text-right ${val >= 0 ? 'text-emerald-600 font-bold' : 'text-red-600 font-bold'}">${formatCurrency(val)}</td>
+                            <td class="py-2 px-3 text-right text-slate-400">—</td>
+                            <td class="py-2 px-3 text-right text-slate-400">—</td>
+                            <td class="py-2 px-3 text-center">${breakout ? '<span class="inline-flex items-center px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800">Sim</span>' : '—'}</td>
+                            <td class="py-2 px-3 text-slate-400">—</td>
+                        `;
+                        tbody.appendChild(tr);
+                        rows.push({
+                            rowType: 'trade',
+                            iso: day.iso,
+                            dateLabel: formatDateShort(parseISODateLocal(day.iso)),
+                            strategy: block.label,
+                            trade: `Trade ${idx+1}`,
+                            value: Number(val || 0),
+                            subtotal: Number(block.legs.subtotal || 0),
+                            dayTotal: Number(day.total || 0),
+                            breakout: breakout ? 'Sim' : '',
+                            note
+                        });
+                    });
+
+                    const subtotal = Number(block.legs.subtotal || 0);
+                    if(strategyRows || subtotal !== 0){
+                        const subtotalRow = document.createElement('tr');
+                        subtotalRow.className = 'bg-slate-50/50 dark:bg-slate-800/20';
+                        subtotalRow.innerHTML = `
+                            <td class="py-2 px-3 text-slate-400"> </td>
+                            <td class="py-2 px-3 font-bold text-slate-700 dark:text-slate-200">${block.label}</td>
+                            <td class="py-2 px-3 font-bold text-slate-500 dark:text-slate-400">Subtotal</td>
+                            <td class="py-2 px-3 text-right text-slate-400">—</td>
+                            <td class="py-2 px-3 text-right ${subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'} font-extrabold">${formatCurrency(subtotal)}</td>
+                            <td class="py-2 px-3 text-right ${Number(day.total||0) >= 0 ? 'text-emerald-600' : 'text-red-600'} font-bold">${formatCurrency(Number(day.total||0))}</td>
+                            <td class="py-2 px-3 text-center text-slate-400">—</td>
+                            <td class="py-2 px-3 text-slate-400">${note ? 'Ver nota do dia' : '—'}</td>
+                        `;
+                        tbody.appendChild(subtotalRow);
+                        rows.push({
+                            rowType: 'subtotal',
+                            iso: day.iso,
+                            dateLabel: formatDateShort(parseISODateLocal(day.iso)),
+                            strategy: block.label,
+                            trade: 'Subtotal',
+                            value: null,
+                            subtotal: subtotal,
+                            dayTotal: Number(day.total || 0),
+                            breakout:'',
+                            note
+                        });
+                    }
+                });
+            });
+
+            if(!rows.length){
+                const tr = document.createElement('tr');
+                tr.innerHTML = '<td colspan="8" class="py-3 px-3 text-center text-slate-400">Nenhuma operação encontrada no período selecionado.</td>';
+                tbody.appendChild(tr);
+            }
+
+            if(statDays) statDays.textContent = String(dayCount);
+            if(statOps) statOps.textContent = String(operationCount);
+            if(statPos) statPos.textContent = String(positiveCount);
+            if(statNeg) statNeg.textContent = String(negativeCount);
+
+            lastDetailedPeriodRows = rows;
+            lastDetailedPeriodTitle = `Relatório Detalhado • ${start} até ${end} • ${(acc && acc.name) || 'Conta'}`;
+        }
+
+        function exportDetailedCSVInternal(){
+            const rows = Array.isArray(lastDetailedPeriodRows) ? lastDetailedPeriodRows : [];
+            if(!rows.length){ alert('Nenhum dado detalhado para exportar.'); return; }
+            const header = ['Date','Strategy','Trade','Value','Strategy Subtotal','Day Total','Breakout','Note'];
+            const esc = (v) => '"'+String(v ?? '').replace(/"/g,'""')+'"';
+            const csv = [header.join(',')].concat(rows.map(r => [r.iso, r.strategy, r.trade, r.value ?? '', r.subtotal, r.dayTotal, r.breakout, r.note].map(esc).join(','))).join('
+');
+            const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'detailed_period_report.csv';
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(()=>URL.revokeObjectURL(a.href), 1500);
+        }
+
+        function pdfDetailedReportInternal(){
+            const rows = Array.isArray(lastDetailedPeriodRows) ? lastDetailedPeriodRows : [];
+            if(!rows.length){ alert('Nenhum dado detalhado para imprimir.'); return; }
+            const escapeHtml = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+            let currentIso = '';
+            const parts = [];
+            rows.forEach(r => {
+                if(r.iso !== currentIso){
+                    currentIso = r.iso;
+                    parts.push(`
+                        <tr class="day-head">
+                            <td colspan="8">
+                                <div class="day-wrap">
+                                    <div>
+                                        <div class="day-title">${escapeHtml(r.dateLabel)}</div>
+                                    </div>
+                                    <div class="day-total ${Number(r.dayTotal||0) >= 0 ? 'pos' : 'neg'}">Total do Dia: ${escapeHtml(formatCurrency(r.dayTotal || 0))}</div>
+                                </div>
+                            </td>
+                        </tr>`);
+                }
+                if(r.rowType === 'subtotal'){
+                    parts.push(`
+                        <tr class="subtotal-row">
+                            <td></td>
+                            <td>${escapeHtml(r.strategy)}</td>
+                            <td><strong>Subtotal</strong></td>
+                            <td style="text-align:right;">—</td>
+                            <td style="text-align:right;" class="${Number(r.subtotal||0) >= 0 ? 'pos' : 'neg'}"><strong>${escapeHtml(formatCurrency(r.subtotal || 0))}</strong></td>
+                            <td style="text-align:right;" class="${Number(r.dayTotal||0) >= 0 ? 'pos' : 'neg'}"><strong>${escapeHtml(formatCurrency(r.dayTotal || 0))}</strong></td>
+                            <td style="text-align:center;">—</td>
+                            <td>${escapeHtml(r.note || '—')}</td>
+                        </tr>`);
+                } else {
+                    parts.push(`
+                        <tr>
+                            <td>${escapeHtml(r.dateLabel)}</td>
+                            <td>${escapeHtml(r.strategy)}</td>
+                            <td>${escapeHtml(r.trade)}</td>
+                            <td style="text-align:right;" class="${Number(r.value||0) >= 0 ? 'pos' : 'neg'}">${escapeHtml(formatCurrency(r.value || 0))}</td>
+                            <td style="text-align:right;">—</td>
+                            <td style="text-align:right;">—</td>
+                            <td style="text-align:center;">${escapeHtml(r.breakout || '—')}</td>
+                            <td>${escapeHtml(r.note || '—')}</td>
+                        </tr>`);
+                }
+            });
+            const w = window.open('', '_blank');
+            if(!w) return;
+            w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(lastDetailedPeriodTitle)}</title><style>
+                body{font-family:Arial,sans-serif;padding:18px;color:#111}
+                h1{font-size:18px;margin:0 0 12px}
+                table{width:100%;border-collapse:collapse;font-size:11px}
+                th,td{border:1px solid #d1d5db;padding:6px 8px;vertical-align:top}
+                th{background:#f8fafc;text-align:left}
+                .day-head td{background:#eef2ff;border-top:2px solid #c7d2fe;border-bottom:2px solid #c7d2fe}
+                .day-wrap{display:flex;align-items:center;justify-content:space-between;gap:12px}
+                .day-title{font-size:13px;font-weight:700}
+                .day-total{font-size:12px;font-weight:700}
+                .subtotal-row td{background:#f8fafc}
+                .pos{color:#047857}
+                .neg{color:#dc2626}
+                @media print{@page{size:landscape;margin:10mm}}
+                </style></head><body><h1>${escapeHtml(lastDetailedPeriodTitle)}</h1><table><thead><tr><th>Data</th><th>Estratégia</th><th>Operação</th><th>Valor</th><th>Subtotal Estratégia</th><th>Total do Dia</th><th>Rompimento</th><th>Nota</th></tr></thead><tbody>${parts.join('')}</tbody></table></body></html>`);
+            w.document.close();
+            w.focus();
+            setTimeout(()=>w.print(), 300);
+        }
+
+        window.exportDetailedCSV = exportDetailedCSVInternal;
+        window.pdfDetailedReport = pdfDetailedReportInternal;
+
         function filterReportInternal() {
             const start = els.filterStart.value; 
             const end = els.filterEnd.value;
@@ -5025,10 +5292,14 @@ Resumo por Estratégia,,,,,
             let peak = 0;
             let maxDD = 0;
 
-            const chartStrategyDefs = getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
-                .map(cfg => ({ ...cfg, legacyKey: cfg.legacyKey || cfg.slot, data: [] }));
-            const strategyCum = {};
-            chartStrategyDefs.forEach(cfg => { strategyCum[cfg.legacyKey] = 0; });
+            const strategyCum = { t2550: 0, t4040: 0, t3570: 0, t4080: 0, ct: 0 };
+            const strategySeries = {
+                t2550: { label: '25/50', data: [] },
+                t4040: { label: '30/60', data: [] },
+                t3570: { label: '35/70', data: [] },
+                t4080: { label: '40/80', data: [] },
+                ct: { label: 'Condução Técnica', data: [] }
+            };
 
             Object.keys(acc.data || {}).sort().forEach(iso => {
                 if(iso < start || iso > end) return;
@@ -5036,9 +5307,8 @@ Resumo por Estratégia,,,,,
                 if(e.holiday) return;
 
                 const tradeVals = _individualTradeValuesForDay(e).map(t => Number(t.value || 0)).filter(v => !isNaN(v) && v !== 0);
-                const blocks = _strategyBlocksForDay(e, iso);
-                const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false });
-                const dayTotal = dayEntries.reduce((s,b)=> s + (Number(b.legs.subtotal) || 0), 0);
+                const blocks = _strategyBlocksForDay(e);
+                const dayTotal = Object.values(blocks).reduce((s,b)=> s + (Number(b.legs.subtotal) || 0), 0);
 
                 tradeVals.forEach(tv => {
                     totalTrades += 1;
@@ -5068,22 +5338,19 @@ Resumo por Estratégia,,,,,
                     if (dd > maxDD) maxDD = dd;
 
                     chartLabels.push(formatDateShort(parseISODateLocal(iso)));
-                    chartStrategyDefs.forEach(cfg => {
-                        const key = cfg.legacyKey;
-                        const block = blocks[key] || blocks[cfg.slot];
-                        strategyCum[key] += Number(block?.legs?.subtotal || 0);
-                        cfg.data.push(strategyCum[key]);
+                    ['t3570','t4080','t2550','t4040','ct'].forEach((key) => {
+                        strategyCum[key] += Number(blocks[key].legs.subtotal || 0);
+                        strategySeries[key].data.push(strategyCum[key]);
                     });
                 }
             });
-            chartDatasets = chartStrategyDefs
-                .map(cfg => ({
-                    label: cfg.label,
-                    data: cfg.data,
-                    borderColor: cfg.color || (strategyMetaBySlot(cfg.slot)?.color) || '#4f46e5',
-                    backgroundColor: 'rgba(79,70,229,0.10)'
-                }))
-                .filter(ds => ds.data.some(v => Number(v || 0) !== 0));
+            chartDatasets = [
+                { label: '25/50', data: strategySeries.t2550.data, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.10)' },
+                { label: '30/60', data: strategySeries.t4040.data, borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.10)' },
+                { label: '35/70', data: strategySeries.t3570.data, borderColor: '#059669', backgroundColor: 'rgba(5,150,105,0.10)' },
+                { label: '40/80', data: strategySeries.t4080.data, borderColor: '#ea580c', backgroundColor: 'rgba(234,88,12,0.10)' },
+                { label: 'Condução Técnica', data: strategySeries.ct.data, borderColor: '#dc2626', backgroundColor: 'rgba(220,38,38,0.10)' }
+            ].filter(ds => ds.data.some(v => Number(v || 0) !== 0));
 
             els.customResult.textContent = formatCurrency(sum); 
             els.customResult.className = sum >= 0 ? "font-bold text-green-600" : "font-bold text-red-600";
@@ -5203,6 +5470,9 @@ Resumo por Estratégia,,,,,
             const worstRow = document.querySelector('span#custom-worst')?.closest('div');
             if(bestRow) bestRow.style.display = singleDayMode ? 'none' : '';
             if(worstRow) worstRow.style.display = singleDayMode ? 'none' : '';
+
+            renderDetailedPeriodReport(acc, start, end);
+            try{ if(window.lucide && lucide.createIcons) lucide.createIcons(); }catch(_e){}
         }
 
         function updateChart(labels, datasets) {
@@ -6222,29 +6492,24 @@ ${period} • ${(acc?.name || 'Conta')}
                 try {
                     if (!window.Chart) return null;
                     let chartLabels = [];
-                    const pdfChartStrategyDefs = getStrategiesForDate(endISO, { includeInactive:false, includeHidden:false })
-                        .map(cfg => ({
-                            ...cfg,
-                            key: cfg.legacyKey || cfg.slot,
-                            label: cfg.label,
-                            borderColor: cfg.color || (strategyMetaBySlot(cfg.slot)?.color) || '#4f46e5',
-                            data:[]
-                        }));
-                    const strategyCum = {};
-                    pdfChartStrategyDefs.forEach(ds => { strategyCum[ds.key] = 0; });
-                    const datasets = pdfChartStrategyDefs;
+                    const strategyCum = { t2550: 0, t4040: 0, t3570: 0, t4080: 0, ct: 0 };
+                    const datasets = [
+                        { key:'t2550', label:'25/50', borderColor:'#2563eb', data:[] },
+                        { key:'t4040', label:'30/60', borderColor:'#7c3aed', data:[] },
+                        { key:'t3570', label:'35/70', borderColor:'#059669', data:[] },
+                        { key:'t4080', label:'40/80', borderColor:'#ea580c', data:[] },
+                        { key:'ct', label:'Condução Técnica', borderColor:'#dc2626', data:[] }
+                    ];
                     Object.keys(acc.data || {}).sort().forEach(iso => {
                         if (iso < start || iso > end) return;
                         const e = acc.data[iso] || {};
                         if (e.holiday) return;
-                        const blocks = _strategyBlocksForDay(e, iso);
-                        const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false });
-                        const dayTotal = dayEntries.reduce((sum,b)=> sum + (Number(b.legs.subtotal) || 0), 0);
+                        const blocks = _strategyBlocksForDay(e);
+                        const dayTotal = Object.values(blocks).reduce((sum,b)=> sum + (Number(b.legs.subtotal) || 0), 0);
                         if (dayTotal === 0) return;
                         chartLabels.push(formatDateShort(parseISODateLocal(iso)));
                         datasets.forEach(ds => {
-                            const block = blocks[ds.key] || blocks[ds.slot];
-                            strategyCum[ds.key] += Number(block?.legs?.subtotal || 0);
+                            strategyCum[ds.key] += Number(blocks[ds.key].legs.subtotal || 0);
                             ds.data.push(strategyCum[ds.key]);
                         });
                     });
@@ -8545,16 +8810,15 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                     const colT1   = marginL + 430;
                     const colT2   = marginL + 510;
 
-                    const pdfLabelMap = getStrategyLabelMapForDate(endISO);
                     const drawTableHeader = ()=>{
                         doc.setFont('helvetica','bold');
                         doc.setFontSize(10);
                         doc.text('Data',     colDate, y);
-                        doc.text(String(pdfLabelMap.t0 || '25/50').slice(0,12),  colT0,   y, { align:'right' });
-                        doc.text(String(pdfLabelMap.t3 || '30/60').slice(0,12), colT3,   y, { align:'right' });
-                        doc.text(String(pdfLabelMap.t4 || '35/70').slice(0,12),  colT4,   y, { align:'right' });
-                        doc.text(String(pdfLabelMap.t1 || '40/80').slice(0,12),  colT1,   y, { align:'right' });
-                        doc.text(String(pdfLabelMap.t2 || 'Condução').slice(0,12),  colT2,   y, { align:'right' });
+                        doc.text('25/50',  colT0,   y, { align:'right' });
+                        doc.text('30/60', colT3,   y, { align:'right' });
+                        doc.text('35/70',  colT4,   y, { align:'right' });
+                        doc.text('40/80',  colT1,   y, { align:'right' });
+                        doc.text('Condução',  colT2,   y, { align:'right' });
                         y += 10;
                         doc.setLineWidth(0.5);
                         doc.line(marginL, y, marginL + contentW, y);
