@@ -748,12 +748,12 @@ tr.bg-green-50 td {
                             <div class="flex items-center justify-between gap-3 flex-wrap pt-2 border-t border-slate-200 dark:border-slate-700">
                                 <div id="strategy-manager-status" class="text-xs text-slate-500 dark:text-slate-400">Sem alterações.</div>
                                 <div class="flex items-center gap-2 flex-wrap">
+                                    <button type="button" onclick="window.strategyManagerHardReset()" class="px-3 py-2 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold shadow-md shadow-rose-700/20">Reset completo (manter contas)</button>
+                                    <button type="button" onclick="window.strategyManagerSave()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Salvar versão</button>
                                     <button type="button" onclick="window.strategyManagerDuplicateSelected()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-semibold">Duplicar versão</button>
                                     <button type="button" onclick="window.strategyManagerHideAllInEditor()" class="px-3 py-2 rounded-lg bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/40 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-100 text-xs font-semibold">Inativar/ocultar todas</button>
                                     <button type="button" onclick="window.strategyManagerArchiveOlder()" class="px-3 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold">Apagar versões anteriores</button>
-                                    <button type="button" onclick="window.strategyManagerHardReset()" class="px-3 py-2 rounded-lg bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold">Reset completo (manter contas)</button>
                                     <button type="button" onclick="window.strategyManagerDeleteSelected()" class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold">Excluir versão</button>
-                                    <button type="button" onclick="window.strategyManagerSave()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Salvar versão</button>
                                 </div>
                             </div>
                         </div>
