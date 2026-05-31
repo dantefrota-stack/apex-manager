@@ -747,8 +747,10 @@ tr.bg-green-50 td {
                             </div>
                             <div class="flex items-center justify-between gap-3 flex-wrap pt-2 border-t border-slate-200 dark:border-slate-700">
                                 <div id="strategy-manager-status" class="text-xs text-slate-500 dark:text-slate-400">Sem alterações.</div>
-                                <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-2 flex-wrap">
                                     <button type="button" onclick="window.strategyManagerDuplicateSelected()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-semibold">Duplicar versão</button>
+                                    <button type="button" onclick="window.strategyManagerHideAllInEditor()" class="px-3 py-2 rounded-lg bg-amber-100 hover:bg-amber-200 dark:bg-amber-900/40 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-100 text-xs font-semibold">Inativar/ocultar todas</button>
+                                    <button type="button" onclick="window.strategyManagerArchiveOlder()" class="px-3 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold">Apagar versões anteriores</button>
                                     <button type="button" onclick="window.strategyManagerDeleteSelected()" class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold">Excluir versão</button>
                                     <button type="button" onclick="window.strategyManagerSave()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Salvar versão</button>
                                 </div>
@@ -4918,6 +4920,37 @@ Resumo por Estratégia,,,,,
             renderCalendar(getActive());
             filterReportInternal();
         };
+        window.strategyManagerHideAllInEditor = function(){
+            const rows = Array.from((els.strategyEditorBody || document.createElement('tbody')).querySelectorAll('tr[data-slot]'));
+            if(!rows.length) return;
+            rows.forEach(tr => {
+                const active = tr.querySelector('[data-field="active"]');
+                const visible = tr.querySelector('[data-field="visible"]');
+                if(active) active.checked = false;
+                if(visible) visible.checked = false;
+            });
+            if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Todas as estratégias desta versão foram inativadas/ocultadas no editor. Revise e salve.';
+        };
+        window.strategyManagerArchiveOlder = function(){
+            const versions = getStrategyVersions();
+            const selected = strategyManagerSelectedVersion();
+            const cutoff = (els.strategyEffectiveDate?.value || selected.effectiveFrom || '').trim();
+            if(!cutoff){ alert('Defina a data de vigência da versão antes de limpar o histórico anterior.'); return; }
+            const older = versions.filter(v => v.id !== selected.id && String(v.effectiveFrom) < String(cutoff));
+            if(!older.length){ alert('Não há versões anteriores a essa data para apagar.'); return; }
+            const msg = `Apagar ${older.length} versão(ões) anterior(es) a ${cutoff}?
+
+Os dados lançados não serão apagados. Apenas o histórico antigo de configuração de estratégias será removido.`;
+            if(!confirm(msg)) return;
+            store.strategyConfigs = versions.filter(v => !(v.id !== selected.id && String(v.effectiveFrom) < String(cutoff)));
+            __strategyManagerSelectedVersionId = selected.id;
+            saveToCloud();
+            if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = `${older.length} versão(ões) anterior(es) removida(s).`;
+            renderStrategyManager();
+            renderCalendar(getActive());
+            filterReportInternal();
+            renderSidebar();
+        };
         window.strategyManagerSave = function(){
             try{
                 const version = readStrategyEditorVersion();
@@ -5415,9 +5448,14 @@ Resumo por Estratégia,,,,,
             const data = window.__lastDetailedPeriodReport;
             const container = document.getElementById('detailed-report-container');
             if(!data || !container || !data.rows || !data.rows.length){ alert('Gere a Análise por Período primeiro.'); return; }
+            const safeStart = String(data.startISO || '').replace(/[^0-9-]/g,'');
+            const safeEnd = String(data.endISO || '').replace(/[^0-9-]/g,'');
+            const accountName = (window.currentAccount && window.currentAccount.name) ? String(window.currentAccount.name) : 'Conta';
+            const safeAccount = accountName.replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'') || 'Conta';
+            const pdfTitle = `Relatorio_Detalhado_${safeAccount}_${safeStart}_a_${safeEnd}`;
             const w = window.open('', '_blank');
             if(!w) return;
-            w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Relatório Detalhado</title>
+            w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${pdfTitle}</title>
                 <style>
                     body{font-family:Arial,sans-serif;padding:20px;color:#111}
                     h1{font-size:20px;margin:0 0 8px}
@@ -5434,10 +5472,11 @@ Resumo por Estratégia,,,,,
                     .pos{color:#14803c;font-weight:bold}.neg{color:#b91c1c;font-weight:bold}
                 </style></head><body>
                 <h1>Relatório Detalhado do Período</h1>
-                <div class="meta">${data.startISO} até ${data.endISO}</div>
+                <div class="meta">${accountName} • ${data.startISO} até ${data.endISO}</div>
                 ${container.innerHTML}
                 </body></html>`);
             w.document.close();
+            try{ w.document.title = pdfTitle; }catch(e){}
             w.focus();
             setTimeout(()=>w.print(), 300);
         };
