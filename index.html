@@ -1675,7 +1675,23 @@ tr.bg-green-50 td {
         }
     };
 
-    // --- FUNÇÃO DE SINCRONIZAÇÃO SEGURA ---
+    
+    function hydrateStoreFromLocalBackupIfAvailable(){
+        try{
+            const raw = localStorage.getItem('df_backup_local');
+            if(!raw) return false;
+            const parsed = JSON.parse(raw);
+            if(!parsed || typeof parsed !== 'object' || !parsed.accounts || typeof parsed.accounts !== 'object') return false;
+            store = parsed;
+            try{ store.date = new Date(store.date || new Date()); }catch(e){ store.date = new Date(); }
+            try{ delete store.dayDetailsOpen; delete store.tradeDetailsOpen; }catch(e){}
+            const ts = Number(localStorage.getItem('df_backup_local_ts') || 0) || 0;
+            if(ts && (!store.last_update_ms || Number(store.last_update_ms||0) < ts)) store.last_update_ms = ts;
+            return true;
+        }catch(err){ console.warn('Falha ao hidratar backup local', err); return false; }
+    }
+
+// --- FUNÇÃO DE SINCRONIZAÇÃO SEGURA ---
     // Esta função substitui a lógica antiga de carregar dados soltos
     async function startAppSync() {
         const loader = document.getElementById('app-loader');
@@ -1683,6 +1699,9 @@ tr.bg-green-50 td {
         if (statusEl) statusEl.textContent = "Sincronizando dados...";
 
         try {
+            // 0) Pré-hidrata do backup local para evitar rollback do cloud sobre mudanças locais
+            try { hydrateStoreFromLocalBackupIfAvailable(); } catch(e) { console.warn("local pre-hydrate failed", e); }
+
             // 1) Hidrata do Firestore uma vez (define __cloudHydrated e popula store)
             await loadFromCloud();
             // Migra backup antigo embutido no documento principal para um documento separado
@@ -3186,6 +3205,191 @@ tr.bg-green-50 td {
 
   ${groupsHtml}
 
+
+<script>
+(function(){
+  function smMeta(slot){
+    try{ return (window.STRATEGY_SLOT_META || []).find(s => s.slot===slot) || {slot:slot, defaultLabel:slot, defaultOrder:1}; }catch(e){ return {slot:slot, defaultLabel:slot, defaultOrder:1}; }
+  }
+  function smAllSlots(){ return (window.STRATEGY_SLOT_META || []).map(s => s.slot); }
+  function smBuildVersionFromEditor(){
+    const tbody = (window.els && els.strategyEditorBody) ? els.strategyEditorBody : null;
+    const rows = tbody ? Array.from(tbody.querySelectorAll('tr[data-slot]')) : [];
+    const rowMap = new Map(rows.map(tr => [tr.getAttribute('data-slot'), tr]));
+    const seen = new Set();
+    const strategies = smAllSlots().map((slot, idx) => {
+      const meta = smMeta(slot);
+      const tr = rowMap.get(slot);
+      const rawLabel = tr ? String((tr.querySelector('[data-field="label"]')||{}).value || '').trim() : '';
+      let order = tr ? Number((tr.querySelector('[data-field="order"]')||{}).value || (idx+1)) : (idx+1);
+      if(!Number.isFinite(order) || order < 1) order = idx+1;
+      while(seen.has(order)) order += 1;
+      seen.add(order);
+      const active = tr ? !!((tr.querySelector('[data-field="active"]')||{}).checked) : false;
+      const visible = tr ? !!((tr.querySelector('[data-field="visible"]')||{}).checked) : false;
+      return {
+        slot,
+        label: rawLabel,
+        order,
+        active,
+        visible
+      };
+    });
+    const effectiveFrom = (window.els && els.strategyEffectiveDate && els.strategyEffectiveDate.value) ? els.strategyEffectiveDate.value : (typeof getTodayISO==='function' ? getTodayISO() : new Date().toISOString().slice(0,10));
+    const version = {
+      id: 'strategy-version-' + Date.now(),
+      effectiveFrom,
+      strategies
+    };
+    return (typeof normalizeStrategyVersion === 'function') ? normalizeStrategyVersion(version) : version;
+  }
+  function smPersistLocal(){
+    try{
+      if(typeof buildLocalBackupStore === 'function'){
+        localStorage.setItem('df_backup_local', JSON.stringify(buildLocalBackupStore()));
+      } else if(typeof getPersistableStore === 'function'){
+        localStorage.setItem('df_backup_local', JSON.stringify(getPersistableStore()));
+      } else {
+        localStorage.setItem('df_backup_local', JSON.stringify(window.store || {}));
+      }
+      localStorage.setItem('df_backup_local_ts', String(Date.now()));
+      localStorage.setItem('df_last_activeId', String((window.store && store.activeId) || ''));
+      return true;
+    }catch(err){ console.warn('smPersistLocal fail', err); return false; }
+  }
+  window.renderStrategyVersionList = function(){
+    try{
+      if(!(window.els && els.strategyVersionList)) return;
+      const versions = (typeof getStrategyVersions === 'function' ? getStrategyVersions() : (store.strategyConfigs || [])).slice().sort((a,b)=>String(a.effectiveFrom).localeCompare(String(b.effectiveFrom)));
+      const selectedId = window.__strategyManagerSelectedVersionId || (versions[versions.length-1] && versions[versions.length-1].id);
+      window.__strategyManagerSelectedVersionId = selectedId;
+      els.strategyVersionList.innerHTML = versions.map(v => {
+        const selected = v.id === selectedId;
+        const labels = ((v && Array.isArray(v.strategies) ? v.strategies : [])
+          .slice().sort((a,b)=>(Number(a?.order||0)-Number(b?.order||0)))
+          .filter(s => s && s.active !== false && s.visible !== false && String(s.label || '').trim())
+          .map(s => String(s.label || '').trim())
+        ).join(' • ') || 'Sem estratégias visíveis';
+        return `<button type="button" onclick="window.strategyManagerSelectVersion('${String(v.id).replace(/'/g,"\'")}')" class="w-full text-left rounded-lg border px-3 py-2 transition ${selected ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-indigo-300'}"><div class="font-bold text-xs">${(typeof escapeHtml==='function'?escapeHtml(v.effectiveFrom):v.effectiveFrom)}</div><div class="mt-1 text-[11px] ${selected ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'}">${(typeof escapeHtml==='function'?escapeHtml(labels):labels)}</div></button>`;
+      }).join('');
+    }catch(err){ console.error('renderStrategyVersionList override fail', err); }
+  };
+  window.renderStrategyManager = function(){
+    try{
+      if(!(window.els && els.strategyEditorBody && els.strategyEffectiveDate)) return;
+      if(typeof ensureStrategyConfigs==='function') ensureStrategyConfigs();
+      if(typeof window.renderStrategyVersionList==='function') window.renderStrategyVersionList();
+      const version = (typeof strategyManagerSelectedVersion==='function') ? strategyManagerSelectedVersion() : ((store.strategyConfigs||[]).slice(-1)[0]);
+      if(!version) return;
+      els.strategyEffectiveDate.value = version.effectiveFrom || '';
+      const sorted = (version.strategies||[]).slice().sort((a,b)=>(Number(a?.order||0)-Number(b?.order||0)) || (Number(smMeta(a?.slot).defaultOrder)-Number(smMeta(b?.slot).defaultOrder)));
+      els.strategyEditorBody.innerHTML = sorted.map(s => {
+        const meta = smMeta(s.slot);
+        return `<tr data-slot="${s.slot}" class="border-t border-slate-100 dark:border-slate-700"><td class="py-2 pr-3 align-middle"><div class="font-bold text-slate-700 dark:text-slate-200">${s.slot}</div></td><td class="py-2 pr-3"><input type="text" value="${(typeof escapeHtml==='function'?escapeHtml(String(s.label||'')):String(s.label||''))}" data-field="label" placeholder="Estratégia (${meta.defaultLabel})" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"></td><td class="py-2 pr-3 text-center"><input type="number" min="1" max="5" value="${Number(s.order)||1}" data-field="order" class="w-20 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-center"></td><td class="py-2 pr-3 text-center"><input type="checkbox" data-field="active" ${s.active ? 'checked':''}></td><td class="py-2 pr-3 text-center"><input type="checkbox" data-field="visible" ${s.visible ? 'checked':''}></td><td class="py-2 text-[11px] text-slate-500 dark:text-slate-400">${meta.breakout ? 'Rompimento' : ''}</td></tr>`;
+      }).join('');
+      if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Pronto para salvar.';
+    }catch(err){ console.error('renderStrategyManager override fail', err); }
+  };
+  window.strategyManagerSelectVersion = function(id){ window.__strategyManagerSelectedVersionId=id; if(typeof window.renderStrategyManager==='function') window.renderStrategyManager(); };
+  window.strategyManagerNewVersion = function(){
+    const base = smBuildVersionFromEditor();
+    base.id = 'strategy-version-' + Date.now();
+    base.effectiveFrom = (typeof getTodayISO==='function' ? getTodayISO() : new Date().toISOString().slice(0,10));
+    base.strategies = base.strategies.map((s, idx) => ({...s, label:'', order: idx+1, active:false, visible:false}));
+    window.store.strategyConfigs = [base];
+    window.__strategyManagerSelectedVersionId = base.id;
+    window.renderStrategyManager();
+  };
+  window.strategyManagerHideAllInEditor = function(){
+    try{
+      (els.strategyEditorBody ? Array.from(els.strategyEditorBody.querySelectorAll('tr[data-slot]')) : []).forEach(tr => {
+        const active = tr.querySelector('[data-field="active"]'); if(active) active.checked = false;
+        const visible = tr.querySelector('[data-field="visible"]'); if(visible) visible.checked = false;
+        const label = tr.querySelector('[data-field="label"]'); if(label) label.value = '';
+      });
+      if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Todas desmarcadas.';
+    }catch(err){ console.error(err); }
+  };
+  window.strategyManagerSave = async function(){
+    try{
+      const version = smBuildVersionFromEditor();
+      const visibleActive = version.strategies.filter(s => s.active && s.visible && String(s.label||'').trim());
+      if(!version.effectiveFrom){ alert('Defina a data de vigência.'); return; }
+      if(!visibleActive.length){ alert('Ative e deixe visível pelo menos uma estratégia com nome preenchido.'); return; }
+      version.strategies = version.strategies.map((s,idx)=>({
+        ...s,
+        label: String(s.label||'').trim(),
+        order: Number(s.order)||idx+1,
+        active: !!s.active,
+        visible: !!s.visible
+      }));
+      store.strategyConfigs = [version];
+      window.__strategyManagerSelectedVersionId = version.id;
+      store.last_update_ms = Date.now();
+      smPersistLocal();
+      if(typeof window.renderStrategyManager==='function') window.renderStrategyManager();
+      try{ if(typeof renderSidebar==='function') renderSidebar(); }catch(e){}
+      try{ if(typeof renderCalendar==='function') renderCalendar(getActive()); }catch(e){}
+      try{ if(typeof filterReportInternal==='function') filterReportInternal(); }catch(e){}
+      let cloudMsg = '';
+      try{ if(typeof window.saveToCloud==='function') await window.saveToCloud(); }
+      catch(e){ console.warn('saveToCloud failed; local persisted', e); cloudMsg = ' A nuvem falhou, mas ficou salvo localmente neste navegador.'; }
+      if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Estrutura salva.' + cloudMsg;
+      alert('Estrutura salva com sucesso.' + cloudMsg);
+    }catch(err){ console.error('strategyManagerSave override failed', err); alert('Não foi possível salvar a versão das estratégias. Detalhe: ' + (err && err.message ? err.message : err)); }
+  };
+  window.strategyManagerHardReset = async function(){
+    try{
+      const accounts = store.accounts || {};
+      const ids = Object.keys(accounts);
+      if(!ids.length){ alert('Não há contas para resetar.'); return; }
+      const version = smBuildVersionFromEditor();
+      const visibleActive = version.strategies.filter(s => s.active && s.visible && String(s.label||'').trim());
+      if(!visibleActive.length){ alert('Defina pelo menos uma estratégia ativa e visível antes do reset.'); return; }
+      if(!confirm('Isso vai limpar TODO o histórico operacional e manter apenas as contas. Continuar?')) return;
+      const typed = prompt('Digite RESET para confirmar:');
+      if((typed||'').trim().toUpperCase() !== 'RESET') return;
+      const preserved = {};
+      ids.forEach(id => {
+        const acc = accounts[id] || {};
+        preserved[id] = {
+          id,
+          name: acc.name || 'Conta',
+          size: acc.size || '50k',
+          monthType: Number(acc.monthType || 1),
+          createdAt: acc.createdAt || new Date().toISOString(),
+          favorite: !!acc.favorite,
+          status: acc.status || 'active',
+          companyGroup: acc.companyGroup || 'Sem grupo',
+          data: {}, payouts: [], payoutHistory: [], notes: {}, periodNotes: {}, noteDrafts: {}, archivedPayouts: []
+        };
+      });
+      store.accounts = preserved;
+      store.activeId = ids.includes(store.activeId) ? store.activeId : ids[0];
+      store.strategyConfigs = [version];
+      store.dayDetailsOpen = {};
+      store.tradeDetailsOpen = {};
+      store.noteDrafts = {};
+      store.payoutRequests = [];
+      store.payoutHistory = [];
+      store.periodAnalysisCache = {};
+      store.adminLogs = [];
+      store.last_update_ms = Date.now();
+      window.__strategyManagerSelectedVersionId = version.id;
+      smPersistLocal();
+      try{ if(typeof window.renderStrategyManager==='function') window.renderStrategyManager(); }catch(e){}
+      try{ if(typeof renderSidebar==='function') renderSidebar(); }catch(e){}
+      try{ if(typeof loadAccount==='function' && store.activeId) loadAccount(store.activeId); else if(typeof renderCalendar==='function') renderCalendar(getActive()); }catch(e){}
+      try{ if(typeof filterReportInternal==='function') filterReportInternal(); }catch(e){}
+      let cloudMsg = '';
+      try{ if(typeof window.saveToCloud==='function') await window.saveToCloud(); }
+      catch(e){ console.warn('hard reset cloud failed; local persisted', e); cloudMsg = ' A nuvem falhou, mas o reset ficou salvo localmente neste navegador.'; }
+      alert('Reset concluído.' + cloudMsg);
+    }catch(err){ console.error('strategyManagerHardReset override failed', err); alert('Não foi possível concluir o reset completo. Detalhe: ' + (err && err.message ? err.message : err)); }
+  };
+  setTimeout(function(){ try{ if(typeof window.renderStrategyManager==='function') window.renderStrategyManager(); }catch(e){} }, 0);
+})();
+</script>
 </body>
 </html>`;
         }
