@@ -749,9 +749,9 @@ tr.bg-green-50 td {
                                 <div id="strategy-manager-status" class="text-xs text-slate-500 dark:text-slate-400">Sem alterações.</div>
                                 <div class="flex items-center gap-2 flex-wrap">
                                     <button type="button" onclick="window.strategyManagerNewVersion()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 text-xs font-semibold">Nova estrutura</button>
-                                    <button type="button" onclick="window.strategyManagerUncheckAll()" class="px-3 py-2 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-semibold">Desmarcar todas</button>
+                                    <button type="button" onclick="window.strategyManagerClearAll()" class="px-3 py-2 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-semibold">Desmarcar todas</button>
                                     <button type="button" onclick="window.strategyManagerSave()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold">Salvar estrutura</button>
-                                    <button type="button" onclick="window.strategyManagerResetAll()" class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold">Reset completo (manter contas)</button>
+                                    <button type="button" onclick="window.strategyManagerResetAll()" class="px-3 py-2 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-bold">Reset completo (manter contas)</button>
                                 </div>
                             </div>
                         </div>
@@ -4798,32 +4798,29 @@ Resumo por Estratégia,,,,,
         function renderStrategyVersionList(){
             if(!els.strategyVersionList) return;
             const versions = getStrategyVersions();
-            const selectedId = __strategyManagerSelectedVersionId || (versions[versions.length-1] && versions[versions.length-1].id);
-            __strategyManagerSelectedVersionId = selectedId;
-            els.strategyVersionList.innerHTML = versions.map(v => {
-                const selected = v.id === selectedId;
-                const labels = normalizeStrategyVersion(v).strategies
-                    .sort((a,b)=>a.order-b.order)
-                    .filter(s => s.active !== false && s.visible !== false)
-                    .map(s => String(s.label || strategyMetaBySlot(s.slot).defaultLabel))
-                    .join(' • ');
-                return `<button type="button" onclick="window.strategyManagerSelectVersion('${v.id}')" class="w-full text-left rounded-lg border px-3 py-2 transition ${selected ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-indigo-300'}">
-                            <div class="font-bold text-xs">${escapeHtml(v.effectiveFrom)}</div>
-                            <div class="mt-1 text-[11px] ${selected ? 'text-indigo-100' : 'text-slate-500 dark:text-slate-400'}">${escapeHtml(labels || 'Sem estratégias visíveis')}</div>
-                        </button>`;
-            }).join('');
+            const version = normalizeStrategyVersion(versions[versions.length-1] || strategyDefaultVersion());
+            __strategyManagerSelectedVersionId = version.id;
+            const labels = version.strategies
+                .filter(s => s.active !== false && s.visible !== false)
+                .sort((a,b)=>a.order-b.order)
+                .map(s => s.label || strategyMetaBySlot(s.slot).defaultLabel)
+                .join(' • ');
+            els.strategyVersionList.innerHTML = `<div class="w-full text-left rounded-lg border px-3 py-2 bg-indigo-600 text-white border-indigo-500">
+                            <div class="font-bold text-xs">${escapeHtml(version.effectiveFrom || getTodayISO())}</div>
+                            <div class="mt-1 text-[11px] text-indigo-100">${escapeHtml(labels || 'Estrutura atual')}</div>
+                        </div>`;
         }
         function strategyManagerSelectedVersion(){
             const versions = getStrategyVersions();
-            const found = versions.find(v => v.id === __strategyManagerSelectedVersionId);
-            return normalizeStrategyVersion(found || versions[versions.length-1]);
+            const found = versions[versions.length-1] || strategyDefaultVersion();
+            return normalizeStrategyVersion(found);
         }
         function renderStrategyManager(){
             if(!els.strategyEditorBody || !els.strategyEffectiveDate) return;
             ensureStrategyConfigs();
             renderStrategyVersionList();
             const version = strategyManagerSelectedVersion();
-            els.strategyEffectiveDate.value = version.effectiveFrom;
+            els.strategyEffectiveDate.value = version.effectiveFrom || getTodayISO();
             els.strategyEditorBody.innerHTML = version.strategies.sort((a,b)=>a.order-b.order).map(s => {
                 const meta = strategyMetaBySlot(s.slot);
                 return `<tr data-slot="${s.slot}" class="border-t border-slate-100 dark:border-slate-700">
@@ -4842,28 +4839,29 @@ Resumo por Estratégia,,,,,
                     <td class="py-2 text-[11px] text-slate-500 dark:text-slate-400">${meta.breakout ? 'Mantém checkbox de rompimento' : 'Padrão'}</td>
                 </tr>`;
             }).join('');
-            if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Pronto para salvar.';
+            if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Edite e clique em Salvar estrutura.';
         }
         function readStrategyEditorVersion(){
             const rows = Array.from((els.strategyEditorBody || document.createElement('tbody')).querySelectorAll('tr[data-slot]'));
             const seenOrders = new Set();
             const strategies = rows.map((tr, idx) => {
                 const slot = tr.getAttribute('data-slot');
-                const label = (tr.querySelector('[data-field="label"]')?.value || '').trim() || strategyMetaBySlot(slot).defaultLabel;
+                const meta = strategyMetaBySlot(slot);
+                const rawLabel = (tr.querySelector('[data-field="label"]')?.value || '').trim();
                 let order = Number(tr.querySelector('[data-field="order"]')?.value || idx+1);
-                if(order < 1) order = idx+1;
+                if(!Number.isFinite(order) || order < 1) order = idx+1;
                 while(seenOrders.has(order)) order += 1;
                 seenOrders.add(order);
                 return {
                     slot,
-                    label,
+                    label: rawLabel || meta.defaultLabel,
                     order,
                     active: !!tr.querySelector('[data-field="active"]')?.checked,
                     visible: !!tr.querySelector('[data-field="visible"]')?.checked
                 };
             });
             return normalizeStrategyVersion({
-                id: __strategyManagerSelectedVersionId || `strategy-version-${Date.now()}`,
+                id: 'active-current',
                 effectiveFrom: (els.strategyEffectiveDate?.value || getTodayISO()),
                 strategies
             });
@@ -4872,188 +4870,110 @@ Resumo por Estratégia,,,,,
             __strategyManagerSelectedVersionId = id;
             renderStrategyManager();
         };
-        
         window.strategyManagerNewVersion = function(){
-            ensureStrategyConfigs();
-            const blank = normalizeStrategyVersion({
-                id: `strategy-version-${Date.now()}`,
+            const base = strategyDefaultVersion();
+            __strategyManagerSelectedVersionId = 'active-current';
+            store.strategyConfigs = [normalizeStrategyVersion({
+                id: 'active-current',
                 effectiveFrom: getTodayISO(),
-                strategies: STRATEGY_SLOT_META.map(meta => ({
-                    slot: meta.slot,
-                    label: meta.defaultLabel,
-                    order: meta.defaultOrder,
-                    active: true,
-                    visible: true
-                }))
-            });
-            store.strategyConfigs = [blank];
-            __strategyManagerSelectedVersionId = blank.id;
-            try { touchStore(); } catch(e){}
-            try { saveStoreToLocal(); } catch(e){}
+                strategies: base.strategies.map(s => ({...s}))
+            })];
             renderStrategyManager();
             if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Nova estrutura pronta para edição.';
         };
-
-        window.strategyManagerDuplicateSelected = function(){
-            const version = normalizeStrategyVersion(strategyManagerSelectedVersion());
-            const clone = normalizeStrategyVersion({
-                id: `strategy-version-${Date.now()}`,
-                effectiveFrom: getTodayISO(),
-                strategies: version.strategies.map(s => ({...s}))
-            });
-            store.strategyConfigs = [clone];
-            __strategyManagerSelectedVersionId = clone.id;
-            try { touchStore(); } catch(e){}
-            try { saveStoreToLocal(); } catch(e){}
-            renderStrategyManager();
-            if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Estrutura duplicada localmente.';
-        };
-
-        window.strategyManagerDeleteSelected = function(){
-            const fallback = normalizeStrategyVersion(strategyDefaultVersion());
-            if(!confirm('Excluir a estrutura atual e voltar ao padrão?')) return;
-            store.strategyConfigs = [fallback];
-            __strategyManagerSelectedVersionId = fallback.id;
-            try { touchStore(); } catch(e){}
-            try { saveStoreToLocal(); } catch(e){}
-            renderStrategyManager();
-            try { renderCalendar(getActive()); } catch(e){}
-            try { filterReportInternal(); } catch(e){}
-            try { renderDashboard(); } catch(e){}
-        };
-
-        window.strategyManagerUncheckAll = function(){
+        window.strategyManagerClearAll = function(){
             const rows = Array.from((els.strategyEditorBody || document.createElement('tbody')).querySelectorAll('tr[data-slot]'));
-            rows.forEach((tr) => {
+            rows.forEach((tr, idx) => {
+                const labelEl = tr.querySelector('[data-field="label"]');
+                const orderEl = tr.querySelector('[data-field="order"]');
                 const activeEl = tr.querySelector('[data-field="active"]');
                 const visibleEl = tr.querySelector('[data-field="visible"]');
+                if(labelEl) labelEl.value = '';
+                if(orderEl) orderEl.value = String(idx+1);
                 if(activeEl) activeEl.checked = false;
                 if(visibleEl) visibleEl.checked = false;
             });
-            if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Todas as estratégias foram desmarcadas no editor. Salve para aplicar.';
+            if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Estruturas desmarcadas. Ative apenas as que quiser manter.';
         };
-
+        window.strategyManagerDeleteSelected = function(){
+            window.strategyManagerClearAll();
+        };
+        window.strategyManagerDuplicateSelected = function(){
+            renderStrategyManager();
+        };
         window.strategyManagerSave = async function(){
             try{
-                let version = readStrategyEditorVersion();
-                if(!version || !Array.isArray(version.strategies)) throw new Error('Estrutura inválida.');
-                if(!version.effectiveFrom) version.effectiveFrom = getTodayISO();
-
-                // normalize and preserve all slots, even if labels are blank
-                version = normalizeStrategyVersion({
-                    id: version.id || `strategy-version-${Date.now()}`,
-                    effectiveFrom: version.effectiveFrom,
-                    strategies: STRATEGY_SLOT_META.map(meta => {
-                        const found = (version.strategies || []).find(s => s && s.slot === meta.slot) || {};
-                        const labelRaw = (typeof found.label === 'string') ? found.label.trim() : '';
-                        return {
-                            slot: meta.slot,
-                            label: labelRaw || meta.defaultLabel,
-                            order: Number(found.order) || meta.defaultOrder,
-                            active: found.active === true,
-                            visible: found.visible === true
-                        };
-                    })
-                });
-
-                if(!version.strategies.some(s => s.active && s.visible)){
-                    alert('Ative e deixe visível pelo menos uma estratégia antes de salvar.');
-                    return;
-                }
-
-                // Simplified model: keep only ONE live structure to avoid conflicts with versions/dates
+                const version = readStrategyEditorVersion();
+                if(!version.effectiveFrom){ alert('Defina a data de vigência.'); return; }
+                const activeVisible = version.strategies.filter(s => s.active && s.visible);
+                if(!activeVisible.length){ alert('Marque pelo menos uma estratégia como ativa e visível.'); return; }
                 store.strategyConfigs = [version];
                 __strategyManagerSelectedVersionId = version.id;
-
-                try { touchStore(); } catch(e){}
-                try { saveStoreToLocal(); } catch(e){}
-
+                const nowMs = Date.now();
+                store.last_update_ms = nowMs;
+                store.updatedAt = nowMs;
+                try{ saveStoreToLocal(); }catch(e){}
+                try{ localStorage.setItem('df_backup_local', JSON.stringify(buildLocalBackupStore())); }catch(e){}
+                __dirty = true;
+                __lastLocalWriteMs = nowMs;
+                if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = `Estrutura salva localmente (${version.effectiveFrom}).`;
                 renderStrategyManager();
-                try { renderCalendar(getActive()); } catch(e){}
-                try { filterReportInternal(); } catch(e){}
-                try { renderDashboard(); } catch(e){}
-                try { renderSidebar(); } catch(e){}
-                try { renderAccountsOverview(); } catch(e){}
-
-                if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = `Estrutura salva localmente com vigência em ${version.effectiveFrom}.`;
-
-                try{
-                    await saveToCloudNow();
-                    if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = `Estrutura salva com sucesso em ${version.effectiveFrom}.`;
-                }catch(err){
-                    console.warn('strategy save cloud warning:', err);
-                    alert('Estrutura salva neste navegador. A sincronização na nuvem falhou, mas sua alteração local foi mantida.');
-                }
+                updateCalendarHeaderLabels(version.effectiveFrom);
+                renderCalendar(getActive());
+                filterReportInternal();
+                renderSidebar();
+                try { renderAccountsOverview(); } catch(e) {}
+                __forceCloudSaveOnce = true;
+                try { await saveToCloudNow(); } catch(e) { console.warn('strategy save cloud warning', e); }
             }catch(err){
-                console.error('strategyManagerSave error:', err);
-                alert('Não foi possível salvar a estrutura das estratégias. Detalhe: ' + (err && err.message ? err.message : err));
+                console.error(err);
+                alert(`Não foi possível salvar a estrutura das estratégias. Detalhe: ${err && err.message ? err.message : err}`);
             }
         };
-
         window.strategyManagerResetAll = async function(){
+            const ok = confirm('Isso vai limpar TODAS as operações, notas, saques e gráficos, mantendo apenas as contas e a estrutura atual das estratégias. Deseja continuar?');
+            if(!ok) return;
+            const token = prompt('Digite RESET para confirmar.');
+            if(token !== 'RESET') return;
             try{
-                const ok = confirm('Este reset vai apagar operações, notas, gráficos, saques e histórico de estratégias, mantendo apenas as contas cadastradas. Deseja continuar?');
-                if(!ok) return;
-                const token = prompt('Digite RESET para confirmar o reset completo:');
-                if(token !== 'RESET') return;
-
-                // Keep only accounts and core metadata; zero all operational data
-                const accounts = store && store.accounts ? store.accounts : {};
-                Object.keys(accounts).forEach((id) => {
-                    const acc = accounts[id];
-                    if(!acc || typeof acc !== 'object') return;
+                const version = readStrategyEditorVersion();
+                const activeVisible = version.strategies.filter(s => s.active && s.visible);
+                if(!activeVisible.length){ alert('Antes do reset, deixe pelo menos uma estratégia ativa e visível.'); return; }
+                store.strategyConfigs = [version];
+                const nowIso = new Date().toISOString();
+                Object.values(store.accounts || {}).forEach(acc => {
                     acc.data = {};
                     acc.payouts = [];
-                    acc.createdAt = acc.createdAt || new Date().toISOString();
-                    if(!acc.size) acc.size = '50k';
-                    if(!acc.monthType) acc.monthType = 1;
-                    if(typeof acc.favorite !== 'boolean') acc.favorite = false;
-                    if(!acc.status) acc.status = 'active';
-                    if(!acc.companyGroup) acc.companyGroup = 'Sem grupo';
+                    acc.createdAt = acc.createdAt || nowIso;
+                    delete acc.dayDetailsOpen;
+                    delete acc.tradeDetailsOpen;
                 });
-
-                const currentVersion = normalizeStrategyVersion(readStrategyEditorVersion());
-                currentVersion.id = `strategy-version-${Date.now()}`;
-                currentVersion.effectiveFrom = getTodayISO();
-                store.strategyConfigs = [currentVersion];
-                __strategyManagerSelectedVersionId = currentVersion.id;
-
                 store.adminLogs = [];
-                try { store.importAudit = []; } catch(e){}
-                try { store.dayDetailsOpen = {}; } catch(e){}
-                try { store.tradeDetailsOpen = {}; } catch(e){}
-                try { store.notes = {}; } catch(e){}
-                try { store.last_update_ms = Date.now(); } catch(e){}
-                try { store.date = new Date(); } catch(e){}
-                try { localStorage.removeItem('df_last_activeId'); } catch(e){}
-
-                try { touchStore(); } catch(e){}
-                try { saveStoreToLocal(); } catch(e){}
-
+                try{ store.importAudit = []; }catch(e){}
+                store.date = new Date();
+                const nowMs = Date.now();
+                store.last_update_ms = nowMs;
+                store.updatedAt = nowMs;
+                try{ saveStoreToLocal(); }catch(e){}
+                try{ localStorage.setItem('df_backup_local', JSON.stringify(buildLocalBackupStore())); }catch(e){}
+                __dirty = true;
+                __lastLocalWriteMs = nowMs;
+                __forceCloudSaveOnce = true;
+                try { await saveToCloudNow(); } catch(e) { console.warn('reset cloud warning', e); }
                 renderStrategyManager();
-                try { renderSidebar(); } catch(e){}
-                try { loadAccount(store.activeId); } catch(e){}
-                try { renderCalendar(getActive()); } catch(e){}
-                try { filterReportInternal(); } catch(e){}
-                try { renderDashboard(); } catch(e){}
-                try { renderAccountsOverview(); } catch(e){}
-
-                if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Reset completo aplicado localmente.';
-
-                try{
-                    await saveToCloudNow();
-                }catch(err){
-                    console.warn('reset cloud warning:', err);
-                }
-
+                updateCalendarHeaderLabels(version.effectiveFrom);
+                renderSidebar();
+                if(store.activeId && store.accounts[store.activeId]) loadAccount(store.activeId);
+                syncDatesToView();
+                filterReportInternal();
+                try { renderAccountsOverview(); } catch(e) {}
                 alert('Reset completo concluído. As contas foram mantidas e o operacional foi zerado.');
             }catch(err){
-                console.error('strategyManagerResetAll error:', err);
-                alert('Não foi possível concluir o reset completo. Detalhe: ' + (err && err.message ? err.message : err));
+                console.error(err);
+                alert(`Não foi possível concluir o reset completo. Detalhe: ${err && err.message ? err.message : err}`);
             }
         };
-
-function _strategyBlocksForDay(e, iso){
+        function _strategyBlocksForDay(e, iso){
             const map = {};
             STRATEGY_SLOT_META.forEach(meta => {
                 const label = getStrategyLabelForSlot(meta.slot, iso || getTodayISO());
