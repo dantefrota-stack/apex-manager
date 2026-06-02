@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: UNIFIED-LOADER-NOLOOP-STOREDEF-2026-02-14 -->
+<!-- BUILD_ID: DF-STRATEGY-SAVE-RESET-V13-2026-06-02 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -10087,333 +10087,793 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
 
       
 
-        // === DF STRATEGY RESET / SIMPLE MANAGER PATCH V12 ===
-        // Objetivo: parar o conflito de versões antigas, permitir labels vazios/inativos,
-        // e executar reset completo mantendo contas e saldos no default do plano.
-        const DF_STRATEGY_RESET_BUILD = 'RESET-SIMPLE-V12-2026-06-01';
+        // === DF STRATEGY RESET / SIMPLE MANAGER PATCH V13 ===
+// Objetivo:
+// 1) restaurar gravação diária com save antes do render;
+// 2) abandonar competição de versões antigas;
+// 3) usar uma estrutura atual única em store.strategyStructure;
+// 4) permitir labels vazios sem fallback para 25/50, 30/60, 35/70, 40/80, Condução Técnica;
+// 5) manter reset completo seguro preservando contas.
+const DF_STRATEGY_RESET_BUILD = 'RESET-SAVE-STRUCTURE-V13-2026-06-02';
 
-        function dfStrategyBlankVersion(){
+function dfStrategySlots(){
+    return STRATEGY_SLOT_META.map(meta => meta.slot);
+}
+
+function dfStrategyMeta(slot){
+    return STRATEGY_SLOT_META.find(meta => meta.slot === slot) || {
+        slot,
+        defaultLabel: '',
+        defaultOrder: 999,
+        color: '#64748b',
+        legacyKey: slot,
+        breakout: false
+    };
+}
+
+function dfNormalizeBool(value){
+    return value === true || value === 'true' || value === 1 || value === '1';
+}
+
+function dfNormalizeStrategySlots(rawSlots, opts = {}){
+    const slots = Array.isArray(rawSlots) ? rawSlots : [];
+    const allowDefaults = !!opts.allowDefaults;
+    const seenOrders = new Set();
+
+    return STRATEGY_SLOT_META.map((meta, idx) => {
+        const found = slots.find(s => s && s.slot === meta.slot) || null;
+        const hasLabel = found && Object.prototype.hasOwnProperty.call(found, 'label');
+
+        let label = '';
+        if(hasLabel){
+            label = String(found.label ?? '').trim();
+        }else if(allowDefaults){
+            label = String(meta.defaultLabel || '').trim();
+        }
+
+        let order = Number(found && found.order);
+        if(!Number.isFinite(order) || order < 1) order = Number(meta.defaultOrder || idx + 1);
+        while(seenOrders.has(order)) order += 1;
+        seenOrders.add(order);
+
+        const hasLabelText = label.length > 0;
+        return {
+            slot: meta.slot,
+            label,
+            order,
+            active: hasLabelText && (found ? dfNormalizeBool(found.active) : allowDefaults),
+            visible: hasLabelText && (found ? dfNormalizeBool(found.visible) : allowDefaults)
+        };
+    }).sort((a,b) => {
+        const ma = dfStrategyMeta(a.slot);
+        const mb = dfStrategyMeta(b.slot);
+        return (Number(a.order || 0) - Number(b.order || 0)) ||
+               (Number(ma.defaultOrder || 0) - Number(mb.defaultOrder || 0));
+    });
+}
+
+function dfBlankStrategyStructure(){
+    return {
+        updatedAt: Date.now(),
+        build: DF_STRATEGY_RESET_BUILD,
+        slots: dfNormalizeStrategySlots([], { allowDefaults:false })
+    };
+}
+
+function dfDefaultStrategyStructure(){
+    return {
+        updatedAt: Date.now(),
+        build: DF_STRATEGY_RESET_BUILD,
+        slots: dfNormalizeStrategySlots([], { allowDefaults:true })
+    };
+}
+
+function dfStructureFromVersion(version, opts = {}){
+    const strategies = version && Array.isArray(version.strategies) ? version.strategies : [];
+    return {
+        updatedAt: Number(version && version.updatedAt) || Date.now(),
+        build: DF_STRATEGY_RESET_BUILD,
+        slots: dfNormalizeStrategySlots(strategies, { allowDefaults: !!opts.allowDefaults })
+    };
+}
+
+function dfStrategyVersionFromStructure(structure){
+    const normalized = dfNormalizeStrategyStructure(structure);
+    return {
+        id: 'current-structure',
+        effectiveFrom: '1900-01-01',
+        strategies: normalized.slots.map(s => ({
+            slot: s.slot,
+            label: String(s.label || '').trim(),
+            order: Number(s.order || 0),
+            active: !!s.active && String(s.label || '').trim().length > 0,
+            visible: !!s.visible && String(s.label || '').trim().length > 0
+        }))
+    };
+}
+
+function dfNormalizeStrategyStructure(structure){
+    const slots = structure && Array.isArray(structure.slots) ? structure.slots : [];
+    return {
+        updatedAt: Number(structure && structure.updatedAt) || Date.now(),
+        build: DF_STRATEGY_RESET_BUILD,
+        slots: dfNormalizeStrategySlots(slots, { allowDefaults:false })
+    };
+}
+
+function dfEnsureStrategyStructure(){
+    if(!store || typeof store !== 'object') return dfDefaultStrategyStructure();
+
+    let structure = null;
+
+    if(store.strategyStructure && Array.isArray(store.strategyStructure.slots)){
+        structure = dfNormalizeStrategyStructure(store.strategyStructure);
+    }else if(Array.isArray(store.strategyConfigs) && store.strategyConfigs.length){
+        // Migração única: usa a última configuração existente como base, sem manter histórico por data.
+        const last = store.strategyConfigs[store.strategyConfigs.length - 1];
+        structure = dfStructureFromVersion(last, { allowDefaults:true });
+    }else{
+        // App novo/zerado: inicia com os defaults históricos para o usuário ter colunas prontas.
+        // Depois que o usuário apagar/salvar, esses nomes não voltam mais.
+        structure = dfDefaultStrategyStructure();
+    }
+
+    store.strategyStructure = structure;
+
+    // Compatibilidade controlada: mantém strategyConfigs como espelho, não como fonte.
+    // Isso evita quebrar funções antigas que ainda esperam esse array existir.
+    store.strategyConfigs = [dfStrategyVersionFromStructure(structure)];
+
+    __strategyManagerSelectedVersionId = 'current-structure';
+    return store.strategyStructure;
+}
+
+function getCurrentStrategies(opts = {}){
+    const includeInactive = !!opts.includeInactive;
+    const includeHidden = !!opts.includeHidden;
+    const structure = dfEnsureStrategyStructure();
+
+    return dfNormalizeStrategySlots(structure.slots, { allowDefaults:false })
+        .filter(s => includeInactive || s.active === true)
+        .filter(s => includeHidden || s.visible === true)
+        .filter(s => {
+            // Campo vazio nunca aparece no calendário/gráficos/relatórios,
+            // exceto quando o editor pedir includeInactive/includeHidden para mostrar todos os slots.
+            if(includeInactive || includeHidden) return true;
+            return String(s.label || '').trim().length > 0;
+        })
+        .map(s => {
+            const meta = dfStrategyMeta(s.slot);
             return {
-                id: 'current-structure',
-                effectiveFrom: '1900-01-01',
-                strategies: STRATEGY_SLOT_META.map(meta => ({
-                    slot: meta.slot,
-                    label: '',
-                    order: meta.defaultOrder,
-                    active: false,
-                    visible: false
-                }))
+                ...meta,
+                ...s,
+                color: meta.color,
+                legacyKey: meta.legacyKey,
+                breakout: meta.breakout,
+                defaultOrder: meta.defaultOrder,
+                defaultLabel: meta.defaultLabel
             };
+        })
+        .sort((a,b) => {
+            const ma = dfStrategyMeta(a.slot);
+            const mb = dfStrategyMeta(b.slot);
+            return (Number(a.order || 0) - Number(b.order || 0)) ||
+                   (Number(ma.defaultOrder || 0) - Number(mb.defaultOrder || 0));
+        });
+}
+
+// Override definitivo: versões antigas não mandam mais no app.
+normalizeStrategyVersion = function(ver, idx = 0){
+    if(ver && Array.isArray(ver.strategies)){
+        return dfStrategyVersionFromStructure(dfStructureFromVersion(ver, { allowDefaults:false }));
+    }
+    return dfStrategyVersionFromStructure(dfEnsureStrategyStructure());
+};
+
+ensureStrategyConfigs = function(){
+    const structure = dfEnsureStrategyStructure();
+    store.strategyConfigs = [dfStrategyVersionFromStructure(structure)];
+    return store.strategyConfigs;
+};
+
+getStrategyVersions = function(){
+    return ensureStrategyConfigs();
+};
+
+getStrategyVersionForDate = function(iso){
+    return dfStrategyVersionFromStructure(dfEnsureStrategyStructure());
+};
+
+getStrategiesForDate = function(iso, opts = {}){
+    return getCurrentStrategies(opts || {});
+};
+
+getStrategyLabelForSlot = function(slot, iso){
+    const entry = getCurrentStrategies({ includeInactive:true, includeHidden:true }).find(s => s.slot === slot);
+    return entry ? String(entry.label || '') : '';
+};
+
+getStrategyLabelMapForDate = function(iso){
+    const map = {};
+    getCurrentStrategies({ includeInactive:true, includeHidden:true }).forEach(s => {
+        map[s.slot] = String(s.label || '');
+    });
+    return map;
+};
+
+getStrategySummaryForDate = function(iso){
+    return STRATEGY_SLOT_META.map(meta => getStrategyLabelForSlot(meta.slot, iso));
+};
+
+renderStrategyVersionList = function(){
+    if(!els.strategyVersionList) return;
+
+    const labels = getCurrentStrategies({ includeInactive:false, includeHidden:false })
+        .map(s => s.label)
+        .filter(Boolean)
+        .join(' • ') || 'Nenhuma estratégia ativa';
+
+    els.strategyVersionList.innerHTML = `
+        <div class="w-full text-left rounded-lg border px-3 py-3 bg-indigo-600 text-white border-indigo-500">
+            <div class="font-bold text-xs">Estrutura atual única</div>
+            <div class="mt-1 text-[11px] text-indigo-100">${escapeHtml(labels)}</div>
+            <div class="mt-2 text-[10px] text-indigo-100/80">Build ${DF_STRATEGY_RESET_BUILD}</div>
+        </div>
+    `;
+    __strategyManagerSelectedVersionId = 'current-structure';
+};
+
+strategyManagerSelectedVersion = function(){
+    return dfStrategyVersionFromStructure(dfEnsureStrategyStructure());
+};
+
+renderStrategyManager = function(){
+    if(!els.strategyEditorBody || !els.strategyEffectiveDate) return;
+
+    dfEnsureStrategyStructure();
+    renderStrategyVersionList();
+
+    const rows = getCurrentStrategies({ includeInactive:true, includeHidden:true });
+
+    els.strategyEffectiveDate.value = '1900-01-01';
+    try{ els.strategyEffectiveDate.disabled = true; }catch(e){}
+
+    els.strategyEditorBody.innerHTML = rows.map(s => {
+        const meta = dfStrategyMeta(s.slot);
+        return `<tr data-slot="${s.slot}" class="border-t border-slate-100 dark:border-slate-700">
+            <td class="py-2 pr-3 align-middle">
+                <div class="font-bold text-slate-700 dark:text-slate-200">${s.slot}</div>
+                <div class="text-[11px] text-slate-400">Slot fixo interno</div>
+            </td>
+            <td class="py-2 pr-3">
+                <input type="text" value="${escapeHtml(s.label || '')}" data-field="label" placeholder="Nome da estratégia" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+            </td>
+            <td class="py-2 pr-3 text-center">
+                <input type="number" min="1" max="5" value="${Number(s.order) || meta.defaultOrder}" data-field="order" class="w-20 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-center">
+            </td>
+            <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="active" ${s.active ? 'checked' : ''}></td>
+            <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="visible" ${s.visible ? 'checked' : ''}></td>
+            <td class="py-2 text-[11px] text-slate-500 dark:text-slate-400">${meta.breakout ? 'Rompimento disponível' : 'Padrão'}</td>
+        </tr>`;
+    }).join('');
+
+    if(els.strategyManagerStatus){
+        els.strategyManagerStatus.textContent = 'Estrutura atual única. Campos vazios não aparecem e não herdam nomes antigos.';
+    }
+
+    try{ lucide.createIcons(); }catch(e){}
+};
+
+readStrategyEditorVersion = function(){
+    const rows = Array.from((els.strategyEditorBody || document.createElement('tbody')).querySelectorAll('tr[data-slot]'));
+    const seenOrders = new Set();
+
+    const strategies = rows.map((tr, idx) => {
+        const slot = tr.getAttribute('data-slot');
+        let label = (tr.querySelector('[data-field="label"]')?.value || '').trim();
+
+        let order = Number(tr.querySelector('[data-field="order"]')?.value || idx + 1);
+        if(!Number.isFinite(order) || order < 1) order = idx + 1;
+        while(seenOrders.has(order)) order += 1;
+        seenOrders.add(order);
+
+        if(!label){
+            return { slot, label:'', order, active:false, visible:false };
         }
 
-        function dfStrategyCurrentDefaultVersion(){
-            return {
-                id: 'current-structure',
-                effectiveFrom: '1900-01-01',
-                strategies: STRATEGY_SLOT_META.map(meta => ({
-                    slot: meta.slot,
-                    label: meta.defaultLabel,
-                    order: meta.defaultOrder,
-                    active: true,
-                    visible: true
-                }))
-            };
+        return {
+            slot,
+            label,
+            order,
+            active: !!tr.querySelector('[data-field="active"]')?.checked,
+            visible: !!tr.querySelector('[data-field="visible"]')?.checked
+        };
+    });
+
+    return {
+        id: 'current-structure',
+        effectiveFrom: '1900-01-01',
+        strategies: dfNormalizeStrategySlots(strategies, { allowDefaults:false })
+    };
+};
+
+function dfStoreJsonForPersistence(){
+    try{
+        if(typeof getPersistableStore === 'function'){
+            return JSON.stringify(getPersistableStore());
         }
+    }catch(e){}
+    return JSON.stringify(store);
+}
 
-        // Override: manter labels vazios quando usuário apagou; não forçar default.
-        normalizeStrategyVersion = function(ver, idx=0){
-            const incoming = (ver && Array.isArray(ver.strategies)) ? ver.strategies : [];
-            const merged = STRATEGY_SLOT_META.map(meta => {
-                const found = incoming.find(s => s && s.slot === meta.slot);
-                const hasLabel = found && Object.prototype.hasOwnProperty.call(found, 'label');
-                const label = hasLabel ? String(found.label ?? '').trim() : meta.defaultLabel;
-                return {
-                    slot: meta.slot,
-                    label,
-                    order: Number(found && found.order) || meta.defaultOrder,
-                    active: found ? (found.active === true) : true,
-                    visible: found ? (found.visible === true) : true
-                };
-            }).sort((a,b) => (a.order - b.order) || (strategyMetaBySlot(a.slot).defaultOrder - strategyMetaBySlot(b.slot).defaultOrder));
-            return {
-                id: 'current-structure',
-                effectiveFrom: '1900-01-01',
-                strategies: merged
-            };
-        };
-
-        // Override: estrutura única, sem histórico por data.
-        ensureStrategyConfigs = function(){
-            try{
-                let src = null;
-                if(store && Array.isArray(store.strategyConfigs) && store.strategyConfigs.length){
-                    src = store.strategyConfigs[store.strategyConfigs.length - 1];
-                }
-                if(!src) src = dfStrategyCurrentDefaultVersion();
-                store.strategyConfigs = [normalizeStrategyVersion(src)];
-                __strategyManagerSelectedVersionId = 'current-structure';
-            }catch(e){
-                store.strategyConfigs = [dfStrategyCurrentDefaultVersion()];
-                __strategyManagerSelectedVersionId = 'current-structure';
-            }
-            return store.strategyConfigs;
-        };
-
-        getStrategyVersions = function(){ return ensureStrategyConfigs(); };
-        getStrategyVersionForDate = function(iso){ return normalizeStrategyVersion(ensureStrategyConfigs()[0]); };
-
-        // Override: só aparece se estiver ativo, visível e com nome exibido preenchido.
-        getStrategiesForDate = function(iso, opts={}){
-            const { includeInactive=false, includeHidden=false } = opts || {};
-            const version = getStrategyVersionForDate(iso || getTodayISO());
-            return (version.strategies || [])
-                .filter(s => includeInactive || s.active === true)
-                .filter(s => includeHidden || s.visible === true)
-                .filter(s => includeInactive || includeHidden || String(s.label || '').trim().length > 0)
-                .map(s => ({ ...s, ...(strategyMetaBySlot(s.slot) || {}) }))
-                .sort((a,b) => (Number(a.order||0) - Number(b.order||0)) || (strategyMetaBySlot(a.slot).defaultOrder - strategyMetaBySlot(b.slot).defaultOrder));
-        };
-
-        getStrategyLabelForSlot = function(slot, iso){
-            const entry = getStrategiesForDate(iso || getTodayISO(), { includeInactive:true, includeHidden:true }).find(s => s.slot === slot);
-            return entry ? String(entry.label || '') : '';
-        };
-        getStrategyLabelMapForDate = function(iso){
-            const map = {};
-            getStrategiesForDate(iso || getTodayISO(), { includeInactive:true, includeHidden:true }).forEach(s => map[s.slot] = String(s.label || ''));
-            return map;
-        };
-
-        renderStrategyVersionList = function(){
-            if(!els.strategyVersionList) return;
-            const v = normalizeStrategyVersion(ensureStrategyConfigs()[0]);
-            const labels = (v.strategies || [])
-                .filter(s => s.active && s.visible && String(s.label || '').trim())
-                .sort((a,b)=>a.order-b.order)
-                .map(s => s.label)
-                .join(' • ') || 'Nenhuma estratégia ativa';
-            els.strategyVersionList.innerHTML = `<div class="w-full text-left rounded-lg border px-3 py-3 bg-indigo-600 text-white border-indigo-500">
-                <div class="font-bold text-xs">Estrutura atual</div>
-                <div class="mt-1 text-[11px] text-indigo-100">${escapeHtml(labels)}</div>
-                <div class="mt-2 text-[10px] text-indigo-100/80">Build ${DF_STRATEGY_RESET_BUILD}</div>
-            </div>`;
-            __strategyManagerSelectedVersionId = 'current-structure';
-        };
-
-        strategyManagerSelectedVersion = function(){
-            return normalizeStrategyVersion(ensureStrategyConfigs()[0]);
-        };
-
-        renderStrategyManager = function(){
-            if(!els.strategyEditorBody || !els.strategyEffectiveDate) return;
-            ensureStrategyConfigs();
-            renderStrategyVersionList();
-            const version = strategyManagerSelectedVersion();
-            els.strategyEffectiveDate.value = '1900-01-01';
-            try{ els.strategyEffectiveDate.disabled = true; }catch(e){}
-            els.strategyEditorBody.innerHTML = (version.strategies || []).sort((a,b)=>a.order-b.order).map(s => {
-                const meta = strategyMetaBySlot(s.slot);
-                return `<tr data-slot="${s.slot}" class="border-t border-slate-100 dark:border-slate-700">
-                    <td class="py-2 pr-3 align-middle">
-                        <div class="font-bold text-slate-700 dark:text-slate-200">${s.slot}</div>
-                    </td>
-                    <td class="py-2 pr-3">
-                        <input type="text" value="${escapeHtml(s.label || '')}" data-field="label" placeholder="Nome da estratégia" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
-                    </td>
-                    <td class="py-2 pr-3 text-center">
-                        <input type="number" min="1" max="5" value="${Number(s.order)||meta.defaultOrder}" data-field="order" class="w-20 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-center">
-                    </td>
-                    <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="active" ${s.active ? 'checked' : ''}></td>
-                    <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="visible" ${s.visible ? 'checked' : ''}></td>
-                    <td class="py-2 text-[11px] text-slate-500 dark:text-slate-400">${meta.breakout ? 'Rompimento disponível' : 'Padrão'}</td>
-                </tr>`;
-            }).join('');
-            if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Edite e clique em Salvar estrutura.';
-            try{ lucide.createIcons(); }catch(e){}
-        };
-
-        readStrategyEditorVersion = function(){
-            const rows = Array.from((els.strategyEditorBody || document.createElement('tbody')).querySelectorAll('tr[data-slot]'));
-            const seenOrders = new Set();
-            const strategies = rows.map((tr, idx) => {
-                const slot = tr.getAttribute('data-slot');
-                let label = (tr.querySelector('[data-field="label"]')?.value || '').trim();
-                let order = Number(tr.querySelector('[data-field="order"]')?.value || idx+1);
-                if(order < 1) order = idx+1;
-                while(seenOrders.has(order)) order += 1;
-                seenOrders.add(order);
-                const active = !!tr.querySelector('[data-field="active"]')?.checked;
-                const visible = !!tr.querySelector('[data-field="visible"]')?.checked;
-                if(!label){
-                    // Campo apagado não volta ao default e não aparece no sistema.
-                    return { slot, label:'', order, active:false, visible:false };
-                }
-                return { slot, label, order, active, visible };
-            });
-            return normalizeStrategyVersion({ id:'current-structure', effectiveFrom:'1900-01-01', strategies });
-        };
-
-        function dfRenderEverythingSafely(){
-            try{ renderStrategyManager(); }catch(e){ console.warn('renderStrategyManager failed', e); }
-            try{ renderCalendar(getActive()); }catch(e){ console.warn('renderCalendar failed', e); }
-            try{ filterReportInternal(); }catch(e){ console.warn('filterReportInternal failed', e); }
-            try{ renderDashboard(); }catch(e){ console.warn('renderDashboard failed', e); }
-            try{ renderSidebar(); }catch(e){ console.warn('renderSidebar failed', e); }
-            try{ renderAccountsOverview && renderAccountsOverview(); }catch(e){}
-            try{ saveStoreToLocal(); }catch(e){}
+function dfTouchStoreSafely(){
+    try{
+        if(typeof touchStore === 'function') touchStore();
+        else {
+            store.last_update_ms = Date.now();
+            store.last_update_iso = new Date(store.last_update_ms).toISOString();
         }
-
-        async function dfDeleteAllOperationalPeriodDocs(){
-            try{
-                if(isOffline || !db || !getDocs || !writeBatch) return false;
-                const snap = await getDocs(getCloudPeriodsColRef());
-                let batch = writeBatch(db);
-                let ops = 0;
-                const flush = async () => { if(ops > 0){ await batch.commit(); batch = writeBatch(db); ops = 0; } };
-                snap.forEach(ds => {
-                    batch.delete(getCloudPeriodDocRef(ds.id));
-                    ops += 1;
-                });
-                await flush();
-                __lastOperationalDocHashes = {};
-                return true;
-            }catch(e){
-                console.warn('dfDeleteAllOperationalPeriodDocs failed:', e);
-                return false;
-            }
-        }
-
-        async function dfSaveStructureNow(showAlert=true){
-            try{
-                const version = readStrategyEditorVersion();
-                store.strategyConfigs = [version];
-                __strategyManagerSelectedVersionId = 'current-structure';
-                touchStore();
-                try{ saveStoreToLocal(); }catch(e){}
-
-                // Salva principal direto, sem depender de histórico de versões.
-                if(!isOffline && db && setDoc){
-                    const nowMs = Date.now();
-                    const persistable = getPersistableStore();
-                    const jsonStr = JSON.stringify(persistable);
-                    await setDoc(getCloudDocRef(), {
-                        store_json: jsonStr,
-                        last_update_ms: nowMs,
-                        last_update_iso: new Date(nowMs).toISOString(),
-                        source_client_id: CLIENT_ID,
-                        schema_version: 1,
-                        prev_store_json: deleteField(),
-                        prev_update_ms: deleteField(),
-                        prev_update_iso: deleteField()
-                    }, { merge:true });
-                    __lastRemoteUpdateMs = nowMs;
-                    __lastCloudWriteMs = nowMs;
-                    __cloudHydrated = true;
-                    try{ flashSaved(); }catch(e){}
-                }
-                if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Estrutura salva.';
-                dfRenderEverythingSafely();
-                if(showAlert) alert('Estrutura salva. Campos vazios/desmarcados não aparecerão no calendário, gráficos ou relatórios.');
-                return true;
-            }catch(err){
-                console.error('dfSaveStructureNow failed:', err);
-                alert('Não foi possível salvar a estrutura. Detalhe: ' + (err && err.message ? err.message : err));
-                return false;
-            }
-        }
-
-        window.strategyManagerSave = function(){ dfSaveStructureNow(true); };
-        window.strategyManagerSelectVersion = function(id){ __strategyManagerSelectedVersionId = 'current-structure'; renderStrategyManager(); };
-        window.strategyManagerDuplicateSelected = function(){ renderStrategyManager(); };
-        window.strategyManagerDeleteSelected = function(){ window.strategyManagerClearEditor(); };
-        window.strategyManagerNewVersion = function(){
-            store.strategyConfigs = [dfStrategyCurrentDefaultVersion()];
-            __strategyManagerSelectedVersionId = 'current-structure';
-            renderStrategyManager();
-        };
-        window.strategyManagerClearEditor = function(){
-            store.strategyConfigs = [dfStrategyBlankVersion()];
-            __strategyManagerSelectedVersionId = 'current-structure';
-            renderStrategyManager();
-            if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Campos limpos. Clique em Salvar estrutura para gravar.';
-        };
-
-        window.strategyManagerFullResetKeepAccounts = async function(){
-            try{
-                const ok = confirm('Isso vai limpar TODO o operacional, gráficos, notas e saques, mantendo apenas as contas cadastradas e a estrutura atual de estratégias. Deseja continuar?');
-                if(!ok) return;
-                const typed = prompt('Digite RESET para confirmar o reset completo:');
-                if(String(typed || '').trim().toUpperCase() !== 'RESET') return;
-
-                // Usa exatamente o editor atual como estrutura sobrevivente.
-                const version = readStrategyEditorVersion();
-                const keepActiveId = store.activeId;
-                const keepDate = store.date;
-                const accounts = (store.accounts && typeof store.accounts === 'object') ? store.accounts : {};
-                Object.values(accounts).forEach(acc => {
-                    if(!acc || typeof acc !== 'object') return;
-                    acc.data = {};
-                    acc.payouts = [];
-                    try{ delete acc.nt; }catch(e){}
-                    try{ delete acc.cashHistory; }catch(e){}
-                    try{ delete acc.imports; }catch(e){}
-                    try{ delete acc.snapshots; }catch(e){}
-                    try{ delete acc.broker; }catch(e){}
-                });
-
-                store.accounts = accounts;
-                store.strategyConfigs = [version];
-                store.activeId = keepActiveId && accounts[keepActiveId] ? keepActiveId : (Object.keys(accounts)[0] || null);
-                store.date = keepDate || new Date();
-                store.adminLogs = [];
-                store.payouts = [];
-                try{ delete store.importAudit; }catch(e){}
-                try{ __importAuditLogs = []; }catch(e){}
-                try{ store.dayDetailsOpen = {}; store.tradeDetailsOpen = {}; }catch(e){}
-                touchStore();
-                saveStoreToLocal();
-
-                await dfDeleteAllOperationalPeriodDocs();
-
-                if(!isOffline && db && setDoc){
-                    const nowMs = Date.now();
-                    await setDoc(getCloudDocRef(), {
-                        store_json: JSON.stringify(getPersistableStore()),
-                        last_update_ms: nowMs,
-                        last_update_iso: new Date(nowMs).toISOString(),
-                        source_client_id: CLIENT_ID,
-                        schema_version: 1,
-                        prev_store_json: deleteField(),
-                        prev_update_ms: deleteField(),
-                        prev_update_iso: deleteField()
-                    }, { merge:true });
-                    try{ await saveCloudSidecarDoc(getCloudAdminLogsRef(), { items: [] }); }catch(e){}
-                    try{ await saveCloudSidecarDoc(getCloudImportAuditRef(), { items: [] }); }catch(e){}
-                    __lastRemoteUpdateMs = nowMs;
-                    __lastCloudWriteMs = nowMs;
-                    __cloudHydrated = true;
-                }
-
-                dfRenderEverythingSafely();
-                alert('Reset concluído. Contas mantidas; operacional, gráficos, notas, saques e histórico foram zerados.');
-                try{ setTimeout(()=>location.reload(), 600); }catch(e){}
-            }catch(err){
-                console.error('strategyManagerFullResetKeepAccounts failed:', err);
-                alert('Não foi possível concluir o reset completo. Detalhe: ' + (err && err.message ? err.message : err));
-            }
-        };
-
-        // Reforça o manager simples sempre que o admin abrir.
+    }catch(e){
         try{
-            const __oldSetAdminTab = window.setAdminTab;
-            if(typeof __oldSetAdminTab === 'function'){
-                window.setAdminTab = function(tab){
-                    const r = __oldSetAdminTab.apply(this, arguments);
-                    if(tab === 'strategy') setTimeout(()=>{ try{ renderStrategyManager(); }catch(e){} }, 0);
-                    return r;
-                };
+            store.last_update_ms = Date.now();
+            store.last_update_iso = new Date(store.last_update_ms).toISOString();
+        }catch(_){}
+    }
+}
+
+function dfSaveLocalImmediate(){
+    try{
+        if(typeof saveStoreToLocal === 'function') saveStoreToLocal();
+    }catch(e){}
+
+    try{
+        const json = dfStoreJsonForPersistence();
+        localStorage.setItem('df_backup_local', json);
+        localStorage.setItem('df_store_local_v1', json);
+    }catch(e){}
+}
+
+function dfScheduleCloudSaveSafely(){
+    try{
+        if(typeof scheduleSaveToCloud === 'function'){
+            scheduleSaveToCloud();
+            return true;
+        }
+    }catch(e){
+        console.warn('scheduleSaveToCloud failed:', e);
+    }
+
+    try{
+        if(typeof saveToCloud === 'function'){
+            Promise.resolve(saveToCloud()).catch(err => console.warn('saveToCloud fallback failed:', err));
+            return true;
+        }
+    }catch(e){
+        console.warn('saveToCloud fallback failed:', e);
+    }
+
+    return false;
+}
+
+async function dfSaveCloudImmediate(){
+    dfTouchStoreSafely();
+    dfSaveLocalImmediate();
+
+    if(isOffline || !db){
+        dfScheduleCloudSaveSafely();
+        return false;
+    }
+
+    try{
+        if(typeof setDoc === 'function' && typeof getCloudDocRef === 'function'){
+            const nowMs = Date.now();
+            const payload = {
+                store_json: dfStoreJsonForPersistence(),
+                last_update_ms: nowMs,
+                last_update_iso: new Date(nowMs).toISOString(),
+                source_client_id: (typeof CLIENT_ID !== 'undefined' ? CLIENT_ID : 'unknown-client'),
+                schema_version: 1
+            };
+
+            if(typeof deleteField === 'function'){
+                payload.prev_store_json = deleteField();
+                payload.prev_update_ms = deleteField();
+                payload.prev_update_iso = deleteField();
             }
-        }catch(e){}
+
+            await setDoc(getCloudDocRef(), payload, { merge:true });
+
+            try{ __lastRemoteUpdateMs = nowMs; }catch(e){}
+            try{ __lastCloudWriteMs = nowMs; }catch(e){}
+            try{ __cloudHydrated = true; }catch(e){}
+            try{ if(typeof flashSaved === 'function') flashSaved(); }catch(e){}
+
+            return true;
+        }
+    }catch(err){
+        console.warn('dfSaveCloudImmediate direct setDoc failed:', err);
+    }
+
+    dfScheduleCloudSaveSafely();
+    return false;
+}
+
+function dfPersistAfterUserInput(){
+    // Ordem importante:
+    // 1. atualiza timestamp;
+    // 2. grava local imediatamente;
+    // 3. agenda/grava nuvem;
+    // 4. só depois renderiza.
+    // Assim, se algum render quebrar, os dados digitados não são perdidos.
+    dfTouchStoreSafely();
+    dfSaveLocalImmediate();
+    dfScheduleCloudSaveSafely();
+}
+
+// Restore definitivo da gravação diária.
+window.queueData = function(iso, type, val){
+    try{
+        const acc = getActive();
+        if(!acc) return;
+        _applyDataChange(acc, iso, type, val);
+        dfPersistAfterUserInput();
+    }catch(err){
+        console.error('queueData failed:', err);
+        alert('Erro ao gravar alteração: ' + (err && err.message ? err.message : err));
+    }
+};
+
+window.updateData = function(iso, type, val){
+    try{
+        const acc = getActive();
+        if(!acc) return;
+        _applyDataChange(acc, iso, type, val);
+        dfPersistAfterUserInput();
+
+        try{ renderDashboard(); }catch(e){ console.warn('renderDashboard failed after updateData:', e); }
+    }catch(err){
+        console.error('updateData failed:', err);
+        alert('Erro ao gravar alteração: ' + (err && err.message ? err.message : err));
+    }
+};
+
+window.updateTradeLeg = function(iso, legKey, legIndex, rawVal){
+    try{
+        const acc = getActive();
+        if(!acc) return;
+        if(!acc.data) acc.data = {};
+        if(!acc.data[iso]) acc.data[iso] = {};
+
+        const entry = acc.data[iso];
+        const metaKey = `${legKey}meta`;
+        if(!entry[metaKey]) entry[metaKey] = {};
+
+        const cleanVal = (rawVal === '' || rawVal === null || rawVal === undefined)
+            ? ''
+            : (parseFloat(String(rawVal).replace(',', '.')) || 0);
+
+        entry[metaKey][`leg${legIndex}`] = cleanVal;
+
+        const hasExplicitLegs = Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg1')
+            || Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg2')
+            || Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg3')
+            || Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg4');
+
+        const leg1 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg1) || 0) : (parseFloat(entry[legKey]) || 0);
+        const leg2 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg2) || 0) : 0;
+        const leg3 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg3) || 0) : 0;
+        const leg4 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg4) || 0) : 0;
+        const subtotal = leg1 + leg2 + leg3 + leg4;
+
+        entry[legKey] = subtotal === 0 ? '' : subtotal;
+
+        const t0 = parseFloat(entry.t0) || 0;
+        const t1 = parseFloat(entry.t1) || 0;
+        const t2 = parseFloat(entry.t2) || 0;
+        const t3 = parseFloat(entry.t3) || 0;
+        const t4 = parseFloat(entry.t4) || 0;
+        entry.val = t0 + t1 + t2 + t3 + t4;
+
+        dfPersistAfterUserInput();
+
+        try{ renderDashboard(); }catch(e){ console.warn('renderDashboard failed after updateTradeLeg:', e); }
+    }catch(err){
+        console.error('updateTradeLeg failed:', err);
+        alert('Erro ao gravar trade: ' + (err && err.message ? err.message : err));
+    }
+};
+
+window.updateTradeBreakout = function(iso, legKey, legIndex, checked){
+    try{
+        const acc = getActive();
+        if(!acc) return;
+        if(!acc.data) acc.data = {};
+        if(!acc.data[iso]) acc.data[iso] = {};
+
+        const entry = acc.data[iso];
+        const metaKey = `${legKey}meta`;
+        if(!entry[metaKey]) entry[metaKey] = {};
+        entry[metaKey][`breakout${legIndex}`] = !!checked;
+
+        dfPersistAfterUserInput();
+
+        try{ renderDashboard(); }catch(e){ console.warn('renderDashboard failed after updateTradeBreakout:', e); }
+    }catch(err){
+        console.error('updateTradeBreakout failed:', err);
+        alert('Erro ao gravar rompimento: ' + (err && err.message ? err.message : err));
+    }
+};
+
+
+function dfApplyCurrentStrategyLabelsToStaticUI(){
+    try{
+        const activeSlots = new Set(getCurrentStrategies({ includeInactive:false, includeHidden:false }).map(s => s.slot));
+        const labelIds = [
+            ['accounts-overview-label-t0', 't0'],
+            ['accounts-overview-label-t3', 't3'],
+            ['accounts-overview-label-t4', 't4'],
+            ['accounts-overview-label-t1', 't1'],
+            ['accounts-overview-label-t2', 't2']
+        ];
+
+        labelIds.forEach(([id, slot]) => {
+            const el = document.getElementById(id);
+            const label = String(getStrategyLabelForSlot(slot) || '').trim();
+            if(el) el.textContent = label || '—';
+
+            const card = el ? el.closest('.rounded-xl') : null;
+            if(card){
+                // Campo vazio/inativo/invisível não aparece no resumo.
+                card.style.display = activeSlots.has(slot) ? '' : 'none';
+            }
+        });
+    }catch(e){}
+}
+
+function dfRenderEverythingSafely(){
+    try{ renderStrategyManager(); }catch(e){ console.warn('renderStrategyManager failed:', e); }
+    try{ renderCalendar(getActive()); }catch(e){ console.warn('renderCalendar failed:', e); }
+    try{ filterReportInternal(); }catch(e){ console.warn('filterReportInternal failed:', e); }
+    try{ renderDashboard(); }catch(e){ console.warn('renderDashboard failed:', e); }
+    try{ renderSidebar(); }catch(e){ console.warn('renderSidebar failed:', e); }
+    try{ if(typeof renderAccountsOverview === 'function') renderAccountsOverview(); }catch(e){}
+    try{ dfApplyCurrentStrategyLabelsToStaticUI(); }catch(e){}
+    dfSaveLocalImmediate();
+}
+
+async function dfDeleteAllOperationalPeriodDocs(){
+    try{
+        if(isOffline || !db || typeof getDocs !== 'function' || typeof writeBatch !== 'function' || typeof getCloudPeriodsColRef !== 'function') return false;
+
+        const snap = await getDocs(getCloudPeriodsColRef());
+        const docs = [];
+        snap.forEach(ds => docs.push(ds));
+
+        for(let i = 0; i < docs.length; i += 450){
+            const batch = writeBatch(db);
+            docs.slice(i, i + 450).forEach(ds => {
+                try{
+                    if(typeof getCloudPeriodDocRef === 'function') batch.delete(getCloudPeriodDocRef(ds.id));
+                }catch(e){}
+            });
+            await batch.commit();
+        }
+
+        try{ __lastOperationalDocHashes = {}; }catch(e){}
+        return true;
+    }catch(e){
+        console.warn('dfDeleteAllOperationalPeriodDocs failed:', e);
+        return false;
+    }
+}
+
+async function dfSaveStructureNow(showAlert = true){
+    try{
+        const version = readStrategyEditorVersion();
+        const structure = dfStructureFromVersion(version, { allowDefaults:false });
+
+        store.strategyStructure = structure;
+        store.strategyConfigs = [dfStrategyVersionFromStructure(structure)];
+        __strategyManagerSelectedVersionId = 'current-structure';
+
+        await dfSaveCloudImmediate();
+
+        if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Estrutura salva.';
+        dfRenderEverythingSafely();
+
+        if(showAlert){
+            alert('Estrutura salva. Campos vazios/desmarcados não aparecerão no calendário, gráficos ou relatórios.');
+        }
+
+        return true;
+    }catch(err){
+        console.error('dfSaveStructureNow failed:', err);
+        alert('Não foi possível salvar a estrutura. Detalhe: ' + (err && err.message ? err.message : err));
+        return false;
+    }
+}
+
+window.strategyManagerSave = function(){
+    dfSaveStructureNow(true);
+};
+
+window.strategyManagerSelectVersion = function(id){
+    __strategyManagerSelectedVersionId = 'current-structure';
+    renderStrategyManager();
+};
+
+window.strategyManagerDuplicateSelected = function(){
+    renderStrategyManager();
+};
+
+window.strategyManagerDeleteSelected = function(){
+    window.strategyManagerClearEditor();
+};
+
+window.strategyManagerNewVersion = function(){
+    store.strategyStructure = dfDefaultStrategyStructure();
+    store.strategyConfigs = [dfStrategyVersionFromStructure(store.strategyStructure)];
+    __strategyManagerSelectedVersionId = 'current-structure';
+    renderStrategyManager();
+
+    if(els.strategyManagerStatus){
+        els.strategyManagerStatus.textContent = 'Nova estrutura criada com defaults. Clique em Salvar estrutura para gravar.';
+    }
+};
+
+window.strategyManagerClearEditor = function(){
+    store.strategyStructure = dfBlankStrategyStructure();
+    store.strategyConfigs = [dfStrategyVersionFromStructure(store.strategyStructure)];
+    __strategyManagerSelectedVersionId = 'current-structure';
+    renderStrategyManager();
+
+    if(els.strategyManagerStatus){
+        els.strategyManagerStatus.textContent = 'Campos limpos. Clique em Salvar estrutura para gravar.';
+    }
+};
+
+window.strategyManagerFullResetKeepAccounts = async function(){
+    try{
+        const ok = confirm('Isso vai limpar TODO o operacional, gráficos, notas, saques e imports, mantendo apenas as contas cadastradas e a estrutura atual de estratégias. Deseja continuar?');
+        if(!ok) return;
+
+        const typed = prompt('Digite RESET para confirmar o reset completo:');
+        if(String(typed || '').trim().toUpperCase() !== 'RESET') return;
+
+        const version = readStrategyEditorVersion();
+        const structure = dfStructureFromVersion(version, { allowDefaults:false });
+
+        const oldAccounts = (store.accounts && typeof store.accounts === 'object') ? store.accounts : {};
+        const nextAccounts = {};
+
+        Object.entries(oldAccounts).forEach(([id, acc]) => {
+            if(!acc || typeof acc !== 'object') return;
+
+            const size = acc.size || '50k';
+            const rules = (typeof RULES !== 'undefined' && RULES && RULES[size]) ? RULES[size] : (RULES && RULES['50k']) || { start: 50000 };
+            const start = Number(rules.start || 50000);
+
+            nextAccounts[id] = {
+                ...acc,
+                id: acc.id || id,
+                name: acc.name || 'Conta',
+                size,
+                data: {},
+                payouts: [],
+                withdrawals: [],
+                notes: {},
+                equity: start,
+                currentEquity: start,
+                initialBalance: start,
+                balance: start,
+                lastResetAt: new Date().toISOString()
+            };
+
+            [
+                'nt',
+                'cashHistory',
+                'imports',
+                'snapshots',
+                'broker',
+                'imported',
+                'lastImport',
+                'ninja',
+                'tradovate',
+                'history',
+                'operationalHistory'
+            ].forEach(k => {
+                try{ delete nextAccounts[id][k]; }catch(e){}
+            });
+        });
+
+        store.accounts = nextAccounts;
+
+        const accountIds = Object.keys(nextAccounts);
+        store.activeId = (store.activeId && nextAccounts[store.activeId]) ? store.activeId : (accountIds[0] || null);
+        store.date = store.date || new Date();
+
+        store.strategyStructure = structure;
+        store.strategyConfigs = [dfStrategyVersionFromStructure(structure)];
+
+        store.adminLogs = [];
+        store.payouts = [];
+        store.dayDetailsOpen = {};
+        store.tradeDetailsOpen = {};
+
+        [
+            'importAudit',
+            'imports',
+            'snapshots',
+            'cashHistory',
+            'broker',
+            'nt',
+            'ninja',
+            'tradovate',
+            'operationalHistory',
+            'reportsCache',
+            'chartCache'
+        ].forEach(k => {
+            try{ delete store[k]; }catch(e){}
+        });
+
+        try{ __importAuditLogs = []; }catch(e){}
+
+        dfTouchStoreSafely();
+        dfSaveLocalImmediate();
+
+        await dfDeleteAllOperationalPeriodDocs();
+
+        if(!isOffline && db && typeof saveCloudSidecarDoc === 'function'){
+            try{ await saveCloudSidecarDoc(getCloudAdminLogsRef(), { items: [] }); }catch(e){}
+            try{ await saveCloudSidecarDoc(getCloudImportAuditRef(), { items: [] }); }catch(e){}
+        }
+
+        await dfSaveCloudImmediate();
+
+        dfRenderEverythingSafely();
+
+        alert('Reset concluído. Contas mantidas; operacional, gráficos, notas, saques e histórico foram zerados.');
+        try{ setTimeout(() => location.reload(), 600); }catch(e){}
+    }catch(err){
+        console.error('strategyManagerFullResetKeepAccounts failed:', err);
+        alert('Não foi possível concluir o reset completo. Detalhe: ' + (err && err.message ? err.message : err));
+    }
+};
+
+// Reforça o manager simples sempre que o admin abrir.
+try{
+    const __oldSetAdminTab = window.setAdminTab;
+    if(typeof __oldSetAdminTab === 'function'){
+        window.setAdminTab = function(tab){
+            const r = __oldSetAdminTab.apply(this, arguments);
+            if(tab === 'strategy') setTimeout(() => { try{ renderStrategyManager(); }catch(e){} }, 0);
+            return r;
+        };
+    }
+}catch(e){}
+
+
+// Garante que telas estáticas antigas não voltem a exibir fallback de nomes antigos.
+try{
+    if(typeof renderAccountsOverview === 'function' && !window.__dfStrategyV13AccountsOverviewWrapped){
+        const __dfOldRenderAccountsOverview = renderAccountsOverview;
+        renderAccountsOverview = function(){
+            const out = __dfOldRenderAccountsOverview.apply(this, arguments);
+            try{ dfApplyCurrentStrategyLabelsToStaticUI(); }catch(e){}
+            return out;
+        };
+        try{ window.renderAccountsOverview = renderAccountsOverview; }catch(e){}
+        window.__dfStrategyV13AccountsOverviewWrapped = true;
+    }
+}catch(e){}
+
+// Boot/migração segura após carregar o app.
+try{
+    dfEnsureStrategyStructure();
+    dfSaveLocalImmediate();
+}catch(e){
+    console.warn('DF strategy V13 boot migration failed:', e);
+}
 
         // === Expose internal state/functions for patch modules (safe & idempotent) ===
         try{
