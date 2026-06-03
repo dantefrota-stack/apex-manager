@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: DF-STRATEGY-SAVE-RESET-V13-COMPACT-ALIGN-2026-06-03 -->
+<!-- BUILD_ID: DF-STRATEGY-SAVE-RESET-V13-COMPACT-CARDS-V3-2026-06-03 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -625,6 +625,208 @@ body.dark #period-analysis-card .period-actions{border-top-color:#334155;}
   }
   #period-analysis-card .period-actions{
     grid-template-columns:1fr;
+  }
+}
+
+
+/* Period Analysis V3 - card-based compact UI */
+#period-analysis-card.period-v3{
+  padding:14px !important;
+}
+#period-analysis-card.period-v3 h3{
+  margin-bottom:8px !important;
+}
+#period-analysis-card.period-v3 .period-top-grid{
+  display:block !important;
+  margin-bottom:8px;
+}
+#period-analysis-card.period-v3 .period-filter-bar{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr) 40px !important;
+  gap:8px !important;
+  align-items:center;
+  width:100%;
+  margin-bottom:8px !important;
+}
+#period-analysis-card.period-v3 .period-filter-bar input{
+  height:36px;
+  width:100%;
+}
+#period-analysis-card.period-v3 .period-filter-bar button{
+  width:40px;
+  min-width:40px;
+  height:36px;
+  padding:0;
+}
+#period-analysis-card.period-v3 .period-summary-grid{
+  display:grid !important;
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+  gap:8px !important;
+  width:100%;
+  margin:0 !important;
+}
+#period-analysis-card.period-v3 .period-summary-item{
+  height:34px;
+  min-height:34px;
+  padding:6px 10px !important;
+  border-radius:11px;
+}
+#period-analysis-card.period-v3 .period-section{
+  margin-top:8px !important;
+  padding-top:8px !important;
+}
+#period-analysis-card.period-v3 .period-section-title{
+  margin-bottom:6px !important;
+}
+#period-analysis-card.period-v3 .period-kpi-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:8px !important;
+}
+#period-analysis-card.period-v3 .period-kpi-card{
+  min-height:0 !important;
+  padding:9px 10px !important;
+}
+#period-analysis-card.period-v3 .period-kpi-card:first-child,
+#period-analysis-card.period-v3 .period-kpi-card:nth-child(2){
+  grid-column:auto !important;
+}
+#period-analysis-card.period-v3 .period-breakdown-wrap{
+  max-width:none !important;
+  overflow:visible !important;
+}
+#period-analysis-card.period-v3 .period-breakdown-table{
+  display:none !important;
+}
+#period-analysis-card.period-v3 .period-strategy-cards{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+#period-analysis-card.period-v3 .period-strategy-card{
+  border:1px solid #e2e8f0;
+  background:#fff;
+  border-radius:12px;
+  padding:9px 10px;
+  min-width:0;
+}
+body.dark #period-analysis-card.period-v3 .period-strategy-card{
+  background:rgba(15,23,42,.45);
+  border-color:#334155;
+}
+#period-analysis-card.period-v3 .period-strategy-card-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:6px;
+}
+#period-analysis-card.period-v3 .period-strategy-name{
+  font-size:11px;
+  font-weight:900;
+  color:#0f172a;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+body.dark #period-analysis-card.period-v3 .period-strategy-name{
+  color:#e2e8f0;
+}
+#period-analysis-card.period-v3 .period-strategy-result{
+  font-size:12px;
+  font-weight:900;
+  white-space:nowrap;
+}
+#period-analysis-card.period-v3 .period-mini-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:5px;
+}
+#period-analysis-card.period-v3 .period-mini-stat{
+  border-radius:9px;
+  background:#f8fafc;
+  padding:5px 6px;
+  min-width:0;
+}
+body.dark #period-analysis-card.period-v3 .period-mini-stat{
+  background:rgba(30,41,59,.65);
+}
+#period-analysis-card.period-v3 .period-mini-label{
+  display:block;
+  font-size:9.5px;
+  line-height:1;
+  color:#64748b;
+  font-weight:700;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+body.dark #period-analysis-card.period-v3 .period-mini-label{
+  color:#94a3b8;
+}
+#period-analysis-card.period-v3 .period-mini-value{
+  display:block;
+  margin-top:3px;
+  font-size:10.5px;
+  line-height:1.05;
+  font-weight:900;
+  color:#0f172a;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+body.dark #period-analysis-card.period-v3 .period-mini-value{
+  color:#e2e8f0;
+}
+#period-analysis-card.period-v3 .period-risk-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+  gap:8px !important;
+  justify-content:stretch !important;
+}
+#period-analysis-card.period-v3 .period-risk-card{
+  padding:9px 10px !important;
+  min-width:0;
+}
+#period-analysis-card.period-v3 .period-risk-card .period-stat-row{
+  min-height:17px;
+}
+#period-analysis-card.period-v3 .period-actions{
+  margin-top:8px !important;
+  padding-top:8px !important;
+}
+#period-analysis-card.period-v3 .period-actions button{
+  min-height:29px;
+}
+@media (max-width: 1100px){
+  #period-analysis-card.period-v3 .period-summary-grid,
+  #period-analysis-card.period-v3 .period-strategy-cards,
+  #period-analysis-card.period-v3 .period-risk-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+@media (max-width: 768px){
+  #period-analysis-card.period-v3 .period-filter-bar{
+    grid-template-columns:1fr 1fr 40px !important;
+    gap:6px !important;
+  }
+  #period-analysis-card.period-v3 .period-summary-grid,
+  #period-analysis-card.period-v3 .period-kpi-grid,
+  #period-analysis-card.period-v3 .period-strategy-cards,
+  #period-analysis-card.period-v3 .period-risk-grid{
+    grid-template-columns:1fr !important;
+  }
+  #period-analysis-card.period-v3 .period-mini-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+@media (max-width: 480px){
+  #period-analysis-card.period-v3{
+    padding:12px !important;
+  }
+  #period-analysis-card.period-v3 .period-filter-bar{
+    grid-template-columns:1fr !important;
+  }
+  #period-analysis-card.period-v3 .period-filter-bar button{
+    width:100%;
   }
 }
 </style>
@@ -1351,7 +1553,7 @@ tr.bg-green-50 td {
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <div id="period-analysis-card" class="dashboard-card p-4 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 flex flex-col">
+            <div id="period-analysis-card" class="dashboard-card period-v3 p-4 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 flex flex-col">
                 <h3 class="font-bold text-slate-800 flex items-center gap-2 dark:text-white"><i data-lucide="filter" class="w-4 h-4 text-indigo-600"></i> Análise por Período</h3>
                 <div class="period-filter-bar no-print">
                     <input type="date" id="filter-start" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600">
@@ -1400,7 +1602,59 @@ tr.bg-green-50 td {
                         <i data-lucide="table-properties" class="w-3.5 h-3.5 text-emerald-600"></i>
                         <span>Breakdown por Estratégia</span>
                     </div>
-                    <div class="overflow-x-auto period-breakdown-wrap">
+
+                    <div id="period-strategy-cards" class="period-strategy-cards">
+                        <div class="period-strategy-card">
+                            <div class="period-strategy-card-header">
+                                <span class="period-strategy-name" id="period-card-strategy-0-name">--</span>
+                                <span class="period-strategy-result" id="period-card-strategy-0-result">--</span>
+                            </div>
+                            <div class="period-mini-grid">
+                                <div class="period-mini-stat"><span class="period-mini-label">Trades</span><span class="period-mini-value" id="period-card-strategy-0-trades">--</span></div>
+                                <div class="period-mini-stat"><span class="period-mini-label">Win%</span><span class="period-mini-value" id="period-card-strategy-0-win">--</span></div>
+                                <div class="period-mini-stat"><span class="period-mini-label">Max DD</span><span class="period-mini-value" id="period-card-strategy-0-dd">--</span></div>
+                            </div>
+                            <div class="period-mini-grid mt-1">
+                                <div class="period-mini-stat"><span class="period-mini-label">Payoff</span><span class="period-mini-value" id="period-card-strategy-0-payoff">--</span></div>
+                                <div class="period-mini-stat"><span class="period-mini-label">Expect.</span><span class="period-mini-value" id="period-card-strategy-0-expect">--</span></div>
+                                <div class="period-mini-stat"><span class="period-mini-label">Status</span><span class="period-mini-value">Ativa</span></div>
+                            </div>
+                        </div>
+                        <div class="period-strategy-card">
+                            <div class="period-strategy-card-header">
+                                <span class="period-strategy-name" id="period-card-strategy-1-name">--</span>
+                                <span class="period-strategy-result" id="period-card-strategy-1-result">--</span>
+                            </div>
+                            <div class="period-mini-grid">
+                                <div class="period-mini-stat"><span class="period-mini-label">Trades</span><span class="period-mini-value" id="period-card-strategy-1-trades">--</span></div>
+                                <div class="period-mini-stat"><span class="period-mini-label">Win%</span><span class="period-mini-value" id="period-card-strategy-1-win">--</span></div>
+                                <div class="period-mini-stat"><span class="period-mini-label">Max DD</span><span class="period-mini-value" id="period-card-strategy-1-dd">--</span></div>
+                            </div>
+                            <div class="period-mini-grid mt-1">
+                                <div class="period-mini-stat"><span class="period-mini-label">Payoff</span><span class="period-mini-value" id="period-card-strategy-1-payoff">--</span></div>
+                                <div class="period-mini-stat"><span class="period-mini-label">Expect.</span><span class="period-mini-value" id="period-card-strategy-1-expect">--</span></div>
+                                <div class="period-mini-stat"><span class="period-mini-label">Status</span><span class="period-mini-value">Ativa</span></div>
+                            </div>
+                        </div>
+                        <div class="period-strategy-card">
+                            <div class="period-strategy-card-header">
+                                <span class="period-strategy-name" id="period-card-strategy-2-name">--</span>
+                                <span class="period-strategy-result" id="period-card-strategy-2-result">--</span>
+                            </div>
+                            <div class="period-mini-grid">
+                                <div class="period-mini-stat"><span class="period-mini-label">Trades</span><span class="period-mini-value" id="period-card-strategy-2-trades">--</span></div>
+                                <div class="period-mini-stat"><span class="period-mini-label">Win%</span><span class="period-mini-value" id="period-card-strategy-2-win">--</span></div>
+                                <div class="period-mini-stat"><span class="period-mini-label">Max DD</span><span class="period-mini-value" id="period-card-strategy-2-dd">--</span></div>
+                            </div>
+                            <div class="period-mini-grid mt-1">
+                                <div class="period-mini-stat"><span class="period-mini-label">Payoff</span><span class="period-mini-value" id="period-card-strategy-2-payoff">--</span></div>
+                                <div class="period-mini-stat"><span class="period-mini-label">Expect.</span><span class="period-mini-value" id="period-card-strategy-2-expect">--</span></div>
+                                <div class="period-mini-stat"><span class="period-mini-label">Status</span><span class="period-mini-value">Ativa</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto period-breakdown-wrap hidden">
                         <table class="w-full text-[11px] period-breakdown-table">
                             <thead>
                                 <tr class="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
@@ -1424,24 +1678,16 @@ tr.bg-green-50 td {
                         <span>Risco & Consistência</span>
                     </div>
                     <div class="period-risk-grid text-xs">
-                        <div class="period-risk-card">
-                            <div class="period-stat-list">
-                                <div class="period-stat-row"><span>Max Losing Streak</span><span id="risk-max-losing" class="font-bold text-slate-800 dark:text-white">--</span></div>
-                                <div class="period-stat-row"><span>Max Winning Streak</span><span id="risk-max-winning" class="font-bold text-slate-800 dark:text-white">--</span></div>
-                                <div class="period-stat-row"><span>Expectancy Geral</span><span id="risk-expectancy-overall" class="font-bold text-slate-800 dark:text-white">--</span></div>
-                            </div>
-                        </div>
-                        <div class="period-risk-card">
-                            <div class="period-stat-list">
-                                <div class="period-stat-row"><span>Melhor Estratégia</span><span id="risk-best-strategy" class="font-bold text-emerald-600">--</span></div>
-                                <div class="period-stat-row"><span>Pior Estratégia</span><span id="risk-worst-strategy" class="font-bold text-red-600">--</span></div>
-                                <div class="period-stat-row"><span>Dias Verdes/Vermelhos</span><span id="risk-days-balance" class="font-bold text-slate-800 dark:text-white">--</span></div>
-                            </div>
-                        </div>
+                        <div class="period-risk-card"><div class="period-stat-row"><span>Max Losing Streak</span><span id="risk-max-losing" class="font-bold text-slate-800 dark:text-white">--</span></div></div>
+                        <div class="period-risk-card"><div class="period-stat-row"><span>Max Winning Streak</span><span id="risk-max-winning" class="font-bold text-slate-800 dark:text-white">--</span></div></div>
+                        <div class="period-risk-card"><div class="period-stat-row"><span>Expectancy Geral</span><span id="risk-expectancy-overall" class="font-bold text-slate-800 dark:text-white">--</span></div></div>
+                        <div class="period-risk-card"><div class="period-stat-row"><span>Melhor Estratégia</span><span id="risk-best-strategy" class="font-bold text-emerald-600">--</span></div></div>
+                        <div class="period-risk-card"><div class="period-stat-row"><span>Pior Estratégia</span><span id="risk-worst-strategy" class="font-bold text-red-600">--</span></div></div>
+                        <div class="period-risk-card"><div class="period-stat-row"><span>Dias Verdes/Vermelhos</span><span id="risk-days-balance" class="font-bold text-slate-800 dark:text-white">--</span></div></div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-2 no-print period-actions">
+                <div class="grid grid-cols-3 gap-2 no-print period-actions"><div class="grid grid-cols-3 gap-2 no-print period-actions">
                      <button onclick="shareReport()" class="col-span-1 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400" title="WhatsApp"><i data-lucide="share-2" class="w-3 h-3"></i> Zap</button>
                      <button onclick="pdfFilteredReport()" class="col-span-1 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 flex justify-center items-center gap-1 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"><i data-lucide="printer" class="w-3 h-3"></i> PDF</button>
                      <button onclick="exportCSV()" class="col-span-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400"><i data-lucide="download" class="w-3 h-3"></i> CSV</button>
@@ -10243,7 +10489,68 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
 
       
 
-        // === DF STRATEGY RESET / SIMPLE MANAGER PATCH V13 ===
+        
+        // === Period Analysis V3 cards sync ===
+        function syncPeriodStrategyCardsFromBreakdown(){
+            try{
+                const tbody = document.getElementById('strategy-breakdown-body');
+                const cards = document.getElementById('period-strategy-cards');
+                if(!tbody || !cards) return;
+
+                const rows = Array.from(tbody.querySelectorAll('tr')).filter(Boolean);
+                for(let i=0;i<3;i++){
+                    const row = rows[i];
+                    const card = cards.children[i];
+                    if(card) card.style.display = row ? '' : 'none';
+                    const cells = row ? Array.from(row.children) : [];
+                    const vals = {
+                        name: cells[0]?.textContent?.trim() || '--',
+                        result: cells[1]?.textContent?.trim() || '--',
+                        trades: cells[2]?.textContent?.trim() || '--',
+                        win: cells[3]?.textContent?.trim() || '--',
+                        payoff: cells[4]?.textContent?.trim() || '--',
+                        expect: cells[5]?.textContent?.trim() || '--',
+                        dd: cells[6]?.textContent?.trim() || '--'
+                    };
+                    const set = (suffix, val, clsFromCellIndex=null) => {
+                        const el = document.getElementById(`period-card-strategy-${i}-${suffix}`);
+                        if(!el) return;
+                        el.textContent = val;
+                        if(clsFromCellIndex !== null && cells[clsFromCellIndex]){
+                            el.className = el.className.replace(/\b(val-pos|val-neg|text-green-600|text-red-600|text-emerald-600)\b/g,'').trim();
+                            cells[clsFromCellIndex].classList.forEach(c => {
+                                if(['val-pos','val-neg','text-green-600','text-red-600','text-emerald-600'].includes(c)) el.classList.add(c);
+                            });
+                        }
+                    };
+                    set('name', vals.name);
+                    set('result', vals.result, 1);
+                    set('trades', vals.trades);
+                    set('win', vals.win);
+                    set('payoff', vals.payoff);
+                    set('expect', vals.expect, 5);
+                    set('dd', vals.dd, 6);
+                }
+            }catch(e){}
+        }
+
+        (function(){
+            try{
+                const _oldRenderDashboardForPeriodCards = window.renderDashboard || (typeof renderDashboard === 'function' ? renderDashboard : null);
+                if(_oldRenderDashboardForPeriodCards && !window.__periodV3RenderWrapped){
+                    window.__periodV3RenderWrapped = true;
+                    window.renderDashboard = function(){
+                        const ret = _oldRenderDashboardForPeriodCards.apply(this, arguments);
+                        try{ syncPeriodStrategyCardsFromBreakdown(); }catch(e){}
+                        return ret;
+                    };
+                }
+                setInterval(syncPeriodStrategyCardsFromBreakdown, 900);
+            }catch(e){}
+        })();
+
+
+// === DF STRATEGY RESET / SIMPLE MANAGER PATCH V13 ===
 // Objetivo:
 // 1) restaurar gravação diária com save antes do render;
 // 2) abandonar competição de versões antigas;
