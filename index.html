@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: DF-STRATEGY-SAVE-RESET-V13-COMPACT-PERIOD-2026-06-03 -->
+<!-- BUILD_ID: DF-STRATEGY-SAVE-RESET-V13-COMPACT-ALIGN-2026-06-03 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -517,6 +517,115 @@ body.dark #period-analysis-card .period-actions{border-top-color:#334155;}
   #period-analysis-card .period-summary-grid,
   #period-analysis-card .period-kpi-grid,
   #period-analysis-card .period-risk-grid{grid-template-columns:1fr;}
+}
+
+
+/* Compact layout alignment - Period Analysis V2 */
+#period-analysis-card .period-top-grid{
+  display:grid;
+  grid-template-columns: minmax(420px, 1.2fr) minmax(520px, 2fr);
+  gap:10px;
+  align-items:start;
+  margin-bottom:10px;
+}
+#period-analysis-card .period-filter-bar{
+  margin-bottom:0 !important;
+}
+#period-analysis-card .period-summary-grid{
+  margin-bottom:0 !important;
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+}
+#period-analysis-card .period-summary-item{
+  min-height:36px;
+  padding:7px 10px !important;
+}
+#period-analysis-card .period-summary-item span:first-child{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#period-analysis-card .period-section{
+  margin-top:8px !important;
+  padding-top:8px !important;
+}
+#period-analysis-card .period-kpi-grid{
+  grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+}
+#period-analysis-card .period-kpi-card{
+  min-height:72px;
+}
+#period-analysis-card .period-kpi-card:first-child{
+  grid-column:span 2;
+}
+#period-analysis-card .period-kpi-card:nth-child(2){
+  grid-column:span 2;
+}
+#period-analysis-card .period-stat-list{
+  gap:3px !important;
+}
+#period-analysis-card .period-stat-row{
+  min-height:16px;
+}
+#period-analysis-card .period-breakdown-wrap{
+  max-width:1080px;
+}
+#period-analysis-card .period-breakdown-table{
+  table-layout:fixed;
+  width:100%;
+}
+#period-analysis-card .period-breakdown-table th:nth-child(1),
+#period-analysis-card .period-breakdown-table td:nth-child(1){width:20%;text-align:left;}
+#period-analysis-card .period-breakdown-table th:nth-child(2),
+#period-analysis-card .period-breakdown-table td:nth-child(2){width:14%;}
+#period-analysis-card .period-breakdown-table th:nth-child(3),
+#period-analysis-card .period-breakdown-table td:nth-child(3){width:10%;}
+#period-analysis-card .period-breakdown-table th:nth-child(4),
+#period-analysis-card .period-breakdown-table td:nth-child(4){width:10%;}
+#period-analysis-card .period-breakdown-table th:nth-child(5),
+#period-analysis-card .period-breakdown-table td:nth-child(5){width:12%;}
+#period-analysis-card .period-breakdown-table th:nth-child(6),
+#period-analysis-card .period-breakdown-table td:nth-child(6){width:14%;}
+#period-analysis-card .period-breakdown-table th:nth-child(7),
+#period-analysis-card .period-breakdown-table td:nth-child(7){width:12%;}
+#period-analysis-card .period-risk-grid{
+  grid-template-columns:repeat(2,minmax(0,540px)) !important;
+  justify-content:start;
+}
+#period-analysis-card .period-risk-card{
+  padding:8px 10px !important;
+}
+#period-analysis-card .period-actions{
+  margin-top:10px !important;
+  padding-top:10px !important;
+  grid-template-columns:repeat(3,minmax(160px,1fr));
+}
+#period-analysis-card .period-actions button{
+  min-height:30px;
+}
+@media (max-width: 1280px){
+  #period-analysis-card .period-top-grid{
+    grid-template-columns:1fr;
+  }
+  #period-analysis-card .period-summary-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+  #period-analysis-card .period-kpi-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}
+@media (max-width: 768px){
+  #period-analysis-card .period-summary-grid,
+  #period-analysis-card .period-kpi-grid,
+  #period-analysis-card .period-risk-grid{
+    grid-template-columns:1fr !important;
+  }
+  #period-analysis-card .period-kpi-card:first-child,
+  #period-analysis-card .period-kpi-card:nth-child(2){
+    grid-column:auto;
+  }
+  #period-analysis-card .period-actions{
+    grid-template-columns:1fr;
+  }
 }
 </style>
 
@@ -1291,7 +1400,7 @@ tr.bg-green-50 td {
                         <i data-lucide="table-properties" class="w-3.5 h-3.5 text-emerald-600"></i>
                         <span>Breakdown por Estratégia</span>
                     </div>
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto period-breakdown-wrap">
                         <table class="w-full text-[11px] period-breakdown-table">
                             <thead>
                                 <tr class="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
