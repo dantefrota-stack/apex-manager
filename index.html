@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: DF-STRATEGY-SAVE-RESET-V13-2026-06-02 -->
+<!-- BUILD_ID: DF-STRATEGY-SAVE-RESET-V13-COMPACT-PERIOD-2026-06-03 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -474,6 +474,49 @@ body.dark tr.today-row + tr.day-details-row .rounded-xl {
 @media (max-width: 520px){
   .day-details-row .trade-strategy-grid .trade-row{grid-template-columns:minmax(52px,.9fr) minmax(72px,1fr) minmax(82px,1.15fr);gap:.35rem;}
   .day-details-row .trade-strategy-grid .rounded-xl{padding:.72rem !important;}
+}
+
+
+/* Compact layout - Period Analysis */
+#period-analysis-card{padding:16px !important;}
+#period-analysis-card h3{margin-bottom:10px !important;font-size:14px;line-height:1.2;}
+#period-analysis-card .period-filter-bar{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:center;margin-bottom:10px;}
+#period-analysis-card .period-filter-bar input{min-width:0;padding:8px 10px;font-size:12px;border-radius:10px;}
+#period-analysis-card .period-filter-bar button{height:36px;min-width:36px;padding:0 10px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;}
+#period-analysis-card .period-summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px;}
+#period-analysis-card .period-summary-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;min-width:0;}
+body.dark #period-analysis-card .period-summary-item{background:rgba(15,23,42,.45);border-color:#334155;}
+#period-analysis-card .period-summary-item span:first-child{font-size:11px;color:#64748b;font-weight:600;line-height:1.2;}
+body.dark #period-analysis-card .period-summary-item span:first-child{color:#94a3b8;}
+#period-analysis-card .period-summary-item span:last-child{font-size:13px;font-weight:800;white-space:nowrap;}
+#period-analysis-card .period-section{margin-top:10px;padding-top:10px;border-top:1px solid #e2e8f0;}
+body.dark #period-analysis-card .period-section{border-top-color:#334155;}
+#period-analysis-card .period-section-title{font-size:11px;font-weight:800;color:#334155;display:flex;align-items:center;gap:6px;margin-bottom:8px;text-transform:none;}
+body.dark #period-analysis-card .period-section-title{color:#e2e8f0;}
+#period-analysis-card .period-kpi-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+#period-analysis-card .period-kpi-card{padding:10px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;}
+body.dark #period-analysis-card .period-kpi-card{background:rgba(15,23,42,.45);border-color:#334155;}
+#period-analysis-card .period-kpi-card-title{font-size:11px;font-weight:800;color:#334155;margin-bottom:6px;}
+body.dark #period-analysis-card .period-kpi-card-title{color:#e2e8f0;}
+#period-analysis-card .period-stat-list{display:grid;gap:4px;}
+#period-analysis-card .period-stat-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;line-height:1.2;}
+#period-analysis-card .period-stat-row span:first-child{color:#64748b;}
+body.dark #period-analysis-card .period-stat-row span:first-child{color:#94a3b8;}
+#period-analysis-card .period-breakdown-table{font-size:10.5px;line-height:1.15;}
+#period-analysis-card .period-breakdown-table th{padding:6px 4px;white-space:nowrap;font-size:10px;}
+#period-analysis-card .period-breakdown-table td{padding:6px 4px;white-space:nowrap;}
+#period-analysis-card .period-risk-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+#period-analysis-card .period-risk-card{padding:10px;border-radius:12px;background:#fff;border:1px solid #e2e8f0;}
+body.dark #period-analysis-card .period-risk-card{background:rgba(15,23,42,.45);border-color:#334155;}
+#period-analysis-card .period-actions{margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0;}
+body.dark #period-analysis-card .period-actions{border-top-color:#334155;}
+#period-analysis-card .period-actions button{padding-top:7px;padding-bottom:7px;font-size:11px;border-radius:10px;}
+@media (max-width: 768px){
+  #period-analysis-card{padding:14px !important;}
+  #period-analysis-card .period-filter-bar{grid-template-columns:1fr;}
+  #period-analysis-card .period-summary-grid,
+  #period-analysis-card .period-kpi-grid,
+  #period-analysis-card .period-risk-grid{grid-template-columns:1fr;}
 }
 </style>
 
@@ -1199,57 +1242,57 @@ tr.bg-green-50 td {
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <div id="period-analysis-card" class="dashboard-card p-6 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 flex flex-col">
-                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2 dark:text-white"><i data-lucide="filter" class="w-4 h-4 text-indigo-600"></i> Análise por Período</h3>
-                <div class="flex gap-2 mb-4 no-print">
+            <div id="period-analysis-card" class="dashboard-card p-4 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 flex flex-col">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2 dark:text-white"><i data-lucide="filter" class="w-4 h-4 text-indigo-600"></i> Análise por Período</h3>
+                <div class="period-filter-bar no-print">
                     <input type="date" id="filter-start" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600">
                     <input type="date" id="filter-end" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600">
                     <button onclick="filterReport()" class="bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700"><i data-lucide="search" class="w-4 h-4"></i></button>
                 </div>
-                <div class="space-y-3 text-sm">
-                    <div class="flex justify-between border-b border-slate-200 pb-2 dark:border-slate-700"><span class="text-slate-500 dark:text-slate-400">Resultado Período</span><span id="custom-result" class="font-bold text-slate-800 dark:text-white">--</span></div>
-                    <div class="flex justify-between border-b border-slate-200 pb-2 dark:border-slate-700"><span class="text-slate-500 dark:text-slate-400">Taxa de Acerto (Trades)</span><span id="custom-winrate" class="font-bold text-indigo-600">--</span></div>
-                    <div class="flex justify-between border-b border-slate-200 pb-2 dark:border-slate-700"><span class="text-slate-500 dark:text-slate-400">Melhor Dia</span><span id="custom-best" class="font-bold text-green-600">--</span></div>
-                    <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Pior Dia</span><span id="custom-worst" class="font-bold text-red-600">--</span></div>
+
+                <div class="period-summary-grid text-sm">
+                    <div class="period-summary-item"><span>Resultado Período</span><span id="custom-result" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                    <div class="period-summary-item"><span>Taxa de Acerto (Trades)</span><span id="custom-winrate" class="font-bold text-indigo-600">--</span></div>
+                    <div class="period-summary-item"><span>Melhor Dia</span><span id="custom-best" class="font-bold text-green-600">--</span></div>
+                    <div class="period-summary-item"><span>Pior Dia</span><span id="custom-worst" class="font-bold text-red-600">--</span></div>
                 </div>
                 
-                <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
-                    <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
+                <div class="period-section">
+                    <div class="period-section-title">
                         <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-indigo-600"></i>
                         <span>KPIs do Período</span>
                     </div>
-                    <div class="space-y-3 text-xs">
-                        <div class="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700">
-                            <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2">Trades</div>
-                            <div class="space-y-1">
-                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Total (W/L)</span><span id="kpi-trades" class="font-bold text-slate-800 dark:text-white">--</span></div>
-                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Avg Trade</span><span id="kpi-avg-trade" class="font-bold text-slate-800 dark:text-white">--</span></div>
-                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Avg Win / Avg Loss</span><span id="kpi-avg-winloss" class="font-bold text-slate-800 dark:text-white">--</span></div>
-                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Profit Factor</span><span id="kpi-pf" class="font-bold text-slate-800 dark:text-white">--</span></div>
-                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Payoff Ratio</span><span id="kpi-expectancy" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                    <div class="period-kpi-grid text-xs">
+                        <div class="period-kpi-card">
+                            <div class="period-kpi-card-title">Trades</div>
+                            <div class="period-stat-list">
+                                <div class="period-stat-row"><span>Total (W/L)</span><span id="kpi-trades" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="period-stat-row"><span>Avg Trade</span><span id="kpi-avg-trade" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="period-stat-row"><span>Avg Win / Avg Loss</span><span id="kpi-avg-winloss" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="period-stat-row"><span>Profit Factor</span><span id="kpi-pf" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="period-stat-row"><span>Payoff Ratio</span><span id="kpi-expectancy" class="font-bold text-slate-800 dark:text-white">--</span></div>
                             </div>
                         </div>
 
-                        <div class="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700">
-                            <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2">Dias</div>
-                            <div class="space-y-1">
-                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Dias operados</span><span id="kpi-days" class="font-bold text-slate-800 dark:text-white">--</span></div>
-                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Dias verdes / vermelhos</span><span id="kpi-days-gr" class="font-bold text-slate-800 dark:text-white">--</span></div>
-                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Avg por dia</span><span id="kpi-avg-day" class="font-bold text-slate-800 dark:text-white">--</span></div>
-                                <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Max Drawdown</span><span id="kpi-maxdd" class="font-bold text-red-600">--</span></div>
+                        <div class="period-kpi-card">
+                            <div class="period-kpi-card-title">Dias</div>
+                            <div class="period-stat-list">
+                                <div class="period-stat-row"><span>Dias operados</span><span id="kpi-days" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="period-stat-row"><span>Dias verdes / vermelhos</span><span id="kpi-days-gr" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="period-stat-row"><span>Avg por dia</span><span id="kpi-avg-day" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="period-stat-row"><span>Max Drawdown</span><span id="kpi-maxdd" class="font-bold text-red-600">--</span></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-
-                <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
-                    <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
+                <div class="period-section">
+                    <div class="period-section-title">
                         <i data-lucide="table-properties" class="w-3.5 h-3.5 text-emerald-600"></i>
                         <span>Breakdown por Estratégia</span>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="w-full text-[11px]">
+                        <table class="w-full text-[11px] period-breakdown-table">
                             <thead>
                                 <tr class="text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
                                     <th class="text-left py-2">Estratégia</th>
@@ -1266,29 +1309,33 @@ tr.bg-green-50 td {
                     </div>
                 </div>
 
-                <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700">
-                    <div class="text-[11px] font-bold text-slate-700 dark:text-slate-200 mb-2 flex items-center gap-2">
+                <div class="period-section">
+                    <div class="period-section-title">
                         <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-orange-600"></i>
                         <span>Risco & Consistência</span>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-                        <div class="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700">
-                            <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Max Losing Streak</span><span id="risk-max-losing" class="font-bold text-slate-800 dark:text-white">--</span></div>
-                            <div class="mt-1 flex justify-between"><span class="text-slate-500 dark:text-slate-400">Max Winning Streak</span><span id="risk-max-winning" class="font-bold text-slate-800 dark:text-white">--</span></div>
-                            <div class="mt-1 flex justify-between"><span class="text-slate-500 dark:text-slate-400">Expectancy Geral</span><span id="risk-expectancy-overall" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                    <div class="period-risk-grid text-xs">
+                        <div class="period-risk-card">
+                            <div class="period-stat-list">
+                                <div class="period-stat-row"><span>Max Losing Streak</span><span id="risk-max-losing" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="period-stat-row"><span>Max Winning Streak</span><span id="risk-max-winning" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                                <div class="period-stat-row"><span>Expectancy Geral</span><span id="risk-expectancy-overall" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                            </div>
                         </div>
-                        <div class="p-3 rounded-lg bg-white border border-slate-200 dark:bg-slate-900/40 dark:border-slate-700">
-                            <div class="flex justify-between"><span class="text-slate-500 dark:text-slate-400">Melhor Estratégia</span><span id="risk-best-strategy" class="font-bold text-emerald-600">--</span></div>
-                            <div class="mt-1 flex justify-between"><span class="text-slate-500 dark:text-slate-400">Pior Estratégia</span><span id="risk-worst-strategy" class="font-bold text-red-600">--</span></div>
-                            <div class="mt-1 flex justify-between"><span class="text-slate-500 dark:text-slate-400">Dias Verdes/Vermelhos</span><span id="risk-days-balance" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                        <div class="period-risk-card">
+                            <div class="period-stat-list">
+                                <div class="period-stat-row"><span>Melhor Estratégia</span><span id="risk-best-strategy" class="font-bold text-emerald-600">--</span></div>
+                                <div class="period-stat-row"><span>Pior Estratégia</span><span id="risk-worst-strategy" class="font-bold text-red-600">--</span></div>
+                                <div class="period-stat-row"><span>Dias Verdes/Vermelhos</span><span id="risk-days-balance" class="font-bold text-slate-800 dark:text-white">--</span></div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-3 gap-2 no-print mt-auto pt-4">
-                     <button onclick="shareReport()" class="col-span-1 py-2 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400" title="WhatsApp"><i data-lucide="share-2" class="w-3 h-3"></i> Zap</button>
-                     <button onclick="pdfFilteredReport()" class="col-span-1 py-2 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 flex justify-center items-center gap-1 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"><i data-lucide="printer" class="w-3 h-3"></i> PDF</button>
-                     <button onclick="exportCSV()" class="col-span-1 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400"><i data-lucide="download" class="w-3 h-3"></i> CSV</button>
+                <div class="grid grid-cols-3 gap-2 no-print period-actions">
+                     <button onclick="shareReport()" class="col-span-1 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-green-900/30 dark:border-green-800 dark:text-green-400" title="WhatsApp"><i data-lucide="share-2" class="w-3 h-3"></i> Zap</button>
+                     <button onclick="pdfFilteredReport()" class="col-span-1 bg-white border border-slate-300 text-slate-600 rounded text-xs font-bold hover:bg-slate-50 flex justify-center items-center gap-1 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200"><i data-lucide="printer" class="w-3 h-3"></i> PDF</button>
+                     <button onclick="exportCSV()" class="col-span-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-xs font-bold flex justify-center items-center gap-1 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400"><i data-lucide="download" class="w-3 h-3"></i> CSV</button>
                 </div>
             </div>
 
