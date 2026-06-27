@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: DF-STRATEGY-SAVE-RESET-V13-UI-V4-STABLE-2026-06-03 -->
+<!-- BUILD_ID: DF-STRATEGY-SAVE-RESET-V13-UI-V4-IGNORED-BAR-ANALYTICS-V1-2026-06-26 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -12823,5 +12823,526 @@ tr.bg-green-50 td {
   else boot();
 })();
 </script>
+
+<!-- =============================================================
+     DF MODULE: OPERAÇÃO BARRA IGNORADA + ANALYTICS (V1)
+     Isolated account-level research module. Does not modify trading data.
+     ============================================================= -->
+<style id="df-ignored-bar-styles">
+  #df-main-tabs-shell{max-width:1280px;margin:0 auto;padding:14px 16px 0;}
+  #df-main-tabs{display:inline-flex;align-items:center;gap:5px;padding:5px;border:1px solid #e2e8f0;border-radius:14px;background:rgba(248,250,252,.96);box-shadow:0 1px 3px rgba(15,23,42,.05);}
+  body.dark #df-main-tabs{background:#1e293b;border-color:#334155;}
+  .df-main-tab{display:inline-flex;align-items:center;gap:8px;border:0;background:transparent;color:#64748b;padding:9px 14px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;transition:.18s ease;}
+  .df-main-tab:hover{background:#eef2ff;color:#4338ca;}
+  .df-main-tab.active{background:#4f46e5;color:#fff;box-shadow:0 5px 14px rgba(79,70,229,.22);}
+  body.dark .df-main-tab{color:#cbd5e1;}
+  body.dark .df-main-tab:hover{background:rgba(99,102,241,.16);color:#e0e7ff;}
+  body.dark .df-main-tab.active{background:#4f46e5;color:#fff;}
+
+  #df-ignored-bar-container{max-width:1280px;margin:0 auto;padding:24px 16px 48px;}
+  #df-ignored-bar-container.hidden{display:none!important;}
+  .df-ib-shell{display:grid;gap:18px;}
+  .df-ib-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 1px 3px rgba(15,23,42,.05);overflow:hidden;}
+  body.dark .df-ib-card{background:#1e293b;border-color:#334155;}
+  .df-ib-header{padding:18px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border-bottom:1px solid #e2e8f0;}
+  body.dark .df-ib-header{border-color:#334155;}
+  .df-ib-title{margin:0;color:#0f172a;font-size:18px;line-height:1.2;font-weight:900;display:flex;align-items:center;gap:9px;}
+  body.dark .df-ib-title{color:#f1f5f9;}
+  .df-ib-sub{margin-top:5px;color:#64748b;font-size:12px;line-height:1.45;}
+  body.dark .df-ib-sub{color:#94a3b8;}
+  .df-ib-save{font-size:11px;font-weight:800;color:#64748b;white-space:nowrap;padding:7px 10px;border-radius:999px;background:#f8fafc;border:1px solid #e2e8f0;}
+  body.dark .df-ib-save{color:#cbd5e1;background:#0f172a;border-color:#334155;}
+  .df-ib-save.saving{color:#b45309;background:#fffbeb;border-color:#fde68a;}
+  .df-ib-save.saved{color:#047857;background:#ecfdf5;border-color:#a7f3d0;}
+  .df-ib-body{padding:18px 20px;}
+
+  .df-ib-overview{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;}
+  .df-ib-kpi{padding:12px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;min-width:0;}
+  body.dark .df-ib-kpi{background:rgba(15,23,42,.52);border-color:#334155;}
+  .df-ib-kpi-label{font-size:10px;color:#64748b;font-weight:800;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  body.dark .df-ib-kpi-label{color:#94a3b8;}
+  .df-ib-kpi-value{margin-top:5px;color:#0f172a;font-size:17px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  body.dark .df-ib-kpi-value{color:#f1f5f9;}
+  .df-ib-pos{color:#059669!important;}.df-ib-neg{color:#dc2626!important;}.df-ib-zero{color:#64748b!important;}
+
+  .df-ib-sample-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+  .df-ib-sample-tab{border:1px solid #e2e8f0;background:#fff;color:#475569;border-radius:11px;padding:9px 13px;font-size:12px;font-weight:800;cursor:pointer;max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .df-ib-sample-tab.active{border-color:#6366f1;background:#eef2ff;color:#4338ca;box-shadow:0 0 0 2px rgba(99,102,241,.10);}
+  body.dark .df-ib-sample-tab{background:#0f172a;border-color:#334155;color:#cbd5e1;}
+  body.dark .df-ib-sample-tab.active{background:rgba(99,102,241,.16);border-color:#6366f1;color:#e0e7ff;}
+
+  .df-ib-form-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:14px;margin-bottom:14px;}
+  .df-ib-field label{display:block;margin-bottom:5px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#64748b;}
+  body.dark .df-ib-field label{color:#94a3b8;}
+  .df-ib-field input,.df-ib-field textarea{width:100%;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#0f172a;padding:9px 10px;font-size:12px;outline:none;transition:.15s ease;}
+  .df-ib-field textarea{resize:vertical;min-height:74px;line-height:1.4;}
+  .df-ib-field input:focus,.df-ib-field textarea:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12);}
+  body.dark .df-ib-field input,body.dark .df-ib-field textarea{background:#0f172a;color:#f1f5f9;border-color:#475569;}
+
+  .df-ib-sample-metrics{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin:14px 0;}
+  .df-ib-mini{padding:9px 10px;border-radius:10px;background:#f8fafc;border:1px solid #e2e8f0;min-width:0;}
+  body.dark .df-ib-mini{background:rgba(15,23,42,.52);border-color:#334155;}
+  .df-ib-mini span:first-child{display:block;color:#64748b;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  body.dark .df-ib-mini span:first-child{color:#94a3b8;}
+  .df-ib-mini span:last-child{display:block;margin-top:3px;color:#0f172a;font-size:12px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  body.dark .df-ib-mini span:last-child{color:#f1f5f9;}
+
+  .df-ib-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:12px 0 8px;}
+  .df-ib-toolbar-title{font-size:12px;font-weight:900;color:#334155;}
+  body.dark .df-ib-toolbar-title{color:#e2e8f0;}
+  .df-ib-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;}
+  .df-ib-btn{border:1px solid #cbd5e1;background:#fff;color:#334155;border-radius:9px;padding:7px 10px;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .df-ib-btn:hover{background:#f8fafc;}
+  .df-ib-btn.primary{background:#4f46e5;color:#fff;border-color:#4f46e5;}
+  .df-ib-btn.primary:hover{background:#4338ca;}
+  .df-ib-btn.danger{color:#b91c1c;border-color:#fecaca;background:#fff7f7;}
+  body.dark .df-ib-btn{background:#0f172a;color:#e2e8f0;border-color:#475569;}
+  body.dark .df-ib-btn:hover{background:#111c31;}
+  body.dark .df-ib-btn.primary{background:#4f46e5;border-color:#4f46e5;color:#fff;}
+  body.dark .df-ib-btn.danger{background:rgba(127,29,29,.18);border-color:#7f1d1d;color:#fca5a5;}
+
+  .df-ib-table-wrap{overflow:auto;border:1px solid #e2e8f0;border-radius:12px;}
+  body.dark .df-ib-table-wrap{border-color:#334155;}
+  .df-ib-table{width:100%;min-width:820px;border-collapse:collapse;font-size:11px;}
+  .df-ib-table th{background:#f8fafc;color:#64748b;text-align:left;text-transform:uppercase;letter-spacing:.04em;font-size:9px;padding:9px;border-bottom:1px solid #e2e8f0;}
+  body.dark .df-ib-table th{background:#0f172a;color:#94a3b8;border-color:#334155;}
+  .df-ib-table td{padding:7px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+  body.dark .df-ib-table td{border-color:#334155;}
+  .df-ib-table tr:last-child td{border-bottom:0;}
+  .df-ib-table input{width:100%;min-width:0;border:1px solid #dbe3ee;border-radius:8px;background:#fff;color:#0f172a;padding:7px 8px;font-size:11px;outline:none;}
+  .df-ib-table input:focus{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.10);}
+  body.dark .df-ib-table input{background:#0f172a;color:#f1f5f9;border-color:#475569;}
+  .df-ib-index{width:28px;text-align:center;color:#94a3b8;font-weight:800;}
+  .df-ib-outcome{display:inline-flex;align-items:center;justify-content:center;min-width:36px;border-radius:999px;padding:4px 7px;font-size:9px;font-weight:900;}
+  .df-ib-outcome.win{background:#dcfce7;color:#166534;}.df-ib-outcome.loss{background:#fee2e2;color:#991b1b;}.df-ib-outcome.be{background:#e2e8f0;color:#475569;}.df-ib-outcome.empty{background:#f8fafc;color:#94a3b8;}
+  body.dark .df-ib-outcome.win{background:rgba(22,101,52,.3);color:#86efac;}body.dark .df-ib-outcome.loss{background:rgba(153,27,27,.3);color:#fca5a5;}body.dark .df-ib-outcome.be{background:#334155;color:#cbd5e1;}body.dark .df-ib-outcome.empty{background:#0f172a;color:#64748b;}
+  .df-ib-row-delete{border:0;background:transparent;color:#94a3b8;cursor:pointer;padding:5px;border-radius:7px;}
+  .df-ib-row-delete:hover{background:#fee2e2;color:#b91c1c;}
+
+  .df-ib-paste{margin-top:12px;padding:12px;border:1px dashed #cbd5e1;border-radius:12px;background:#f8fafc;}
+  body.dark .df-ib-paste{background:rgba(15,23,42,.45);border-color:#475569;}
+  .df-ib-paste-grid{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;}
+  .df-ib-paste textarea{width:100%;min-height:64px;resize:vertical;border:1px solid #cbd5e1;border-radius:9px;padding:8px 9px;background:#fff;color:#0f172a;font-size:11px;outline:none;}
+  body.dark .df-ib-paste textarea{background:#0f172a;color:#f1f5f9;border-color:#475569;}
+  .df-ib-paste-help{font-size:10px;color:#64748b;margin-top:5px;}
+  body.dark .df-ib-paste-help{color:#94a3b8;}
+
+  .df-ib-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;}
+  .df-ib-summary-card{border:1px solid #e2e8f0;border-radius:13px;padding:13px;background:#fff;min-width:0;}
+  body.dark .df-ib-summary-card{background:rgba(15,23,42,.42);border-color:#334155;}
+  .df-ib-summary-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px;}
+  .df-ib-summary-name{font-size:12px;font-weight:900;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  body.dark .df-ib-summary-name{color:#f1f5f9;}
+  .df-ib-summary-status{font-size:9px;font-weight:900;border-radius:999px;padding:4px 7px;white-space:nowrap;}
+  .df-ib-status-positive{background:#dcfce7;color:#166534;}.df-ib-status-negative{background:#fee2e2;color:#991b1b;}.df-ib-status-neutral{background:#e2e8f0;color:#475569;}
+  .df-ib-summary-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;}
+  .df-ib-summary-stat{background:#f8fafc;border-radius:8px;padding:7px;min-width:0;}
+  body.dark .df-ib-summary-stat{background:#0f172a;}
+  .df-ib-summary-stat small{display:block;color:#64748b;font-size:8px;font-weight:800;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  body.dark .df-ib-summary-stat small{color:#94a3b8;}
+  .df-ib-summary-stat strong{display:block;margin-top:3px;font-size:11px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  body.dark .df-ib-summary-stat strong{color:#f1f5f9;}
+  .df-ib-result-bar{height:5px;border-radius:999px;background:#e2e8f0;margin-top:10px;overflow:hidden;}
+  body.dark .df-ib-result-bar{background:#334155;}
+  .df-ib-result-fill{height:100%;border-radius:999px;min-width:2px;}
+
+  .df-ib-analytics-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,.75fr);gap:14px;margin-top:14px;align-items:stretch;}
+  .df-ib-chart-card,.df-ib-compare-card{border:1px solid #e2e8f0;border-radius:13px;background:#fff;padding:14px;min-width:0;}
+  body.dark .df-ib-chart-card,body.dark .df-ib-compare-card{background:rgba(15,23,42,.42);border-color:#334155;}
+  .df-ib-section-title{font-size:12px;font-weight:900;color:#334155;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
+  body.dark .df-ib-section-title{color:#e2e8f0;}
+  .df-ib-chart-wrap{height:310px;position:relative;}
+  .df-ib-empty{height:100%;display:flex;align-items:center;justify-content:center;text-align:center;color:#94a3b8;font-size:11px;padding:20px;}
+  .df-ib-compare{width:100%;border-collapse:collapse;font-size:10px;}
+  .df-ib-compare th{padding:7px 5px;text-align:left;color:#64748b;text-transform:uppercase;font-size:8px;border-bottom:1px solid #e2e8f0;}
+  body.dark .df-ib-compare th{color:#94a3b8;border-color:#334155;}
+  .df-ib-compare td{padding:8px 5px;border-bottom:1px solid #f1f5f9;color:#334155;font-weight:700;}
+  body.dark .df-ib-compare td{color:#e2e8f0;border-color:#334155;}
+  .df-ib-compare tr:last-child td{border-bottom:0;}
+  .df-ib-compare td:not(:first-child),.df-ib-compare th:not(:first-child){text-align:right;white-space:nowrap;}
+
+  @media(max-width:1100px){.df-ib-overview{grid-template-columns:repeat(3,minmax(0,1fr));}.df-ib-sample-metrics{grid-template-columns:repeat(4,minmax(0,1fr));}.df-ib-analytics-grid{grid-template-columns:1fr;}}
+  @media(max-width:800px){#df-main-tabs-shell{padding-top:10px;}.df-main-tab{padding:8px 10px;}.df-ib-header{padding:15px;}.df-ib-body{padding:15px;}.df-ib-overview{grid-template-columns:repeat(2,minmax(0,1fr));}.df-ib-form-grid{grid-template-columns:1fr;}.df-ib-sample-metrics{grid-template-columns:repeat(2,minmax(0,1fr));}.df-ib-summary-grid{grid-template-columns:1fr;}.df-ib-paste-grid{grid-template-columns:1fr;}.df-ib-paste-grid .df-ib-btn{justify-content:center;}.df-ib-chart-wrap{height:270px;}}
+  @media(max-width:480px){#df-main-tabs{display:flex;width:100%;}.df-main-tab{flex:1;justify-content:center;min-width:0;}.df-main-tab span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.df-ib-overview{grid-template-columns:1fr 1fr;}.df-ib-sample-metrics{grid-template-columns:1fr 1fr;}}
+  @media print{#df-main-tabs-shell{display:none!important;}#df-main-dashboard-container{display:none!important;}#df-ignored-bar-container{display:block!important;padding:0!important;}.df-ib-actions,.df-ib-paste,.df-ib-row-delete{display:none!important;}.df-ib-card{box-shadow:none!important;break-inside:avoid;}}
+</style>
+
+<script id="df-ignored-bar-script">
+(function(){
+  'use strict';
+  if(window.__DF_IGNORED_BAR_V1__) return;
+  window.__DF_IGNORED_BAR_V1__ = true;
+
+  var ACTIVE_SAMPLE_KEY = 'df_ignored_bar_active_sample';
+  var ACTIVE_TAB_KEY = 'df_main_active_tab';
+  var activeSampleIndex = Math.max(0, Math.min(2, Number(localStorage.getItem(ACTIVE_SAMPLE_KEY) || 0) || 0));
+  var chartInstance = null;
+  var saveTimer = null;
+  var bootAttempts = 0;
+
+  function uid(prefix){ return (prefix || 'ib') + '_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
+  function esc(value){ return String(value == null ? '' : value).replace(/[&<>'"]/g,function(ch){ return ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'})[ch]; }); }
+  function getStore(){ try{return window.getStore ? window.getStore() : window.store;}catch(e){return null;} }
+  function getAccount(){
+    try{
+      if(typeof window.getActive === 'function') return window.getActive();
+      var s=getStore(); return s && s.accounts ? s.accounts[s.activeId] : null;
+    }catch(e){ return null; }
+  }
+  function currency(v){
+    var n=Number(v)||0;
+    try{return new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2}).format(n);}catch(e){return '$'+n.toFixed(2);}
+  }
+  function number(v,digits){ var n=Number(v); if(!Number.isFinite(n)) return '—'; return n.toFixed(digits == null ? 2 : digits); }
+  function ratio(v){ if(v === Infinity) return '∞'; return Number.isFinite(v) ? Number(v).toFixed(2) : '—'; }
+  function pct(v){ return Number.isFinite(v) ? Number(v).toFixed(1)+'%' : '—'; }
+  function resultClass(v){ return Number(v)>0?'df-ib-pos':(Number(v)<0?'df-ib-neg':'df-ib-zero'); }
+  function parseLooseNumber(value){
+    if(value === null || value === undefined || value === '') return null;
+    var s=String(value).trim().replace(/[$\s]/g,'');
+    if(!s) return null;
+    if(s.indexOf(',')>=0 && s.indexOf('.')>=0) s=s.replace(/,/g,'');
+    else if(s.indexOf(',')>=0) s=s.replace(',','.');
+    s=s.replace(/[^0-9.+-]/g,'');
+    var n=Number(s); return Number.isFinite(n)?n:null;
+  }
+
+  function blankOperation(){ return {id:uid('op'),date:'',result:'',points:'',note:''}; }
+  function defaultSample(index){ return {id:'sample_'+(index+1),name:'Amostra '+(index+1),period:'',notes:'',operations:[blankOperation()]}; }
+  function ensureStudy(acc){
+    if(!acc) return null;
+    if(!acc.ignoredBarStudy || typeof acc.ignoredBarStudy !== 'object'){
+      acc.ignoredBarStudy={version:1,updatedAt:null,samples:[defaultSample(0),defaultSample(1),defaultSample(2)]};
+    }
+    if(!Array.isArray(acc.ignoredBarStudy.samples)) acc.ignoredBarStudy.samples=[];
+    while(acc.ignoredBarStudy.samples.length<3) acc.ignoredBarStudy.samples.push(defaultSample(acc.ignoredBarStudy.samples.length));
+    acc.ignoredBarStudy.samples=acc.ignoredBarStudy.samples.slice(0,3).map(function(sample,index){
+      sample=(sample && typeof sample==='object')?sample:defaultSample(index);
+      if(!sample.id) sample.id='sample_'+(index+1);
+      if(!sample.name) sample.name='Amostra '+(index+1);
+      if(sample.period==null) sample.period='';
+      if(sample.notes==null) sample.notes='';
+      if(!Array.isArray(sample.operations)) sample.operations=[];
+      sample.operations=sample.operations.map(function(op){
+        op=(op && typeof op==='object')?op:blankOperation();
+        if(!op.id) op.id=uid('op');
+        if(op.date==null) op.date=''; if(op.result==null) op.result=''; if(op.points==null) op.points=''; if(op.note==null) op.note='';
+        return op;
+      });
+      if(!sample.operations.length) sample.operations=[blankOperation()];
+      return sample;
+    });
+    return acc.ignoredBarStudy;
+  }
+
+  function validResults(sample){
+    return (sample.operations||[]).filter(function(op){ return op.result !== '' && op.result !== null && op.result !== undefined && Number.isFinite(Number(op.result)); }).map(function(op){return Number(op.result);});
+  }
+  function calcMetrics(sample){
+    var values=validResults(sample);
+    var wins=values.filter(function(v){return v>0;});
+    var losses=values.filter(function(v){return v<0;});
+    var bes=values.filter(function(v){return v===0;});
+    var net=values.reduce(function(a,b){return a+b;},0);
+    var grossProfit=wins.reduce(function(a,b){return a+b;},0);
+    var grossLoss=Math.abs(losses.reduce(function(a,b){return a+b;},0));
+    var avgWin=wins.length?grossProfit/wins.length:0;
+    var avgLoss=losses.length?grossLoss/losses.length:0;
+    var peak=0,cum=0,maxDD=0,best=-Infinity,worst=Infinity;
+    values.forEach(function(v){cum+=v;if(cum>peak)peak=cum;maxDD=Math.max(maxDD,peak-cum);best=Math.max(best,v);worst=Math.min(worst,v);});
+    return {
+      values:values,trades:values.length,wins:wins.length,losses:losses.length,breakeven:bes.length,net:net,
+      winRate:values.length?(wins.length/values.length)*100:0,avgTrade:values.length?net/values.length:0,
+      avgWin:avgWin,avgLoss:avgLoss,profitFactor:grossLoss?grossProfit/grossLoss:(grossProfit>0?Infinity:0),
+      payoff:avgLoss?avgWin/avgLoss:(avgWin>0?Infinity:0),expectancy:values.length?net/values.length:0,
+      maxDD:maxDD,best:values.length?best:0,worst:values.length?worst:0
+    };
+  }
+  function combinedSample(study){
+    var ops=[];
+    study.samples.forEach(function(sample){ (sample.operations||[]).forEach(function(op){ops.push(op);}); });
+    return {operations:ops};
+  }
+  function sampleStatus(m){
+    if(!m.trades) return {label:'Sem dados',cls:'df-ib-status-neutral'};
+    if(m.net>0) return {label:(m.profitFactor>=1.5?'Forte':'Positiva'),cls:'df-ib-status-positive'};
+    if(m.net<0) return {label:'Negativa',cls:'df-ib-status-negative'};
+    return {label:'Neutra',cls:'df-ib-status-neutral'};
+  }
+
+  function saveLocalSnapshot(){
+    try{
+      var s=getStore(); if(!s) return;
+      localStorage.setItem('df_backup_local',JSON.stringify(s));
+      localStorage.setItem('df_backup_local_ts',String(Date.now()));
+    }catch(e){}
+  }
+  function setSaveStatus(text,state){
+    var el=document.getElementById('df-ib-save-status'); if(!el)return;
+    el.textContent=text; el.className='df-ib-save '+(state||'');
+  }
+  function scheduleSave(){
+    var acc=getAccount(); var study=ensureStudy(acc); if(!study)return;
+    study.updatedAt=new Date().toISOString();
+    saveLocalSnapshot();
+    setSaveStatus('Salvando...','saving');
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(function(){
+      var fn=window.saveToCloud;
+      if(typeof fn!=='function'){setSaveStatus('Salvo localmente','saved');return;}
+      Promise.resolve(fn()).then(function(){setSaveStatus('Salvo','saved');}).catch(function(){setSaveStatus('Salvo localmente','saved');});
+    },700);
+  }
+
+  function buildShell(){
+    var dashboard=document.querySelector('div.container.mx-auto.px-4.py-6.space-y-6');
+    if(!dashboard) return false;
+    if(!dashboard.id) dashboard.id='df-main-dashboard-container';
+
+    var nav=document.getElementById('df-main-tabs-shell');
+    if(!nav){
+      nav=document.createElement('div'); nav.id='df-main-tabs-shell'; nav.className='no-print';
+      nav.innerHTML='<div id="df-main-tabs">'+
+        '<button type="button" class="df-main-tab active" data-df-main-tab="performance"><i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Performance</span></button>'+
+        '<button type="button" class="df-main-tab" data-df-main-tab="ignored-bar"><i data-lucide="scan-line" class="w-4 h-4"></i><span>Barra Ignorada + Analytics</span></button>'+
+      '</div>';
+      dashboard.parentNode.insertBefore(nav,dashboard);
+    }
+
+    var container=document.getElementById('df-ignored-bar-container');
+    if(!container){
+      container=document.createElement('div'); container.id='df-ignored-bar-container'; container.className='hidden';
+      dashboard.insertAdjacentElement('afterend',container);
+    }
+
+    if(nav.dataset.bound!=='1'){
+      nav.dataset.bound='1';
+      nav.addEventListener('click',function(e){
+        var btn=e.target.closest('[data-df-main-tab]'); if(!btn)return;
+        setMainTab(btn.getAttribute('data-df-main-tab'));
+      });
+    }
+    return true;
+  }
+
+  function setMainTab(tab){
+    tab=tab==='ignored-bar'?'ignored-bar':'performance';
+    try{localStorage.setItem(ACTIVE_TAB_KEY,tab);}catch(e){}
+    var dashboard=document.getElementById('df-main-dashboard-container');
+    var studyContainer=document.getElementById('df-ignored-bar-container');
+    document.querySelectorAll('[data-df-main-tab]').forEach(function(btn){btn.classList.toggle('active',btn.getAttribute('data-df-main-tab')===tab);});
+    if(dashboard) dashboard.style.display=tab==='performance'?'':'none';
+    if(studyContainer) studyContainer.classList.toggle('hidden',tab!=='ignored-bar');
+    var visibility=document.getElementById('df-v15-visibility-root'); if(visibility) visibility.style.display=tab==='performance'?'':'none';
+    if(tab==='ignored-bar') renderAll();
+  }
+
+  function overviewHTML(metrics,study){
+    var bestIndex=-1,bestNet=-Infinity;
+    study.samples.forEach(function(sample,index){var m=calcMetrics(sample);if(m.trades&&m.net>bestNet){bestNet=m.net;bestIndex=index;}});
+    return '<div class="df-ib-overview">'+
+      kpi('Resultado consolidado',currency(metrics.net),resultClass(metrics.net))+
+      kpi('Operações',String(metrics.trades),'')+
+      kpi('Win rate',pct(metrics.winRate),'')+
+      kpi('Profit factor',ratio(metrics.profitFactor),'')+
+      kpi('Melhor amostra',bestIndex>=0?esc(study.samples[bestIndex].name):'—',bestIndex>=0?'df-ib-pos':'')+
+    '</div>';
+  }
+  function kpi(label,value,cls){return '<div class="df-ib-kpi"><div class="df-ib-kpi-label">'+esc(label)+'</div><div class="df-ib-kpi-value '+(cls||'')+'">'+value+'</div></div>';}
+
+  function renderAll(){
+    var container=document.getElementById('df-ignored-bar-container'); if(!container)return;
+    var acc=getAccount();
+    if(!acc){container.innerHTML='<div class="df-ib-card"><div class="df-ib-body"><div class="df-ib-empty">Nenhuma conta ativa.</div></div></div>';return;}
+    var study=ensureStudy(acc); var all=calcMetrics(combinedSample(study));
+    container.innerHTML='<div class="df-ib-shell">'+
+      '<section class="df-ib-card">'+
+        '<div class="df-ib-header"><div><h2 class="df-ib-title"><i data-lucide="scan-line" class="w-5 h-5 text-indigo-600"></i>Operação Barra Ignorada</h2><div class="df-ib-sub">Conta: <strong>'+esc(acc.name||'Conta')+'</strong> · Registre três amostras independentes e compare a consistência dos resultados.</div></div><div id="df-ib-save-status" class="df-ib-save">Dados por conta</div></div>'+
+        '<div class="df-ib-body">'+overviewHTML(all,study)+'</div>'+
+      '</section>'+
+      '<section class="df-ib-card"><div class="df-ib-header"><div><h3 class="df-ib-title" style="font-size:15px"><i data-lucide="database" class="w-4 h-4 text-indigo-600"></i>Registro das Amostras</h3><div class="df-ib-sub">Cada linha representa uma operação. O resultado financeiro alimenta todos os cálculos automaticamente.</div></div><div class="df-ib-actions"><button type="button" class="df-ib-btn" id="df-ib-export"><i data-lucide="download" class="w-3.5 h-3.5"></i>CSV</button><button type="button" class="df-ib-btn danger" id="df-ib-clear-sample"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>Limpar amostra</button></div></div><div class="df-ib-body"><div id="df-ib-editor"></div></div></section>'+
+      '<section class="df-ib-card"><div class="df-ib-header"><div><h3 class="df-ib-title" style="font-size:15px"><i data-lucide="chart-no-axes-combined" class="w-4 h-4 text-indigo-600"></i>Analytics Comparativo</h3><div class="df-ib-sub">Leitura individual e consolidada das três amostras.</div></div></div><div class="df-ib-body"><div id="df-ib-analytics"></div></div></section>'+
+    '</div>';
+    bindContainer(); renderEditor(); renderAnalytics();
+    try{window.lucide&&window.lucide.createIcons&&window.lucide.createIcons();}catch(e){}
+  }
+
+  function sampleTabsHTML(study){
+    return '<div class="df-ib-sample-tabs">'+study.samples.map(function(sample,index){return '<button type="button" class="df-ib-sample-tab '+(index===activeSampleIndex?'active':'')+'" data-sample-index="'+index+'">'+esc(sample.name||('Amostra '+(index+1)))+'</button>';}).join('')+'</div>';
+  }
+  function mini(label,value,cls){return '<div class="df-ib-mini"><span>'+esc(label)+'</span><span class="'+(cls||'')+'">'+value+'</span></div>';}
+  function outcome(op){
+    if(op.result===''||op.result===null||op.result===undefined) return {label:'—',cls:'empty'};
+    var v=Number(op.result); if(v>0)return{label:'WIN',cls:'win'}; if(v<0)return{label:'LOSS',cls:'loss'}; return{label:'BE',cls:'be'};
+  }
+  function operationRows(sample){
+    return (sample.operations||[]).map(function(op,index){var out=outcome(op);return '<tr data-op-id="'+esc(op.id)+'">'+
+      '<td class="df-ib-index">'+(index+1)+'</td>'+
+      '<td style="width:132px"><input type="date" data-op-field="date" value="'+esc(op.date)+'"></td>'+
+      '<td style="width:132px"><input type="number" step="0.01" inputmode="decimal" data-op-field="result" value="'+esc(op.result)+'" placeholder="0.00"></td>'+
+      '<td style="width:110px"><input type="number" step="0.01" inputmode="decimal" data-op-field="points" value="'+esc(op.points)+'" placeholder="Opcional"></td>'+
+      '<td style="width:64px;text-align:center"><span class="df-ib-outcome '+out.cls+'">'+out.label+'</span></td>'+
+      '<td><input type="text" data-op-field="note" value="'+esc(op.note)+'" placeholder="Observação da operação"></td>'+
+      '<td style="width:42px;text-align:center"><button type="button" class="df-ib-row-delete" data-delete-op="'+esc(op.id)+'" title="Excluir"><i data-lucide="x" class="w-3.5 h-3.5"></i></button></td>'+
+    '</tr>';}).join('');
+  }
+
+  function renderEditor(){
+    var root=document.getElementById('df-ib-editor'); if(!root)return;
+    var acc=getAccount(); var study=ensureStudy(acc); if(!study)return;
+    activeSampleIndex=Math.max(0,Math.min(2,activeSampleIndex));
+    var sample=study.samples[activeSampleIndex],m=calcMetrics(sample);
+    root.innerHTML=sampleTabsHTML(study)+
+      '<div class="df-ib-form-grid">'+
+        '<div class="df-ib-field"><label>Nome da amostra</label><input type="text" id="df-ib-sample-name" value="'+esc(sample.name)+'" placeholder="Amostra '+(activeSampleIndex+1)+'"></div>'+
+        '<div class="df-ib-field"><label>Período / identificação</label><input type="text" id="df-ib-sample-period" value="'+esc(sample.period)+'" placeholder="Ex.: Junho/2026 ou Semana 1"></div>'+
+      '</div>'+
+      '<div class="df-ib-field"><label>Observações gerais da amostra</label><textarea id="df-ib-sample-notes" placeholder="Contexto, regra aplicada, mercado, horário ou qualquer observação relevante.">'+esc(sample.notes)+'</textarea></div>'+
+      '<div id="df-ib-sample-metrics" class="df-ib-sample-metrics">'+sampleMetricsHTML(m)+'</div>'+
+      '<div class="df-ib-toolbar"><div class="df-ib-toolbar-title">Operações da '+esc(sample.name)+'</div><div class="df-ib-actions"><button type="button" class="df-ib-btn primary" id="df-ib-add-op"><i data-lucide="plus" class="w-3.5 h-3.5"></i>Adicionar operação</button></div></div>'+
+      '<div class="df-ib-table-wrap"><table class="df-ib-table"><thead><tr><th style="text-align:center">#</th><th>Data</th><th>Resultado ($)</th><th>Pontos</th><th style="text-align:center">Status</th><th>Observação</th><th></th></tr></thead><tbody id="df-ib-ops-body">'+operationRows(sample)+'</tbody></table></div>'+
+      '<div class="df-ib-paste"><div class="df-ib-paste-grid"><div><div class="df-ib-toolbar-title">Colagem rápida de resultados</div><textarea id="df-ib-quick-paste" placeholder="Um resultado por linha, por exemplo:\n250\n-120\n375"></textarea><div class="df-ib-paste-help">Linhas vazias são ignoradas. Os valores serão adicionados ao final da amostra ativa.</div></div><button type="button" class="df-ib-btn primary" id="df-ib-import-results"><i data-lucide="clipboard-paste" class="w-3.5 h-3.5"></i>Importar resultados</button></div></div>';
+    try{window.lucide&&window.lucide.createIcons&&window.lucide.createIcons();}catch(e){}
+  }
+  function sampleMetricsHTML(m){return mini('Operações',String(m.trades),'')+mini('W / L / BE',m.wins+' / '+m.losses+' / '+m.breakeven,'')+mini('Resultado',currency(m.net),resultClass(m.net))+mini('Win rate',pct(m.winRate),'')+mini('Profit factor',ratio(m.profitFactor),'')+mini('Payoff',ratio(m.payoff),'')+mini('Max DD',currency(-Math.abs(m.maxDD)),m.maxDD?'df-ib-neg':'');}
+  function refreshSampleMetrics(){
+    var study=ensureStudy(getAccount()); if(!study)return; var m=calcMetrics(study.samples[activeSampleIndex]);
+    var el=document.getElementById('df-ib-sample-metrics'); if(el)el.innerHTML=sampleMetricsHTML(m);
+  }
+
+  function summaryCard(sample,index,maxAbsNet){
+    var m=calcMetrics(sample),s=sampleStatus(m),width=maxAbsNet?Math.max(2,Math.min(100,Math.abs(m.net)/maxAbsNet*100)):2;
+    var fill=m.net>=0?'#10b981':'#ef4444';
+    return '<div class="df-ib-summary-card"><div class="df-ib-summary-head"><div style="min-width:0"><div class="df-ib-summary-name">'+esc(sample.name)+'</div><div class="df-ib-sub">'+esc(sample.period||'Período não informado')+'</div></div><span class="df-ib-summary-status '+s.cls+'">'+s.label+'</span></div><div class="df-ib-summary-stats">'+
+      '<div class="df-ib-summary-stat"><small>Resultado</small><strong class="'+resultClass(m.net)+'">'+currency(m.net)+'</strong></div>'+
+      '<div class="df-ib-summary-stat"><small>Win rate</small><strong>'+pct(m.winRate)+'</strong></div>'+
+      '<div class="df-ib-summary-stat"><small>PF</small><strong>'+ratio(m.profitFactor)+'</strong></div>'+
+      '<div class="df-ib-summary-stat"><small>Trades</small><strong>'+m.trades+'</strong></div>'+
+      '<div class="df-ib-summary-stat"><small>Expect.</small><strong class="'+resultClass(m.expectancy)+'">'+currency(m.expectancy)+'</strong></div>'+
+      '<div class="df-ib-summary-stat"><small>Max DD</small><strong class="'+(m.maxDD?'df-ib-neg':'')+'">'+currency(-Math.abs(m.maxDD))+'</strong></div>'+
+      '</div><div class="df-ib-result-bar"><div class="df-ib-result-fill" style="width:'+width+'%;background:'+fill+'"></div></div></div>';
+  }
+
+  function renderAnalytics(){
+    var root=document.getElementById('df-ib-analytics'); if(!root)return;
+    var study=ensureStudy(getAccount()); if(!study)return;
+    var metrics=study.samples.map(calcMetrics),combined=calcMetrics(combinedSample(study));
+    var maxAbs=Math.max.apply(null,metrics.map(function(m){return Math.abs(m.net);})); if(!Number.isFinite(maxAbs))maxAbs=0;
+    root.innerHTML='<div class="df-ib-summary-grid">'+study.samples.map(function(s,i){return summaryCard(s,i,maxAbs);}).join('')+'</div>'+
+      '<div class="df-ib-analytics-grid"><div class="df-ib-chart-card"><div class="df-ib-section-title"><i data-lucide="line-chart" class="w-3.5 h-3.5 text-indigo-600"></i>Curva acumulada por amostra</div><div class="df-ib-chart-wrap"><canvas id="df-ib-chart"></canvas><div id="df-ib-chart-empty" class="df-ib-empty hidden">Adicione resultados nas amostras para visualizar as curvas acumuladas.</div></div></div>'+
+      '<div class="df-ib-compare-card"><div class="df-ib-section-title"><i data-lucide="table-2" class="w-3.5 h-3.5 text-indigo-600"></i>Comparativo objetivo</div>'+compareTable(study,metrics,combined)+'</div></div>';
+    renderChart(study,metrics);
+    var top=document.querySelector('#df-ignored-bar-container .df-ib-overview'); if(top)top.outerHTML=overviewHTML(combined,study);
+    try{window.lucide&&window.lucide.createIcons&&window.lucide.createIcons();}catch(e){}
+  }
+  function compareTable(study,metrics,combined){
+    var rows=[
+      ['Resultado',metrics.map(function(m){return '<span class="'+resultClass(m.net)+'">'+currency(m.net)+'</span>';}),'<span class="'+resultClass(combined.net)+'">'+currency(combined.net)+'</span>'],
+      ['Operações',metrics.map(function(m){return m.trades;}),combined.trades],
+      ['Win rate',metrics.map(function(m){return pct(m.winRate);}),pct(combined.winRate)],
+      ['Avg trade',metrics.map(function(m){return '<span class="'+resultClass(m.avgTrade)+'">'+currency(m.avgTrade)+'</span>';}),'<span class="'+resultClass(combined.avgTrade)+'">'+currency(combined.avgTrade)+'</span>'],
+      ['Profit factor',metrics.map(function(m){return ratio(m.profitFactor);}),ratio(combined.profitFactor)],
+      ['Payoff',metrics.map(function(m){return ratio(m.payoff);}),ratio(combined.payoff)],
+      ['Max DD',metrics.map(function(m){return currency(-Math.abs(m.maxDD));}),currency(-Math.abs(combined.maxDD))],
+      ['Melhor trade',metrics.map(function(m){return currency(m.best);}),currency(combined.best)],
+      ['Pior trade',metrics.map(function(m){return currency(m.worst);}),currency(combined.worst)]
+    ];
+    return '<div style="overflow:auto"><table class="df-ib-compare"><thead><tr><th>Métrica</th>'+study.samples.map(function(s){return '<th>'+esc(s.name)+'</th>';}).join('')+'<th>Geral</th></tr></thead><tbody>'+rows.map(function(row){return '<tr><td>'+row[0]+'</td>'+row[1].map(function(v){return '<td>'+v+'</td>';}).join('')+'<td>'+row[2]+'</td></tr>';}).join('')+'</tbody></table></div>';
+  }
+
+  function renderChart(study,metrics){
+    if(chartInstance){try{chartInstance.destroy();}catch(e){}chartInstance=null;}
+    var canvas=document.getElementById('df-ib-chart'),empty=document.getElementById('df-ib-chart-empty'); if(!canvas)return;
+    var maxLen=Math.max.apply(null,metrics.map(function(m){return m.values.length;}));
+    if(!maxLen || typeof window.Chart==='undefined'){canvas.style.display='none';if(empty)empty.classList.remove('hidden');return;}
+    canvas.style.display='block';if(empty)empty.classList.add('hidden');
+    var dark=document.body.classList.contains('dark');
+    var colors=['#4f46e5','#0f766e','#d97706'];
+    var labels=Array.from({length:maxLen},function(_,i){return '#'+(i+1);});
+    var datasets=metrics.map(function(m,index){var cum=0;return{label:study.samples[index].name,data:m.values.map(function(v){cum+=v;return Number(cum.toFixed(2));}),borderColor:colors[index],backgroundColor:colors[index],borderWidth:2.2,pointRadius:2,pointHoverRadius:4,tension:.25,spanGaps:true,fill:false};});
+    chartInstance=new Chart(canvas.getContext('2d'),{type:'line',data:{labels:labels,datasets:datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:dark?'#cbd5e1':'#475569',boxWidth:10,boxHeight:10,usePointStyle:true,font:{size:10,weight:'700'}}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+currency(ctx.raw);}}}},scales:{x:{grid:{display:false},ticks:{color:dark?'#94a3b8':'#64748b',font:{size:9},maxTicksLimit:14}},y:{grid:{color:dark?'rgba(71,85,105,.55)':'rgba(226,232,240,.9)'},ticks:{color:dark?'#94a3b8':'#64748b',font:{size:9},callback:function(v){return '$'+Number(v).toLocaleString();}}}}}});
+  }
+
+  function bindContainer(){
+    var container=document.getElementById('df-ignored-bar-container'); if(!container||container.dataset.bound==='1')return;
+    container.dataset.bound='1';
+    container.addEventListener('click',function(e){
+      var sampleBtn=e.target.closest('[data-sample-index]');
+      if(sampleBtn){activeSampleIndex=Number(sampleBtn.getAttribute('data-sample-index'))||0;try{localStorage.setItem(ACTIVE_SAMPLE_KEY,String(activeSampleIndex));}catch(err){}renderEditor();return;}
+      if(e.target.closest('#df-ib-add-op')){var study=ensureStudy(getAccount());study.samples[activeSampleIndex].operations.push(blankOperation());scheduleSave();renderEditor();renderAnalytics();return;}
+      var del=e.target.closest('[data-delete-op]');
+      if(del){var id=del.getAttribute('data-delete-op'),st=ensureStudy(getAccount()),sample=st.samples[activeSampleIndex];sample.operations=sample.operations.filter(function(op){return op.id!==id;});if(!sample.operations.length)sample.operations=[blankOperation()];scheduleSave();renderEditor();renderAnalytics();return;}
+      if(e.target.closest('#df-ib-import-results')){importQuickResults();return;}
+      if(e.target.closest('#df-ib-clear-sample')){clearActiveSample();return;}
+      if(e.target.closest('#df-ib-export')){exportCSV();return;}
+    });
+    container.addEventListener('input',function(e){
+      var study=ensureStudy(getAccount()); if(!study)return; var sample=study.samples[activeSampleIndex];
+      if(e.target.id==='df-ib-sample-name'){sample.name=e.target.value||('Amostra '+(activeSampleIndex+1));document.querySelectorAll('[data-sample-index]')[activeSampleIndex].textContent=sample.name;scheduleSave();renderAnalytics();return;}
+      if(e.target.id==='df-ib-sample-period'){sample.period=e.target.value;scheduleSave();renderAnalytics();return;}
+      if(e.target.id==='df-ib-sample-notes'){sample.notes=e.target.value;scheduleSave();return;}
+      var field=e.target.getAttribute('data-op-field'); if(!field)return;
+      var row=e.target.closest('[data-op-id]'); if(!row)return; var op=sample.operations.find(function(x){return x.id===row.getAttribute('data-op-id');}); if(!op)return;
+      if(field==='result'||field==='points'){var parsed=parseLooseNumber(e.target.value);op[field]=e.target.value===''?'':(parsed===null?e.target.value:parsed);}else op[field]=e.target.value;
+      if(field==='result'){var badge=row.querySelector('.df-ib-outcome'),out=outcome(op);if(badge){badge.className='df-ib-outcome '+out.cls;badge.textContent=out.label;}refreshSampleMetrics();renderAnalytics();}
+      scheduleSave();
+    });
+  }
+
+  function importQuickResults(){
+    var area=document.getElementById('df-ib-quick-paste'); if(!area)return;
+    var values=String(area.value||'').split(/\r?\n/).map(function(line){return parseLooseNumber(line);}).filter(function(v){return v!==null;});
+    if(!values.length){alert('Nenhum resultado válido foi encontrado. Use um valor por linha.');return;}
+    var study=ensureStudy(getAccount()),sample=study.samples[activeSampleIndex];
+    if(sample.operations.length===1 && sample.operations[0].result==='' && sample.operations[0].date==='' && sample.operations[0].note==='') sample.operations=[];
+    values.forEach(function(v){var op=blankOperation();op.result=v;sample.operations.push(op);});
+    area.value='';scheduleSave();renderEditor();renderAnalytics();
+  }
+  function clearActiveSample(){
+    var study=ensureStudy(getAccount()),sample=study.samples[activeSampleIndex];
+    if(!confirm('Limpar todas as operações e observações de "'+sample.name+'"?'))return;
+    var name=sample.name||('Amostra '+(activeSampleIndex+1));
+    study.samples[activeSampleIndex]={id:sample.id||('sample_'+(activeSampleIndex+1)),name:name,period:'',notes:'',operations:[blankOperation()]};
+    scheduleSave();renderEditor();renderAnalytics();
+  }
+  function exportCSV(){
+    var acc=getAccount(),study=ensureStudy(acc); if(!study)return;
+    var rows=[['Conta','Amostra','Período','Operação','Data','Resultado','Pontos','Status','Observação']];
+    study.samples.forEach(function(sample){(sample.operations||[]).forEach(function(op,index){var out=outcome(op);rows.push([acc.name||'',sample.name||'',sample.period||'',index+1,op.date||'',op.result===''?'':op.result,op.points===''?'':op.points,out.label,op.note||'']);});});
+    var csv='\ufeff'+rows.map(function(row){return row.map(function(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"';}).join(',');}).join('\r\n');
+    var blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download='barra-ignorada-'+String(acc.name||'conta').replace(/[^a-z0-9_-]+/gi,'-').toLowerCase()+'.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url);},500);
+  }
+
+  function wrapAccountChange(){
+    if(window.__DF_IB_LOAD_WRAPPED__)return;
+    var old=window.loadAccount; if(typeof old!=='function')return;
+    window.loadAccount=function(){var out=old.apply(this,arguments);setTimeout(function(){if(!document.getElementById('df-ignored-bar-container').classList.contains('hidden'))renderAll();},0);return out;};
+    window.__DF_IB_LOAD_WRAPPED__=true;
+  }
+  function observeAccountName(){
+    var el=document.getElementById('active-account-name'); if(!el||el.dataset.dfIbObserved==='1')return;
+    el.dataset.dfIbObserved='1';
+    try{new MutationObserver(function(){var c=document.getElementById('df-ignored-bar-container');if(c&&!c.classList.contains('hidden'))renderAll();}).observe(el,{childList:true,characterData:true,subtree:true});}catch(e){}
+  }
+  function observeTheme(){
+    if(document.body.dataset.dfIbThemeObserved==='1')return; document.body.dataset.dfIbThemeObserved='1';
+    try{new MutationObserver(function(){var c=document.getElementById('df-ignored-bar-container');if(c&&!c.classList.contains('hidden'))renderAnalytics();}).observe(document.body,{attributes:true,attributeFilter:['class']});}catch(e){}
+  }
+
+  function boot(){
+    bootAttempts++;
+    if(!buildShell()){if(bootAttempts<80)setTimeout(boot,250);return;}
+    wrapAccountChange();observeAccountName();observeTheme();
+    var preferred=localStorage.getItem(ACTIVE_TAB_KEY)||'performance';
+    setMainTab(preferred);
+    try{window.lucide&&window.lucide.createIcons&&window.lucide.createIcons();}catch(e){}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+  window.addEventListener('load',function(){setTimeout(boot,80);});
+  window.dfIgnoredBarRender=renderAll;
+})();
+</script>
+
 </body>
 </html>
