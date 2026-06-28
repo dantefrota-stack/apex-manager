@@ -1129,49 +1129,54 @@ tr.bg-green-50 td {
                     <div class="flex items-start justify-between gap-3 flex-wrap">
                         <div>
                             <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                <i data-lucide="sliders-horizontal" class="w-4 h-4 text-indigo-500"></i> Estratégias atuais
+                                <i data-lucide="layers-3" class="w-4 h-4 text-indigo-500"></i> Configuração dos Operacionais
                             </h4>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Somente estratégias com nome e marcadas como <strong>Em uso</strong> aparecem no calendário, relatórios, gráficos e automações.</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Dois setups independentes, cada um com 20/60, 25/75 e 30/90.</p>
                         </div>
-                        <div id="strategy-admin-health" class="px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-700 text-xs font-bold text-slate-600 dark:text-slate-200">Verificando...</div>
+                        <div id="strategy-admin-health" class="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-xs font-bold text-emerald-700 dark:text-emerald-300">2 setups · 6 estratégias</div>
                     </div>
 
-                    <!-- IDs mantidos para compatibilidade com o motor atual -->
+                    <!-- IDs mantidos para compatibilidade do motor -->
                     <input id="strategy-effective-date" type="hidden" value="1900-01-01">
                     <div id="strategy-version-list" class="hidden"></div>
+                    <table class="hidden"><tbody id="strategy-editor-body"></tbody></table>
 
-                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/20 overflow-hidden">
-                        <div class="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 flex items-center justify-between gap-3 flex-wrap">
-                            <div>
-                                <div class="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-300">Configuração operacional</div>
-                                <div id="strategy-editor-hint" class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Apague o nome ou desligue “Em uso” para retirar uma estratégia de todas as telas.</div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        <div class="rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/50 dark:bg-indigo-950/20 p-4">
+                            <div class="flex items-center gap-2 font-extrabold text-indigo-900 dark:text-indigo-200"><i data-lucide="gem" class="w-4 h-4"></i> Premium</div>
+                            <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+                                <div class="rounded-lg bg-white dark:bg-slate-900/50 border border-indigo-100 dark:border-indigo-900 p-2"><div class="font-black">20/60</div><div class="text-[10px] text-slate-500">Desde o marco</div></div>
+                                <div class="rounded-lg bg-white dark:bg-slate-900/50 border border-indigo-100 dark:border-indigo-900 p-2"><div class="font-black">25/75</div><div class="text-[10px] text-emerald-600">Continuidade</div></div>
+                                <div class="rounded-lg bg-white dark:bg-slate-900/50 border border-indigo-100 dark:border-indigo-900 p-2"><div class="font-black">30/90</div><div class="text-[10px] text-slate-500">Desde o marco</div></div>
                             </div>
-                            <button type="button" onclick="window.dfStrategyCleanupLegacyConfig()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-100 text-xs font-semibold flex items-center gap-1.5">
-                                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Limpar resíduos antigos
-                            </button>
                         </div>
-
-                        <div class="strategy-admin-table-wrap">
-                            <table class="strategy-admin-table w-full text-sm">
-                                <thead>
-                                    <tr class="text-left text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                                        <th>Nome da estratégia</th>
-                                        <th class="text-center">Ordem</th>
-                                        <th class="text-center">Em uso</th>
-                                        <th class="text-right">Ação</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="strategy-editor-body"></tbody>
-                            </table>
+                        <div class="rounded-xl border border-teal-200 dark:border-teal-900/60 bg-teal-50/50 dark:bg-teal-950/20 p-4">
+                            <div class="flex items-center gap-2 font-extrabold text-teal-900 dark:text-teal-200"><i data-lucide="scan-line" class="w-4 h-4"></i> Barra Ignorada</div>
+                            <div class="mt-3 grid grid-cols-3 gap-2 text-center">
+                                <div class="rounded-lg bg-white dark:bg-slate-900/50 border border-teal-100 dark:border-teal-900 p-2"><div class="font-black">20/60</div><div class="text-[10px] text-slate-500">Desde o marco</div></div>
+                                <div class="rounded-lg bg-white dark:bg-slate-900/50 border border-teal-100 dark:border-teal-900 p-2"><div class="font-black">25/75</div><div class="text-[10px] text-emerald-600">Continuidade</div></div>
+                                <div class="rounded-lg bg-white dark:bg-slate-900/50 border border-teal-100 dark:border-teal-900 p-2"><div class="font-black">30/90</div><div class="text-[10px] text-slate-500">Desde o marco</div></div>
+                            </div>
                         </div>
+                    </div>
 
-                        <div class="px-4 py-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between gap-3 flex-wrap">
-                            <div id="strategy-manager-status" class="text-xs text-slate-500 dark:text-slate-400">Sem alterações.</div>
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/20 p-4">
+                        <div class="grid grid-cols-1 md:grid-cols-[minmax(220px,320px)_1fr] gap-4 items-end">
+                            <div>
+                                <label class="text-[11px] uppercase tracking-wide font-bold text-slate-500 dark:text-slate-400">Marco temporal</label>
+                                <input id="df-operational-cutover-date" type="date" value="2026-06-28" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+                                <p class="mt-1 text-[10px] text-slate-400">20/60 e 30/90 contam somente a partir desta data. 25/75 mantém continuidade.</p>
+                            </div>
+                            <label class="rounded-lg border border-slate-200 dark:border-slate-700 p-3 flex items-center justify-between gap-3 cursor-pointer">
+                                <div><div class="text-xs font-bold text-slate-700 dark:text-slate-200">Exibir histórico antigo</div><div class="text-[10px] text-slate-400 mt-0.5">Mantém a linha anterior congelada no gráfico.</div></div>
+                                <input id="df-admin-show-legacy-history" type="checkbox" class="w-5 h-5 accent-indigo-600" checked>
+                            </label>
+                        </div>
+                        <div class="mt-4 flex items-center justify-between gap-3 flex-wrap border-t border-slate-200 dark:border-slate-700 pt-3">
+                            <div id="strategy-manager-status" class="text-xs text-slate-500 dark:text-slate-400">Configuração pronta.</div>
                             <div class="flex items-center gap-2 flex-wrap">
-                                <button type="button" onclick="window.dfStrategyClearInactiveSlots()" class="px-3 py-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-semibold">Limpar desativadas</button>
-                                <button type="button" onclick="window.strategyManagerSave()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5">
-                                    <i data-lucide="save" class="w-3.5 h-3.5"></i> Salvar alterações
-                                </button>
+                                <button type="button" onclick="window.dfStrategyCleanupLegacyConfig()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-100 text-xs font-semibold flex items-center gap-1.5"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Limpar resíduos antigos</button>
+                                <button type="button" onclick="window.strategyManagerSave()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5"><i data-lucide="save" class="w-3.5 h-3.5"></i> Salvar configuração</button>
                             </div>
                         </div>
                     </div>
@@ -1179,7 +1184,7 @@ tr.bg-green-50 td {
                     <details class="rounded-xl border border-red-200 dark:border-red-900/60 bg-red-50/60 dark:bg-red-950/20 p-3">
                         <summary class="cursor-pointer text-xs font-bold text-red-700 dark:text-red-300">Zona de risco</summary>
                         <div class="mt-3 flex items-start justify-between gap-3 flex-wrap">
-                            <p class="text-[11px] text-red-700/80 dark:text-red-300/80 max-w-xl">O reset completo apaga dados operacionais, notas, saques e importações, mantendo somente as contas e a estrutura de estratégias atualmente exibida.</p>
+                            <p class="text-[11px] text-red-700/80 dark:text-red-300/80 max-w-xl">O reset completo apaga dados operacionais, notas, saques e importações, mantendo as contas e a configuração dos setups.</p>
                             <button type="button" onclick="window.strategyManagerFullResetKeepAccounts()" class="px-3 py-2 rounded-lg bg-red-700 hover:bg-red-800 text-white text-xs font-bold">Reset completo (manter contas)</button>
                         </div>
                     </details>
@@ -1615,15 +1620,22 @@ tr.bg-green-50 td {
         
         <div class="space-y-6">
             <div class="dashboard-card p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="bar-chart" class="w-4 h-4 text-indigo-600"></i> Evolução da Performance</h3>
+                <div class="flex justify-between items-center gap-3 mb-4 flex-wrap">
+                    <h3 class="font-bold text-slate-800 dark:text-white flex items-center gap-2"><i data-lucide="bar-chart" class="w-4 h-4 text-indigo-600"></i> Evolução da Performance — Premium</h3>
+                    <div class="no-print flex items-center gap-3 flex-wrap text-[11px]">
+                        <span id="df-cutover-badge" class="px-2.5 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-200 font-bold">Marco</span>
+                        <label class="inline-flex items-center gap-2 cursor-pointer select-none px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/40 text-slate-600 dark:text-slate-300 font-semibold">
+                            <input id="df-show-legacy-history" type="checkbox" class="accent-indigo-600" onchange="window.dfSetShowLegacyHistory(this.checked)" checked>
+                            <span>Exibir Histórico Antigo</span>
+                        </label>
+                    </div>
                 </div>
                 <div class="relative h-64 w-full"><canvas id="equityChart"></canvas></div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <div id="period-analysis-card" class="dashboard-card period-v4 p-4 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 flex flex-col">
-                <h3 class="font-bold text-slate-800 flex items-center gap-2 dark:text-white"><i data-lucide="filter" class="w-4 h-4 text-indigo-600"></i> <span>Análise por Período</span><span class="info-i" tabindex="0" role="button" aria-label="Ajuda: Análise por Período" data-help-title="Análise por Período">i</span></h3>
+                <h3 class="font-bold text-slate-800 flex items-center gap-2 dark:text-white"><i data-lucide="filter" class="w-4 h-4 text-indigo-600"></i> <span>Análise por Período — Premium</span><span class="info-i" tabindex="0" role="button" aria-label="Ajuda: Análise por Período" data-help-title="Análise por Período">i</span></h3>
                 <div class="period-filter-bar no-print">
                     <input type="date" id="filter-start" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600">
                     <input type="date" id="filter-end" class="w-full text-xs p-2 border rounded bg-white dark:bg-slate-700 dark:border-slate-600">
@@ -4808,6 +4820,8 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
             };
             const lines = [];
+            lines.push([t('Setup','Setup'), 'Premium'].map(csvEscape).join(','));
+            lines.push('');
             const strategyDefs = getStrategiesForDate(fe || fs || getTodayISO(), { includeInactive:false, includeHidden:false });
             lines.push([t('Data','Date'), ...strategyDefs.map(s => s.label), t('Notas','Notes')].map(csvEscape).join(','));
 
@@ -4864,7 +4878,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `${(acc.name || 'report').replace(/[^a-z0-9_-]+/gi,'_')}_${fe || fs || getTodayISO()}.csv`;
+            link.download = `${(acc.name || 'report').replace(/[^a-z0-9_-]+/gi,'_')}_Premium_${fe || fs || getTodayISO()}.csv`;
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -5087,12 +5101,105 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         }
 
         const STRATEGY_SLOT_META = [
-            { slot:'t0', defaultLabel:'', defaultOrder:1, color:'#2563eb', legacyKey:'t2550', breakout:true },
-            { slot:'t3', defaultLabel:'', defaultOrder:2, color:'#7c3aed', legacyKey:'t4040', breakout:false },
-            { slot:'t4', defaultLabel:'', defaultOrder:3, color:'#059669', legacyKey:'t3570', breakout:false },
+            { slot:'t0', defaultLabel:'20/60', defaultOrder:1, color:'#2563eb', legacyKey:'t2550', breakout:true },
+            { slot:'t3', defaultLabel:'25/75', defaultOrder:2, color:'#7c3aed', legacyKey:'t4040', breakout:false },
+            { slot:'t4', defaultLabel:'30/90', defaultOrder:3, color:'#059669', legacyKey:'t3570', breakout:false },
             { slot:'t1', defaultLabel:'', defaultOrder:4, color:'#ea580c', legacyKey:'t4080', breakout:false },
             { slot:'t2', defaultLabel:'', defaultOrder:5, color:'#dc2626', legacyKey:'ct', breakout:false }
         ];
+
+        // === SETUPS SEGREGADOS / MARCO TEMPORAL V5 ===
+        const DF_OPERATIONAL_CUTOVER_DEFAULT = '2026-06-28';
+        const DF_FIXED_PREMIUM_STRATEGIES = [
+            { slot:'t0', label:'20/60', order:1, active:true, visible:true, continuity:false },
+            { slot:'t3', label:'25/75', order:2, active:true, visible:true, continuity:true },
+            { slot:'t4', label:'30/90', order:3, active:true, visible:true, continuity:false },
+            { slot:'t1', label:'', order:4, active:false, visible:false, continuity:false },
+            { slot:'t2', label:'', order:5, active:false, visible:false, continuity:false }
+        ];
+
+        function dfEnsureOperationalConfig(){
+            if(!store.operationalConfig || typeof store.operationalConfig !== 'object') store.operationalConfig = {};
+            const cfg = store.operationalConfig;
+            cfg.version = 5;
+            if(!/^\d{4}-\d{2}-\d{2}$/.test(String(cfg.cutoverDate || ''))) cfg.cutoverDate = DF_OPERATIONAL_CUTOVER_DEFAULT;
+            if(typeof cfg.showLegacyHistory !== 'boolean') cfg.showLegacyHistory = true;
+            cfg.setups = {
+                premium: {
+                    id:'premium', label:'Premium',
+                    strategies: [
+                        { key:'t0', label:'20/60', startMode:'cutover' },
+                        { key:'t3', label:'25/75', startMode:'continuous' },
+                        { key:'t4', label:'30/90', startMode:'cutover' }
+                    ]
+                },
+                ignoredBar: {
+                    id:'ignoredBar', label:'Barra Ignorada',
+                    strategies: [
+                        { key:'ib2060', label:'20/60', startMode:'cutover' },
+                        { key:'ib2575', label:'25/75', startMode:'continuous' },
+                        { key:'ib3090', label:'30/90', startMode:'cutover' }
+                    ]
+                }
+            };
+            return cfg;
+        }
+        function dfGetCutoverDate(){ return dfEnsureOperationalConfig().cutoverDate; }
+        function dfShowLegacyHistory(){ return dfEnsureOperationalConfig().showLegacyHistory !== false; }
+        function dfIsPremiumStrategyEligible(slot, iso){
+            if(slot === 't3') return true; // 25/75 mantém continuidade histórica
+            if(slot === 't0' || slot === 't4') return String(iso || '') >= dfGetCutoverDate();
+            return false;
+        }
+        function dfFixedPremiumSlots(){ return DF_FIXED_PREMIUM_STRATEGIES.map(s => ({...s})); }
+        function dfLegacyDayTotal(entry){
+            const direct = Number(entry && entry.val);
+            if(Number.isFinite(direct)) return direct;
+            return ['t0','t1','t2','t3','t4'].reduce((sum,slot) => sum + (Number(entry && entry[slot]) || 0), 0);
+        }
+        function dfAllLegacyTradeValuesForDay(entry){
+            const values = [];
+            ['t0','t1','t2','t3','t4'].forEach(slot => {
+                const legs = getTradeLegValues(entry || {}, slot);
+                [legs.leg1,legs.leg2,legs.leg3,legs.leg4].forEach(v => {
+                    if(v === '' || v === null || v === undefined) return;
+                    const n = Number(v);
+                    if(Number.isFinite(n) && n !== 0) values.push(n);
+                });
+            });
+            return values;
+        }
+        function dfNewPremiumDayTotal(entry, iso){
+            return ['t0','t3','t4'].reduce((sum,slot) => {
+                if(!dfIsPremiumStrategyEligible(slot, iso)) return sum;
+                return sum + (Number(getTradeLegValues(entry || {}, slot).subtotal) || 0);
+            }, 0);
+        }
+        function dfFormatCutoverDate(iso){
+            try{return parseISODateLocal(iso).toLocaleDateString(CURRENT_LANG === 'en' ? 'en-US' : 'pt-BR');}catch(e){return iso;}
+        }
+        function dfSyncOperationalUI(){
+            const cfg = dfEnsureOperationalConfig();
+            const checkbox = document.getElementById('df-show-legacy-history');
+            if(checkbox) checkbox.checked = cfg.showLegacyHistory !== false;
+            const badge = document.getElementById('df-cutover-badge');
+            if(badge) badge.textContent = `${CURRENT_LANG === 'en' ? 'Cutover' : 'Marco'}: ${dfFormatCutoverDate(cfg.cutoverDate)}`;
+            const adminDate = document.getElementById('df-operational-cutover-date');
+            if(adminDate && document.activeElement !== adminDate) adminDate.value = cfg.cutoverDate;
+            const adminToggle = document.getElementById('df-admin-show-legacy-history');
+            if(adminToggle) adminToggle.checked = cfg.showLegacyHistory !== false;
+        }
+        window.dfGetOperationalConfig = () => dfEnsureOperationalConfig();
+        window.dfGetCutoverDate = () => dfGetCutoverDate();
+        window.dfSetShowLegacyHistory = (checked) => {
+            const cfg = dfEnsureOperationalConfig();
+            cfg.showLegacyHistory = !!checked;
+            try{ touchStore(); saveStoreToLocal(); }catch(e){}
+            try{ saveToCloud(); }catch(e){}
+            try{ filterReportInternal(); }catch(e){}
+            dfSyncOperationalUI();
+        };
+
         const STRATEGY_BREAKDOWN_SLOT_MAP = { t2550:'t0', t4040:'t3', t3570:'t4', t4080:'t1', ct:'t2' };
         let __strategyManagerSelectedVersionId = null;
 
@@ -5164,8 +5271,19 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         }
         function getStrategyEntriesForDay(e, iso, opts={}){
             return getStrategiesForDate(iso, opts).map(cfg => {
-                const legs = getTradeLegValues(e || {}, cfg.slot);
-                return { ...cfg, key: cfg.slot, legs, subtotal: Number(legs.subtotal || 0) };
+                const rawLegs = getTradeLegValues(e || {}, cfg.slot);
+                const eligible = dfIsPremiumStrategyEligible(cfg.slot, iso);
+                const legs = eligible ? rawLegs : {
+                    leg1:'', leg2:'', leg3:'', leg4:'',
+                    breakout1:false, breakout2:false, breakout3:false, breakout4:false,
+                    subtotal:0
+                };
+                return {
+                    ...cfg, key: cfg.slot, eligible,
+                    legacyLegs: eligible ? null : rawLegs,
+                    legs,
+                    subtotal: Number(legs.subtotal || 0)
+                };
             });
         }
         function getVisibleStrategyEntriesForDay(e, iso){
@@ -5189,6 +5307,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 const e = acc.data[iso] || {};
                 if (e.holiday) return;
                 getStrategyEntriesForDay(e, iso, { includeInactive, includeHidden }).forEach(entry => {
+                    if(entry.eligible === false) return;
                     const bucketKey = `${entry.slot}__${entry.label}`;
                     if (!bucketMap.has(bucketKey)) {
                         bucketMap.set(bucketKey, {
@@ -5462,6 +5581,83 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         }
 
 
+
+        function dfBuildPremiumEvolutionChart(acc, startISO, endISO){
+            const cutover = dfGetCutoverDate();
+            const allDates = Object.keys((acc && acc.data) || {}).filter(iso => /^\d{4}-\d{2}-\d{2}$/.test(iso)).sort();
+            let legacyBaseline = 0;
+            allDates.forEach(iso => {
+                if(iso >= cutover) return;
+                const entry = acc.data[iso] || {};
+                if(entry.holiday) return;
+                legacyBaseline += dfLegacyDayTotal(entry);
+            });
+
+            const labels = [];
+            const oldData = [];
+            const newData = [];
+            let visibleLegacyCum = 0;
+            let newCum = 0;
+            const rangeDates = allDates.filter(iso => iso >= startISO && iso <= endISO);
+            const includeCutMarker = startISO <= cutover && endISO >= cutover;
+
+            rangeDates.filter(iso => iso < cutover).forEach(iso => {
+                const entry = acc.data[iso] || {};
+                if(entry.holiday) return;
+                const day = dfLegacyDayTotal(entry);
+                if(day === 0 && !dfAllLegacyTradeValuesForDay(entry).length) return;
+                visibleLegacyCum += day;
+                labels.push(formatDateShort(parseISODateLocal(iso)));
+                oldData.push(visibleLegacyCum);
+                newData.push(null);
+            });
+
+            const chartBaseline = startISO < cutover ? visibleLegacyCum : legacyBaseline;
+            if(includeCutMarker || rangeDates.some(iso => iso >= cutover)){
+                labels.push(`${formatDateShort(parseISODateLocal(cutover))} • ${CURRENT_LANG === 'en' ? 'Cutover' : 'Marco'}`);
+                oldData.push(chartBaseline);
+                newData.push(chartBaseline);
+            }
+
+            rangeDates.filter(iso => iso >= cutover).forEach(iso => {
+                const entry = acc.data[iso] || {};
+                if(entry.holiday) return;
+                const day = dfNewPremiumDayTotal(entry, iso);
+                const trades = _individualTradeValuesForDay(entry, iso);
+                if(day === 0 && !trades.length) return;
+                newCum += day;
+                labels.push(`${formatDateShort(parseISODateLocal(iso))}${iso === cutover ? ` • ${CURRENT_LANG === 'en' ? 'Close' : 'Fechamento'}` : ''}`);
+                oldData.push(chartBaseline); // linha antiga permanece congelada
+                newData.push(chartBaseline + newCum);
+            });
+
+            const datasets = [];
+            if(dfShowLegacyHistory() && oldData.some(v => v !== null)){
+                datasets.push({
+                    label: `${CURRENT_LANG === 'en' ? 'Previous history' : 'Histórico anterior'} (${CURRENT_LANG === 'en' ? 'until' : 'até'} ${dfFormatCutoverDate(new Date(parseISODateLocal(cutover).getTime()-86400000).toISOString().slice(0,10))})`,
+                    data: oldData,
+                    borderColor:'#94a3b8',
+                    backgroundColor:'rgba(148,163,184,.08)',
+                    borderDash:[7,5],
+                    pointRadius:1.5,
+                    tension:0.12,
+                    spanGaps:false
+                });
+            }
+            if(newData.some(v => v !== null)){
+                datasets.push({
+                    label:`Premium (${CURRENT_LANG === 'en' ? 'since' : 'desde'} ${dfFormatCutoverDate(cutover)})`,
+                    data:newData,
+                    borderColor:'#4f46e5',
+                    backgroundColor:'rgba(79,70,229,.10)',
+                    pointRadius:2.5,
+                    tension:0.28,
+                    spanGaps:false
+                });
+            }
+            return { labels, datasets };
+        }
+
         function filterReportInternal() {
             const start = els.filterStart.value; 
             const end = els.filterEnd.value;
@@ -5500,10 +5696,16 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 const e = acc.data[iso] || {};
                 if(e.holiday) return;
 
-                const tradeVals = _individualTradeValuesForDay(e, iso).map(t => Number(t.value || 0)).filter(v => !isNaN(v) && v !== 0);
+                const cutoverDate = dfGetCutoverDate();
+                const tradeVals = (iso < cutoverDate
+                    ? dfAllLegacyTradeValuesForDay(e)
+                    : _individualTradeValuesForDay(e, iso).map(t => Number(t.value || 0))
+                ).filter(v => !isNaN(v) && v !== 0);
                 const blocks = _strategyBlocksForDay(e, iso);
                 const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false });
-                const dayTotal = dayEntries.reduce((s,b)=> s + (Number(b.legs.subtotal) || 0), 0);
+                const dayTotal = iso < cutoverDate
+                    ? dfLegacyDayTotal(e)
+                    : dayEntries.filter(b => b.eligible !== false).reduce((s,b)=> s + (Number(b.legs.subtotal) || 0), 0);
 
                 tradeVals.forEach(tv => {
                     totalTrades += 1;
@@ -5563,11 +5765,15 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             els.customBest.textContent = (!singleDayMode && best > -Infinity) ? formatCurrency(best) : "--";
             els.customWorst.textContent = (!singleDayMode && worst < Infinity) ? formatCurrency(worst) : "--";
 
+            const segmentedPremiumChart = dfBuildPremiumEvolutionChart(acc, start, end);
+            chartLabels = segmentedPremiumChart.labels;
+            chartDatasets = segmentedPremiumChart.datasets;
             if (chartLabels.length === 1 && chartDatasets.length) {
-                chartLabels = ['Início', chartLabels[0]];
-                chartDatasets = chartDatasets.map(ds => ({ ...ds, data: [0, ...(ds.data || [])] }));
+                chartLabels = [CURRENT_LANG === 'en' ? 'Start' : 'Início', chartLabels[0]];
+                chartDatasets = chartDatasets.map(ds => ({ ...ds, data: [ds.data[0] ?? 0, ...(ds.data || [])] }));
             }
             updateChart(chartLabels, chartDatasets);
+            dfSyncOperationalUI();
 
             const strat = _computeStrategyAnalytics(acc, start, end);
             const fillStrategy = (prefix, obj) => {
@@ -5707,16 +5913,17 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                         data: ds.data || [],
                         borderColor: ds.borderColor || '#4f46e5',
                         backgroundColor: ds.backgroundColor || 'rgba(79, 70, 229, 0.10)',
-                        borderWidth: 2.4,
-                        pointRadius: (ds.data && ds.data.length <= 2) ? 4 : 2,
+                        borderWidth: ds.borderWidth || 2.4,
+                        borderDash: Array.isArray(ds.borderDash) ? ds.borderDash : [],
+                        pointRadius: ds.pointRadius != null ? ds.pointRadius : ((ds.data && ds.data.length <= 2) ? 4 : 2),
                         pointHoverRadius: 5,
                         pointHitRadius: 12,
-                        fill: false,
-                        tension: 0.35,
+                        fill: ds.fill === true,
+                        tension: ds.tension != null ? ds.tension : 0.35,
                         cubicInterpolationMode: 'monotone',
                         borderJoinStyle: 'round',
                         borderCapStyle: 'round',
-                        spanGaps: true
+                        spanGaps: ds.spanGaps === true
                     }))
                 },
                 options: {
@@ -5948,7 +6155,12 @@ function renderCalendar(acc) {
                 const visibleBlocks = getVisibleStrategyEntriesForDay(entry, iso);
                 const hasBlockTrades = (block) => [block.legs.leg1, block.legs.leg2, block.legs.leg3, block.legs.leg4].some(v => v !== '' && v !== null && v !== undefined);
                 const breakoutLabel = CURRENT_LANG === 'en' ? 'Breakout' : 'Rompimento';
-                const renderTradeEditorRows = (block) => [1, 2, 3, 4].map((idx) => `
+                const renderTradeEditorRows = (block) => block.eligible === false
+                    ? `<div class="rounded-lg border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800/50 px-3 py-3 text-[11px] text-slate-500 dark:text-slate-400">
+                        <div class="font-bold text-slate-700 dark:text-slate-200">${CURRENT_LANG === 'en' ? 'Previous configuration' : 'Configuração anterior'}</div>
+                        <div class="mt-1">${CURRENT_LANG === 'en' ? 'This new strategy only starts at the cutover date. Historical fields remain stored but are not recalculated.' : 'Esta nova estratégia começa somente no marco temporal. Os campos históricos permanecem armazenados, mas não são recalculados.'}</div>
+                       </div>`
+                    : [1, 2, 3, 4].map((idx) => `
                                         <label class="flex items-center justify-between gap-2 min-w-0">
                                             <span class="text-slate-500 shrink-0">Trade ${idx}</span>
                                             <div class="flex items-center gap-2 min-w-0 flex-1 justify-end">
@@ -6650,7 +6862,7 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             const acc = getActive();
             const isEN = CURRENT_LANG === 'en';
             const t = (pt, en) => isEN ? en : pt;
-            const title = t('Análise por Período', 'Period Analysis');
+            const title = t('Análise por Período — Premium', 'Period Analysis — Premium');
             const rangeText = `${formatDateShort(parseISODateLocal(start))} - ${formatDateShort(parseISODateLocal(end))} • ${acc?.name || t('Conta','Account')}`;
             const metricResult = (els.customResult?.textContent || '--').trim();
             const metricWin = (els.customWinrate?.textContent || '--').trim();
@@ -8721,8 +8933,8 @@ if (!store.activeId) {
                 return {
                     title: en ? "Ignored Bar Operation" : "Operação Barra Ignorada",
                     body: en
-                        ? "Select a strategy and date range, then click Generate 3 samples. The module reads each existing calendar trade, preserves chronological order, and divides the records into three balanced samples. All indicators are calculated automatically. Manual editing remains available only for adjustments or external results."
-                        : "Selecione a estratégia e o período e clique em Gerar 3 amostras. O módulo lê cada operação já lançada no calendário, mantém a ordem cronológica e divide os registros em três amostras equilibradas. Todos os indicadores são calculados automaticamente. A edição manual continua disponível apenas para ajustes ou resultados externos.",
+                        ? "This is an independent setup. Record Ignored Bar operations directly under 20/60, 25/75 or 30/90. Data is never copied from Premium. Indicators and comparisons are calculated automatically."
+                        : "Este é um setup independente. Registre as operações da Barra Ignorada diretamente em 20/60, 25/75 ou 30/90. Nenhum dado é copiado do Premium. Os indicadores e comparativos são calculados automaticamente.",
                     link: null
                 };
             }
@@ -10732,7 +10944,7 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
 // 3) usar uma estrutura atual única em store.strategyStructure;
 // 4) permitir labels vazios sem restaurar nomes antigos;
 // 5) manter reset completo seguro preservando contas.
-const DF_STRATEGY_RESET_BUILD = 'CLEAN-ADMIN-STRUCTURE-V14-2026-06-28';
+const DF_STRATEGY_RESET_BUILD = 'SETUPS-SEGREGATED-V5-2026-06-28';
 
 function dfStrategySlots(){
     return STRATEGY_SLOT_META.map(meta => meta.slot);
@@ -10855,7 +11067,13 @@ function dfEnsureStrategyStructure(){
         structure = dfDefaultStrategyStructure();
     }
 
+    // V5: o setup Premium possui exatamente três estratégias fixas.
+    // Slots antigos permanecem somente como campos técnicos no histórico e não voltam à interface.
+    structure.slots = dfFixedPremiumSlots();
+    structure.updatedAt = Number(structure.updatedAt) || Date.now();
+    structure.build = 'SETUPS-SEGREGATED-V5-2026-06-28';
     store.strategyStructure = structure;
+    dfEnsureOperationalConfig();
 
     // Compatibilidade controlada: mantém strategyConfigs como espelho, não como fonte.
     // Isso evita quebrar funções antigas que ainda esperam esse array existir.
@@ -11530,7 +11748,9 @@ window.strategyManagerFullResetKeepAccounts = async function(){
                 'ninja',
                 'tradovate',
                 'history',
-                'operationalHistory'
+                'operationalHistory',
+                'ignoredBarStudy',
+                'ignoredBarLegacyArchiveV4'
             ].forEach(k => {
                 try{ delete nextAccounts[id][k]; }catch(e){}
             });
@@ -11590,6 +11810,86 @@ window.strategyManagerFullResetKeepAccounts = async function(){
     }
 };
 
+
+// === ADMIN V5: configuração fixa, simples e orientada por setup ===
+window.dfRefreshStrategyAdminHealth = function(){
+    const badge = document.getElementById('strategy-admin-health');
+    if(badge){
+        badge.textContent = '2 setups · 6 estratégias';
+        badge.className = 'px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-xs font-bold text-emerald-700 dark:text-emerald-300';
+    }
+};
+
+renderStrategyManager = function(){
+    try{
+        dfEnsureOperationalConfig();
+        dfEnsureStrategyStructure();
+        if(els.strategyEditorBody){
+            els.strategyEditorBody.innerHTML = DF_FIXED_PREMIUM_STRATEGIES.map(s => `<tr data-slot="${s.slot}"><td><input data-field="label" value="${s.label}"><input data-field="order" value="${s.order}"><input type="checkbox" data-field="enabled" ${s.active?'checked':''}></td></tr>`).join('');
+        }
+        const cfg = dfEnsureOperationalConfig();
+        const dateEl = document.getElementById('df-operational-cutover-date');
+        const toggleEl = document.getElementById('df-admin-show-legacy-history');
+        if(dateEl) dateEl.value = cfg.cutoverDate;
+        if(toggleEl) toggleEl.checked = cfg.showLegacyHistory !== false;
+        if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = `Marco atual: ${dfFormatCutoverDate(cfg.cutoverDate)}.`;
+        dfSyncOperationalUI();
+        try{ lucide.createIcons(); }catch(e){}
+    }catch(e){ console.warn('renderStrategyManager V5 failed:',e); }
+};
+
+readStrategyEditorVersion = function(){
+    return {
+        id:'current-structure',
+        effectiveFrom:'1900-01-01',
+        strategies:dfFixedPremiumSlots().map(s => ({slot:s.slot,label:s.label,order:s.order,active:s.active,visible:s.visible}))
+    };
+};
+
+window.strategyManagerSave = async function(){
+    try{
+        const dateEl = document.getElementById('df-operational-cutover-date');
+        const toggleEl = document.getElementById('df-admin-show-legacy-history');
+        const date = String(dateEl && dateEl.value || '').trim();
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ alert('Informe uma data válida para o marco temporal.'); return; }
+        const cfg = dfEnsureOperationalConfig();
+        cfg.cutoverDate = date;
+        cfg.showLegacyHistory = toggleEl ? !!toggleEl.checked : true;
+        store.strategyStructure = { updatedAt:Date.now(), build:'SETUPS-SEGREGATED-V5-2026-06-28', slots:dfFixedPremiumSlots() };
+        store.strategyConfigs = [dfStrategyVersionFromStructure(store.strategyStructure)];
+        dfTouchStoreSafely();
+        dfSaveLocalImmediate();
+        await dfSaveCloudImmediate();
+        if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = `Configuração salva. Marco: ${dfFormatCutoverDate(date)}.`;
+        dfRenderEverythingSafely();
+        dfSyncOperationalUI();
+        alert('Configuração salva. Premium e Barra Ignorada permanecem independentes.');
+    }catch(err){
+        console.error('strategyManagerSave V5 failed:',err);
+        alert('Não foi possível salvar a configuração.');
+    }
+};
+
+window.dfStrategyCleanupLegacyConfig = async function(){
+    const ok = confirm('Remover nomes, versões e referências antigas sem apagar lançamentos históricos?');
+    if(!ok) return;
+    try{
+        store.strategyStructure = { updatedAt:Date.now(), build:'SETUPS-SEGREGATED-V5-2026-06-28', slots:dfFixedPremiumSlots() };
+        store.strategyConfigs = [dfStrategyVersionFromStructure(store.strategyStructure)];
+        ['strategyVersions','strategyHistory','strategyConfigHistory','strategyArchives','strategyTemplates','strategyDrafts','legacyStrategyConfigs','strategyStructureLegacy','setupDrafts'].forEach(k => { try{ delete store[k]; }catch(e){} });
+        Object.values((store && store.accounts) || {}).forEach(acc => {
+            if(!acc || typeof acc !== 'object') return;
+            if(acc.ignoredBarStudy && acc.ignoredBarStudy.autoSource){
+                acc.ignoredBarStudy.autoSource = null;
+            }
+        });
+        dfTouchStoreSafely(); dfSaveLocalImmediate(); await dfSaveCloudImmediate();
+        renderStrategyManager();
+        if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Resíduos antigos removidos; dados históricos preservados.';
+        alert('Limpeza concluída. Nenhum lançamento histórico foi apagado.');
+    }catch(err){ alert('Não foi possível concluir a limpeza.'); }
+};
+
 // Reforça o manager simples sempre que o admin abrir.
 try{
     const __oldSetAdminTab = window.setAdminTab;
@@ -11619,8 +11919,10 @@ try{
 
 // Boot/migração segura após carregar o app.
 try{
+    dfEnsureOperationalConfig();
     dfEnsureStrategyStructure();
     dfPruneLegacyStrategyConfiguration(false);
+    dfSyncOperationalUI();
     dfSaveLocalImmediate();
 }catch(e){
     console.warn('DF strategy V14 boot migration failed:', e);
@@ -13264,13 +13566,16 @@ tr.bg-green-50 td {
   @media(max-width:620px){.df-ib-auto-grid{grid-template-columns:1fr 1fr;}.df-ib-auto-grid .df-ib-field:first-child{grid-column:1/-1;}.df-ib-auto-grid .df-ib-auto-sync{grid-column:1/-1;}.df-ib-auto-head{flex-direction:column;}}
   @media(max-width:480px){#df-main-tabs{display:flex;width:100%;}.df-main-tab{flex:1;justify-content:center;min-width:0;}.df-main-tab span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.df-ib-overview{grid-template-columns:1fr 1fr;}.df-ib-sample-metrics{grid-template-columns:1fr 1fr;}}
   @media print{#df-main-tabs-shell{display:none!important;}#df-main-dashboard-container{display:none!important;}#df-ignored-bar-container{display:block!important;padding:0!important;}.df-ib-actions,.df-ib-paste,.df-ib-row-delete{display:none!important;}.df-ib-card{box-shadow:none!important;break-inside:avoid;}}
+
+  .df-ib-field input[readonly]{cursor:default;color:#0f172a;}
+  body.dark .df-ib-field input[readonly]{color:#e2e8f0;}
 </style>
 
 <script id="df-ignored-bar-script">
 (function(){
   'use strict';
-  if(window.__DF_IGNORED_BAR_V3__) return;
-  window.__DF_IGNORED_BAR_V3__ = true;
+  if(window.__DF_IGNORED_BAR_V5__) return;
+  window.__DF_IGNORED_BAR_V5__ = true;
 
   var ACTIVE_SAMPLE_KEY = 'df_ignored_bar_active_sample';
   var ACTIVE_TAB_KEY = 'df_main_active_tab';
@@ -13329,101 +13634,25 @@ tr.bg-green-50 td {
 
 
   var IB_STRATEGY_META = [
-    {slot:'t0',label:''},
-    {slot:'t3',label:''},
-    {slot:'t4',label:''},
-    {slot:'t1',label:''},
-    {slot:'t2',label:''}
+    {slot:'ib2060',label:'20/60',premiumSlot:'t0',continuity:false},
+    {slot:'ib2575',label:'25/75',premiumSlot:'t3',continuity:true},
+    {slot:'ib3090',label:'30/90',premiumSlot:'t4',continuity:false}
   ];
+  function getCutover(){
+    try{return (window.dfGetCutoverDate && window.dfGetCutoverDate()) || '2026-06-28';}catch(e){return '2026-06-28';}
+  }
+  function fixedMeta(index){return IB_STRATEGY_META[index] || IB_STRATEGY_META[0];}
+  function opEligible(sample,op){
+    var meta=IB_STRATEGY_META.find(function(x){return x.slot===sample.strategyKey;})||fixedMeta(0);
+    if(meta.continuity)return true;
+    var d=String(op&&op.date||'');
+    if(!d)return false;
+    return d>=getCutover();
+  }
 
   function todayISO(){
     var d=new Date();
     return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-  }
-  function strategyConfigForDateLocal(iso,slot){
-    var s=getStore();
-    var versions=(s&&Array.isArray(s.strategyConfigs))?s.strategyConfigs.slice():[];
-    versions.sort(function(a,b){return String(a&&a.effectiveFrom||'1900-01-01').localeCompare(String(b&&b.effectiveFrom||'1900-01-01'));});
-    var chosen=null,target=String(iso||todayISO());
-    versions.forEach(function(v){if(String(v&&v.effectiveFrom||'1900-01-01')<=target)chosen=v;});
-    var found=chosen&&Array.isArray(chosen.strategies)?chosen.strategies.find(function(x){return x&&x.slot===slot;}):null;
-    var fallback=IB_STRATEGY_META.find(function(x){return x.slot===slot;})||{slot:slot,label:slot};
-    return {
-      slot:slot,
-      label:String(found&&found.label||fallback.label||slot),
-      active:found?found.active!==false:true,
-      visible:found?found.visible!==false:true,
-      order:Number(found&&found.order)||IB_STRATEGY_META.indexOf(fallback)+1
-    };
-  }
-  function getAvailableStrategies(acc){
-    var storeRef=getStore()||{};
-    var raw=[];
-    if(storeRef.strategyStructure&&Array.isArray(storeRef.strategyStructure.slots)){
-      raw=storeRef.strategyStructure.slots.slice();
-    }else if(Array.isArray(storeRef.strategyConfigs)&&storeRef.strategyConfigs.length){
-      var latest=storeRef.strategyConfigs.slice().sort(function(a,b){return String(a&&a.effectiveFrom||'').localeCompare(String(b&&b.effectiveFrom||''));}).pop();
-      raw=(latest&&Array.isArray(latest.strategies))?latest.strategies.slice():[];
-    }
-    return raw.filter(function(cfg){
-      return cfg && String(cfg.label||'').trim() && cfg.active!==false && cfg.visible!==false;
-    }).map(function(cfg,index){
-      var range=findStrategyDataRange(acc,cfg.slot);
-      return {
-        slot:String(cfg.slot||''),
-        label:String(cfg.label||'').trim(),
-        active:true,
-        visible:true,
-        count:range.count||0,
-        order:Number(cfg.order)||index+1
-      };
-    }).filter(function(cfg){return cfg.slot;}).sort(function(a,b){return a.order-b.order;});
-  }
-  function explicitLegRecords(entry,slot){
-    entry=entry||{};
-    var meta=entry[slot+'meta']||{};
-    var hasExplicit=['leg1','leg2','leg3','leg4'].some(function(k){return Object.prototype.hasOwnProperty.call(meta,k);});
-    var out=[];
-    if(hasExplicit){
-      ['leg1','leg2','leg3','leg4'].forEach(function(k,index){
-        var raw=meta[k];
-        if(raw===''||raw===null||raw===undefined)return;
-        var n=parseLooseNumber(raw);
-        if(n!==null)out.push({value:n,leg:index+1});
-      });
-    }else{
-      var legacy=entry[slot];
-      if(!(legacy===''||legacy===null||legacy===undefined)){
-        var n=parseLooseNumber(legacy);
-        if(n!==null)out.push({value:n,leg:1});
-      }
-    }
-    return out;
-  }
-  function collectCalendarOperations(acc,slot,startISO,endISO){
-    var ops=[];
-    Object.keys(acc&&acc.data||{}).filter(function(iso){return /^\d{4}-\d{2}-\d{2}$/.test(iso);}).sort().forEach(function(iso){
-      if(startISO&&iso<startISO)return;
-      if(endISO&&iso>endISO)return;
-      var entry=acc.data[iso]||{};
-      if(entry.holiday)return;
-      explicitLegRecords(entry,slot).forEach(function(rec){
-        ops.push({
-          id:uid('op'),date:iso,result:rec.value,points:'',note:String(entry.note||''),
-          source:{type:'calendar',slot:slot,leg:rec.leg,date:iso}
-        });
-      });
-    });
-    return ops;
-  }
-  function findStrategyDataRange(acc,slot){
-    var dates=[];var count=0;
-    Object.keys(acc&&acc.data||{}).filter(function(iso){return /^\d{4}-\d{2}-\d{2}$/.test(iso);}).sort().forEach(function(iso){
-      var entry=acc.data[iso]||{};if(entry.holiday)return;
-      var records=explicitLegRecords(entry,slot);
-      if(records.length){dates.push(iso);count+=records.length;}
-    });
-    return {start:dates[0]||'',end:dates[dates.length-1]||'',count:count};
   }
   function formatRangeDate(iso){
     if(!iso)return '';
@@ -13431,133 +13660,53 @@ tr.bg-green-50 td {
     if(p.length!==3)return iso;
     return isEnglish()?(p[1]+'/'+p[2]+'/'+p[0]):(p[2]+'/'+p[1]+'/'+p[0]);
   }
-  function balancedSplit(items){
-    var chunks=[[],[],[]],base=Math.floor(items.length/3),extra=items.length%3,offset=0;
-    for(var i=0;i<3;i++){
-      var size=base+(i<extra?1:0);
-      chunks[i]=items.slice(offset,offset+size);offset+=size;
-    }
-    return chunks;
-  }
-  function getAutoDefaults(acc,study){
-    var strategies=getAvailableStrategies(acc);
-    var saved=(study&&study.autoSource&&typeof study.autoSource==='object')?study.autoSource:{};
-    var selected=strategies.find(function(x){return x.slot===saved.slot;})||strategies.find(function(x){return x.count>0;})||strategies[0]||null;
-    var range=selected?findStrategyDataRange(acc,selected.slot):{start:'',end:'',count:0};
-    return {strategies:strategies,slot:selected?selected.slot:'',start:saved.start||range.start,end:saved.end||range.end,range:range};
-  }
-  function automationHTML(acc,study){
-    var cfg=getAutoDefaults(acc,study),hasStrategies=cfg.strategies.length>0;
-    var ops=hasStrategies?collectCalendarOperations(acc,cfg.slot,cfg.start,cfg.end):[];
-    var source=study.autoSource||{};
-    var last=source.lastSyncAt?new Date(source.lastSyncAt).toLocaleString(isEnglish()?'en-US':'pt-BR'):'';
-    var options=hasStrategies?cfg.strategies.map(function(s){
-      var suffix=s.count?' · '+s.count+' '+tr('op.','ops'):'';
-      return '<option value="'+esc(s.slot)+'" '+(s.slot===cfg.slot?'selected':'')+'>'+esc(s.label+suffix)+'</option>';
-    }).join(''):'<option value="">'+tr('Nenhuma estratégia ativa','No active strategy')+'</option>';
-    var disabled=hasStrategies?'':' disabled';
-    var preview=hasStrategies
-      ? '<span class="df-ib-auto-badge"><i data-lucide="list-checks" class="w-3 h-3"></i>'+ops.length+' '+tr('operações encontradas','operations found')+'</span><span>'+tr('Divisão prevista: ','Expected split: ')+balancedSplit(ops).map(function(x){return x.length;}).join(' / ')+'</span>'
-      : '<span class="df-ib-auto-badge warning"><i data-lucide="triangle-alert" class="w-3 h-3"></i>'+tr('Cadastre e ative uma estratégia na Área Administrativa.','Create and activate a strategy in the Admin Area.')+'</span>';
-    return '<div class="df-ib-auto">'+
-      '<div class="df-ib-auto-head"><div><div class="df-ib-auto-title"><i data-lucide="sparkles" class="w-4 h-4"></i>'+tr('Preenchimento automático','Automatic population')+'</div><div class="df-ib-sub">'+tr('A lista usa exclusivamente as estratégias atualmente ativas. Os lançamentos do calendário serão divididos cronologicamente em três amostras iguais.','The list uses only currently active strategies. Calendar entries will be split chronologically into three equal samples.')+'</div></div>'+
-      (last?'<span class="df-ib-auto-badge"><i data-lucide="refresh-cw" class="w-3 h-3"></i>'+tr('Última sincronização: ','Last sync: ')+esc(last)+'</span>':'')+'</div>'+
-      '<div class="df-ib-auto-grid">'+
-        '<div class="df-ib-field"><label>'+tr('Estratégia','Strategy')+'</label><select id="df-ib-auto-strategy"'+disabled+'>'+options+'</select></div>'+
-        '<div class="df-ib-field"><label>'+tr('Data inicial','Start date')+'</label><input id="df-ib-auto-start" type="date" value="'+esc(cfg.start)+'"'+disabled+'></div>'+
-        '<div class="df-ib-field"><label>'+tr('Data final','End date')+'</label><input id="df-ib-auto-end" type="date" value="'+esc(cfg.end)+'"'+disabled+'></div>'+
-        '<button type="button" class="df-ib-btn" id="df-ib-auto-all"'+disabled+'><i data-lucide="calendar-range" class="w-3.5 h-3.5"></i>'+tr('Todo histórico','All history')+'</button>'+
-        '<button type="button" class="df-ib-btn primary df-ib-auto-sync" id="df-ib-auto-sync"'+disabled+'><i data-lucide="wand-sparkles" class="w-3.5 h-3.5"></i>'+tr('Gerar 3 amostras','Generate 3 samples')+'</button>'+
-      '</div>'+
-      '<div id="df-ib-auto-preview" class="df-ib-auto-preview">'+preview+'</div>'+
-    '</div>';
-  }
-  function readAutoControls(){
-    var slotEl=document.getElementById('df-ib-auto-strategy'),startEl=document.getElementById('df-ib-auto-start'),endEl=document.getElementById('df-ib-auto-end');
-    return {slot:slotEl?slotEl.value:'',start:startEl?startEl.value:'',end:endEl?endEl.value:''};
-  }
-  function updateAutoPreview(resetRange){
-    var acc=getAccount();if(!acc)return;
-    var controls=readAutoControls();
-    if(!controls.slot){
-      var emptyEl=document.getElementById('df-ib-auto-preview');
-      if(emptyEl)emptyEl.innerHTML='<span class="df-ib-auto-badge warning">'+tr('Nenhuma estratégia ativa. Configure a Área Administrativa.','No active strategy. Configure the Admin Area.')+'</span>';
-      return;
-    }
-    if(resetRange){
-      var range=findStrategyDataRange(acc,controls.slot);
-      var startEl=document.getElementById('df-ib-auto-start'),endEl=document.getElementById('df-ib-auto-end');
-      if(startEl)startEl.value=range.start;if(endEl)endEl.value=range.end;
-      controls.start=range.start;controls.end=range.end;
-    }
-    var ops=collectCalendarOperations(acc,controls.slot,controls.start,controls.end),chunks=balancedSplit(ops),el=document.getElementById('df-ib-auto-preview');
-    if(el)el.innerHTML='<span class="df-ib-auto-badge"><i data-lucide="list-checks" class="w-3 h-3"></i>'+ops.length+' '+tr('operações encontradas','operations found')+'</span><span>'+tr('Divisão prevista: ','Expected split: ')+chunks.map(function(x){return x.length;}).join(' / ')+'</span>';
-    try{window.lucide&&window.lucide.createIcons&&window.lucide.createIcons();}catch(e){}
-  }
-  function syncSamplesFromCalendar(){
-    var acc=getAccount(),study=ensureStudy(acc);if(!acc||!study)return;
-    var controls=readAutoControls();
-    if(!controls.slot){alert(tr('Nenhuma estratégia ativa foi encontrada. Cadastre uma estratégia na Área Administrativa.','No active strategy was found. Create one in the Admin Area.'));return;}
-    if(controls.start&&controls.end&&controls.start>controls.end){alert(tr('A data inicial não pode ser maior que a data final.','The start date cannot be later than the end date.'));return;}
-    var operations=collectCalendarOperations(acc,controls.slot,controls.start,controls.end);
-    if(!operations.length){alert(tr('Nenhuma operação foi encontrada para essa estratégia e período.','No operations were found for this strategy and date range.'));return;}
-    var hasExisting=study.samples.some(function(s){return validResults(s).length>0;});
-    if(hasExisting&&!confirm(tr('Isso substituirá as três amostras atuais pelos dados do calendário. Continuar?','This will replace the current three samples with calendar data. Continue?')))return;
-    var label=strategyConfigForDateLocal(controls.end||controls.start||todayISO(),controls.slot).label;
-    var chunks=balancedSplit(operations);
-    study.samples=chunks.map(function(chunk,index){
-      var first=chunk[0]&&chunk[0].date,last=chunk[chunk.length-1]&&chunk[chunk.length-1].date;
-      var period=first?(formatRangeDate(first)+(last&&last!==first?' '+tr('a','to')+' '+formatRangeDate(last):'')):'';
-      return {
-        id:'sample_'+(index+1),
-        name:tr('Amostra ','Sample ')+(index+1)+' · '+label,
-        period:period,
-        notes:tr('Gerada automaticamente com os lançamentos do calendário da estratégia ','Automatically generated from calendar entries for strategy ')+label+'.',
-        operations:chunk.length?chunk:[blankOperation()]
-      };
-    });
-    study.version=3;
-    study.autoSource={slot:controls.slot,label:label,start:controls.start,end:controls.end,mode:'equal-chronological',operationsFound:operations.length,lastSyncAt:new Date().toISOString()};
-    activeSampleIndex=0;try{localStorage.setItem(ACTIVE_SAMPLE_KEY,'0');}catch(e){}
-    scheduleSave();renderAll();
-    setSaveStatus(tr(operations.length+' operações sincronizadas',operations.length+' operations synced'),'saved');
-  }
-
-  function blankOperation(){ return {id:uid('op'),date:'',result:'',points:'',note:''}; }
-  function defaultSample(index){ return {id:'sample_'+(index+1),name:tr('Amostra ','Sample ')+(index+1),period:'',notes:'',operations:[blankOperation()]}; }
+  function blankOperation(){ return {id:uid('op'),date:todayISO(),result:'',points:'',note:'',createdAt:new Date().toISOString()}; }
+  function defaultSample(index){ var meta=fixedMeta(index); return {id:meta.slot,strategyKey:meta.slot,name:meta.label,period:'',notes:'',operations:[blankOperation()]}; }
 
   function ensureStudy(acc){
     if(!acc) return null;
-    if(!acc.ignoredBarStudy || typeof acc.ignoredBarStudy !== 'object'){
-      acc.ignoredBarStudy={version:3,updatedAt:null,autoSource:null,samples:[defaultSample(0),defaultSample(1),defaultSample(2)]};
+    var old=(acc.ignoredBarStudy && typeof acc.ignoredBarStudy==='object')?acc.ignoredBarStudy:null;
+    if(!old || Number(old.version||0)<5){
+      if(old){
+        try{acc.ignoredBarLegacyArchiveV4=JSON.parse(JSON.stringify(old));}catch(e){acc.ignoredBarLegacyArchiveV4=old;}
+      }
+      var fresh={version:5,setupId:'ignoredBar',updatedAt:null,autoSource:null,migratedAt:new Date().toISOString(),samples:[defaultSample(0),defaultSample(1),defaultSample(2)]};
+      // Preserva apenas registros manuais identificáveis; lançamentos copiados do Premium ficam arquivados.
+      if(old && Array.isArray(old.samples)){
+        old.samples.forEach(function(sample){
+          var hint=String((sample&&sample.name)||'')+' '+String((old.autoSource&&old.autoSource.label)||'');
+          var target=hint.indexOf('25/75')>=0?1:(hint.indexOf('30/90')>=0?2:(hint.indexOf('20/60')>=0?0:-1));
+          if(target<0 && old.autoSource&&old.autoSource.slot){target=old.autoSource.slot==='t3'?1:(old.autoSource.slot==='t4'?2:0);}
+          if(target<0)return;
+          var manual=(sample.operations||[]).filter(function(op){return !(op&&op.source&&op.source.type==='calendar');}).map(function(op){
+            var copy=Object.assign({},op); if(!copy.id)copy.id=uid('op'); if(!copy.createdAt)copy.createdAt=new Date().toISOString(); return copy;
+          });
+          if(manual.length){
+            if(fresh.samples[target].operations.length===1 && fresh.samples[target].operations[0].result==='')fresh.samples[target].operations=[];
+            fresh.samples[target].operations=fresh.samples[target].operations.concat(manual);
+          }
+        });
+      }
+      acc.ignoredBarStudy=fresh;
     }
-    if(!Object.prototype.hasOwnProperty.call(acc.ignoredBarStudy,'autoSource')) acc.ignoredBarStudy.autoSource=null;
-    if(!Array.isArray(acc.ignoredBarStudy.samples)) acc.ignoredBarStudy.samples=[];
-    while(acc.ignoredBarStudy.samples.length<3) acc.ignoredBarStudy.samples.push(defaultSample(acc.ignoredBarStudy.samples.length));
-    acc.ignoredBarStudy.samples=acc.ignoredBarStudy.samples.slice(0,3).map(function(sample,index){
-      sample=(sample && typeof sample==='object')?sample:defaultSample(index);
-      if(!sample.id) sample.id='sample_'+(index+1);
-      if(!sample.name) sample.name=tr('Amostra ','Sample ')+(index+1);
-      if(sample.period==null) sample.period='';
-      if(sample.notes==null) sample.notes='';
-      if(!Array.isArray(sample.operations)) sample.operations=[];
-      sample.operations=sample.operations.map(function(op){
-        op=(op && typeof op==='object')?op:blankOperation();
-        if(!op.id) op.id=uid('op');
-        if(op.date==null) op.date=''; if(op.result==null) op.result=''; if(op.points==null) op.points=''; if(op.note==null) op.note='';
-        return op;
-      });
-      if(!sample.operations.length) sample.operations=[blankOperation()];
-      return sample;
+    var study=acc.ignoredBarStudy;
+    study.version=5;study.setupId='ignoredBar';study.autoSource=null;
+    study.samples=[0,1,2].map(function(index){
+      var meta=fixedMeta(index),sample=(Array.isArray(study.samples)&&study.samples[index]&&typeof study.samples[index]==='object')?study.samples[index]:defaultSample(index);
+      sample.id=meta.slot;sample.strategyKey=meta.slot;sample.name=meta.label;
+      if(sample.period==null)sample.period='';if(sample.notes==null)sample.notes='';if(!Array.isArray(sample.operations))sample.operations=[];
+      sample.operations=sample.operations.map(function(op){op=(op&&typeof op==='object')?op:blankOperation();if(!op.id)op.id=uid('op');if(op.date==null)op.date='';if(op.result==null)op.result='';if(op.points==null)op.points='';if(op.note==null)op.note='';if(!op.createdAt)op.createdAt=new Date().toISOString();return op;});
+      if(!sample.operations.length)sample.operations=[blankOperation()];return sample;
     });
-    return acc.ignoredBarStudy;
+    return study;
   }
 
   function validResults(sample){
-    return (sample.operations||[]).filter(function(op){ return op.result !== '' && op.result !== null && op.result !== undefined && Number.isFinite(Number(op.result)); }).map(function(op){return Number(op.result);});
+    return (sample.operations||[]).filter(function(op){ return opEligible(sample,op) && op.result !== '' && op.result !== null && op.result !== undefined && Number.isFinite(Number(op.result)); }).map(function(op){return Number(op.result);});
   }
   function calcMetrics(sample){
     var values=validResults(sample);
+    var excludedBeforeCut=(sample.operations||[]).filter(function(op){return !opEligible(sample,op) && op.result!=='' && op.result!==null && op.result!==undefined;}).length;
     var wins=values.filter(function(v){return v>0;});
     var losses=values.filter(function(v){return v<0;});
     var bes=values.filter(function(v){return v===0;});
@@ -13580,7 +13729,7 @@ tr.bg-green-50 td {
       avgWin:avgWin,avgLoss:avgLoss,profitFactor:grossLoss?grossProfit/grossLoss:(grossProfit>0?Infinity:null),
       payoff:avgLoss?avgWin/avgLoss:(avgWin>0?Infinity:null),expectancy:values.length?net/values.length:0,
       maxDD:maxDD,best:values.length?best:0,worst:values.length?worst:0,
-      maxWinStreak:maxWinStreak,maxLossStreak:maxLossStreak
+      maxWinStreak:maxWinStreak,maxLossStreak:maxLossStreak,excludedBeforeCut:excludedBeforeCut
     };
   }
 
@@ -13588,7 +13737,8 @@ tr.bg-green-50 td {
     var ops=[];
     study.samples.forEach(function(sample,sampleIndex){
       (sample.operations||[]).forEach(function(op,operationIndex){
-        ops.push(Object.assign({},op,{__sampleIndex:sampleIndex,__operationIndex:operationIndex}));
+        if(!opEligible(sample,op)) return;
+        ops.push(Object.assign({},op,{strategyKey:sample.strategyKey,__sampleIndex:sampleIndex,__operationIndex:operationIndex}));
       });
     });
     ops.sort(function(a,b){
@@ -13641,7 +13791,7 @@ tr.bg-green-50 td {
     if(!nav){
       nav=document.createElement('div'); nav.id='df-main-tabs-shell'; nav.className='no-print';
       nav.innerHTML='<div id="df-main-tabs">'+
-        '<button type="button" class="df-main-tab active" data-df-main-tab="performance"><i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Performance</span></button>'+
+        '<button type="button" class="df-main-tab active" data-df-main-tab="performance"><i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Performance · Premium</span></button>'+
         '<button type="button" class="df-main-tab" data-df-main-tab="ignored-bar"><i data-lucide="scan-line" class="w-4 h-4"></i><span>Barra Ignorada + Analytics</span></button>'+
       '</div>';
       dashboard.parentNode.insertBefore(nav,dashboard);
@@ -13683,7 +13833,7 @@ tr.bg-green-50 td {
       kpi(tr('Operações','Operations'),String(metrics.trades),'')+
       kpi(tr('Taxa de acerto','Win rate'),pct(metrics.winRate),'')+
       kpi(tr('Fator de lucro','Profit factor'),ratio(metrics.profitFactor),'')+
-      kpi(tr('Melhor amostra','Best sample'),bestIndex>=0?esc(study.samples[bestIndex].name):'—',bestIndex>=0?'df-ib-pos':'')+
+      kpi(tr('Melhor estratégia','Best strategy'),bestIndex>=0?esc(study.samples[bestIndex].name):'—',bestIndex>=0?'df-ib-pos':'')+
     '</div>';
   }
   function kpi(label,value,cls){return '<div class="df-ib-kpi"><div class="df-ib-kpi-label">'+esc(label)+'</div><div class="df-ib-kpi-value '+(cls||'')+'">'+value+'</div></div>';}
@@ -13697,11 +13847,11 @@ tr.bg-green-50 td {
     var study=ensureStudy(acc); var all=calcMetrics(combinedSample(study));
     container.innerHTML='<div class="df-ib-shell">'+
       '<section class="df-ib-card">'+
-        '<div class="df-ib-header"><div><h2 class="df-ib-title"><i data-lucide="scan-line" class="w-5 h-5 text-indigo-600"></i>'+tr('Operação Barra Ignorada','Ignored Bar Operation')+'<span class="info-i" tabindex="0" role="button" aria-label="'+tr('Ajuda: Operação Barra Ignorada','Help: Ignored Bar Operation')+'" data-help-title="Operação Barra Ignorada">i</span></h2><div class="df-ib-sub">'+tr('Conta','Account')+': <strong>'+esc(acc.name||tr('Conta','Account'))+'</strong> · '+tr('Sincronize os dados do calendário e compare automaticamente três amostras cronológicas.','Sync calendar data and automatically compare three chronological samples.')+'</div></div><div id="df-ib-save-status" class="df-ib-save">'+tr('Dados por conta','Account-level data')+'</div></div>'+
+        '<div class="df-ib-header"><div><h2 class="df-ib-title"><i data-lucide="scan-line" class="w-5 h-5 text-indigo-600"></i>'+tr('Operação Barra Ignorada','Ignored Bar Operation')+'<span class="info-i" tabindex="0" role="button" aria-label="'+tr('Ajuda: Operação Barra Ignorada','Help: Ignored Bar Operation')+'" data-help-title="Operação Barra Ignorada">i</span></h2><div class="df-ib-sub">'+tr('Conta','Account')+': <strong>'+esc(acc.name||tr('Conta','Account'))+'</strong> · '+tr('Registre e compare 20/60, 25/75 e 30/90 sem compartilhar dados com o Premium.','Record and compare 20/60, 25/75 and 30/90 without sharing data with Premium.')+'</div></div><div id="df-ib-save-status" class="df-ib-save">'+tr('Dados por conta','Account-level data')+'</div></div>'+
         '<div class="df-ib-body">'+overviewHTML(all,study)+'</div>'+
       '</section>'+
-      '<section class="df-ib-card"><div class="df-ib-header"><div><h3 class="df-ib-title" style="font-size:15px"><i data-lucide="database" class="w-4 h-4 text-indigo-600"></i>'+tr('Registro das Amostras','Sample Records')+'</h3><div class="df-ib-sub">'+tr('Cada linha representa uma operação. O resultado financeiro alimenta todos os cálculos automaticamente.','Each row represents one operation. The financial result feeds all calculations automatically.')+'</div></div><div class="df-ib-actions"><button type="button" class="df-ib-btn" id="df-ib-export"><i data-lucide="download" class="w-3.5 h-3.5"></i>CSV</button><button type="button" class="df-ib-btn danger" id="df-ib-clear-sample"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>'+tr('Limpar amostra','Clear sample')+'</button></div></div><div class="df-ib-body"><div id="df-ib-editor"></div></div></section>'+
-      '<section class="df-ib-card"><div class="df-ib-header"><div><h3 class="df-ib-title" style="font-size:15px"><i data-lucide="chart-no-axes-combined" class="w-4 h-4 text-indigo-600"></i>'+tr('Análise Comparativa','Comparative Analytics')+'</h3><div class="df-ib-sub">'+tr('Leitura individual e consolidada das três amostras.','Individual and consolidated reading of the three samples.')+'</div></div></div><div class="df-ib-body"><div id="df-ib-analytics"></div></div></section>'+
+      '<section class="df-ib-card"><div class="df-ib-header"><div><h3 class="df-ib-title" style="font-size:15px"><i data-lucide="database" class="w-4 h-4 text-indigo-600"></i>'+tr('Registro das Estratégias','Strategy Records')+'</h3><div class="df-ib-sub">'+tr('Cada linha representa uma operação. O resultado financeiro alimenta todos os cálculos automaticamente.','Each row represents one operation. The financial result feeds all calculations automatically.')+'</div></div><div class="df-ib-actions"><button type="button" class="df-ib-btn" id="df-ib-export"><i data-lucide="download" class="w-3.5 h-3.5"></i>CSV</button><button type="button" class="df-ib-btn danger" id="df-ib-clear-sample"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>'+tr('Limpar estratégia','Clear strategy')+'</button></div></div><div class="df-ib-body"><div id="df-ib-editor"></div></div></section>'+
+      '<section class="df-ib-card"><div class="df-ib-header"><div><h3 class="df-ib-title" style="font-size:15px"><i data-lucide="chart-no-axes-combined" class="w-4 h-4 text-indigo-600"></i>'+tr('Análise Comparativa','Comparative Analytics')+'</h3><div class="df-ib-sub">'+tr('Leitura individual e consolidada das três estratégias da Barra Ignorada.','Individual and consolidated reading of the three Ignored Bar strategies.')+'</div></div></div><div class="df-ib-body"><div id="df-ib-analytics"></div></div></section>'+
     '</div>';
     bindContainer(); renderEditor(); renderAnalytics();
     try{window.lucide&&window.lucide.createIcons&&window.lucide.createIcons();}catch(e){}
@@ -13737,21 +13887,31 @@ tr.bg-green-50 td {
     }).join('');
   }
 
+  function isolatedSetupHTML(study){
+    var cut=getCutover();
+    return '<div class="df-ib-auto">'+
+      '<div class="df-ib-auto-head"><div><div class="df-ib-auto-title"><i data-lucide="shield-check" class="w-4 h-4"></i>'+tr('Setup isolado','Isolated setup')+'</div>'+
+      '<div class="df-ib-sub">'+tr('Os dados desta aba não são copiados nem calculados a partir do Premium. Use as abas 20/60, 25/75 e 30/90 para registrar somente as operações da Barra Ignorada.','Data in this tab is not copied or calculated from Premium. Use the 20/60, 25/75 and 30/90 tabs to record Ignored Bar operations only.')+'</div></div>'+
+      '<span class="df-ib-auto-badge"><i data-lucide="calendar-clock" class="w-3 h-3"></i>'+tr('Marco: ','Cutover: ')+formatRangeDate(cut)+'</span></div>'+
+      '<div class="df-ib-auto-preview"><span>'+tr('20/60 e 30/90 contam desde o marco. 25/75 mantém continuidade histórica.','20/60 and 30/90 count from the cutover. 25/75 keeps historical continuity.')+'</span></div>'+
+    '</div>';
+  }
+
   function renderEditor(){
     var root=document.getElementById('df-ib-editor'); if(!root)return;
     var acc=getAccount(); var study=ensureStudy(acc); if(!study)return;
     activeSampleIndex=Math.max(0,Math.min(2,activeSampleIndex));
     var sample=study.samples[activeSampleIndex],m=calcMetrics(sample);
-    root.innerHTML=automationHTML(acc,study)+sampleTabsHTML(study)+
+    root.innerHTML=isolatedSetupHTML(study)+sampleTabsHTML(study)+
       '<div class="df-ib-form-grid">'+
-        '<div class="df-ib-field"><label>'+tr('Nome da amostra','Sample name')+'</label><input type="text" id="df-ib-sample-name" value="'+esc(sample.name)+'" placeholder="'+tr('Amostra ','Sample ')+(activeSampleIndex+1)+'"></div>'+
+        '<div class="df-ib-field"><label>'+tr('Amostragem técnica','Technical sample')+'</label><input type="text" id="df-ib-sample-name" value="'+esc(sample.name)+'" readonly class="font-bold bg-slate-50 dark:bg-slate-800"></div>'+
         '<div class="df-ib-field"><label>'+tr('Período / identificação','Period / identification')+'</label><input type="text" id="df-ib-sample-period" value="'+esc(sample.period)+'" placeholder="'+tr('Ex.: Junho/2026 ou Semana 1','E.g.: June/2026 or Week 1')+'"></div>'+
       '</div>'+
-      '<div class="df-ib-field"><label>'+tr('Observações gerais da amostra','General sample notes')+'</label><textarea id="df-ib-sample-notes" placeholder="'+tr('Contexto, regra aplicada, mercado, horário ou qualquer observação relevante.','Context, rule applied, market, time, or any relevant note.')+'">'+esc(sample.notes)+'</textarea></div>'+
+      '<div class="df-ib-field"><label>'+tr('Observações da estratégia','Strategy notes')+'</label><textarea id="df-ib-sample-notes" placeholder="'+tr('Contexto, regra aplicada, mercado, horário ou qualquer observação relevante.','Context, rule applied, market, time, or any relevant note.')+'">'+esc(sample.notes)+'</textarea></div>'+
       '<div id="df-ib-sample-metrics" class="df-ib-sample-metrics">'+sampleMetricsHTML(m)+'</div>'+
       '<div class="df-ib-toolbar"><div class="df-ib-toolbar-title">'+tr('Operações da ','Operations for ')+esc(sample.name)+'</div><div class="df-ib-actions"><button type="button" class="df-ib-btn primary" id="df-ib-add-op"><i data-lucide="plus" class="w-3.5 h-3.5"></i>'+tr('Adicionar operação','Add operation')+'</button></div></div>'+
       '<div class="df-ib-table-wrap"><table class="df-ib-table"><thead><tr><th style="text-align:center">#</th><th>'+tr('Data','Date')+'</th><th>'+tr('Resultado ($)','Result ($)')+'</th><th>'+tr('Pontos','Points')+'</th><th style="text-align:center">Status</th><th>'+tr('Observação','Note')+'</th><th></th></tr></thead><tbody id="df-ib-ops-body">'+operationRows(sample)+'</tbody></table></div>'+
-      '<div class="df-ib-paste"><div class="df-ib-paste-grid"><div><div class="df-ib-toolbar-title">'+tr('Colagem rápida de resultados','Quick result paste')+'</div><textarea id="df-ib-quick-paste" placeholder="'+tr('Um resultado por linha, por exemplo:','One result per line, for example:')+'\n250\n-120\n375"></textarea><div class="df-ib-paste-help">'+tr('Linhas vazias são ignoradas. Os valores serão adicionados ao final da amostra ativa.','Blank lines are ignored. Values are appended to the active sample.')+'</div></div><button type="button" class="df-ib-btn primary" id="df-ib-import-results"><i data-lucide="clipboard-paste" class="w-3.5 h-3.5"></i>'+tr('Importar resultados','Import results')+'</button></div></div>';
+      '<div class="df-ib-paste"><div class="df-ib-paste-grid"><div><div class="df-ib-toolbar-title">'+tr('Colagem rápida de resultados','Quick result paste')+'</div><textarea id="df-ib-quick-paste" placeholder="'+tr('Um resultado por linha, por exemplo:','One result per line, for example:')+'\n250\n-120\n375"></textarea><div class="df-ib-paste-help">'+tr('Linhas vazias são ignoradas. Os valores serão adicionados ao final da estratégia ativa.','Blank lines are ignored. Values are appended to the active strategy.')+'</div></div><button type="button" class="df-ib-btn primary" id="df-ib-import-results"><i data-lucide="clipboard-paste" class="w-3.5 h-3.5"></i>'+tr('Importar resultados','Import results')+'</button></div></div>';
     try{window.lucide&&window.lucide.createIcons&&window.lucide.createIcons();}catch(e){}
   }
 
@@ -13768,7 +13928,8 @@ tr.bg-green-50 td {
       mini(tr('Payoff','Payoff'),ratio(m.payoff),'')+
       mini(tr('Drawdown máximo','Maximum drawdown'),m.trades?currency(-Math.abs(m.maxDD)):'—',m.maxDD?'df-ib-neg':'')+
       mini(tr('Maior seq. ganhos','Max winning streak'),m.trades?String(m.maxWinStreak):'—','')+
-      mini(tr('Maior seq. perdas','Max losing streak'),m.trades?String(m.maxLossStreak):'—','');
+      mini(tr('Maior seq. perdas','Max losing streak'),m.trades?String(m.maxLossStreak):'—','')+
+      (m.excludedBeforeCut?mini(tr('Fora do marco','Before cutover'),String(m.excludedBeforeCut),'df-ib-zero'):'');
   }
 
   function refreshSampleMetrics(){
@@ -13793,13 +13954,13 @@ tr.bg-green-50 td {
   function analysisNarrative(study,metrics,combined){
     var available=metrics.map(function(m,i){return {m:m,i:i};}).filter(function(x){return x.m.trades>0;});
     if(!available.length){
-      return '<div class="df-ib-insight"><div class="df-ib-insight-icon"><i data-lucide="lightbulb" class="w-4 h-4"></i></div><div><div class="df-ib-insight-title">'+tr('Leitura automática','Automatic reading')+'</div><div class="df-ib-insight-body">'+tr('Adicione resultados às amostras para gerar uma leitura comparativa de consistência, risco e desempenho.','Add results to the samples to generate a comparative reading of consistency, risk, and performance.')+'</div></div></div>';
+      return '<div class="df-ib-insight"><div class="df-ib-insight-icon"><i data-lucide="lightbulb" class="w-4 h-4"></i></div><div><div class="df-ib-insight-title">'+tr('Leitura automática','Automatic reading')+'</div><div class="df-ib-insight-body">'+tr('Adicione resultados às estratégias para gerar uma leitura comparativa de consistência, risco e desempenho.','Add results to the strategies to generate a comparative reading of consistency, risk, and performance.')+'</div></div></div>';
     }
     if(available.length===1){
       var only=available[0];
       var oneText=isEnglish()
-        ? 'Preliminary reading: only <strong>'+esc(study.samples[only.i].name)+'</strong> contains data. Net result: <strong>'+currency(only.m.net)+'</strong>; profit factor: <strong>'+ratio(only.m.profitFactor)+'</strong>; maximum drawdown: <strong>'+currency(-Math.abs(only.m.maxDD))+'</strong>. Add the other samples before drawing a consistency conclusion.'
-        : 'Leitura preliminar: somente <strong>'+esc(study.samples[only.i].name)+'</strong> possui dados. Resultado líquido: <strong>'+currency(only.m.net)+'</strong>; fator de lucro: <strong>'+ratio(only.m.profitFactor)+'</strong>; drawdown máximo: <strong>'+currency(-Math.abs(only.m.maxDD))+'</strong>. Preencha as demais amostras antes de concluir sobre consistência.';
+        ? 'Preliminary reading: only <strong>'+esc(study.samples[only.i].name)+'</strong> contains data. Net result: <strong>'+currency(only.m.net)+'</strong>; profit factor: <strong>'+ratio(only.m.profitFactor)+'</strong>; maximum drawdown: <strong>'+currency(-Math.abs(only.m.maxDD))+'</strong>. Add the other strategies before drawing a consistency conclusion.'
+        : 'Leitura preliminar: somente <strong>'+esc(study.samples[only.i].name)+'</strong> possui dados. Resultado líquido: <strong>'+currency(only.m.net)+'</strong>; fator de lucro: <strong>'+ratio(only.m.profitFactor)+'</strong>; drawdown máximo: <strong>'+currency(-Math.abs(only.m.maxDD))+'</strong>. Preencha as demais estratégias antes de concluir sobre consistência.';
       return '<div class="df-ib-insight"><div class="df-ib-insight-icon"><i data-lucide="lightbulb" class="w-4 h-4"></i></div><div><div class="df-ib-insight-title">'+tr('Leitura automática preliminar','Preliminary automatic reading')+'</div><div class="df-ib-insight-body">'+oneText+'</div></div></div>';
     }
     var best=available.slice().sort(function(a,b){return b.m.net-a.m.net;})[0];
@@ -13808,8 +13969,8 @@ tr.bg-green-50 td {
     var consistency=positive===available.length?tr('alta','high'):(positive>=Math.ceil(available.length/2)?tr('moderada','moderate'):tr('baixa','low'));
     var pf=ratio(combined.profitFactor);
     var text=isEnglish()
-      ? 'Indicative consistency: <strong>'+consistency+'</strong>. '+positive+' of '+available.length+' samples are positive. Best sample: <strong>'+esc(study.samples[best.i].name)+'</strong> ('+currency(best.m.net)+'); weakest sample: <strong>'+esc(study.samples[worst.i].name)+'</strong> ('+currency(worst.m.net)+'). Consolidated profit factor: <strong>'+pf+'</strong>; maximum drawdown: <strong>'+currency(-Math.abs(combined.maxDD))+'</strong>.'
-      : 'Consistência indicativa: <strong>'+consistency+'</strong>. '+positive+' de '+available.length+' amostra(s) estão positivas. Melhor amostra: <strong>'+esc(study.samples[best.i].name)+'</strong> ('+currency(best.m.net)+'); amostra mais fraca: <strong>'+esc(study.samples[worst.i].name)+'</strong> ('+currency(worst.m.net)+'). Fator de lucro consolidado: <strong>'+pf+'</strong>; drawdown máximo: <strong>'+currency(-Math.abs(combined.maxDD))+'</strong>.';
+      ? 'Indicative consistency: <strong>'+consistency+'</strong>. '+positive+' of '+available.length+' strategies are positive. Best strategy: <strong>'+esc(study.samples[best.i].name)+'</strong> ('+currency(best.m.net)+'); weakest strategy: <strong>'+esc(study.samples[worst.i].name)+'</strong> ('+currency(worst.m.net)+'). Consolidated profit factor: <strong>'+pf+'</strong>; maximum drawdown: <strong>'+currency(-Math.abs(combined.maxDD))+'</strong>.'
+      : 'Consistência indicativa: <strong>'+consistency+'</strong>. '+positive+' de '+available.length+' estratégia(s) estão positivas. Melhor estratégia: <strong>'+esc(study.samples[best.i].name)+'</strong> ('+currency(best.m.net)+'); estratégia mais fraca: <strong>'+esc(study.samples[worst.i].name)+'</strong> ('+currency(worst.m.net)+'). Fator de lucro consolidado: <strong>'+pf+'</strong>; drawdown máximo: <strong>'+currency(-Math.abs(combined.maxDD))+'</strong>.';
     return '<div class="df-ib-insight"><div class="df-ib-insight-icon"><i data-lucide="lightbulb" class="w-4 h-4"></i></div><div><div class="df-ib-insight-title">'+tr('Leitura automática indicativa','Indicative automatic reading')+'</div><div class="df-ib-insight-body">'+text+'</div></div></div>';
   }
 
@@ -13820,7 +13981,7 @@ tr.bg-green-50 td {
     var maxAbs=Math.max.apply(null,metrics.map(function(m){return Math.abs(m.net);})); if(!Number.isFinite(maxAbs))maxAbs=0;
     root.innerHTML='<div class="df-ib-summary-grid">'+study.samples.map(function(s,i){return summaryCard(s,i,maxAbs);}).join('')+'</div>'+
       analysisNarrative(study,metrics,combined)+
-      '<div class="df-ib-analytics-grid"><div class="df-ib-chart-card"><div class="df-ib-section-title"><i data-lucide="line-chart" class="w-3.5 h-3.5 text-indigo-600"></i>'+tr('Curva acumulada por amostra','Cumulative curve by sample')+'</div><div class="df-ib-chart-wrap"><canvas id="df-ib-chart"></canvas><div id="df-ib-chart-empty" class="df-ib-empty hidden">'+tr('Adicione resultados nas amostras para visualizar as curvas acumuladas.','Add results to the samples to view cumulative curves.')+'</div></div></div>'+
+      '<div class="df-ib-analytics-grid"><div class="df-ib-chart-card"><div class="df-ib-section-title"><i data-lucide="line-chart" class="w-3.5 h-3.5 text-indigo-600"></i>'+tr('Curva acumulada por estratégia','Cumulative curve by strategy')+'</div><div class="df-ib-chart-wrap"><canvas id="df-ib-chart"></canvas><div id="df-ib-chart-empty" class="df-ib-empty hidden">'+tr('Adicione resultados nas estratégias para visualizar as curvas acumuladas.','Add results to the strategies to view cumulative curves.')+'</div></div></div>'+
       '<div class="df-ib-compare-card"><div class="df-ib-section-title"><i data-lucide="table-2" class="w-3.5 h-3.5 text-indigo-600"></i>'+tr('Comparativo objetivo','Objective comparison')+'</div>'+compareTable(study,metrics,combined)+'</div></div>';
     renderChart(study,metrics);
     var top=document.querySelector('#df-ignored-bar-container .df-ib-overview'); if(top)top.outerHTML=overviewHTML(combined,study);
@@ -13868,8 +14029,6 @@ tr.bg-green-50 td {
     container.addEventListener('click',function(e){
       var sampleBtn=e.target.closest('[data-sample-index]');
       if(sampleBtn){activeSampleIndex=Number(sampleBtn.getAttribute('data-sample-index'))||0;try{localStorage.setItem(ACTIVE_SAMPLE_KEY,String(activeSampleIndex));}catch(err){}renderEditor();return;}
-      if(e.target.closest('#df-ib-auto-sync')){syncSamplesFromCalendar();return;}
-      if(e.target.closest('#df-ib-auto-all')){updateAutoPreview(true);return;}
       if(e.target.closest('#df-ib-add-op')){var study=ensureStudy(getAccount());study.samples[activeSampleIndex].operations.push(blankOperation());scheduleSave();renderEditor();renderAnalytics();return;}
       var del=e.target.closest('[data-delete-op]');
       if(del){var id=del.getAttribute('data-delete-op'),st=ensureStudy(getAccount()),sample=st.samples[activeSampleIndex];sample.operations=sample.operations.filter(function(op){return op.id!==id;});if(!sample.operations.length)sample.operations=[blankOperation()];scheduleSave();renderEditor();renderAnalytics();return;}
@@ -13878,12 +14037,10 @@ tr.bg-green-50 td {
       if(e.target.closest('#df-ib-export')){exportCSV();return;}
     });
     container.addEventListener('change',function(e){
-      if(e.target.id==='df-ib-auto-strategy'){updateAutoPreview(true);return;}
-      if(e.target.id==='df-ib-auto-start'||e.target.id==='df-ib-auto-end'){updateAutoPreview(false);return;}
     });
     container.addEventListener('input',function(e){
       var study=ensureStudy(getAccount()); if(!study)return; var sample=study.samples[activeSampleIndex];
-      if(e.target.id==='df-ib-sample-name'){sample.name=e.target.value||(tr('Amostra ','Sample ')+(activeSampleIndex+1));document.querySelectorAll('[data-sample-index]')[activeSampleIndex].textContent=sample.name;scheduleSave();renderAnalytics();return;}
+      if(e.target.id==='df-ib-sample-name'){return;}
       if(e.target.id==='df-ib-sample-period'){sample.period=e.target.value;scheduleSave();renderAnalytics();return;}
       if(e.target.id==='df-ib-sample-notes'){sample.notes=e.target.value;scheduleSave();return;}
       var field=e.target.getAttribute('data-op-field'); if(!field)return;
@@ -13900,34 +14057,34 @@ tr.bg-green-50 td {
     if(!values.length){alert(tr('Nenhum resultado válido foi encontrado. Use um valor por linha.','No valid result was found. Use one value per line.'));return;}
     var study=ensureStudy(getAccount()),sample=study.samples[activeSampleIndex];
     if(sample.operations.length===1 && sample.operations[0].result==='' && sample.operations[0].date==='' && sample.operations[0].note==='') sample.operations=[];
-    values.forEach(function(v){var op=blankOperation();op.result=v;sample.operations.push(op);});
+    values.forEach(function(v){var op=blankOperation();op.date=todayISO();op.result=v;sample.operations.push(op);});
     area.value='';scheduleSave();renderEditor();renderAnalytics();
   }
 
   function clearActiveSample(){
     var study=ensureStudy(getAccount()),sample=study.samples[activeSampleIndex];
     if(!confirm(tr('Limpar todas as operações e observações de "','Clear all operations and notes from "')+sample.name+'"?'))return;
-    var name=sample.name||(tr('Amostra ','Sample ')+(activeSampleIndex+1));
-    study.samples[activeSampleIndex]={id:sample.id||('sample_'+(activeSampleIndex+1)),name:name,period:'',notes:'',operations:[blankOperation()]};
+    var meta=fixedMeta(activeSampleIndex);
+    study.samples[activeSampleIndex]={id:meta.slot,strategyKey:meta.slot,name:meta.label,period:'',notes:'',operations:[blankOperation()]};
     scheduleSave();renderEditor();renderAnalytics();
   }
 
   function exportCSV(){
     var acc=getAccount(),study=ensureStudy(acc); if(!study)return;
     var headers=isEnglish()
-      ? ['Account','Sample','Period','Operation','Date','Result','Points','Status','Note']
-      : ['Conta','Amostra','Período','Operação','Data','Resultado','Pontos','Status','Observação'];
+      ? ['Setup','Strategy','Period','Operation','Date','Result','Points','Status','Counted','Note']
+      : ['Setup','Estratégia','Período','Operação','Data','Resultado','Pontos','Status','Contabilizada','Observação'];
     var rows=[headers];
     study.samples.forEach(function(sample){
       (sample.operations||[]).forEach(function(op,index){
         var out=outcome(op);
-        rows.push([acc.name||'',sample.name||'',sample.period||'',index+1,op.date||'',op.result===''?'':op.result,op.points===''?'':op.points,out.label,op.note||'']);
+        rows.push(['Barra Ignorada',sample.name||'',sample.period||'',index+1,op.date||'',op.result===''?'':op.result,op.points===''?'':op.points,out.label,opEligible(sample,op)?tr('Sim','Yes'):tr('Não','No'),op.note||'']);
       });
     });
     rows.push([]);
     rows.push(isEnglish()
-      ? ['ANALYTICS SUMMARY','Sample','Operations','Wins','Losses','BE','Net result','Win rate','Average/op.','Average win','Average loss','Profit factor','Payoff','Max drawdown','Best operation','Worst operation','Max win streak','Max loss streak']
-      : ['RESUMO ANALÍTICO','Amostra','Operações','Ganhos','Perdas','BE','Resultado líquido','Taxa de acerto','Média/op.','Ganho médio','Perda média','Fator de lucro','Payoff','Drawdown máximo','Melhor operação','Pior operação','Maior seq. ganhos','Maior seq. perdas']);
+      ? ['ANALYTICS SUMMARY','Strategy','Operations','Wins','Losses','BE','Net result','Win rate','Average/op.','Average win','Average loss','Profit factor','Payoff','Max drawdown','Best operation','Worst operation','Max win streak','Max loss streak']
+      : ['RESUMO ANALÍTICO','Estratégia','Operações','Ganhos','Perdas','BE','Resultado líquido','Taxa de acerto','Média/op.','Ganho médio','Perda média','Fator de lucro','Payoff','Drawdown máximo','Melhor operação','Pior operação','Maior seq. ganhos','Maior seq. perdas']);
     var metrics=study.samples.map(calcMetrics),combined=calcMetrics(combinedSample(study));
     study.samples.forEach(function(sample,index){
       var m=metrics[index];
@@ -13965,7 +14122,7 @@ tr.bg-green-50 td {
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
   window.addEventListener('load',function(){setTimeout(boot,80);});
-  window.dfIgnoredBarSyncFromCalendar=syncSamplesFromCalendar;
+  window.dfIgnoredBarSyncFromCalendar=function(){ return false; };
   window.dfIgnoredBarRender=renderAll;
   window.__dfIgnoredBarRenderAll=renderAll;
 })();
