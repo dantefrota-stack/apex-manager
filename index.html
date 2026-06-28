@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: DF-STRATEGY-SAVE-RESET-V13-UI-V5-IGNORED-BAR-ANALYTICS-V2-2026-06-27 -->
+<!-- BUILD_ID: DF-STRATEGY-SAVE-RESET-V13-UI-V6-IGNORED-BAR-AUTO-V3-2026-06-27 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -8683,8 +8683,8 @@ if (!store.activeId) {
                 return {
                     title: en ? "Ignored Bar Operation" : "Operação Barra Ignorada",
                     body: en
-                        ? "This module keeps three independent samples for the active account. Enter one financial result per operation. Win rate excludes breakeven operations; profit factor is gross profit divided by gross loss; payoff is average win divided by average loss; expectancy/operation is net result divided by all recorded operations; maximum drawdown is the largest decline from a cumulative peak. The automatic reading is indicative and does not replace your trading rules."
-                        : "Este módulo mantém três amostras independentes para a conta ativa. Informe um resultado financeiro por operação. A taxa de acerto desconsidera operações no zero; fator de lucro é lucro bruto dividido pela perda bruta; payoff é ganho médio dividido pela perda média; expectativa/operação é o resultado líquido dividido por todas as operações registradas; drawdown máximo é a maior queda a partir de um pico acumulado. A leitura automática é indicativa e não substitui suas regras operacionais.",
+                        ? "Select a strategy and date range, then click Generate 3 samples. The module reads each existing calendar trade, preserves chronological order, and divides the records into three balanced samples. All indicators are calculated automatically. Manual editing remains available only for adjustments or external results."
+                        : "Selecione a estratégia e o período e clique em Gerar 3 amostras. O módulo lê cada operação já lançada no calendário, mantém a ordem cronológica e divide os registros em três amostras equilibradas. Todos os indicadores são calculados automaticamente. A edição manual continua disponível apenas para ajustes ou resultados externos.",
                     link: null
                 };
             }
@@ -12944,7 +12944,7 @@ tr.bg-green-50 td {
 </script>
 
 <!-- =============================================================
-     DF MODULE: OPERAÇÃO BARRA IGNORADA + ANALYTICS (V2)
+     DF MODULE: OPERAÇÃO BARRA IGNORADA + ANALYTICS (V3 AUTO)
      Isolated account-level research module. Does not modify trading data.
      ============================================================= -->
 <style id="df-ignored-bar-styles">
@@ -12974,6 +12974,23 @@ tr.bg-green-50 td {
   .df-ib-save.saving{color:#b45309;background:#fffbeb;border-color:#fde68a;}
   .df-ib-save.saved{color:#047857;background:#ecfdf5;border-color:#a7f3d0;}
   .df-ib-body{padding:18px 20px;}
+
+
+  .df-ib-auto{margin-bottom:16px;padding:14px;border:1px solid rgba(99,102,241,.24);border-radius:14px;background:linear-gradient(135deg,rgba(238,242,255,.92),rgba(248,250,252,.96));}
+  body.dark .df-ib-auto{background:linear-gradient(135deg,rgba(79,70,229,.12),rgba(15,23,42,.54));border-color:rgba(129,140,248,.28);}
+  .df-ib-auto-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:11px;}
+  .df-ib-auto-title{display:flex;align-items:center;gap:7px;color:#312e81;font-size:12px;font-weight:900;}
+  body.dark .df-ib-auto-title{color:#c7d2fe;}
+  .df-ib-auto-grid{display:grid;grid-template-columns:minmax(180px,1.25fr) minmax(135px,.8fr) minmax(135px,.8fr) auto auto;gap:9px;align-items:end;}
+  .df-ib-auto .df-ib-field{min-width:0;}
+  .df-ib-auto .df-ib-field select{width:100%;height:35px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;color:#0f172a;padding:7px 9px;font-size:11px;font-weight:700;outline:none;}
+  .df-ib-auto .df-ib-field select:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12);}
+  body.dark .df-ib-auto .df-ib-field select{background:#0f172a;color:#f1f5f9;border-color:#475569;}
+  .df-ib-auto-preview{margin-top:9px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:#64748b;font-size:10.5px;line-height:1.4;}
+  body.dark .df-ib-auto-preview{color:#94a3b8;}
+  .df-ib-auto-badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 8px;background:#fff;border:1px solid #dbe3ee;color:#334155;font-weight:800;}
+  body.dark .df-ib-auto-badge{background:#0f172a;border-color:#334155;color:#e2e8f0;}
+  .df-ib-auto-sync{white-space:nowrap;height:35px;justify-content:center;}
 
   .df-ib-overview{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;}
   .df-ib-kpi{padding:12px;border-radius:12px;background:#f8fafc;border:1px solid #e2e8f0;min-width:0;}
@@ -13091,7 +13108,9 @@ tr.bg-green-50 td {
   .df-ib-compare td:not(:first-child),.df-ib-compare th:not(:first-child){text-align:right;white-space:nowrap;}
 
   @media(max-width:1100px){.df-ib-overview{grid-template-columns:repeat(3,minmax(0,1fr));}.df-ib-analytics-grid{grid-template-columns:1fr;}}
+  @media(max-width:1000px){.df-ib-auto-grid{grid-template-columns:1fr 1fr 1fr;}.df-ib-auto-grid .df-ib-auto-sync{width:100%;}}
   @media(max-width:800px){#df-main-tabs-shell{padding-top:10px;}.df-main-tab{padding:8px 10px;}.df-ib-header{padding:15px;}.df-ib-body{padding:15px;}.df-ib-overview{grid-template-columns:repeat(2,minmax(0,1fr));}.df-ib-form-grid{grid-template-columns:1fr;}.df-ib-summary-grid{grid-template-columns:1fr;}.df-ib-paste-grid{grid-template-columns:1fr;}.df-ib-paste-grid .df-ib-btn{justify-content:center;}.df-ib-chart-wrap{height:270px;}}
+  @media(max-width:620px){.df-ib-auto-grid{grid-template-columns:1fr 1fr;}.df-ib-auto-grid .df-ib-field:first-child{grid-column:1/-1;}.df-ib-auto-grid .df-ib-auto-sync{grid-column:1/-1;}.df-ib-auto-head{flex-direction:column;}}
   @media(max-width:480px){#df-main-tabs{display:flex;width:100%;}.df-main-tab{flex:1;justify-content:center;min-width:0;}.df-main-tab span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.df-ib-overview{grid-template-columns:1fr 1fr;}.df-ib-sample-metrics{grid-template-columns:1fr 1fr;}}
   @media print{#df-main-tabs-shell{display:none!important;}#df-main-dashboard-container{display:none!important;}#df-ignored-bar-container{display:block!important;padding:0!important;}.df-ib-actions,.df-ib-paste,.df-ib-row-delete{display:none!important;}.df-ib-card{box-shadow:none!important;break-inside:avoid;}}
 </style>
@@ -13099,8 +13118,8 @@ tr.bg-green-50 td {
 <script id="df-ignored-bar-script">
 (function(){
   'use strict';
-  if(window.__DF_IGNORED_BAR_V2__) return;
-  window.__DF_IGNORED_BAR_V2__ = true;
+  if(window.__DF_IGNORED_BAR_V3__) return;
+  window.__DF_IGNORED_BAR_V3__ = true;
 
   var ACTIVE_SAMPLE_KEY = 'df_ignored_bar_active_sample';
   var ACTIVE_TAB_KEY = 'df_main_active_tab';
@@ -13156,14 +13175,191 @@ tr.bg-green-50 td {
   }
 
 
+
+
+  var IB_STRATEGY_META = [
+    {slot:'t0',label:'25/50'},
+    {slot:'t3',label:'30/60'},
+    {slot:'t4',label:'35/70'},
+    {slot:'t1',label:'40/80'},
+    {slot:'t2',label:'Condução Técnica'}
+  ];
+
+  function todayISO(){
+    var d=new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function strategyConfigForDateLocal(iso,slot){
+    var s=getStore();
+    var versions=(s&&Array.isArray(s.strategyConfigs))?s.strategyConfigs.slice():[];
+    versions.sort(function(a,b){return String(a&&a.effectiveFrom||'1900-01-01').localeCompare(String(b&&b.effectiveFrom||'1900-01-01'));});
+    var chosen=null,target=String(iso||todayISO());
+    versions.forEach(function(v){if(String(v&&v.effectiveFrom||'1900-01-01')<=target)chosen=v;});
+    var found=chosen&&Array.isArray(chosen.strategies)?chosen.strategies.find(function(x){return x&&x.slot===slot;}):null;
+    var fallback=IB_STRATEGY_META.find(function(x){return x.slot===slot;})||{slot:slot,label:slot};
+    return {
+      slot:slot,
+      label:String(found&&found.label||fallback.label||slot),
+      active:found?found.active!==false:true,
+      visible:found?found.visible!==false:true,
+      order:Number(found&&found.order)||IB_STRATEGY_META.indexOf(fallback)+1
+    };
+  }
+  function getAvailableStrategies(acc){
+    var keys=Object.keys(acc&&acc.data||{}).filter(function(k){return /^\d{4}-\d{2}-\d{2}$/.test(k);}).sort();
+    var ref=keys[keys.length-1]||todayISO();
+    return IB_STRATEGY_META.map(function(meta){
+      var cfg=strategyConfigForDateLocal(ref,meta.slot);
+      var range=findStrategyDataRange(acc,meta.slot);
+      return {slot:meta.slot,label:cfg.label,active:cfg.active,visible:cfg.visible,count:range.count||0,order:cfg.order};
+    }).sort(function(a,b){
+      if((a.active&&a.visible)!==(b.active&&b.visible)) return (a.active&&a.visible)?-1:1;
+      if((a.count>0)!==(b.count>0)) return a.count>0?-1:1;
+      return a.order-b.order;
+    });
+  }
+  function explicitLegRecords(entry,slot){
+    entry=entry||{};
+    var meta=entry[slot+'meta']||{};
+    var hasExplicit=['leg1','leg2','leg3','leg4'].some(function(k){return Object.prototype.hasOwnProperty.call(meta,k);});
+    var out=[];
+    if(hasExplicit){
+      ['leg1','leg2','leg3','leg4'].forEach(function(k,index){
+        var raw=meta[k];
+        if(raw===''||raw===null||raw===undefined)return;
+        var n=parseLooseNumber(raw);
+        if(n!==null)out.push({value:n,leg:index+1});
+      });
+    }else{
+      var legacy=entry[slot];
+      if(!(legacy===''||legacy===null||legacy===undefined)){
+        var n=parseLooseNumber(legacy);
+        if(n!==null)out.push({value:n,leg:1});
+      }
+    }
+    return out;
+  }
+  function collectCalendarOperations(acc,slot,startISO,endISO){
+    var ops=[];
+    Object.keys(acc&&acc.data||{}).filter(function(iso){return /^\d{4}-\d{2}-\d{2}$/.test(iso);}).sort().forEach(function(iso){
+      if(startISO&&iso<startISO)return;
+      if(endISO&&iso>endISO)return;
+      var entry=acc.data[iso]||{};
+      if(entry.holiday)return;
+      explicitLegRecords(entry,slot).forEach(function(rec){
+        ops.push({
+          id:uid('op'),date:iso,result:rec.value,points:'',note:String(entry.note||''),
+          source:{type:'calendar',slot:slot,leg:rec.leg,date:iso}
+        });
+      });
+    });
+    return ops;
+  }
+  function findStrategyDataRange(acc,slot){
+    var dates=[];var count=0;
+    Object.keys(acc&&acc.data||{}).filter(function(iso){return /^\d{4}-\d{2}-\d{2}$/.test(iso);}).sort().forEach(function(iso){
+      var entry=acc.data[iso]||{};if(entry.holiday)return;
+      var records=explicitLegRecords(entry,slot);
+      if(records.length){dates.push(iso);count+=records.length;}
+    });
+    return {start:dates[0]||'',end:dates[dates.length-1]||'',count:count};
+  }
+  function formatRangeDate(iso){
+    if(!iso)return '';
+    var p=String(iso).split('-');
+    if(p.length!==3)return iso;
+    return isEnglish()?(p[1]+'/'+p[2]+'/'+p[0]):(p[2]+'/'+p[1]+'/'+p[0]);
+  }
+  function balancedSplit(items){
+    var chunks=[[],[],[]],base=Math.floor(items.length/3),extra=items.length%3,offset=0;
+    for(var i=0;i<3;i++){
+      var size=base+(i<extra?1:0);
+      chunks[i]=items.slice(offset,offset+size);offset+=size;
+    }
+    return chunks;
+  }
+  function getAutoDefaults(acc,study){
+    var strategies=getAvailableStrategies(acc);
+    var saved=(study&&study.autoSource&&typeof study.autoSource==='object')?study.autoSource:{};
+    var selected=strategies.find(function(x){return x.slot===saved.slot;})||strategies.find(function(x){return x.count>0;})||strategies[0];
+    var range=findStrategyDataRange(acc,selected?selected.slot:'t0');
+    return {strategies:strategies,slot:selected?selected.slot:'t0',start:saved.start||range.start,end:saved.end||range.end,range:range};
+  }
+  function automationHTML(acc,study){
+    var cfg=getAutoDefaults(acc,study),ops=collectCalendarOperations(acc,cfg.slot,cfg.start,cfg.end);
+    var source=study.autoSource||{};
+    var last=source.lastSyncAt?new Date(source.lastSyncAt).toLocaleString(isEnglish()?'en-US':'pt-BR'):'';
+    var options=cfg.strategies.map(function(s){
+      var suffix=s.count?' · '+s.count+' '+tr('op.','ops'):'';
+      return '<option value="'+esc(s.slot)+'" '+(s.slot===cfg.slot?'selected':'')+'>'+esc(s.label+suffix)+'</option>';
+    }).join('');
+    return '<div class="df-ib-auto">'+
+      '<div class="df-ib-auto-head"><div><div class="df-ib-auto-title"><i data-lucide="sparkles" class="w-4 h-4"></i>'+tr('Preenchimento automático','Automatic population')+'</div><div class="df-ib-sub">'+tr('Escolha a estratégia. Os lançamentos já registrados no calendário serão divididos cronologicamente em três amostras iguais.','Choose the strategy. Calendar entries already recorded will be split chronologically into three equal samples.')+'</div></div>'+
+      (last?'<span class="df-ib-auto-badge"><i data-lucide="refresh-cw" class="w-3 h-3"></i>'+tr('Última sincronização: ','Last sync: ')+esc(last)+'</span>':'')+'</div>'+
+      '<div class="df-ib-auto-grid">'+
+        '<div class="df-ib-field"><label>'+tr('Estratégia','Strategy')+'</label><select id="df-ib-auto-strategy">'+options+'</select></div>'+
+        '<div class="df-ib-field"><label>'+tr('Data inicial','Start date')+'</label><input id="df-ib-auto-start" type="date" value="'+esc(cfg.start)+'"></div>'+
+        '<div class="df-ib-field"><label>'+tr('Data final','End date')+'</label><input id="df-ib-auto-end" type="date" value="'+esc(cfg.end)+'"></div>'+
+        '<button type="button" class="df-ib-btn" id="df-ib-auto-all"><i data-lucide="calendar-range" class="w-3.5 h-3.5"></i>'+tr('Todo histórico','All history')+'</button>'+
+        '<button type="button" class="df-ib-btn primary df-ib-auto-sync" id="df-ib-auto-sync"><i data-lucide="wand-sparkles" class="w-3.5 h-3.5"></i>'+tr('Gerar 3 amostras','Generate 3 samples')+'</button>'+
+      '</div>'+
+      '<div id="df-ib-auto-preview" class="df-ib-auto-preview"><span class="df-ib-auto-badge"><i data-lucide="list-checks" class="w-3 h-3"></i>'+ops.length+' '+tr('operações encontradas','operations found')+'</span><span>'+tr('Divisão prevista: ','Expected split: ')+balancedSplit(ops).map(function(x){return x.length;}).join(' / ')+'</span></div>'+
+    '</div>';
+  }
+  function readAutoControls(){
+    var slotEl=document.getElementById('df-ib-auto-strategy'),startEl=document.getElementById('df-ib-auto-start'),endEl=document.getElementById('df-ib-auto-end');
+    return {slot:slotEl?slotEl.value:'t0',start:startEl?startEl.value:'',end:endEl?endEl.value:''};
+  }
+  function updateAutoPreview(resetRange){
+    var acc=getAccount();if(!acc)return;
+    var controls=readAutoControls();
+    if(resetRange){
+      var range=findStrategyDataRange(acc,controls.slot);
+      var startEl=document.getElementById('df-ib-auto-start'),endEl=document.getElementById('df-ib-auto-end');
+      if(startEl)startEl.value=range.start;if(endEl)endEl.value=range.end;
+      controls.start=range.start;controls.end=range.end;
+    }
+    var ops=collectCalendarOperations(acc,controls.slot,controls.start,controls.end),chunks=balancedSplit(ops),el=document.getElementById('df-ib-auto-preview');
+    if(el)el.innerHTML='<span class="df-ib-auto-badge"><i data-lucide="list-checks" class="w-3 h-3"></i>'+ops.length+' '+tr('operações encontradas','operations found')+'</span><span>'+tr('Divisão prevista: ','Expected split: ')+chunks.map(function(x){return x.length;}).join(' / ')+'</span>';
+    try{window.lucide&&window.lucide.createIcons&&window.lucide.createIcons();}catch(e){}
+  }
+  function syncSamplesFromCalendar(){
+    var acc=getAccount(),study=ensureStudy(acc);if(!acc||!study)return;
+    var controls=readAutoControls();
+    if(controls.start&&controls.end&&controls.start>controls.end){alert(tr('A data inicial não pode ser maior que a data final.','The start date cannot be later than the end date.'));return;}
+    var operations=collectCalendarOperations(acc,controls.slot,controls.start,controls.end);
+    if(!operations.length){alert(tr('Nenhuma operação foi encontrada para essa estratégia e período.','No operations were found for this strategy and date range.'));return;}
+    var hasExisting=study.samples.some(function(s){return validResults(s).length>0;});
+    if(hasExisting&&!confirm(tr('Isso substituirá as três amostras atuais pelos dados do calendário. Continuar?','This will replace the current three samples with calendar data. Continue?')))return;
+    var label=strategyConfigForDateLocal(controls.end||controls.start||todayISO(),controls.slot).label;
+    var chunks=balancedSplit(operations);
+    study.samples=chunks.map(function(chunk,index){
+      var first=chunk[0]&&chunk[0].date,last=chunk[chunk.length-1]&&chunk[chunk.length-1].date;
+      var period=first?(formatRangeDate(first)+(last&&last!==first?' '+tr('a','to')+' '+formatRangeDate(last):'')):'';
+      return {
+        id:'sample_'+(index+1),
+        name:tr('Amostra ','Sample ')+(index+1)+' · '+label,
+        period:period,
+        notes:tr('Gerada automaticamente com os lançamentos do calendário da estratégia ','Automatically generated from calendar entries for strategy ')+label+'.',
+        operations:chunk.length?chunk:[blankOperation()]
+      };
+    });
+    study.version=3;
+    study.autoSource={slot:controls.slot,label:label,start:controls.start,end:controls.end,mode:'equal-chronological',operationsFound:operations.length,lastSyncAt:new Date().toISOString()};
+    activeSampleIndex=0;try{localStorage.setItem(ACTIVE_SAMPLE_KEY,'0');}catch(e){}
+    scheduleSave();renderAll();
+    setSaveStatus(tr(operations.length+' operações sincronizadas',operations.length+' operations synced'),'saved');
+  }
+
   function blankOperation(){ return {id:uid('op'),date:'',result:'',points:'',note:''}; }
   function defaultSample(index){ return {id:'sample_'+(index+1),name:tr('Amostra ','Sample ')+(index+1),period:'',notes:'',operations:[blankOperation()]}; }
 
   function ensureStudy(acc){
     if(!acc) return null;
     if(!acc.ignoredBarStudy || typeof acc.ignoredBarStudy !== 'object'){
-      acc.ignoredBarStudy={version:1,updatedAt:null,samples:[defaultSample(0),defaultSample(1),defaultSample(2)]};
+      acc.ignoredBarStudy={version:3,updatedAt:null,autoSource:null,samples:[defaultSample(0),defaultSample(1),defaultSample(2)]};
     }
+    if(!Object.prototype.hasOwnProperty.call(acc.ignoredBarStudy,'autoSource')) acc.ignoredBarStudy.autoSource=null;
     if(!Array.isArray(acc.ignoredBarStudy.samples)) acc.ignoredBarStudy.samples=[];
     while(acc.ignoredBarStudy.samples.length<3) acc.ignoredBarStudy.samples.push(defaultSample(acc.ignoredBarStudy.samples.length));
     acc.ignoredBarStudy.samples=acc.ignoredBarStudy.samples.slice(0,3).map(function(sample,index){
@@ -13329,7 +13525,7 @@ tr.bg-green-50 td {
     var study=ensureStudy(acc); var all=calcMetrics(combinedSample(study));
     container.innerHTML='<div class="df-ib-shell">'+
       '<section class="df-ib-card">'+
-        '<div class="df-ib-header"><div><h2 class="df-ib-title"><i data-lucide="scan-line" class="w-5 h-5 text-indigo-600"></i>'+tr('Operação Barra Ignorada','Ignored Bar Operation')+'<span class="info-i" tabindex="0" role="button" aria-label="'+tr('Ajuda: Operação Barra Ignorada','Help: Ignored Bar Operation')+'" data-help-title="Operação Barra Ignorada">i</span></h2><div class="df-ib-sub">'+tr('Conta','Account')+': <strong>'+esc(acc.name||tr('Conta','Account'))+'</strong> · '+tr('Registre três amostras independentes e compare a consistência dos resultados.','Record three independent samples and compare result consistency.')+'</div></div><div id="df-ib-save-status" class="df-ib-save">'+tr('Dados por conta','Account-level data')+'</div></div>'+
+        '<div class="df-ib-header"><div><h2 class="df-ib-title"><i data-lucide="scan-line" class="w-5 h-5 text-indigo-600"></i>'+tr('Operação Barra Ignorada','Ignored Bar Operation')+'<span class="info-i" tabindex="0" role="button" aria-label="'+tr('Ajuda: Operação Barra Ignorada','Help: Ignored Bar Operation')+'" data-help-title="Operação Barra Ignorada">i</span></h2><div class="df-ib-sub">'+tr('Conta','Account')+': <strong>'+esc(acc.name||tr('Conta','Account'))+'</strong> · '+tr('Sincronize os dados do calendário e compare automaticamente três amostras cronológicas.','Sync calendar data and automatically compare three chronological samples.')+'</div></div><div id="df-ib-save-status" class="df-ib-save">'+tr('Dados por conta','Account-level data')+'</div></div>'+
         '<div class="df-ib-body">'+overviewHTML(all,study)+'</div>'+
       '</section>'+
       '<section class="df-ib-card"><div class="df-ib-header"><div><h3 class="df-ib-title" style="font-size:15px"><i data-lucide="database" class="w-4 h-4 text-indigo-600"></i>'+tr('Registro das Amostras','Sample Records')+'</h3><div class="df-ib-sub">'+tr('Cada linha representa uma operação. O resultado financeiro alimenta todos os cálculos automaticamente.','Each row represents one operation. The financial result feeds all calculations automatically.')+'</div></div><div class="df-ib-actions"><button type="button" class="df-ib-btn" id="df-ib-export"><i data-lucide="download" class="w-3.5 h-3.5"></i>CSV</button><button type="button" class="df-ib-btn danger" id="df-ib-clear-sample"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>'+tr('Limpar amostra','Clear sample')+'</button></div></div><div class="df-ib-body"><div id="df-ib-editor"></div></div></section>'+
@@ -13374,7 +13570,7 @@ tr.bg-green-50 td {
     var acc=getAccount(); var study=ensureStudy(acc); if(!study)return;
     activeSampleIndex=Math.max(0,Math.min(2,activeSampleIndex));
     var sample=study.samples[activeSampleIndex],m=calcMetrics(sample);
-    root.innerHTML=sampleTabsHTML(study)+
+    root.innerHTML=automationHTML(acc,study)+sampleTabsHTML(study)+
       '<div class="df-ib-form-grid">'+
         '<div class="df-ib-field"><label>'+tr('Nome da amostra','Sample name')+'</label><input type="text" id="df-ib-sample-name" value="'+esc(sample.name)+'" placeholder="'+tr('Amostra ','Sample ')+(activeSampleIndex+1)+'"></div>'+
         '<div class="df-ib-field"><label>'+tr('Período / identificação','Period / identification')+'</label><input type="text" id="df-ib-sample-period" value="'+esc(sample.period)+'" placeholder="'+tr('Ex.: Junho/2026 ou Semana 1','E.g.: June/2026 or Week 1')+'"></div>'+
@@ -13500,12 +13696,18 @@ tr.bg-green-50 td {
     container.addEventListener('click',function(e){
       var sampleBtn=e.target.closest('[data-sample-index]');
       if(sampleBtn){activeSampleIndex=Number(sampleBtn.getAttribute('data-sample-index'))||0;try{localStorage.setItem(ACTIVE_SAMPLE_KEY,String(activeSampleIndex));}catch(err){}renderEditor();return;}
+      if(e.target.closest('#df-ib-auto-sync')){syncSamplesFromCalendar();return;}
+      if(e.target.closest('#df-ib-auto-all')){updateAutoPreview(true);return;}
       if(e.target.closest('#df-ib-add-op')){var study=ensureStudy(getAccount());study.samples[activeSampleIndex].operations.push(blankOperation());scheduleSave();renderEditor();renderAnalytics();return;}
       var del=e.target.closest('[data-delete-op]');
       if(del){var id=del.getAttribute('data-delete-op'),st=ensureStudy(getAccount()),sample=st.samples[activeSampleIndex];sample.operations=sample.operations.filter(function(op){return op.id!==id;});if(!sample.operations.length)sample.operations=[blankOperation()];scheduleSave();renderEditor();renderAnalytics();return;}
       if(e.target.closest('#df-ib-import-results')){importQuickResults();return;}
       if(e.target.closest('#df-ib-clear-sample')){clearActiveSample();return;}
       if(e.target.closest('#df-ib-export')){exportCSV();return;}
+    });
+    container.addEventListener('change',function(e){
+      if(e.target.id==='df-ib-auto-strategy'){updateAutoPreview(true);return;}
+      if(e.target.id==='df-ib-auto-start'||e.target.id==='df-ib-auto-end'){updateAutoPreview(false);return;}
     });
     container.addEventListener('input',function(e){
       var study=ensureStudy(getAccount()); if(!study)return; var sample=study.samples[activeSampleIndex];
@@ -13591,6 +13793,7 @@ tr.bg-green-50 td {
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
   window.addEventListener('load',function(){setTimeout(boot,80);});
+  window.dfIgnoredBarSyncFromCalendar=syncSamplesFromCalendar;
   window.dfIgnoredBarRender=renderAll;
   window.__dfIgnoredBarRenderAll=renderAll;
 })();
