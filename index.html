@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: DF-AUTO-RECOVERY-V11-FIXED-BOOT-AUTO-SCAN-2026-06-29 -->
+<!-- BUILD_ID: DF-AUTO-RECOVERY-V12-HELP-SYSTEM-FIXED-2026-06-29 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Performance Report - DF Strategic V10</title>
+    <title>Performance Report - DF Strategic V12</title>
     
     <link rel="apple-touch-icon" sizes="180x180" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
     <link rel="icon" type="image/png" sizes="32x32" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
@@ -2377,6 +2377,17 @@ tr.bg-green-50 td {
             try { hideAppLoader(); } catch (e) { if (loader) loader.style.display = 'none'; }
             const main = document.getElementById('main-content');
             if (main) main.classList.remove('hidden');
+
+            // V12: the authenticated application uses startAppSync() as its real startup path.
+            // Bind contextual help here as well; bootstrapApp()/init() is not the path used after login.
+            try {
+                ensureInfoIcons();
+                bindHelpPopover();
+                startHelpIntegrityObserver();
+                if (typeof window.dfBindContextHelpV12 === 'function') window.dfBindContextHelpV12();
+            } catch (helpErr) {
+                console.warn('Contextual help initialization failed:', helpErr);
+            }
         } catch (e) {
             console.error("Falha ao sincronizar com a nuvem:", e);
             if (loader) {
@@ -15482,19 +15493,278 @@ tr.bg-green-50 td {
 </script>
 
 
-<script id="df-v8-help-fallback">
+<script id="df-v12-context-help">
 (function(){
-  if(window.__dfV8HelpFallbackBound)return;window.__dfV8HelpFallbackBound=true;
-  document.addEventListener('click',function(e){
-    var icon=e.target&&e.target.closest?e.target.closest('.info-i, .info-icon-btn'):null;
-    if(!icon)return;
-    setTimeout(function(){
-      var pop=document.getElementById('help-popover');
-      if(pop && !pop.classList.contains('hidden'))return;
-      var title=icon.getAttribute('data-help-title')||'';
-      if(title==='Setup Barra Ignorada' && window.dfOpenQuickGuide)window.dfOpenQuickGuide('ignored-bar');
-    },50);
-  },true);
+  'use strict';
+
+  function normalize(value){
+    return String(value || '')
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .toLowerCase().replace(/\s+/g,' ').trim();
+  }
+
+  function isEnglish(){
+    var lang='pt';
+    try{lang=window.CURRENT_LANG||localStorage.getItem('df_app_lang')||document.documentElement.lang||'pt';}catch(e){}
+    return String(lang).toLowerCase().indexOf('en')===0;
+  }
+
+  function helpContent(rawTitle, infoKey){
+    var en=isEnglish();
+    var t=normalize(rawTitle);
+    var k=normalize(infoKey);
+
+    if(k==='ninja') t='importar performance ninjatrader';
+    if(k==='tradovate') t='importar cash history tradovate';
+    if(k==='selectedaccount') t='conta selecionada admin';
+
+    var entries=[
+      {
+        keys:['evolucao da performance','performance evolution'],
+        ptTitle:'Evolução da Performance — Premium', enTitle:'Premium Performance Evolution',
+        pt:'Mostra a evolução acumulada do setup Premium. A linha histórica termina no marco temporal e a linha atual continua a partir dele. “Exibir Histórico Antigo” apenas mostra ou oculta a linha anterior; não altera nem apaga operações.',
+        en:'Shows the cumulative Premium setup performance. The historical line ends at the cutover date and the current line continues from there. “Show old history” only changes visibility; it does not modify or delete operations.'
+      },
+      {
+        keys:['analise por periodo','period analysis'],
+        ptTitle:'Análise por Período — Premium', enTitle:'Premium Period Analysis',
+        pt:'Escolha a data inicial e final e clique na lupa. O painel calcula somente as operações desse intervalo: resultado líquido, taxa de acerto, médias, fator de lucro, payoff, expectativa, drawdown, sequências e desempenho por estratégia.',
+        en:'Choose the start and end dates and click search. The panel calculates only operations within that range: net result, win rate, averages, profit factor, payoff, expectancy, drawdown, streaks and results by strategy.'
+      },
+      {
+        keys:['setup barra ignorada','ignored-bar setup','ignored bar setup'],
+        ptTitle:'Setup Barra Ignorada', enTitle:'Ignored-Bar Setup',
+        pt:'Ambiente independente do Premium. Registre 20/60, 25/75 e 30/90 separadamente. Cada mudança de nome cria uma nova versão com data; os resultados anteriores permanecem disponíveis no Histórico de Estratégias e não são renomeados.',
+        en:'Independent from Premium. Record 20/60, 25/75 and 30/90 separately. Each name change creates a dated version; prior results remain available in Strategy History and are not renamed.'
+      },
+      {
+        keys:['registro das estrategias','strategy records'],
+        ptTitle:'Registro das Estratégias', enTitle:'Strategy Records',
+        pt:'Selecione uma estratégia e registre as operações. Data e resultado são os campos usados nos cálculos; pontos e observações são opcionais. O sistema mantém cada versão da estratégia separada pela data de vigência.',
+        en:'Select a strategy and record its operations. Date and result drive the calculations; points and notes are optional. Each strategy version is kept separate by its effective date.'
+      },
+      {
+        keys:['analise comparativa','comparative analytics'],
+        ptTitle:'Análise Comparativa', enTitle:'Comparative Analytics',
+        pt:'Compara as versões atuais das três estratégias usando resultado, taxa de acerto, fator de lucro, payoff, expectativa, drawdown e sequências. Versões encerradas são analisadas no Histórico de Estratégias.',
+        en:'Compares the current versions of all three strategies using result, win rate, profit factor, payoff, expectancy, drawdown and streaks. Closed versions are analyzed in Strategy History.'
+      },
+      {
+        keys:['detalhamento por estrategia','breakdown por estrategia','strategy breakdown'],
+        ptTitle:'Detalhamento por Estratégia', enTitle:'Strategy Breakdown',
+        pt:'Separa os resultados de cada estratégia. Operações mostra total e ganhos/perdas; acerto mostra a porcentagem vencedora; drawdown é a maior queda acumulada; payoff compara ganho médio com perda média; expectativa mostra o resultado médio esperado por operação.',
+        en:'Separates each strategy’s results. Operations shows total and wins/losses; win rate is the winning percentage; drawdown is the largest cumulative decline; payoff compares average win with average loss; expectancy is the expected result per operation.'
+      },
+      {
+        keys:['risco e consistencia','risco e consististencia','risk and consistency'],
+        ptTitle:'Risco e Consistência', enTitle:'Risk and Consistency',
+        pt:'Mostra as maiores sequências de ganhos e perdas, expectativa geral, melhor e pior estratégia e a quantidade de dias positivos e negativos no período. Use esta seção para avaliar estabilidade, não apenas lucro total.',
+        en:'Shows longest winning and losing streaks, overall expectancy, best and worst strategy, and positive/negative days. Use it to evaluate stability, not only total profit.'
+      },
+      {
+        keys:['historico de estrategias','strategy history'],
+        ptTitle:'Histórico de Estratégias', enTitle:'Strategy History',
+        pt:'Consulta e compara todas as versões anteriores e atuais. A alteração de nome encerra a versão antiga no dia anterior e inicia a nova na data definida, preservando nome, período e operações originais.',
+        en:'Reviews and compares all previous and current versions. Renaming closes the prior version one day before the new effective date, preserving the original name, period and operations.'
+      },
+      {
+        keys:['marco temporal','cutover date','cutover'],
+        ptTitle:'Marco Temporal', enTitle:'Cutover Date',
+        pt:'Define a partir de qual data as novas regras entram nos relatórios. Alterar o marco não apaga nem reescreve operações, mas pode mudar quais registros entram em cada cálculo. Versões já encerradas continuam preservadas.',
+        en:'Defines when the new rules begin to apply in reports. Changing it does not delete or rewrite operations, but may change which records enter each calculation. Closed versions remain preserved.'
+      },
+      {
+        keys:['configuracao dos operacionais','operational configuration'],
+        ptTitle:'Configuração dos Operacionais', enTitle:'Operational Configuration',
+        pt:'Premium e Setup Barra Ignorada são ambientes independentes. Use “Alterar” para criar uma nova versão datada e “Histórico” para consultar versões anteriores. Mudar o nome não apaga operações.',
+        en:'Premium and Ignored-Bar Setup are independent environments. Use “Change” to create a dated version and “History” to review prior versions. Renaming never deletes operations.'
+      },
+      {
+        keys:['importar performance','ninjatrader','ninja'],
+        ptTitle:'Importar Performance — NinjaTrader', enTitle:'Import Performance — NinjaTrader',
+        pt:'Arraste os arquivos CSV, confira a pré-visualização e somente depois clique em “Importar e Salvar”. A opção de sobrescrever conflitos substitui lançamentos encontrados na mesma conta e data.',
+        en:'Drop the CSV files, review the preview, and only then click “Import and Save”. Overwrite conflicts replaces records found for the same account and date.'
+      },
+      {
+        keys:['importar cash history','tradovate','cash history'],
+        ptTitle:'Importar Cash History — Tradovate', enTitle:'Import Cash History — Tradovate',
+        pt:'Importa o histórico financeiro do Tradovate. Use a pré-visualização para conferir conta, datas, valores e conflitos antes de salvar. A importação pode atualizar o equity quando essa opção estiver ativa.',
+        en:'Imports Tradovate cash history. Use preview to verify account, dates, amounts and conflicts before saving. The import may update equity when that option is enabled.'
+      },
+      {
+        keys:['conta selecionada','selected account','selectedaccount','admin'],
+        ptTitle:'Conta selecionada', enTitle:'Selected Account',
+        pt:'As ações administrativas desta tela afetam somente a conta indicada no topo, exceto configurações explicitamente marcadas como globais.',
+        en:'Administrative actions on this screen affect only the account shown at the top, except settings explicitly marked as global.'
+      },
+      {
+        keys:['saldo atual','equity'],
+        ptTitle:'Saldo Atual — Equity', enTitle:'Current Equity',
+        pt:'Mostra o saldo calculado com base nos lançamentos da conta. O indicador de drawdown apresenta o limite atual e o buffer disponível antes da violação.',
+        en:'Shows the balance calculated from the account records. The drawdown indicator displays the current threshold and the remaining buffer before violation.'
+      },
+      {
+        keys:['teto 30','30%'],
+        ptTitle:'Teto de Consistência de 30%', enTitle:'30% Consistency Limit',
+        pt:'Indica quanto o maior dia representa do lucro acumulado. Serve como referência de consistência para evitar que um único dia concentre parcela excessiva do resultado.',
+        en:'Shows how much the largest day represents of accumulated profit. It is a consistency reference to prevent one day from concentrating too much of the result.'
+      },
+      {
+        keys:['saque','payout'],
+        ptTitle:'Gestão de Saques', enTitle:'Payout Management',
+        pt:'Acompanha o valor disponível, requisitos e histórico de saques da conta selecionada. Confirme sempre os dados antes de registrar ou cancelar uma solicitação.',
+        en:'Tracks available amount, requirements and payout history for the selected account. Always verify the information before recording or cancelling a request.'
+      },
+      {
+        keys:['calendario','calendar','relatorio'],
+        ptTitle:'Calendário de Operações', enTitle:'Operations Calendar',
+        pt:'Registre os resultados diários por estratégia. Esses valores alimentam gráficos, análises, médias, ciclos e relatórios. Notas são opcionais e feriados podem ser marcados separadamente.',
+        en:'Record daily results by strategy. These values feed charts, analytics, averages, cycles and reports. Notes are optional and holidays can be marked separately.'
+      }
+    ];
+
+    for(var i=0;i<entries.length;i++){
+      for(var j=0;j<entries[i].keys.length;j++){
+        if(t.indexOf(normalize(entries[i].keys[j]))!==-1){
+          return {title:en?entries[i].enTitle:entries[i].ptTitle,body:en?entries[i].en:entries[i].pt};
+        }
+      }
+    }
+    return {
+      title:rawTitle|| (en?'Help':'Ajuda'),
+      body:en
+        ? 'This information button explains how the current panel works. The panel uses the selected account, date range and strategy version without deleting prior records.'
+        : 'Este botão explica como o painel atual funciona. A tela usa a conta, o período e a versão da estratégia selecionados, sem apagar os registros anteriores.'
+    };
+  }
+
+  function getElements(){
+    var pop=document.getElementById('help-popover');
+    if(!pop){
+      pop=document.createElement('div');
+      pop.id='help-popover'; pop.className='hidden'; pop.setAttribute('role','dialog');
+      pop.innerHTML='<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px"><div class="hp-title" id="help-title">Ajuda</div><button type="button" class="hp-close" id="help-close" aria-label="Fechar">×</button></div><div class="hp-body" id="help-body"></div><a class="hp-link" id="help-link" href="#" target="_blank" rel="noopener" style="display:none"></a>';
+      document.body.appendChild(pop);
+    }
+    return {
+      pop:pop,
+      title:document.getElementById('help-title'),
+      body:document.getElementById('help-body'),
+      link:document.getElementById('help-link'),
+      close:document.getElementById('help-close')
+    };
+  }
+
+  function deriveTitle(icon){
+    var title=icon.getAttribute('data-help-title')||icon.dataset.helpTitle||'';
+    if(!title){
+      var key=icon.getAttribute('data-info-key')||'';
+      if(key==='ninja') title='Importar Performance NinjaTrader';
+      else if(key==='tradovate') title='Importar Cash History Tradovate';
+      else if(key==='selectedAccount') title='Conta selecionada Admin';
+    }
+    if(!title){
+      var heading=icon.closest('h1,h2,h3,h4,p,[data-help-context]');
+      if(heading){
+        var clone=heading.cloneNode(true);
+        clone.querySelectorAll('.info-i,.info-icon-btn,.help-icon').forEach(function(el){el.remove();});
+        title=(clone.textContent||'').trim();
+      }
+    }
+    return title||'Ajuda';
+  }
+
+  function position(pop,anchor){
+    var rect=anchor.getBoundingClientRect();
+    var pad=12;
+    var left=Math.min(Math.max(pad,rect.left),Math.max(pad,window.innerWidth-pop.offsetWidth-pad));
+    var top=rect.bottom+10;
+    if(top+pop.offsetHeight+pad>window.innerHeight) top=Math.max(pad,rect.top-pop.offsetHeight-10);
+    pop.style.left=left+'px'; pop.style.top=top+'px';
+  }
+
+  function hide(){
+    var els=getElements();
+    els.pop.classList.add('hidden');
+    document.querySelectorAll('.info-i[aria-expanded="true"],.info-icon-btn[aria-expanded="true"],.help-icon[aria-expanded="true"]').forEach(function(el){el.setAttribute('aria-expanded','false');});
+    window.__dfContextHelpAnchor=null;
+  }
+
+  function show(icon,forcedTitle){
+    var els=getElements();
+    var raw=forcedTitle||deriveTitle(icon);
+    var content=helpContent(raw,icon.getAttribute('data-info-key')||'');
+    if(els.title) els.title.textContent=content.title;
+    if(els.body) els.body.textContent=content.body;
+    if(els.link) els.link.style.display='none';
+    els.pop.classList.remove('hidden');
+    icon.setAttribute('aria-expanded','true');
+    window.__dfContextHelpAnchor=icon;
+    requestAnimationFrame(function(){position(els.pop,icon);});
+  }
+
+  function prepareIcons(root){
+    var scope=root||document;
+    var icons=[];
+    if(scope.matches&&scope.matches('.info-i,.info-icon-btn,.help-icon')) icons.push(scope);
+    if(scope.querySelectorAll) icons=icons.concat(Array.prototype.slice.call(scope.querySelectorAll('.info-i,.info-icon-btn,.help-icon')));
+    icons.forEach(function(icon){
+      if(!icon.hasAttribute('tabindex')) icon.setAttribute('tabindex','0');
+      if(!icon.hasAttribute('role')) icon.setAttribute('role','button');
+      if(!icon.hasAttribute('aria-expanded')) icon.setAttribute('aria-expanded','false');
+      if(!icon.getAttribute('title')) icon.setAttribute('title',isEnglish()?'Click for help':'Clique para ver a explicação');
+      icon.style.pointerEvents='auto';
+      icon.style.cursor='pointer';
+    });
+  }
+
+  function bind(){
+    if(window.__dfContextHelpV12Bound){prepareIcons(document);return;}
+    window.__dfContextHelpV12Bound=true;
+    prepareIcons(document);
+
+    document.addEventListener('click',function(e){
+      var icon=e.target&&e.target.closest?e.target.closest('.info-i,.info-icon-btn,.help-icon'):null;
+      if(icon){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        var els=getElements();
+        if(window.__dfContextHelpAnchor===icon && !els.pop.classList.contains('hidden')) hide();
+        else show(icon);
+        return;
+      }
+      var els=getElements();
+      if(!els.pop.classList.contains('hidden') && !els.pop.contains(e.target)) hide();
+    },true);
+
+    document.addEventListener('keydown',function(e){
+      var icon=e.target&&e.target.closest?e.target.closest('.info-i,.info-icon-btn,.help-icon'):null;
+      if(icon&&(e.key==='Enter'||e.key===' ')){
+        e.preventDefault(); e.stopImmediatePropagation(); show(icon); return;
+      }
+      if(e.key==='Escape') hide();
+    },true);
+
+    var els=getElements();
+    if(els.close) els.close.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();hide();});
+    window.addEventListener('resize',hide,{passive:true});
+
+    try{
+      new MutationObserver(function(mutations){
+        mutations.forEach(function(m){m.addedNodes&&m.addedNodes.forEach(function(n){if(n&&n.nodeType===1)prepareIcons(n);});});
+      }).observe(document.body,{childList:true,subtree:true});
+    }catch(e){}
+  }
+
+  window.dfBindContextHelpV12=bind;
+  window.dfOpenContextHelp=function(title,anchor){
+    var target=anchor&&anchor.getBoundingClientRect?anchor:document.querySelector('.info-i,.info-icon-btn,.help-icon');
+    if(target) show(target,title||deriveTitle(target));
+  };
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind,{once:true});
+  else bind();
+  window.addEventListener('load',function(){setTimeout(bind,50);});
 })();
 </script>
 </body>
