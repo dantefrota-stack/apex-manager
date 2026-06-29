@@ -5,7 +5,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Performance Report - DF Strategic V8</title>
+    <title>Performance Report - DF Strategic V9</title>
     
     <link rel="apple-touch-icon" sizes="180x180" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
     <link rel="icon" type="image/png" sizes="32x32" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
@@ -1270,23 +1270,36 @@ tr.bg-green-50 td {
                         <p class="text-xs text-slate-400 italic">Vazio.</p>
                     </div>
                 
-                <div class="border border-slate-700/50 rounded-xl p-3 bg-slate-900/30">
-                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-300">
-                        Segurança da Nuvem
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
+                    <div class="flex items-start justify-between gap-3 flex-wrap">
+                        <div>
+                            <div class="text-xs font-bold uppercase tracking-wide text-slate-600 dark:text-slate-300">Segurança e Recuperação da Nuvem</div>
+                            <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">As ações abaixo nunca devem ocorrer sem confirmação e retorno visual.</div>
+                        </div>
+                        <span id="cloud-recovery-badge" class="px-2.5 py-1 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-[11px] font-bold">Pronto</span>
                     </div>
-                    <div class="flex flex-wrap gap-2 mt-2">
-                        <button id="btn-restore-prev-cloud" onclick="restorePrevCloudVersion()" class="px-3 py-2 rounded-lg border border-slate-600/60 hover:border-slate-400 text-slate-100 text-sm">
-                            <i class="fa-solid fa-rotate-left mr-2"></i>Restaurar versão anterior (nuvem)
+                    <div class="flex flex-wrap gap-2 mt-3">
+                        <button id="btn-reload-cloud" type="button" onclick="reloadCloudDataSafely()" class="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-100 text-sm font-semibold">
+                            <i data-lucide="cloud-download" class="w-4 h-4 inline-block mr-1"></i>Recarregar dados da nuvem
                         </button>
-                        <button id="btn-force-cloud-save" onclick="forceCloudSaveOnce()" class="px-3 py-2 rounded-lg border border-amber-600/60 hover:border-amber-400 text-amber-200 text-sm">
-                            <i class="fa-solid fa-triangle-exclamation mr-2"></i>Forçar salvar na nuvem
+                        <button id="btn-diagnose-cloud" type="button" onclick="diagnoseCloudRecovery()" class="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-100 text-sm font-semibold">
+                            <i data-lucide="activity" class="w-4 h-4 inline-block mr-1"></i>Verificar estado
                         </button>
-                        <button id="btn-download-local-backup" onclick="downloadLocalBackupJson()" class="px-3 py-2 rounded-lg border border-slate-600/60 hover:border-slate-400 text-slate-100 text-sm">
-                            <i class="fa-solid fa-download mr-2"></i>Baixar Backup Local
+                        <button id="btn-restore-prev-cloud" type="button" onclick="restorePrevCloudVersion()" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold">
+                            <i data-lucide="rotate-ccw" class="w-4 h-4 inline-block mr-1"></i>Restaurar versão anterior
+                        </button>
+                        <button id="btn-download-local-backup" type="button" onclick="downloadLocalBackupJson()" class="px-3 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-100 text-sm font-semibold">
+                            <i data-lucide="download" class="w-4 h-4 inline-block mr-1"></i>Baixar backup local
+                        </button>
+                        <button id="btn-force-cloud-save" type="button" onclick="forceCloudSaveOnce()" class="px-3 py-2 rounded-lg border border-red-300 dark:border-red-900/70 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300 text-sm font-semibold">
+                            <i data-lucide="triangle-alert" class="w-4 h-4 inline-block mr-1"></i>Forçar salvar
                         </button>
                     </div>
-                    <div id="cloud-safety-msg" class="text-xs text-slate-400 mt-2">
-                        Dica: agora cada salvamento na nuvem grava automaticamente uma cópia anterior (rollback). Assim, se algo der errado, é possível restaurar rapidamente.
+                    <div id="cloud-recovery-status" class="mt-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950/40 px-3 py-2 text-xs text-slate-600 dark:text-slate-300 whitespace-pre-line" role="status" aria-live="polite">
+                        Nenhuma operação em andamento.
+                    </div>
+                    <div id="cloud-safety-msg" class="text-[11px] text-slate-500 dark:text-slate-400 mt-2">
+                        Recarregar apenas lê a nuvem. Restaurar troca a versão atual pela cópia anterior e exige confirmação. Não clique duas vezes: uma segunda restauração pode inverter novamente as versões.
                     </div>
                 </div>
 </div>
@@ -2521,7 +2534,7 @@ Usuário administrador:`) || '';
 
 
         // --- Build/Version guard (prevents stale cached builds from overwriting cloud) ---
-        const APP_BUILD_ID = "2026-01-28-import-ui-unified-applyfix2";
+        const APP_BUILD_ID = "DF-CLOUD-RECOVERY-V9-2026-06-29";
         function touchStore(){
           try {
             const now = Date.now();
@@ -7929,7 +7942,8 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             }
         }
 
-        async function loadFromCloud() {
+        async function loadFromCloud(options = {}) {
+            const forceCloud = !!(options && options.force);
             const docRef = getCloudDocRef();
             const docSnap = await Promise.race([
                 getDoc(docRef),
@@ -7971,7 +7985,7 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             // Proteção contra "rollback":
             // Se o local estiver mais recente que o cloud, NÃO sobrescreve (mantém local).
             const localMs = Number((store && store.last_update_ms) ? store.last_update_ms : 0) || 0;
-            if(localMs && ms && localMs > ms){
+            if(!forceCloud && localMs && ms && localMs > ms){
                 __cloudHydrated = true;
                 __lastLoadedCloudLen = getComparableStoreJsonLength(data.store_json || '');
                 // opcional: tenta enviar o local para o cloud em background (sem travar a UI)
@@ -8142,28 +8156,155 @@ async function saveToCloudNow() {
         }
 
         // ===== Cloud safety tools (rollback / force save / local backup download) =====
-        async function restorePrevCloudVersion(){
+        function setCloudRecoveryUi(state, message){
+            const badge = document.getElementById('cloud-recovery-badge');
+            const status = document.getElementById('cloud-recovery-status');
+            const ids = ['btn-reload-cloud','btn-diagnose-cloud','btn-restore-prev-cloud','btn-download-local-backup','btn-force-cloud-save'];
+            const busy = state === 'busy';
+            ids.forEach(id => {
+                const btn = document.getElementById(id);
+                if(btn){
+                    btn.disabled = busy;
+                    btn.classList.toggle('opacity-50', busy);
+                    btn.classList.toggle('cursor-not-allowed', busy);
+                }
+            });
+            if(status) status.textContent = message || '';
+            if(badge){
+                const labels = { busy:'Processando', ok:'Concluído', error:'Erro', ready:'Pronto' };
+                badge.textContent = labels[state] || 'Pronto';
+                badge.className = 'px-2.5 py-1 rounded-full text-[11px] font-bold ' + (
+                    state === 'busy' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' :
+                    state === 'ok' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' :
+                    state === 'error' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                    'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300'
+                );
+            }
+        }
+
+        async function diagnoseCloudRecovery(){
             if(isOffline){
-                toast(translateString(CURRENT_LANG==='en' ? "Offline mode: can't restore from cloud." : "Modo offline: não é possível restaurar da nuvem."), 'warn');
+                const msg = CURRENT_LANG==='en' ? 'Offline mode: cloud diagnosis is unavailable.' : 'Modo offline: não é possível verificar a nuvem.';
+                setCloudRecoveryUi('error', msg);
+                showToast(msg, 'error', 3500);
                 return;
             }
+            setCloudRecoveryUi('busy', CURRENT_LANG==='en' ? 'Checking cloud and local recovery sources...' : 'Verificando as fontes de recuperação locais e da nuvem...');
+            try{
+                await __initFirebaseIfPossible();
+                const [mainSnap, backupSnap, periodsSnap] = await Promise.all([
+                    getDoc(getCloudDocRef()),
+                    getDoc(getCloudBackupRef()).catch(()=>null),
+                    getDocs(getCloudPeriodsColRef()).catch(()=>null)
+                ]);
+                const main = mainSnap && mainSnap.exists() ? (mainSnap.data() || {}) : {};
+                const backup = backupSnap && backupSnap.exists() ? (backupSnap.data() || {}) : {};
+                let mainAccounts = 0, backupAccounts = 0;
+                try{ mainAccounts = Object.keys((JSON.parse(main.store_json || '{}').accounts) || {}).length; }catch(e){}
+                try{ backupAccounts = Object.keys((JSON.parse(backup.store_json || '{}').accounts) || {}).length; }catch(e){}
+                let periodDocs = 0, periodEntries = 0;
+                if(periodsSnap){
+                    periodsSnap.forEach(s => {
+                        periodDocs += 1;
+                        const d = s.data() || {};
+                        periodEntries += Object.keys((d.entries && typeof d.entries === 'object') ? d.entries : {}).length;
+                    });
+                }
+                let localEntries = 0, localBackupEntries = 0;
+                const countEntries = obj => {
+                    let n = 0;
+                    const accounts = (obj && obj.accounts && typeof obj.accounts === 'object') ? obj.accounts : {};
+                    Object.values(accounts).forEach(a => { n += Object.keys((a && a.data && typeof a.data === 'object') ? a.data : {}).length; });
+                    return n;
+                };
+                try{ localEntries = countEntries(store); }catch(e){}
+                try{ localBackupEntries = countEntries(JSON.parse(localStorage.getItem('df_backup_local') || '{}')); }catch(e){}
+                const fmt = iso => { try{ return iso ? new Date(iso).toLocaleString() : '—'; }catch(e){ return '—'; } };
+                const restoredFlag = backup && (backup.restored_from_backup_ms || backup.restored_from_backup_iso);
+                const lines = CURRENT_LANG==='en' ? [
+                    `Current cloud: ${mainAccounts} account(s) • updated ${fmt(main.last_update_iso)}`,
+                    `Previous cloud backup: ${backupAccounts} account(s) • updated ${fmt(backup.last_update_iso)}`,
+                    `Operational periods: ${periodDocs} document(s) • ${periodEntries} dated record(s)`,
+                    `Current browser: ${localEntries} dated record(s) • local backup: ${localBackupEntries}`,
+                    restoredFlag ? 'A restore swap has already been recorded in the cloud backup.' : 'No restore swap marker was found.'
+                ] : [
+                    `Nuvem atual: ${mainAccounts} conta(s) • atualização ${fmt(main.last_update_iso)}`,
+                    `Backup anterior: ${backupAccounts} conta(s) • atualização ${fmt(backup.last_update_iso)}`,
+                    `Períodos operacionais: ${periodDocs} documento(s) • ${periodEntries} registro(s) com data`,
+                    `Navegador atual: ${localEntries} registro(s) • backup local: ${localBackupEntries}`,
+                    restoredFlag ? 'Já existe registro de uma troca/restauração no backup da nuvem.' : 'Não foi encontrado registro de restauração anterior.'
+                ];
+                setCloudRecoveryUi('ok', lines.join('\n'));
+                showToast(CURRENT_LANG==='en' ? 'Cloud diagnosis completed.' : 'Verificação da nuvem concluída.', 'ok', 3500);
+            }catch(err){
+                const msg = (err && err.message) ? err.message : (CURRENT_LANG==='en' ? 'Cloud diagnosis failed.' : 'Falha ao verificar a nuvem.');
+                console.error('diagnoseCloudRecovery failed:', err);
+                setCloudRecoveryUi('error', msg);
+                showToast(msg, 'error', 5000);
+            }
+        }
+
+        async function reloadCloudDataSafely(){
+            if(isOffline){
+                const msg = CURRENT_LANG==='en' ? "Offline mode: cloud reload is unavailable." : "Modo offline: não é possível recarregar da nuvem.";
+                setCloudRecoveryUi('error', msg);
+                showToast(msg, 'error', 3200);
+                return;
+            }
+            setCloudRecoveryUi('busy', CURRENT_LANG==='en' ? 'Reading the latest cloud data...' : 'Lendo os dados mais recentes da nuvem...');
+            setCloudStatus('saving', CURRENT_LANG==='en' ? 'Loading cloud...' : 'Carregando nuvem...');
+            try{
+                await __initFirebaseIfPossible();
+                await loadFromCloud({force:true});
+                renderAll();
+                saveStoreToLocal();
+                const msg = CURRENT_LANG==='en' ? 'Cloud data reloaded successfully.' : 'Dados da nuvem recarregados com sucesso.';
+                setCloudRecoveryUi('ok', msg);
+                setCloudStatus('saved', CURRENT_LANG==='en' ? 'Cloud reloaded' : 'Nuvem recarregada');
+                showToast(msg, 'ok', 3200);
+            }catch(err){
+                const msg = (err && err.message) ? err.message : (CURRENT_LANG==='en' ? 'Cloud reload failed.' : 'Falha ao recarregar a nuvem.');
+                console.error('reloadCloudDataSafely failed:', err);
+                setCloudRecoveryUi('error', msg);
+                setCloudStatus('error', msg);
+                showToast(msg, 'error', 4500);
+            }
+        }
+
+        async function restorePrevCloudVersion(){
+            if(isOffline){
+                const msg = CURRENT_LANG==='en' ? "Offline mode: can't restore from cloud." : "Modo offline: não é possível restaurar da nuvem.";
+                setCloudRecoveryUi('error', msg);
+                showToast(msg, 'warn', 3500);
+                return;
+            }
+
+            const warning = CURRENT_LANG==='en'
+                ? 'Restore the previous cloud version? This swaps the current version with the previous backup. Do not click again after completion unless you intentionally want to reverse the swap.'
+                : 'Restaurar a versão anterior da nuvem? Esta ação troca a versão atual pela cópia anterior. Não clique novamente após concluir, pois uma segunda restauração pode inverter as versões outra vez.';
+            if(!confirm(warning)){
+                setCloudRecoveryUi('ready', CURRENT_LANG==='en' ? 'Restore cancelled.' : 'Restauração cancelada.');
+                return;
+            }
+
+            setCloudRecoveryUi('busy', CURRENT_LANG==='en' ? 'Validating and restoring the previous cloud version...' : 'Validando e restaurando a versão anterior da nuvem...');
+            setCloudStatus('saving', CURRENT_LANG==='en' ? 'Restoring...' : 'Restaurando...');
+
             try{
                 await __initFirebaseIfPossible();
                 const docRef = getCloudDocRef();
 
                 if(!runTransaction){
-                    toast(translateString(CURRENT_LANG==='en' ? "Restore unavailable (transaction module missing)." : "Restauração indisponível (módulo de transação ausente)."), 'error');
-                    return;
+                    throw new Error(CURRENT_LANG==='en' ? 'Restore unavailable (transaction module missing).' : 'Restauração indisponível (módulo de transação ausente).');
                 }
 
-                setCloudStatus('saving', (CURRENT_LANG==='en' ? "Restoring..." : "Restaurando..."));
-
+                let restoredMeta = null;
                 await runTransaction(db, async (txn) => {
                     const backupRef = getCloudBackupRef();
                     const snap = await txn.get(docRef);
-                    if(!snap.exists()) throw new Error(CURRENT_LANG==='en' ? "No cloud document found." : "Documento na nuvem não encontrado.");
+                    if(!snap.exists()) throw new Error(CURRENT_LANG==='en' ? 'No cloud document found.' : 'Documento na nuvem não encontrado.');
                     const cur = snap.data() || {};
-                    const curJson  = (typeof cur.store_json === 'string') ? cur.store_json : '';
+                    const curJson = (typeof cur.store_json === 'string') ? cur.store_json : '';
 
                     const backupSnap = await txn.get(backupRef);
                     const backupData = backupSnap.exists() ? (backupSnap.data() || {}) : {};
@@ -8171,21 +8312,24 @@ async function saveToCloudNow() {
                     let prevMs = Number(backupData.last_update_ms || 0) || null;
                     let prevIso = (typeof backupData.last_update_iso === 'string') ? backupData.last_update_iso : null;
 
-                    // backward compatibility if an old embedded backup still exists
                     if((!prevJson || prevJson.length < 20) && typeof cur.prev_store_json === 'string'){
                         prevJson = cur.prev_store_json;
                         prevMs = Number(cur.prev_update_ms || 0) || prevMs;
                         prevIso = (typeof cur.prev_update_iso === 'string') ? cur.prev_update_iso : prevIso;
                     }
-
                     if(!prevJson || prevJson.length < 20){
-                        throw new Error(CURRENT_LANG==='en'
-                            ? "No previous cloud version available yet."
-                            : "Ainda não existe uma versão anterior disponível."
-                        );
+                        throw new Error(CURRENT_LANG==='en' ? 'No previous cloud version is available.' : 'Não existe uma versão anterior disponível na nuvem.');
                     }
+                    let parsedPrev = null;
+                    try{ parsedPrev = JSON.parse(prevJson); }catch(e){ throw new Error(CURRENT_LANG==='en' ? 'The previous cloud version is invalid.' : 'A versão anterior da nuvem está inválida.'); }
+                    if(!parsedPrev || typeof parsedPrev !== 'object' || !parsedPrev.accounts){
+                        throw new Error(CURRENT_LANG==='en' ? 'The previous cloud version does not contain valid accounts.' : 'A versão anterior não contém contas válidas.');
+                    }
+
                     const nowMs = Date.now();
                     const nowIso = new Date(nowMs).toISOString();
+                    restoredMeta = { prevMs, prevIso, accountCount: Object.keys(parsedPrev.accounts || {}).length };
+
                     txn.set(docRef, {
                         store_json: prevJson,
                         last_update_ms: nowMs,
@@ -8206,28 +8350,41 @@ async function saveToCloudNow() {
                     }, { merge:true });
                 });
 
-                toast(translateString(CURRENT_LANG==='en' ? "Previous cloud version restored." : "Versão anterior restaurada."), 'ok');
-                const __local = loadStoreFromLocal();
-        if(__local){
-          // Merge local snapshot first; cloud sync will resolve by last_update_ms
-          store = Object.assign(store, __local);
-        }
-        await loadFromCloud();
+                // Important: force cloud to win after rollback; do not merge the smaller local cache first.
+                await loadFromCloud({force:true});
                 renderAll();
-                setCloudStatus('saved', (CURRENT_LANG==='en' ? "Restored" : "Restaurado"));
+                saveStoreToLocal();
+
+                const when = restoredMeta && restoredMeta.prevIso ? new Date(restoredMeta.prevIso).toLocaleString() : '';
+                const msg = CURRENT_LANG==='en'
+                    ? `Previous cloud version restored${when ? ' (' + when + ')' : ''}.`
+                    : `Versão anterior restaurada${when ? ' (' + when + ')' : ''}.`;
+                setCloudRecoveryUi('ok', msg);
+                setCloudStatus('saved', CURRENT_LANG==='en' ? 'Restored' : 'Restaurado');
+                showToast(msg, 'ok', 5000);
             }catch(err){
-                console.error(err);
-                setCloudStatus('error', (err && err.message) ? err.message : (CURRENT_LANG==='en' ? "Restore failed" : "Falha ao restaurar"));
-                toast((err && err.message) ? err.message : (CURRENT_LANG==='en' ? "Restore failed" : "Falha ao restaurar"), 'error');
+                const msg = (err && err.message) ? err.message : (CURRENT_LANG==='en' ? 'Restore failed.' : 'Falha ao restaurar.');
+                console.error('restorePrevCloudVersion failed:', err);
+                setCloudRecoveryUi('error', msg);
+                setCloudStatus('error', msg);
+                showToast(msg, 'error', 6000);
             }
         }
 
+        window.diagnoseCloudRecovery = diagnoseCloudRecovery;
+        window.reloadCloudDataSafely = reloadCloudDataSafely;
+
         function forceCloudSaveOnce(){
+            const msg = CURRENT_LANG==='en'
+                ? 'Force-save can overwrite a larger cloud dataset with the current local dataset. Continue only if you verified the local data is complete. Continue?'
+                : 'Forçar salvar pode substituir um conjunto maior da nuvem pelos dados locais atuais. Continue somente se tiver confirmado que os dados locais estão completos. Deseja continuar?';
+            if(!confirm(msg)){
+                setCloudRecoveryUi('ready', CURRENT_LANG==='en' ? 'Force save cancelled.' : 'Salvamento forçado cancelado.');
+                return;
+            }
             __forceCloudSaveOnce = true;
-            toast(translateString(CURRENT_LANG==='en'
-                ? "Force save armed. Next save will bypass the safety guard."
-                : "Forçar salvar ativado. O próximo salvamento vai ignorar a proteção."
-            ), 'warn');
+            setCloudRecoveryUi('busy', CURRENT_LANG==='en' ? 'Force save requested...' : 'Salvamento forçado solicitado...');
+            showToast(CURRENT_LANG==='en' ? 'Force save armed.' : 'Salvamento forçado ativado.', 'warn', 3500);
             scheduleSaveToCloud();
         }
 
@@ -8242,9 +8399,11 @@ async function saveToCloudNow() {
                 document.body.appendChild(a);
                 a.click();
                 setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 300);
-                toast(translateString(CURRENT_LANG==='en' ? "Local backup downloaded." : "Backup local baixado."), 'ok');
+                setCloudRecoveryUi('ok', CURRENT_LANG==='en' ? 'Local backup downloaded. Check your Downloads folder.' : 'Backup local baixado. Verifique a pasta Downloads.');
+                showToast(CURRENT_LANG==='en' ? 'Local backup downloaded.' : 'Backup local baixado.', 'ok', 3500);
             }catch(e){
-                toast(translateString(CURRENT_LANG==='en' ? "Failed to download backup." : "Falha ao baixar backup."), 'error');
+                setCloudRecoveryUi('error', CURRENT_LANG==='en' ? 'Failed to download local backup.' : 'Falha ao baixar o backup local.');
+                showToast(CURRENT_LANG==='en' ? 'Failed to download backup.' : 'Falha ao baixar backup.', 'error', 4500);
             }
         }
 
