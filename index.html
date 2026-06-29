@@ -5,7 +5,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Performance Report - DF Strategic V10</title>
+    <title>Performance Report - DF Strategic V8</title>
     
     <link rel="apple-touch-icon" sizes="180x180" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
     <link rel="icon" type="image/png" sizes="32x32" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
@@ -949,6 +949,66 @@ tr.bg-green-50 td {
     #admin-pane-strategy .strategy-admin-table td:nth-child(4){display:inline-flex;width:auto;margin-right:12px;align-items:center;}
   }
 </style>
+
+<style id="df-strategy-history-v7-styles">
+  .df-v7-strategy-card{border:1px solid #e2e8f0;background:#fff;border-radius:12px;padding:10px;min-width:0;transition:border-color .15s,box-shadow .15s,transform .15s;}
+  .df-v7-strategy-card:hover{border-color:#a5b4fc;box-shadow:0 8px 24px rgba(15,23,42,.08);transform:translateY(-1px);}
+  body.dark .df-v7-strategy-card{background:rgba(15,23,42,.55);border-color:#334155;}
+  body.dark .df-v7-strategy-card:hover{border-color:#6366f1;box-shadow:0 10px 26px rgba(0,0,0,.22);}
+  .df-v7-strategy-card-name{font-size:14px;font-weight:900;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  body.dark .df-v7-strategy-card-name{color:#e2e8f0;}
+  .df-v7-strategy-card-meta{font-size:9.5px;color:#64748b;line-height:1.3;margin-top:2px;}
+  body.dark .df-v7-strategy-card-meta{color:#94a3b8;}
+  .df-v7-strategy-card-actions{display:flex;gap:6px;margin-top:8px;}
+  .df-v7-mini-btn{flex:1;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;border-radius:8px;padding:6px 7px;font-size:10px;font-weight:800;cursor:pointer;}
+  .df-v7-mini-btn:hover{background:#eef2ff;border-color:#c7d2fe;color:#4338ca;}
+  body.dark .df-v7-mini-btn{background:#1e293b;border-color:#334155;color:#cbd5e1;}
+  body.dark .df-v7-mini-btn:hover{background:#312e81;border-color:#4f46e5;color:#e0e7ff;}
+  .df-v7-version-card{border:1px solid #e2e8f0;background:#fff;border-radius:12px;padding:10px;}
+  body.dark .df-v7-version-card{background:rgba(15,23,42,.55);border-color:#334155;}
+  .df-v7-version-card.current{border-color:#86efac;background:#f0fdf4;}
+  body.dark .df-v7-version-card.current{border-color:#166534;background:rgba(20,83,45,.20);}
+  .df-v7-version-card.scheduled{border-color:#fcd34d;background:#fffbeb;}
+  body.dark .df-v7-version-card.scheduled{border-color:#92400e;background:rgba(120,53,15,.18);}
+  .df-v7-status-pill{display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.04em;}
+  .df-v7-status-current{background:#dcfce7;color:#166534;}.df-v7-status-archived{background:#e2e8f0;color:#475569;}.df-v7-status-scheduled{background:#fef3c7;color:#92400e;}
+  body.dark .df-v7-status-current{background:rgba(22,101,52,.28);color:#86efac;} body.dark .df-v7-status-archived{background:#334155;color:#cbd5e1;} body.dark .df-v7-status-scheduled{background:rgba(146,64,14,.28);color:#fcd34d;}
+  .df-v7-history-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;}
+  .df-v7-history-kpi{border:1px solid #e2e8f0;border-radius:11px;background:#fff;padding:9px 10px;min-width:0;}
+  body.dark .df-v7-history-kpi{background:rgba(15,23,42,.5);border-color:#334155;}
+  .df-v7-history-kpi small{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#64748b;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .df-v7-history-kpi strong{display:block;margin-top:2px;font-size:13px;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  body.dark .df-v7-history-kpi small{color:#94a3b8;} body.dark .df-v7-history-kpi strong{color:#e2e8f0;}
+  @media(max-width:900px){.df-v7-history-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media(max-width:520px){.df-v7-history-kpis{grid-template-columns:1fr;}}
+</style>
+
+
+<style id="df-v8-help-and-harmony-styles">
+  body.dark .d2-info-modal{background:#0f172a;border:1px solid #334155;}
+  body.dark .d2-info-modal header{border-bottom-color:#334155;}
+  body.dark .d2-info-modal header h3,.dark .d2-info-body{color:#e2e8f0;}
+  body.dark .d2-info-modal header button{background:#1e293b;border-color:#334155;color:#cbd5e1;}
+  #df-main-tabs-shell .df-main-help-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid #cbd5e1;background:#fff;color:#475569;padding:8px 11px;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;transition:.18s ease;}
+  #df-main-tabs-shell .df-main-help-btn:hover{border-color:#818cf8;background:#eef2ff;color:#4338ca;}
+  body.dark #df-main-tabs-shell .df-main-help-btn{background:#0f172a;border-color:#475569;color:#cbd5e1;}
+  body.dark #df-main-tabs-shell .df-main-help-btn:hover{background:rgba(99,102,241,.16);border-color:#6366f1;color:#e0e7ff;}
+  .df-v8-guide{display:grid;gap:12px;}
+  .df-v8-guide-intro{padding:10px 12px;border-radius:12px;background:#eef2ff;border:1px solid #c7d2fe;font-size:12px;line-height:1.45;color:#3730a3;}
+  body.dark .df-v8-guide-intro{background:rgba(79,70,229,.14);border-color:rgba(99,102,241,.35);color:#c7d2fe;}
+  .df-v8-guide-steps{display:grid;gap:8px;counter-reset:guide;}
+  .df-v8-guide-step{display:grid;grid-template-columns:26px minmax(0,1fr);gap:9px;align-items:start;padding:9px 10px;border:1px solid #e2e8f0;border-radius:11px;background:#fff;}
+  body.dark .df-v8-guide-step{background:#1e293b;border-color:#334155;}
+  .df-v8-guide-step::before{counter-increment:guide;content:counter(guide);display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;background:#4f46e5;color:#fff;font-size:11px;font-weight:900;}
+  .df-v8-guide-step strong{display:block;font-size:12px;color:#0f172a;margin-bottom:2px;}
+  body.dark .df-v8-guide-step strong{color:#f1f5f9;}
+  .df-v8-guide-step span{display:block;font-size:11px;color:#64748b;line-height:1.4;}
+  body.dark .df-v8-guide-step span{color:#94a3b8;}
+  .df-v8-guide-note{font-size:11px;color:#64748b;padding-top:2px;}
+  body.dark .df-v8-guide-note{color:#94a3b8;}
+  @media(max-width:480px){#df-main-tabs-shell .df-main-help-btn span{display:none;}#df-main-tabs-shell .df-main-help-btn{padding:8px;}}
+</style>
+
 </head>
 <body class="pb-12 transition-colors duration-300">
 
@@ -1081,15 +1141,18 @@ tr.bg-green-50 td {
                     </div>
                 </div>
 
-                <div class="flex gap-2 mb-4">
+                <div class="flex gap-2 mb-4 flex-wrap">
                     <button id="admin-tab-payouts" onclick="setAdminTab('payouts')" class="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         <i data-lucide="wallet" class="w-4 h-4"></i> Saques
                     </button>
-                    <button id="admin-tab-logs" onclick="setAdminTab('logs')" class="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                        <i data-lucide="file-text" class="w-4 h-4"></i> Logs
+                    <button id="admin-tab-imports" onclick="setAdminTab('imports')" class="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i data-lucide="upload" class="w-4 h-4"></i> Importações
                     </button>
                     <button id="admin-tab-strategy" onclick="setAdminTab('strategy')" class="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         <i data-lucide="sliders-horizontal" class="w-4 h-4"></i> Estratégias
+                    </button>
+                    <button id="admin-tab-logs" onclick="setAdminTab('logs')" class="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i data-lucide="settings" class="w-4 h-4"></i> Sistema
                     </button>
                 </div>
 
@@ -1129,7 +1192,7 @@ tr.bg-green-50 td {
                     <div class="flex items-start justify-between gap-3 flex-wrap">
                         <div>
                             <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                <i data-lucide="layers-3" class="w-4 h-4 text-indigo-500"></i> Configuração dos Operacionais
+                                <i data-lucide="layers-3" class="w-4 h-4 text-indigo-500"></i> Configuração dos Operacionais <span class="info-i" tabindex="0" role="button" aria-label="Ajuda: Configuração dos Operacionais" data-help-title="Configuração dos Operacionais">i</span>
                             </h4>
                             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Dois setups independentes, cada um com 20/60, 25/75 e 30/90.</p>
                         </div>
@@ -1143,20 +1206,18 @@ tr.bg-green-50 td {
 
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
                         <div class="rounded-xl border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/50 dark:bg-indigo-950/20 p-4">
-                            <div class="flex items-center gap-2 font-extrabold text-indigo-900 dark:text-indigo-200"><i data-lucide="gem" class="w-4 h-4"></i> Premium</div>
-                            <div class="mt-3 grid grid-cols-3 gap-2 text-center">
-                                <div class="rounded-lg bg-white dark:bg-slate-900/50 border border-indigo-100 dark:border-indigo-900 p-2"><div class="font-black">20/60</div><div class="text-[10px] text-slate-500">Desde o marco</div></div>
-                                <div class="rounded-lg bg-white dark:bg-slate-900/50 border border-indigo-100 dark:border-indigo-900 p-2"><div class="font-black">25/75</div><div class="text-[10px] text-emerald-600">Continuidade</div></div>
-                                <div class="rounded-lg bg-white dark:bg-slate-900/50 border border-indigo-100 dark:border-indigo-900 p-2"><div class="font-black">30/90</div><div class="text-[10px] text-slate-500">Desde o marco</div></div>
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 font-extrabold text-indigo-900 dark:text-indigo-200"><i data-lucide="gem" class="w-4 h-4"></i> Premium</div>
+                                <button type="button" onclick="window.dfOpenStrategyHistory('premium','t0')" class="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 hover:underline">Histórico e comparação</button>
                             </div>
+                            <div id="df-premium-strategy-cards" class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2"></div>
                         </div>
                         <div class="rounded-xl border border-teal-200 dark:border-teal-900/60 bg-teal-50/50 dark:bg-teal-950/20 p-4">
-                            <div class="flex items-center gap-2 font-extrabold text-teal-900 dark:text-teal-200"><i data-lucide="scan-line" class="w-4 h-4"></i> Barra Ignorada</div>
-                            <div class="mt-3 grid grid-cols-3 gap-2 text-center">
-                                <div class="rounded-lg bg-white dark:bg-slate-900/50 border border-teal-100 dark:border-teal-900 p-2"><div class="font-black">20/60</div><div class="text-[10px] text-slate-500">Desde o marco</div></div>
-                                <div class="rounded-lg bg-white dark:bg-slate-900/50 border border-teal-100 dark:border-teal-900 p-2"><div class="font-black">25/75</div><div class="text-[10px] text-emerald-600">Continuidade</div></div>
-                                <div class="rounded-lg bg-white dark:bg-slate-900/50 border border-teal-100 dark:border-teal-900 p-2"><div class="font-black">30/90</div><div class="text-[10px] text-slate-500">Desde o marco</div></div>
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 font-extrabold text-teal-900 dark:text-teal-200"><i data-lucide="scan-line" class="w-4 h-4"></i> Setup Barra Ignorada</div>
+                                <button type="button" onclick="window.dfOpenStrategyHistory('ignoredBar','ib2060')" class="text-[11px] font-bold text-teal-700 dark:text-teal-300 hover:underline">Histórico e comparação</button>
                             </div>
+                            <div id="df-ignored-strategy-cards" class="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2"></div>
                         </div>
                     </div>
 
@@ -1194,9 +1255,9 @@ tr.bg-green-50 td {
                     <div class="flex items-start justify-between gap-3">
                         <div>
                             <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                                <i data-lucide="shield-alert" class="w-4 h-4 text-indigo-500"></i> Logs de Admin
+                                <i data-lucide="settings" class="w-4 h-4 text-indigo-500"></i> Sistema e Auditoria
                             </h4>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Registro de ações administrativas.</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Logs administrativos e ferramentas de segurança da nuvem.</p>
                         </div>
                         <div class="flex gap-2">
                             <button id="admin-clear-logs-btn" onclick="clearAdminLogs()" class="hidden px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold flex items-center gap-2">
@@ -1232,6 +1293,16 @@ tr.bg-green-50 td {
 
                 
                 
+                <div id="admin-pane-imports" class="hidden space-y-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                                <i data-lucide="upload-cloud" class="w-4 h-4 text-indigo-500"></i> Central de Importações
+                            </h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">NinjaTrader e Tradovate ficam concentrados somente nesta área.</p>
+                        </div>
+                    </div>
+
                     <!-- NINJATRADER QUICK IMPORT -->
 <div class="mt-4 p-4 rounded-xl border border-slate-200 bg-white">
   <div class="flex items-start justify-between gap-3">
@@ -1349,6 +1420,7 @@ tr.bg-green-50 td {
               <div id="cash-import-preview" class="mt-3 p-4 rounded-xl bg-slate-50 border border-slate-200 text-sm hidden"></div>
             </div>
           </div>
+                </div><!-- /admin-pane-imports -->
 </div>
                     </div>
 
@@ -1621,9 +1693,16 @@ tr.bg-green-50 td {
         <div class="space-y-6">
             <div class="dashboard-card p-6">
                 <div class="flex justify-between items-center gap-3 mb-4 flex-wrap">
-                    <h3 class="font-bold text-slate-800 dark:text-white flex items-center gap-2"><i data-lucide="bar-chart" class="w-4 h-4 text-indigo-600"></i> Evolução da Performance — Premium</h3>
+                    <h3 class="font-bold text-slate-800 dark:text-white flex items-center gap-2"><i data-lucide="bar-chart" class="w-4 h-4 text-indigo-600"></i> Evolução da Performance — Premium <span class="info-i" tabindex="0" role="button" aria-label="Ajuda: Evolução da Performance" data-help-title="Evolução da Performance">i</span></h3>
                     <div class="no-print flex items-center gap-3 flex-wrap text-[11px]">
-                        <span id="df-cutover-badge" class="px-2.5 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-200 font-bold">Marco</span>
+                        <button id="df-cutover-badge" type="button" onclick="window.dfOpenCutoverQuickEditor()" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-200 font-bold transition" title="Alterar marco temporal">
+                            <span id="df-cutover-badge-label">Marco</span>
+                            <i data-lucide="pencil" class="w-3 h-3"></i>
+                        </button>
+                        <button type="button" onclick="window.dfOpenStrategyHistory('premium','t0')" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border border-indigo-200 dark:border-indigo-800 bg-white hover:bg-indigo-50 dark:bg-slate-900/40 dark:hover:bg-indigo-950/30 text-indigo-700 dark:text-indigo-200 font-bold transition" title="Consultar e comparar versões das estratégias">
+                            <i data-lucide="history" class="w-3 h-3"></i>
+                            <span>Histórico de Estratégias</span>
+                        </button>
                         <label class="inline-flex items-center gap-2 cursor-pointer select-none px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/40 text-slate-600 dark:text-slate-300 font-semibold">
                             <input id="df-show-legacy-history" type="checkbox" class="accent-indigo-600" onchange="window.dfSetShowLegacyHistory(this.checked)" checked>
                             <span>Exibir Histórico Antigo</span>
@@ -1733,7 +1812,7 @@ tr.bg-green-50 td {
 <div class="flex items-center justify-between mb-3">
         <div class="flex items-center gap-2">
             <i data-lucide="activity" class="w-4 h-4 text-indigo-600"></i>
-            <span id="global-insights-title" class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase">Insights Globais</span>
+            <span id="global-insights-title" class="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase">Insights Globais</span><span class="info-i" tabindex="0" role="button" aria-label="Ajuda: Insights Globais" data-help-title="Insights Globais">i</span>
         </div>
         <button type="button" onclick="openAccountsOverview()" class="px-2.5 py-1.5 rounded-md bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/10 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-200 text-[11px] font-bold">
             Resumo
@@ -1785,7 +1864,7 @@ tr.bg-green-50 td {
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
     <div class="dashboard-card p-4 border-l-4 border-l-indigo-500">
-        <p class="text-xs font-bold text-gray-400 uppercase">Saldo Atual (Equity)</p>
+        <p class="text-xs font-bold text-gray-400 uppercase flex items-center">Saldo Atual (Equity)<span class="info-i" tabindex="0" role="button" aria-label="Ajuda: Saldo Atual" data-help-title="Saldo Atual (Equity)">i</span></p>
         <h2 id="current-equity" class="text-3xl font-extrabold text-slate-800 dark:text-white mt-1">$0.00</h2>
         <div class="mt-3">
             <div class="flex justify-between text-[10px] uppercase font-bold text-slate-400 mb-1">
@@ -1929,6 +2008,137 @@ tr.bg-green-50 td {
                 <div class="flex justify-end gap-2 pt-1">
                     <button type="button" onclick="closeAccountMetaModal()" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600">Cancelar</button>
                     <button type="button" onclick="saveAccountMeta()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Cutover Editor -->
+    <div id="df-cutover-modal" class="fixed inset-0 z-[75] hidden no-print" role="dialog" aria-modal="true">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="window.dfCloseCutoverQuickEditor()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[92vw] max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5">
+            <div class="flex items-start justify-between gap-3 mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2"><i data-lucide="calendar-cog" class="w-5 h-5 text-indigo-600"></i> Ajustar marco temporal <span class="info-i" tabindex="0" role="button" aria-label="Ajuda: Marco Temporal" data-help-title="Marco Temporal">i</span></h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Configuração global aplicada a todas as contas.</p>
+                </div>
+                <button type="button" onclick="window.dfCloseCutoverQuickEditor()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Nova data do marco</label>
+                    <input id="df-cutover-quick-date" type="date" oninput="window.dfUpdateCutoverQuickImpact()" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div id="df-cutover-quick-impact" class="rounded-xl border border-indigo-100 dark:border-indigo-900/60 bg-indigo-50/60 dark:bg-indigo-950/20 p-3 text-xs text-slate-600 dark:text-slate-300"></div>
+                <div class="rounded-xl border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/20 p-3 text-[11px] text-amber-800 dark:text-amber-200 leading-relaxed">
+                    A mudança não apaga nem reescreve lançamentos. Ela altera apenas o enquadramento de 20/60 e 30/90 nos relatórios, gráficos e análises. A estratégia 25/75 mantém continuidade histórica.
+                </div>
+                <div class="flex justify-end gap-2 pt-1">
+                    <button type="button" onclick="window.dfCloseCutoverQuickEditor()" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold dark:bg-slate-700 dark:text-slate-200">Cancelar</button>
+                    <button type="button" onclick="window.dfSaveCutoverQuickEditor()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold flex items-center gap-2"><i data-lucide="save" class="w-4 h-4"></i> Salvar marco</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Strategy Change / Versioning Modal V8 -->
+    <div id="df-strategy-change-modal" class="fixed inset-0 z-[82] hidden no-print" role="dialog" aria-modal="true">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="window.dfCloseStrategyChange()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[94vw] max-w-xl max-h-[92vh] overflow-y-auto bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 p-5">
+            <div class="flex items-start justify-between gap-3 mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2"><i data-lucide="git-branch" class="w-5 h-5 text-indigo-600"></i> Criar nova versão da estratégia</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">A versão anterior será encerrada e continuará disponível para consulta e comparação.</p>
+                </div>
+                <button type="button" onclick="window.dfCloseStrategyChange()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[11px] uppercase tracking-wide font-bold text-slate-500 dark:text-slate-400">Operacional</label>
+                        <select id="df-strategy-change-setup" onchange="window.dfStrategyChangeSetupChanged()" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+                            <option value="premium">Premium</option>
+                            <option value="ignoredBar">Setup Barra Ignorada</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[11px] uppercase tracking-wide font-bold text-slate-500 dark:text-slate-400">Linha técnica</label>
+                        <select id="df-strategy-change-slot" onchange="window.dfUpdateStrategyChangePreview()" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"></select>
+                    </div>
+                </div>
+                <div id="df-strategy-change-current" class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-3 text-xs text-slate-600 dark:text-slate-300"></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[11px] uppercase tracking-wide font-bold text-slate-500 dark:text-slate-400">Novo nome</label>
+                        <input id="df-strategy-change-name" type="text" maxlength="60" oninput="window.dfUpdateStrategyChangePreview()" placeholder="Ex.: 15/45" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="text-[11px] uppercase tracking-wide font-bold text-slate-500 dark:text-slate-400">Início da nova versão</label>
+                        <input id="df-strategy-change-date" type="date" oninput="window.dfUpdateStrategyChangePreview()" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-[11px] uppercase tracking-wide font-bold text-slate-500 dark:text-slate-400">Observação da mudança <span class="font-normal normal-case">(opcional)</span></label>
+                    <textarea id="df-strategy-change-note" rows="2" maxlength="300" placeholder="Motivo ou alteração técnica aplicada." class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 resize-none"></textarea>
+                </div>
+                <div id="df-strategy-change-impact" class="rounded-xl border border-indigo-100 dark:border-indigo-900/60 bg-indigo-50/60 dark:bg-indigo-950/20 p-3 text-xs text-slate-600 dark:text-slate-300"></div>
+                <div class="rounded-xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50 dark:bg-emerald-950/20 p-3 text-[11px] text-emerald-800 dark:text-emerald-200 leading-relaxed">
+                    Nenhuma operação será apagada ou movida. Os registros permanecem no mesmo campo técnico e passam a ser identificados pela versão válida na data da operação.
+                </div>
+                <div class="flex justify-end gap-2 pt-1">
+                    <button type="button" onclick="window.dfCloseStrategyChange()" class="px-4 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold dark:bg-slate-700 dark:text-slate-200">Cancelar</button>
+                    <button type="button" onclick="window.dfSaveStrategyVersionChange()" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold flex items-center gap-2"><i data-lucide="git-commit" class="w-4 h-4"></i> Criar nova versão</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Strategy History & Comparison Modal V7 -->
+    <div id="df-strategy-history-modal" class="fixed inset-0 z-[81] hidden no-print" role="dialog" aria-modal="true">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="window.dfCloseStrategyHistory()"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[96vw] max-w-6xl max-h-[94vh] overflow-hidden bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col">
+            <div class="flex items-start justify-between gap-3 px-5 py-4 border-b border-slate-200 dark:border-slate-700">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2"><i data-lucide="history" class="w-5 h-5 text-indigo-600"></i> Histórico e Comparação de Estratégias <span class="info-i" tabindex="0" role="button" aria-label="Ajuda: Histórico de Estratégias" data-help-title="Histórico de Estratégias">i</span></h3>
+                    <p id="df-strategy-history-account" class="text-xs text-slate-500 dark:text-slate-400 mt-1">Conta selecionada: —</p>
+                </div>
+                <button type="button" onclick="window.dfCloseStrategyHistory()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-4">
+                <div class="flex items-end justify-between gap-3 flex-wrap">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 min-w-0 flex-1 max-w-2xl">
+                        <div>
+                            <label class="text-[11px] uppercase tracking-wide font-bold text-slate-500 dark:text-slate-400">Operacional</label>
+                            <select id="df-strategy-history-setup" onchange="window.dfStrategyHistorySetupChanged()" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+                                <option value="premium">Premium</option>
+                                <option value="ignoredBar">Setup Barra Ignorada</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[11px] uppercase tracking-wide font-bold text-slate-500 dark:text-slate-400">Linha técnica</label>
+                            <select id="df-strategy-history-slot" onchange="window.dfRenderStrategyHistory()" class="mt-1 w-full px-3 py-2.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"></select>
+                        </div>
+                    </div>
+                    <button type="button" onclick="window.dfOpenStrategyChangeFromHistory()" class="px-4 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-2"><i data-lucide="git-branch" class="w-4 h-4"></i> Alterar estratégia</button>
+                </div>
+                <div id="df-strategy-history-summary"></div>
+                <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,.85fr)] gap-4">
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/20 p-4">
+                        <div class="text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-2 mb-3"><i data-lucide="line-chart" class="w-4 h-4 text-indigo-600"></i> Curvas por versão</div>
+                        <div class="relative h-[340px]"><canvas id="df-strategy-history-chart"></canvas><div id="df-strategy-history-chart-empty" class="absolute inset-0 hidden items-center justify-center text-sm text-slate-400">Sem operações para exibir.</div></div>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4">
+                        <div class="text-xs font-extrabold text-slate-700 dark:text-slate-200 flex items-center gap-2 mb-3"><i data-lucide="list-tree" class="w-4 h-4 text-indigo-600"></i> Versões registradas</div>
+                        <div id="df-strategy-history-list" class="space-y-2"></div>
+                    </div>
+                </div>
+                <div class="rounded-xl border border-slate-200 dark:border-slate-700 overflow-x-auto">
+                    <table class="min-w-[980px] w-full text-xs">
+                        <thead class="bg-slate-50 dark:bg-slate-900/60 text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                            <tr><th class="px-3 py-2 text-left">Versão</th><th class="px-3 py-2 text-left">Período</th><th class="px-3 py-2 text-right">Operações</th><th class="px-3 py-2 text-right">Resultado</th><th class="px-3 py-2 text-right">Acerto</th><th class="px-3 py-2 text-right">Fator de lucro</th><th class="px-3 py-2 text-right">Média/op.</th><th class="px-3 py-2 text-right">Drawdown</th><th class="px-3 py-2 text-right">Seq. perdas</th></tr>
+                        </thead>
+                        <tbody id="df-strategy-history-table" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -2360,10 +2570,12 @@ let isOffline = false;
             adminUsername: document.getElementById('admin-username'),
             adminPassword: document.getElementById('admin-password'),
             adminTabPayouts: document.getElementById('admin-tab-payouts'),
+            adminTabImports: document.getElementById('admin-tab-imports'),
             adminTabLogs: document.getElementById('admin-tab-logs'),
             adminTabStrategy: document.getElementById('admin-tab-strategy'),
             adminTabAI: document.getElementById('admin-tab-ai'),
             adminPanePayouts: document.getElementById('admin-pane-payouts'),
+            adminPaneImports: document.getElementById('admin-pane-imports'),
             adminPaneLogs: document.getElementById('admin-pane-logs'),
             adminPaneStrategy: document.getElementById('admin-pane-strategy'),
             adminPaneAI: document.getElementById('admin-pane-ai'),
@@ -2750,7 +2962,7 @@ async function callOpenAI(question){
             const instructions = [
                 'Você é um assistente dentro de um aplicativo de performance (trading) baseado em regras da Apex Trader Funding.',
                 'Responda no mesmo idioma da pergunta (português ou inglês).',
-                'Você deve ajudar o usuário a entender e analisar os números e informações armazenadas no aplicativo (trades, ciclos, médias, filtros, relatórios, campos de Trade 1/Trade 2/Trade 3/Trade 4, etc.).',
+                'Você deve ajudar o usuário a entender e analisar os números e informações armazenadas no aplicativo (trades, ciclos, médias, filtros, relatórios, estratégias ativas, versões históricas e resultados por período.).',
                 'Use SOMENTE o contexto JSON fornecido (monthEntries, recentEntries, analysisRangeEntries, stats, questionRangeEntries). Não invente dados.',
                 'Se o usuário pedir um relatório por período, priorize o intervalo informado em analysisFilter/start-end e/ou analysisRangeSummary. Se o usuário mencionar um intervalo na pergunta, use questionRangeSummary/questionRangeEntries.',
                 'Você não tem acesso a preços ao vivo. Se pedirem cotação atual, explique essa limitação e sugira consultar a corretora.',
@@ -3611,6 +3823,8 @@ tr.bg-green-50 td {
 
   ${groupsHtml}
 
+
+
 </body>
 </html>`;
         }
@@ -4375,6 +4589,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             _adminTab = tab;
 
             if(els.adminPanePayouts) els.adminPanePayouts.classList.toggle('hidden', tab !== 'payouts');
+            if(els.adminPaneImports) els.adminPaneImports.classList.toggle('hidden', tab !== 'imports');
             if(els.adminPaneLogs) els.adminPaneLogs.classList.toggle('hidden', tab !== 'logs');
             if(els.adminPaneStrategy) els.adminPaneStrategy.classList.toggle('hidden', tab !== 'strategy');
             if(els.adminPaneAI) els.adminPaneAI.classList.toggle('hidden', tab !== 'ai');
@@ -4382,6 +4597,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(els.adminTabPayouts){
                 els.adminTabPayouts.className = "px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 " + 
                     (tab === 'payouts' ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100");
+            }
+            if(els.adminTabImports){
+                els.adminTabImports.className = "px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 " + 
+                    (tab === 'imports' ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100");
             }
             if(els.adminTabLogs){
                 els.adminTabLogs.className = "px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 " + 
@@ -4690,7 +4909,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         };
 
 
-        // Abrir/fechar detalhes do Trade 1/Trade 2/Trade 3/Trade 4 (por dia) — somente no clique
+        // Abrir/fechar detalhes das estratégias ativas do dia — somente no clique
         window.toggleTradeDetails = (iso, which) => {
             const acc = getActive();
             if (!store.tradeDetailsOpen) store.tradeDetailsOpen = {};
@@ -5121,7 +5340,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         function dfEnsureOperationalConfig(){
             if(!store.operationalConfig || typeof store.operationalConfig !== 'object') store.operationalConfig = {};
             const cfg = store.operationalConfig;
-            cfg.version = 5;
+            cfg.version = 6;
             if(!/^\d{4}-\d{2}-\d{2}$/.test(String(cfg.cutoverDate || ''))) cfg.cutoverDate = DF_OPERATIONAL_CUTOVER_DEFAULT;
             if(typeof cfg.showLegacyHistory !== 'boolean') cfg.showLegacyHistory = true;
             cfg.setups = {
@@ -5134,7 +5353,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                     ]
                 },
                 ignoredBar: {
-                    id:'ignoredBar', label:'Barra Ignorada',
+                    id:'ignoredBar', label:'Setup Barra Ignorada',
                     strategies: [
                         { key:'ib2060', label:'20/60', startMode:'cutover' },
                         { key:'ib2575', label:'25/75', startMode:'continuous' },
@@ -5182,8 +5401,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const cfg = dfEnsureOperationalConfig();
             const checkbox = document.getElementById('df-show-legacy-history');
             if(checkbox) checkbox.checked = cfg.showLegacyHistory !== false;
+            const badgeLabel = document.getElementById('df-cutover-badge-label');
             const badge = document.getElementById('df-cutover-badge');
-            if(badge) badge.textContent = `${CURRENT_LANG === 'en' ? 'Cutover' : 'Marco'}: ${dfFormatCutoverDate(cfg.cutoverDate)}`;
+            if(badgeLabel) badgeLabel.textContent = `${CURRENT_LANG === 'en' ? 'Cutover' : 'Marco'}: ${dfFormatCutoverDate(cfg.cutoverDate)}`;
+            else if(badge) badge.textContent = `${CURRENT_LANG === 'en' ? 'Cutover' : 'Marco'}: ${dfFormatCutoverDate(cfg.cutoverDate)}`;
             const adminDate = document.getElementById('df-operational-cutover-date');
             if(adminDate && document.activeElement !== adminDate) adminDate.value = cfg.cutoverDate;
             const adminToggle = document.getElementById('df-admin-show-legacy-history');
@@ -5198,6 +5419,102 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             try{ saveToCloud(); }catch(e){}
             try{ filterReportInternal(); }catch(e){}
             dfSyncOperationalUI();
+        };
+
+        function dfCountCutoverAffected(oldDate, newDate){
+            let premium = 0, ignoredBar = 0;
+            const eligibilityChanged = (iso) => !!iso && ((String(iso) >= oldDate) !== (String(iso) >= newDate));
+            Object.values((store && store.accounts) || {}).forEach(acc => {
+                if(!acc || typeof acc !== 'object') return;
+                Object.entries(acc.data || {}).forEach(([iso, entry]) => {
+                    if(!eligibilityChanged(iso)) return;
+                    ['t0','t4'].forEach(slot => {
+                        try{
+                            const legs = getTradeLegValues(entry || {}, slot);
+                            [legs.leg1, legs.leg2, legs.leg3, legs.leg4].forEach(v => {
+                                if(v === '' || v === null || v === undefined) return;
+                                if(Number.isFinite(Number(v))) premium++;
+                            });
+                        }catch(e){}
+                    });
+                });
+                const study = acc.ignoredBarStudy;
+                if(study && Array.isArray(study.samples)){
+                    study.samples.forEach(sample => {
+                        if(!sample || !['ib2060','ib3090'].includes(sample.strategyKey)) return;
+                        (sample.operations || []).forEach(op => {
+                            if(op && eligibilityChanged(op.date) && op.result !== '' && op.result !== null && op.result !== undefined && Number.isFinite(Number(op.result))) ignoredBar++;
+                        });
+                    });
+                }
+            });
+            return { premium, ignoredBar, total: premium + ignoredBar };
+        }
+
+        window.dfUpdateCutoverQuickImpact = () => {
+            const input = document.getElementById('df-cutover-quick-date');
+            const box = document.getElementById('df-cutover-quick-impact');
+            if(!input || !box) return;
+            const cfg = dfEnsureOperationalConfig();
+            const next = String(input.value || '');
+            if(!/^\d{4}-\d{2}-\d{2}$/.test(next)){
+                box.textContent = 'Selecione uma data válida.';
+                return;
+            }
+            const current = cfg.cutoverDate;
+            if(next === current){
+                box.innerHTML = `<strong>Sem alteração.</strong> O marco permanece em ${dfFormatCutoverDate(current)}.`;
+                return;
+            }
+            const impact = dfCountCutoverAffected(current, next);
+            const direction = next < current ? 'retroagir' : 'avançar';
+            box.innerHTML = `<strong>Prévia:</strong> o marco será alterado de ${dfFormatCutoverDate(current)} para ${dfFormatCutoverDate(next)}. Ao ${direction} a data, ${impact.total} operação(ões) podem mudar de enquadramento (${impact.premium} Premium e ${impact.ignoredBar} Setup Barra Ignorada). Nenhum lançamento será apagado.`;
+        };
+
+        window.dfOpenCutoverQuickEditor = () => {
+            const session = promptAdminCredentials('Alterar o marco temporal exige acesso administrativo.', 'admin');
+            if(!session) return;
+            const modal = document.getElementById('df-cutover-modal');
+            const input = document.getElementById('df-cutover-quick-date');
+            if(input) input.value = dfGetCutoverDate();
+            if(modal) modal.classList.remove('hidden');
+            window.dfUpdateCutoverQuickImpact();
+            try{ lucide.createIcons(); }catch(e){}
+        };
+
+        window.dfCloseCutoverQuickEditor = () => {
+            const modal = document.getElementById('df-cutover-modal');
+            if(modal) modal.classList.add('hidden');
+        };
+
+        window.dfSaveCutoverQuickEditor = async () => {
+            const session = promptAdminCredentials('Salvar o marco temporal exige acesso administrativo.', 'admin');
+            if(!session) return;
+            const input = document.getElementById('df-cutover-quick-date');
+            const next = String(input && input.value || '').trim();
+            if(!/^\d{4}-\d{2}-\d{2}$/.test(next)){
+                alert('Informe uma data válida para o marco temporal.');
+                return;
+            }
+            const cfg = dfEnsureOperationalConfig();
+            const previous = cfg.cutoverDate;
+            if(next === previous){ window.dfCloseCutoverQuickEditor(); return; }
+            const impact = dfCountCutoverAffected(previous, next);
+            const ok = confirm(`Alterar o marco de ${dfFormatCutoverDate(previous)} para ${dfFormatCutoverDate(next)}?\n\n${impact.total} operação(ões) podem mudar de enquadramento. Nenhum lançamento será apagado.`);
+            if(!ok) return;
+            cfg.cutoverHistory = Array.isArray(cfg.cutoverHistory) ? cfg.cutoverHistory : [];
+            cfg.cutoverHistory.push({ from: previous, to: next, changedAt: new Date().toISOString(), changedBy: session.username, affected: impact.total });
+            cfg.cutoverHistory = cfg.cutoverHistory.slice(-50);
+            cfg.cutoverDate = next;
+            try{ logAdminAction(session.username, `Marco temporal alterado de ${previous} para ${next}`); }catch(e){}
+            try{ dfTouchStoreSafely(); }catch(e){ try{ touchStore(); }catch(_){} }
+            try{ dfSaveLocalImmediate(); }catch(e){ try{ saveStoreToLocal(); }catch(_){} }
+            try{ await dfSaveCloudImmediate(); }catch(e){ try{ await saveToCloud(); }catch(_){} }
+            try{ dfRenderEverythingSafely(); }catch(e){}
+            try{ if(window.__dfIgnoredBarRenderAll) window.__dfIgnoredBarRenderAll(); }catch(e){}
+            dfSyncOperationalUI();
+            window.dfCloseCutoverQuickEditor();
+            try{ showToast('Marco temporal atualizado com segurança.', 'ok', 2200); }catch(e){ alert('Marco temporal atualizado.'); }
         };
 
         const STRATEGY_BREAKDOWN_SLOT_MAP = { t2550:'t0', t4040:'t3', t3570:'t4', t4080:'t1', ct:'t2' };
@@ -8334,7 +8651,7 @@ async function saveToCloudNow() {
   "Pré-visualizar automaticamente": "Auto-preview",
   "“Cancelar” marca o saque como cancelado (não apaga). “Apagar”/“Limpar” só aparece para Super Admin.": "“Cancel” marks the withdrawal as canceled (does not delete). “Delete”/“Clear” shows only for Super Admin.",
   "\"Cancelar\" marca o saque como cancelado (não apaga). \"Apagar\"/\"Limpar\" só aparece para Super Admin.": "\"Cancel\" marks the withdrawal as canceled (does not delete). \"Delete\"/\"Clear\" shows only for Super Admin.",
-  "* “Dias operados” = dias úteis com qualquer registro nas estratégias ou no total, excluindo os feriados marcados no aplicativo.": "* “Days Traded” = business days with any entry (Trade 1, Trade 2, Trade 3, Trade 4, Trade 5, or Total), excluding holidays marked in the app.",
+  "* “Dias operados” = dias úteis com qualquer registro nas estratégias ou no total, excluindo os feriados marcados no aplicativo.": "* “Days Traded” = business days with any entry (any active strategy or the daily total), excluding holidays marked in the app.",
   "Esta área mostra e permite gerenciar informações (ex.: saques/histórico/ações) somente da conta selecionada. Isso evita misturar transações de todas as accounts em uma lista única, mantendo o admin limpo e fácil de auditar.": "This area shows and lets you manage info (e.g., withdrawals/history/actions) only for the selected account. This avoids mixing all accounts’ transactions in one list, keeping the admin clean and easy to audit.",
   "Formato: Performance<X>.csv. O app identifica a conta pelo sufixo X (tudo após 'Performance' e antes de '.csv'). Usa a coluna 'pnl' por trade e agrupa por dia: T1 = primeiro trade do dia; T2 = soma do 2º trade em diante; Total = T1 + T2. X pode ser qualquer combinação de letras/números.": "Format: Performance<X>.csv. The app identifies the account by suffix X (everything after 'Performance' and before '.csv'). It uses the 'pnl' column per trade and groups by day: T1 = first trade of the day; T2 = sum of trade #2 onward; Total = T1 + T2. X can be any mix of letters/numbers.",
   "Formato: Cash History<X>.csv. O app identifica a conta pelo sufixo X (tudo após 'Cash History' e antes de '.csv') e atualiza os days automaticamente. X pode ser qualquer combinação de letras/números.": "Format: Cash History<X>.csv. The app identifies the account by suffix X (everything after 'Cash History' and before '.csv') and updates the days automatically. X can be any mix of letters/numbers.",
@@ -8430,7 +8747,7 @@ async function saveToCloudNow() {
                 ['* "Cancelar" marca o saque como cancelado (não apaga). "Apagar"/"Limpar" só aparece para Super Admin.',
                  '* "Cancel" marks the withdrawal as canceled (does not delete). "Delete"/"Clear" appears only for Super Admin.'],
                 ['* “Dias operados” = dias úteis com qualquer registro nas estratégias ou no total, excluindo os feriados marcados no aplicativo.',
-                 '* "Days Traded" = business days with any record (Trade 1, Trade 2, Trade 3, Trade 4, Trade 5, or Total), excluding holidays marked in the app.'],
+                 '* "Days Traded" = business days with any record (any active strategy or the daily total), excluding holidays marked in the app.'],
                 ['Pré-visualizar automaticamente', 'Auto preview'],
                 ['Pré-visualizar', 'Preview'],
                 ['Importar e Salvar', 'Import & Save'],
@@ -8788,7 +9105,7 @@ if(composed !== core) return lead + composed + trail;
 
 
         async function init() {
-            lucide.createIcons(); ensureInfoIcons(); bindHelpPopover(); bindPeriodInteractions();
+            lucide.createIcons(); ensureInfoIcons(); bindHelpPopover(); startHelpIntegrityObserver(); bindPeriodInteractions();
             const showFatalError = (title, msg) => {
                  const loader = document.getElementById('app-loader');
                  if (loader) {
@@ -8865,8 +9182,8 @@ if (!store.activeId) {
             // Defaults (métricas internas)
             const generic = {
                 title: rawTitle || "Ajuda",
-                body: "Este card é um resumo calculado a partir do seu registro diário (Trade 1 + Trade 2 + Trade 3 + Trade 4 + Trade 5). Ele ajuda a acompanhar sua evolução e reduzir erros antes de solicitar payout.",
-                link: LINKS.paRules
+                body: "Este painel usa os lançamentos e as estratégias válidas no período selecionado. Os nomes e versões são resolvidos pela data de cada operação, preservando o histórico anterior sem misturar configurações.",
+                link: null
             };
 
 
@@ -8928,13 +9245,74 @@ if (!store.activeId) {
             }
 
 
-            if(t.includes("operacao barra ignorada") || t.includes("ignored bar operation")){
+            if(t.includes("setup barra ignorada") || t.includes("ignored-bar setup") || t.includes("ignored bar setup")){
                 const en = CURRENT_LANG === 'en';
                 return {
-                    title: en ? "Ignored Bar Operation" : "Operação Barra Ignorada",
+                    title: en ? "Ignored-Bar Setup" : "Setup Barra Ignorada",
                     body: en
-                        ? "This is an independent setup. Record Ignored Bar operations directly under 20/60, 25/75 or 30/90. Data is never copied from Premium. Indicators and comparisons are calculated automatically."
-                        : "Este é um setup independente. Registre as operações da Barra Ignorada diretamente em 20/60, 25/75 ou 30/90. Nenhum dado é copiado do Premium. Os indicadores e comparativos são calculados automaticamente.",
+                        ? "This setup is fully independent from Premium. The three tabs always show the current strategy names. A name change creates a new dated version; prior operations remain available under Strategy History and are never relabeled."
+                        : "Este setup é totalmente independente do Premium. As três abas sempre exibem os nomes atuais das estratégias. Ao mudar um nome, o sistema cria uma nova versão por data; as operações anteriores continuam no Histórico de Estratégias e nunca recebem o nome novo.",
+                    link: null
+                };
+            }
+
+            if(t.includes("evolucao da performance") || t.includes("performance evolution")){
+                const en = CURRENT_LANG === 'en';
+                return {
+                    title: en ? "Premium Performance Evolution" : "Evolução da Performance — Premium",
+                    body: en
+                        ? "The chart follows Premium results over time. The prior-history line stops at the cutover, while the current line continues from that point. Use ‘Show old history’ to hide or display the frozen line, and Strategy History to compare named versions."
+                        : "O gráfico acompanha os resultados do Premium ao longo do tempo. A linha do histórico anterior termina no marco, enquanto a linha atual continua a partir desse ponto. Use “Exibir Histórico Antigo” para ocultar ou mostrar a linha congelada e “Histórico de Estratégias” para comparar versões.",
+                    link: null
+                };
+            }
+            if(t.includes("registro das estrategias") || t.includes("strategy records")){
+                const en = CURRENT_LANG === 'en';
+                return {
+                    title: en ? "Strategy Records" : "Registro das Estratégias",
+                    body: en
+                        ? "Select one of the three current strategy tabs and add or paste results. Date and result drive the calculations; points and notes are optional. When a strategy version changes, the editor automatically switches to the new name and keeps the prior version archived."
+                        : "Selecione uma das três estratégias atuais e adicione ou cole os resultados. Data e resultado alimentam os cálculos; pontos e observações são opcionais. Quando uma versão muda, o editor assume automaticamente o novo nome e mantém a versão anterior arquivada.",
+                    link: null
+                };
+            }
+            if(t.includes("analise comparativa") || t.includes("comparative analytics")){
+                const en = CURRENT_LANG === 'en';
+                return {
+                    title: en ? "Comparative Analytics" : "Análise Comparativa",
+                    body: en
+                        ? "Compares only the current versions of the three strategies. It calculates net result, win rate, profit factor, expectancy, drawdown and streaks. Closed versions are compared separately in Strategy History."
+                        : "Compara somente as versões atuais das três estratégias. Calcula resultado, taxa de acerto, fator de lucro, expectativa, drawdown e sequências. Versões encerradas são comparadas separadamente no Histórico de Estratégias.",
+                    link: null
+                };
+            }
+            if(t.includes("historico de estrategias") || t.includes("strategy history")){
+                const en = CURRENT_LANG === 'en';
+                return {
+                    title: en ? "Strategy History" : "Histórico de Estratégias",
+                    body: en
+                        ? "Each name change creates a dated version. This screen preserves the old name, period and operations, and compares versions without changing the original records."
+                        : "Cada alteração de nome cria uma versão com data de início. Esta tela preserva nome, período e operações anteriores e permite comparar as versões sem alterar os registros originais.",
+                    link: null
+                };
+            }
+            if(t.includes("marco temporal") || t.includes("cutover")){
+                const en = CURRENT_LANG === 'en';
+                return {
+                    title: en ? "Cutover Date" : "Marco Temporal",
+                    body: en
+                        ? "Changing the cutover does not delete or rewrite operations. It only changes which dated rules apply to reports and charts. Existing strategy-version periods remain protected."
+                        : "Alterar o marco não apaga nem reescreve operações. A data apenas define quais regras entram nos relatórios e gráficos. Períodos já versionados das estratégias permanecem protegidos.",
+                    link: null
+                };
+            }
+            if(t.includes("configuracao dos operacionais") || t.includes("operational configuration")){
+                const en = CURRENT_LANG === 'en';
+                return {
+                    title: en ? "Operational Configuration" : "Configuração dos Operacionais",
+                    body: en
+                        ? "Premium and Ignored-Bar Setup are independent. Use Change to create a new dated strategy version; use History to review and compare prior versions. No operation is deleted by a name change."
+                        : "Premium e Setup Barra Ignorada são independentes. Use “Alterar” para criar uma nova versão datada da estratégia e “Histórico” para consultar e comparar versões anteriores. Nenhuma operação é apagada por uma mudança de nome.",
                     link: null
                 };
             }
@@ -8966,7 +9344,7 @@ if (!store.activeId) {
             if(t.includes("performance") || t.includes("ciclos")){
                 return {
                     title: "Performance (Ciclos / Semana / Mensal)",
-                    body: "Cálculos feitos somando Trade 1 + Trade 2 + Trade 3 + Trade 4 + Trade 5 por dia (dias úteis). ‘Mensal’ soma o mês. ‘Ciclo 10/15/20 a …’ soma do dia N do mês anterior até dia N do mês atual. As semanas seguem a divisão Seg–Dom usada no resumo.",
+                    body: "Cálculos feitos somando todas as estratégias ativas por dia (dias úteis). ‘Mensal’ soma o mês. ‘Ciclo 10/15/20 a …’ soma do dia N do mês anterior até dia N do mês atual. As semanas seguem a divisão Seg–Dom usada no resumo.",
                     link: LINKS.paRules
                 };
             }
@@ -8974,7 +9352,7 @@ if (!store.activeId) {
             if(t.includes("media") || t.includes("médias")){
                 return {
                     title: "Médias",
-                    body: "Média dos seus resultados diários (Trade 1 + Trade 2 + Trade 3 + Trade 4 + Trade 5) nos últimos X dias operados. É uma métrica interna para consistência — não substitui a checagem de regras de payout/consistência da Apex.",
+                    body: "Média dos seus resultados diários (todas as estratégias ativas) nos últimos X dias operados. É uma métrica interna para consistência — não substitui a checagem de regras de payout/consistência da Apex.",
                     link: LINKS.paRules
                 };
             }
@@ -9018,15 +9396,32 @@ if (!store.activeId) {
             });
         }
 
+        function startHelpIntegrityObserver(){
+            if(window.__dfHelpIntegrityObserverStarted) return;
+            window.__dfHelpIntegrityObserverStarted = true;
+            let timer = null;
+            const refresh = ()=>{
+                clearTimeout(timer);
+                timer = setTimeout(()=>{
+                    try{ ensureInfoIcons(); bindHelpPopover(); }catch(e){}
+                }, 40);
+            };
+            try{
+                const root = document.getElementById('df-main-dashboard-container') || document.body;
+                new MutationObserver(refresh).observe(root,{childList:true,subtree:true});
+            }catch(e){}
+            refresh();
+        }
+
         function bindHelpPopover(){
-            if(window.__helpPopoverBound) return;
-            window.__helpPopoverBound = true;
             const pop = document.getElementById('help-popover');
             const titleEl = document.getElementById('help-title');
             const bodyEl = document.getElementById('help-body');
             const linkEl = document.getElementById('help-link');
             const closeBtn = document.getElementById('help-close');
             if(!pop || !titleEl || !bodyEl || !linkEl || !closeBtn) return;
+            if(window.__helpPopoverBound) return;
+            window.__helpPopoverBound = true;
 
             let hideTimer = null;
 
@@ -9045,8 +9440,8 @@ if (!store.activeId) {
                 pop.style.top = `${top}px`;
             }
 
-            function show(anchor){
-                let rawTitle = anchor.dataset.helpTitle || anchor.dataset.helpTitle || anchor.dataset.helpTitle || '';
+            function show(anchor, forcedTitle){
+                let rawTitle = forcedTitle || anchor?.dataset?.helpTitle || '';
                 if(!rawTitle && anchor.dataset && anchor.dataset.infoKey){
                     const k = String(anchor.dataset.infoKey);
                     if(k==='ninja') rawTitle = 'Importar Performance (NinjaTrader)';
@@ -9070,12 +9465,27 @@ if (!store.activeId) {
                 requestAnimationFrame(()=>placePopover(anchor));
             }
 
+            window.dfShowHelpByTitle = function(rawTitle, anchor){
+                const target = anchor && anchor.getBoundingClientRect ? anchor : document.querySelector('.info-i');
+                if(!target) return;
+                window.__helpPopoverAnchor = target;
+                show(target, rawTitle || target.dataset.helpTitle || 'Ajuda');
+            };
+
             function hide(){
                 pop.classList.add('hidden');
             }
 
             closeBtn.addEventListener('click', hide);
-                        document.addEventListener('keydown', (e)=>{ if(e && e.key==='Escape') hide(); });
+                        document.addEventListener('keydown', (e)=>{
+                if(e && e.key==='Escape'){ hide(); return; }
+                if(!e || (e.key!=='Enter' && e.key!==' ')) return;
+                const icon = (e.target && e.target.closest) ? e.target.closest('.info-i, .info-icon-btn') : null;
+                if(!icon) return;
+                e.preventDefault();
+                window.__helpPopoverAnchor = icon;
+                show(icon);
+            });
 
 document.addEventListener('click', (e)=>{
                 const icon = (e.target && e.target.closest) ? e.target.closest('.info-i, .info-icon-btn') : null;
@@ -10944,7 +11354,7 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
 // 3) usar uma estrutura atual única em store.strategyStructure;
 // 4) permitir labels vazios sem restaurar nomes antigos;
 // 5) manter reset completo seguro preservando contas.
-const DF_STRATEGY_RESET_BUILD = 'SETUPS-SEGREGATED-V5-2026-06-28';
+const DF_STRATEGY_RESET_BUILD = 'HARMONIZED-HELP-V8-2026-06-28';
 
 function dfStrategySlots(){
     return STRATEGY_SLOT_META.map(meta => meta.slot);
@@ -11071,7 +11481,7 @@ function dfEnsureStrategyStructure(){
     // Slots antigos permanecem somente como campos técnicos no histórico e não voltam à interface.
     structure.slots = dfFixedPremiumSlots();
     structure.updatedAt = Number(structure.updatedAt) || Date.now();
-    structure.build = 'SETUPS-SEGREGATED-V5-2026-06-28';
+    structure.build = 'HARMONIZED-HELP-V8-2026-06-28';
     store.strategyStructure = structure;
     dfEnsureOperationalConfig();
 
@@ -11855,7 +12265,7 @@ window.strategyManagerSave = async function(){
         const cfg = dfEnsureOperationalConfig();
         cfg.cutoverDate = date;
         cfg.showLegacyHistory = toggleEl ? !!toggleEl.checked : true;
-        store.strategyStructure = { updatedAt:Date.now(), build:'SETUPS-SEGREGATED-V5-2026-06-28', slots:dfFixedPremiumSlots() };
+        store.strategyStructure = { updatedAt:Date.now(), build:'HARMONIZED-HELP-V8-2026-06-28', slots:dfFixedPremiumSlots() };
         store.strategyConfigs = [dfStrategyVersionFromStructure(store.strategyStructure)];
         dfTouchStoreSafely();
         dfSaveLocalImmediate();
@@ -11863,7 +12273,7 @@ window.strategyManagerSave = async function(){
         if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = `Configuração salva. Marco: ${dfFormatCutoverDate(date)}.`;
         dfRenderEverythingSafely();
         dfSyncOperationalUI();
-        alert('Configuração salva. Premium e Barra Ignorada permanecem independentes.');
+        alert('Configuração salva. Premium e Setup Barra Ignorada permanecem independentes.');
     }catch(err){
         console.error('strategyManagerSave V5 failed:',err);
         alert('Não foi possível salvar a configuração.');
@@ -11874,7 +12284,7 @@ window.dfStrategyCleanupLegacyConfig = async function(){
     const ok = confirm('Remover nomes, versões e referências antigas sem apagar lançamentos históricos?');
     if(!ok) return;
     try{
-        store.strategyStructure = { updatedAt:Date.now(), build:'SETUPS-SEGREGATED-V5-2026-06-28', slots:dfFixedPremiumSlots() };
+        store.strategyStructure = { updatedAt:Date.now(), build:'HARMONIZED-HELP-V8-2026-06-28', slots:dfFixedPremiumSlots() };
         store.strategyConfigs = [dfStrategyVersionFromStructure(store.strategyStructure)];
         ['strategyVersions','strategyHistory','strategyConfigHistory','strategyArchives','strategyTemplates','strategyDrafts','legacyStrategyConfigs','strategyStructureLegacy','setupDrafts'].forEach(k => { try{ delete store[k]; }catch(e){} });
         Object.values((store && store.accounts) || {}).forEach(acc => {
@@ -11927,6 +12337,471 @@ try{
 }catch(e){
     console.warn('DF strategy V14 boot migration failed:', e);
 }
+
+
+        // =============================================================
+        // STRATEGY VERSION HISTORY V8
+        // Non-destructive versioning for Premium and Ignored-Bar Setup.
+        // =============================================================
+        const DF_V7_HISTORY_KEY = 'strategyVersioningV7';
+        const DF_V7_BUILD = 'HARMONIZED-HELP-V8-2026-06-28';
+        const DF_V7_SETUP_META = {
+            premium: {
+                id:'premium', label:'Premium', color:'#4f46e5',
+                slots:[
+                    {slot:'t0', lineage:'Amostra 1', fallback:'20/60', continuity:false, order:1},
+                    {slot:'t3', lineage:'Amostra 2', fallback:'25/75', continuity:true, order:2},
+                    {slot:'t4', lineage:'Amostra 3', fallback:'30/90', continuity:false, order:3}
+                ]
+            },
+            ignoredBar: {
+                id:'ignoredBar', label:'Setup Barra Ignorada', color:'#0f766e',
+                slots:[
+                    {slot:'ib2060', lineage:'Amostra 1', fallback:'20/60', continuity:false, order:1},
+                    {slot:'ib2575', lineage:'Amostra 2', fallback:'25/75', continuity:true, order:2},
+                    {slot:'ib3090', lineage:'Amostra 3', fallback:'30/90', continuity:false, order:3}
+                ]
+            }
+        };
+        const __dfV6EnsureOperationalConfig = dfEnsureOperationalConfig;
+        const __dfV6EnsureStrategyStructure = dfEnsureStrategyStructure;
+        let __dfV7HistoryChart = null;
+
+        function dfV7TodayISO(){
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+        function dfV7PreviousISO(iso){
+            const d = new Date(`${iso}T12:00:00`);
+            d.setDate(d.getDate()-1);
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+        function dfV7ValidISO(v){ return /^\d{4}-\d{2}-\d{2}$/.test(String(v||'')); }
+        function dfV7VersionId(setupId,slot){ return `${setupId}-${slot}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`; }
+        function dfV7Name(v,fallback){ const n=String(v||'').trim().replace(/\s+/g,' '); return n || fallback || 'Estratégia'; }
+        function dfV7Setup(setupId){ return DF_V7_SETUP_META[setupId] || DF_V7_SETUP_META.premium; }
+        function dfV7SlotMeta(setupId,slot){ return dfV7Setup(setupId).slots.find(s=>s.slot===slot) || dfV7Setup(setupId).slots[0]; }
+        function dfV7Clone(v){ try{return JSON.parse(JSON.stringify(v));}catch(e){return v;} }
+
+        function dfV7NormalizeLineage(setupId, slot, rawLineage, cfg){
+            const meta = dfV7SlotMeta(setupId,slot);
+            const rawVersions = rawLineage && Array.isArray(rawLineage.versions) ? rawLineage.versions : [];
+            let versions = rawVersions.map((v,idx)=>({
+                id:String(v && v.id || dfV7VersionId(setupId,slot)),
+                name:dfV7Name(v && v.name, meta.fallback),
+                startDate:dfV7ValidISO(v && v.startDate) ? String(v.startDate) : (meta.continuity ? '1900-01-01' : String(cfg.cutoverDate || DF_OPERATIONAL_CUTOVER_DEFAULT)),
+                endDate:dfV7ValidISO(v && v.endDate) ? String(v.endDate) : null,
+                createdAt:String(v && v.createdAt || new Date().toISOString()),
+                createdBy:String(v && v.createdBy || 'Sistema'),
+                note:String(v && v.note || ''),
+                origin:String(v && v.origin || (idx===0 ? (meta.continuity?'initial-continuity':'initial-cutover') : 'manual-change'))
+            })).sort((a,b)=>a.startDate.localeCompare(b.startDate));
+            if(!versions.length){
+                let initialName = meta.fallback;
+                try{
+                    const old = cfg && cfg.setups && cfg.setups[setupId] && Array.isArray(cfg.setups[setupId].strategies)
+                        ? cfg.setups[setupId].strategies.find(s => String(s.key||'')===slot)
+                        : null;
+                    if(old && old.label) initialName = String(old.label);
+                }catch(e){}
+                versions = [{
+                    id:dfV7VersionId(setupId,slot),
+                    name:dfV7Name(initialName,meta.fallback),
+                    startDate:meta.continuity ? '1900-01-01' : String(cfg.cutoverDate || DF_OPERATIONAL_CUTOVER_DEFAULT),
+                    endDate:null, createdAt:new Date().toISOString(), createdBy:'Sistema', note:'Versão inicial migrada.',
+                    origin:meta.continuity ? 'initial-continuity' : 'initial-cutover'
+                }];
+            }
+            // Remove duplicate start dates, preserving the newest declaration for that date.
+            const byStart = new Map();
+            versions.forEach(v=>byStart.set(v.startDate,v));
+            versions = Array.from(byStart.values()).sort((a,b)=>a.startDate.localeCompare(b.startDate));
+            versions.forEach((v,idx)=>{ v.endDate = idx < versions.length-1 ? dfV7PreviousISO(versions[idx+1].startDate) : null; });
+            return { setupId, slot, lineage:meta.lineage, order:meta.order, continuity:meta.continuity, versions };
+        }
+
+        function dfEnsureStrategyVersionHistory(){
+            if(!store || typeof store!=='object') return null;
+            const cfg = __dfV6EnsureOperationalConfig();
+            let root = store[DF_V7_HISTORY_KEY];
+            if(!root || typeof root!=='object') root = {version:7,build:DF_V7_BUILD,createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),setups:{}};
+            root.version=7; root.build=DF_V7_BUILD; root.setups = root.setups && typeof root.setups==='object' ? root.setups : {};
+            Object.keys(DF_V7_SETUP_META).forEach(setupId=>{
+                const setupMeta=dfV7Setup(setupId);
+                const setupRaw=root.setups[setupId] && typeof root.setups[setupId]==='object' ? root.setups[setupId] : {};
+                setupRaw.id=setupId; setupRaw.label=setupMeta.label; setupRaw.lineages=setupRaw.lineages && typeof setupRaw.lineages==='object' ? setupRaw.lineages : {};
+                setupMeta.slots.forEach(meta=>{ setupRaw.lineages[meta.slot]=dfV7NormalizeLineage(setupId,meta.slot,setupRaw.lineages[meta.slot],cfg); });
+                root.setups[setupId]=setupRaw;
+            });
+            root.updatedAt = root.updatedAt || new Date().toISOString();
+            store[DF_V7_HISTORY_KEY]=root;
+            return root;
+        }
+
+        function dfV7GetLineage(setupId,slot){
+            const root=dfEnsureStrategyVersionHistory();
+            return root && root.setups && root.setups[setupId] && root.setups[setupId].lineages ? root.setups[setupId].lineages[slot] : null;
+        }
+        function dfV7Versions(setupId,slot){ const l=dfV7GetLineage(setupId,slot); return l ? l.versions : []; }
+        function dfV7VersionAt(setupId,slot,iso){
+            const target=dfV7ValidISO(iso)?String(iso):dfV7TodayISO();
+            const versions=dfV7Versions(setupId,slot);
+            let found=null;
+            versions.forEach(v=>{ if(v.startDate<=target && (!v.endDate || target<=v.endDate)) found=v; });
+            return found;
+        }
+        function dfV7CurrentVersion(setupId,slot){
+            const today=dfV7TodayISO();
+            return dfV7VersionAt(setupId,slot,today) || dfV7Versions(setupId,slot).filter(v=>v.startDate<=today).slice(-1)[0] || dfV7Versions(setupId,slot)[0] || null;
+        }
+        function dfV7LatestVersion(setupId,slot){ const v=dfV7Versions(setupId,slot); return v[v.length-1] || null; }
+        function dfV7NextVersion(setupId,slot){ const t=dfV7TodayISO(); return dfV7Versions(setupId,slot).find(v=>v.startDate>t) || null; }
+        function dfV7StrategyName(setupId,slot,iso){ const v=dfV7VersionAt(setupId,slot,iso); return v ? v.name : ''; }
+        function dfV7IsCurrentOperation(setupId,slot,iso){
+            const current=dfV7CurrentVersion(setupId,slot); if(!current) return false;
+            if(!dfV7ValidISO(iso)) return true;
+            const version=dfV7VersionAt(setupId,slot,iso);
+            return !!version && version.id===current.id;
+        }
+        function dfV7VersionStatus(v){
+            const today=dfV7TodayISO();
+            if(v.startDate>today) return 'scheduled';
+            if(!v.endDate || v.endDate>=today) return 'current';
+            return 'archived';
+        }
+        function dfV7FormatDate(iso){
+            if(!dfV7ValidISO(iso)) return '—';
+            try{return parseISODateLocal(iso).toLocaleDateString(CURRENT_LANG==='en'?'en-US':'pt-BR');}catch(e){return iso;}
+        }
+        function dfV7Period(v){ return `${dfV7FormatDate(v.startDate)} — ${v.endDate?dfV7FormatDate(v.endDate):(v.startDate>dfV7TodayISO()?'agendada':'atual')}`; }
+
+        // Public, read-only access for the isolated Ignored-Bar Setup module.
+        window.dfGetStrategyVersionHistory = (setupId,slot)=>dfV7Clone(dfV7Versions(setupId,slot));
+        window.dfGetStrategyVersionAtDate = (setupId,slot,iso)=>dfV7Clone(dfV7VersionAt(setupId,slot,iso));
+        window.dfGetStrategyNameForDate = (setupId,slot,iso)=>dfV7StrategyName(setupId,slot,iso);
+        window.dfGetCurrentStrategyVersion = (setupId,slot)=>dfV7Clone(dfV7CurrentVersion(setupId,slot));
+        window.dfIsCurrentStrategyOperation = (setupId,slot,iso)=>dfV7IsCurrentOperation(setupId,slot,iso);
+
+        // Keep legacy config mirrors dynamic while strategy history remains the source of truth.
+        dfEnsureOperationalConfig = function(){
+            const cfg=__dfV6EnsureOperationalConfig();
+            const root=dfEnsureStrategyVersionHistory();
+            Object.keys(DF_V7_SETUP_META).forEach(setupId=>{
+                const setupMeta=dfV7Setup(setupId);
+                if(!cfg.setups[setupId]) cfg.setups[setupId]={id:setupId,label:setupMeta.label,strategies:[]};
+                cfg.setups[setupId].label=setupMeta.label;
+                cfg.setups[setupId].strategies=setupMeta.slots.map(meta=>({
+                    key:meta.slot,
+                    label:(dfV7CurrentVersion(setupId,meta.slot)||{}).name || meta.fallback,
+                    startMode:meta.continuity?'continuous':'versioned'
+                }));
+            });
+            return cfg;
+        };
+        dfFixedPremiumSlots = function(){
+            return dfV7Setup('premium').slots.map(meta=>({
+                slot:meta.slot,
+                label:(dfV7CurrentVersion('premium',meta.slot)||{}).name || meta.fallback,
+                order:meta.order, active:true, visible:true, continuity:meta.continuity
+            })).concat([
+                {slot:'t1',label:'',order:4,active:false,visible:false,continuity:false},
+                {slot:'t2',label:'',order:5,active:false,visible:false,continuity:false}
+            ]);
+        };
+        dfEnsureStrategyStructure = function(){
+            dfEnsureStrategyVersionHistory();
+            const structure={updatedAt:Date.now(),build:DF_V7_BUILD,slots:dfFixedPremiumSlots()};
+            store.strategyStructure=structure;
+            store.strategyConfigs=[dfStrategyVersionFromStructure(structure)];
+            __strategyManagerSelectedVersionId='current-structure';
+            return structure;
+        };
+        getStrategiesForDate = function(iso,opts={}){
+            const includeInactive=!!opts.includeInactive, includeHidden=!!opts.includeHidden;
+            const target=dfV7ValidISO(iso)?String(iso):dfV7TodayISO();
+            const rows=dfV7Setup('premium').slots.map(meta=>{
+                const v=dfV7VersionAt('premium',meta.slot,target);
+                const slotMeta=strategyMetaBySlot(meta.slot);
+                return {...slotMeta,slot:meta.slot,label:v?v.name:'',order:meta.order,active:!!v,visible:!!v,versionId:v?v.id:null,versionStart:v?v.startDate:null,versionEnd:v?v.endDate:null};
+            });
+            return rows.filter(s=>includeInactive||s.active).filter(s=>includeHidden||s.visible).filter(s=>(includeInactive||includeHidden)||String(s.label||'').trim()).sort((a,b)=>a.order-b.order);
+        };
+        getStrategyVersionForDate = function(iso){
+            return {id:`premium-${iso||dfV7TodayISO()}`,effectiveFrom:String(iso||dfV7TodayISO()),strategies:getStrategiesForDate(iso,{includeInactive:true,includeHidden:true})};
+        };
+        getStrategyLabelForSlot = function(slot,iso){ return dfV7StrategyName('premium',slot,iso)||''; };
+        getStrategyLabelMapForDate = function(iso){ const map={}; getStrategiesForDate(iso,{includeInactive:true,includeHidden:true}).forEach(s=>map[s.slot]=s.label); return map; };
+        getStrategySummaryForDate = function(iso){ const map=getStrategyLabelMapForDate(iso); return STRATEGY_SLOT_META.map(meta=>map[meta.slot]||''); };
+        dfIsPremiumStrategyEligible = function(slot,iso){ return !!dfV7VersionAt('premium',slot,iso); };
+
+        function dfV7RawPremiumValues(entry,slot){
+            const meta=(entry&&entry[`${slot}meta`])||{};
+            const explicit=['leg1','leg2','leg3','leg4'].some(k=>Object.prototype.hasOwnProperty.call(meta,k));
+            const raw=explicit?[meta.leg1,meta.leg2,meta.leg3,meta.leg4]:[entry&&entry[slot]];
+            return raw.filter(v=>v!==''&&v!==null&&v!==undefined&&Number.isFinite(Number(v))).map(v=>Number(v));
+        }
+        function dfV7OperationsForVersion(setupId,slot,version,acc){
+            const ops=[]; if(!version||!acc) return ops;
+            if(setupId==='premium'){
+                Object.keys(acc.data||{}).sort().forEach(iso=>{
+                    if(iso<version.startDate || (version.endDate&&iso>version.endDate)) return;
+                    const entry=acc.data[iso]||{}; if(entry.holiday) return;
+                    dfV7RawPremiumValues(entry,slot).forEach((result,index)=>ops.push({date:iso,result,index:index+1}));
+                });
+            }else{
+                const study=acc.ignoredBarStudy;
+                const sample=study&&Array.isArray(study.samples)?study.samples.find(s=>s&&s.strategyKey===slot):null;
+                (sample&&Array.isArray(sample.operations)?sample.operations:[]).forEach((op,index)=>{
+                    if(op==null||op.result===''||op.result===null||op.result===undefined||!Number.isFinite(Number(op.result))) return;
+                    const date=String(op.date||'');
+                    const belongs=date ? (date>=version.startDate&&(!version.endDate||date<=version.endDate)) : (dfV7CurrentVersion(setupId,slot)||{}).id===version.id;
+                    if(belongs) ops.push({date,result:Number(op.result),index:index+1});
+                });
+                ops.sort((a,b)=>(String(a.date||'').localeCompare(String(b.date||'')))||(a.index-b.index));
+            }
+            return ops;
+        }
+        function dfV7Metrics(ops){
+            const values=(ops||[]).map(o=>Number(o.result)).filter(Number.isFinite);
+            const wins=values.filter(v=>v>0), losses=values.filter(v=>v<0), be=values.filter(v=>v===0);
+            const net=values.reduce((a,b)=>a+b,0), gp=wins.reduce((a,b)=>a+b,0), gl=Math.abs(losses.reduce((a,b)=>a+b,0));
+            const avgWin=wins.length?gp/wins.length:0, avgLoss=losses.length?gl/losses.length:0;
+            let cum=0,peak=0,maxDD=0,maxWin=0,maxLoss=0,cw=0,cl=0;
+            const curve=[];
+            values.forEach(v=>{cum+=v;peak=Math.max(peak,cum);maxDD=Math.max(maxDD,peak-cum);curve.push(Number(cum.toFixed(2)));if(v>0){cw++;cl=0;}else if(v<0){cl++;cw=0;}else{cw=0;cl=0;}maxWin=Math.max(maxWin,cw);maxLoss=Math.max(maxLoss,cl);});
+            const decisive=wins.length+losses.length;
+            return {values,curve,trades:values.length,wins:wins.length,losses:losses.length,be:be.length,net,winRate:decisive?wins.length/decisive*100:0,avgTrade:values.length?net/values.length:0,avgWin,avgLoss,profitFactor:gl?gp/gl:(gp>0?Infinity:null),payoff:avgLoss?avgWin/avgLoss:(avgWin>0?Infinity:null),maxDD,maxWin,maxLoss,best:values.length?Math.max(...values):0,worst:values.length?Math.min(...values):0};
+        }
+        function dfV7Currency(v){ try{return formatCurrency(Number(v||0));}catch(e){return '$'+Number(v||0).toFixed(2);} }
+        function dfV7Ratio(v){ return v===Infinity?'∞':(v==null||!Number.isFinite(Number(v))?'—':Number(v).toFixed(2)); }
+        function dfV7ImpactCount(setupId,slot,date){
+            let count=0;
+            Object.values((store&&store.accounts)||{}).forEach(acc=>{
+                if(setupId==='premium') Object.keys(acc.data||{}).forEach(iso=>{if(iso>=date)count+=dfV7RawPremiumValues(acc.data[iso]||{},slot).length;});
+                else{
+                    const sample=acc.ignoredBarStudy&&Array.isArray(acc.ignoredBarStudy.samples)?acc.ignoredBarStudy.samples.find(s=>s&&s.strategyKey===slot):null;
+                    (sample&&sample.operations||[]).forEach(op=>{if(op&&String(op.date||'')>=date&&op.result!==''&&op.result!=null&&Number.isFinite(Number(op.result)))count++;});
+                }
+            });
+            return count;
+        }
+        function dfV7SaveHistoryLocal(){
+            const root=dfEnsureStrategyVersionHistory(); root.updatedAt=new Date().toISOString();
+            dfEnsureStrategyStructure();
+            try{dfTouchStoreSafely();}catch(e){try{touchStore();}catch(_){}}
+            try{dfSaveLocalImmediate();}catch(e){try{saveStoreToLocal();}catch(_){}}
+        }
+        async function dfV7SaveHistoryCloud(){ try{await dfSaveCloudImmediate();}catch(e){try{await saveToCloud();}catch(_){}} }
+        function dfV7RenderAllAfterChange(){
+            try{dfEnsureOperationalConfig();dfEnsureStrategyStructure();}catch(e){}
+            try{renderCalendar(getActive());}catch(e){}
+            try{filterReportInternal();}catch(e){}
+            try{renderDashboard();}catch(e){}
+            try{renderSidebar();}catch(e){}
+            try{dfApplyCurrentStrategyLabelsToStaticUI();}catch(e){}
+            try{if(window.__dfIgnoredBarRenderAll)window.__dfIgnoredBarRenderAll();}catch(e){}
+            try{dfV7RenderAdminCards();}catch(e){}
+            try{dfSyncOperationalUI();}catch(e){}
+            try{lucide.createIcons();}catch(e){}
+        }
+
+        function dfV7SlotOptions(setupId,selected){
+            return dfV7Setup(setupId).slots.map(meta=>{
+                const current=dfV7CurrentVersion(setupId,meta.slot);
+                return `<option value="${meta.slot}" ${meta.slot===selected?'selected':''}>${escapeHtml(meta.lineage)} · ${escapeHtml(current?current.name:meta.fallback)}</option>`;
+            }).join('');
+        }
+        function dfV7FillSlotSelect(selectId,setupId,selected){ const el=document.getElementById(selectId); if(el)el.innerHTML=dfV7SlotOptions(setupId,selected||dfV7Setup(setupId).slots[0].slot); }
+
+        window.dfOpenStrategyChange = function(setupId='premium',slot){
+            const setup=dfV7Setup(setupId); slot=slot||setup.slots[0].slot;
+            const modal=document.getElementById('df-strategy-change-modal');
+            const setupEl=document.getElementById('df-strategy-change-setup');
+            const dateEl=document.getElementById('df-strategy-change-date');
+            const nameEl=document.getElementById('df-strategy-change-name');
+            const noteEl=document.getElementById('df-strategy-change-note');
+            if(setupEl)setupEl.value=setupId;
+            dfV7FillSlotSelect('df-strategy-change-slot',setupId,slot);
+            if(dateEl)dateEl.value=dfV7TodayISO();
+            if(nameEl)nameEl.value='';
+            if(noteEl)noteEl.value='';
+            if(modal)modal.classList.remove('hidden');
+            window.dfUpdateStrategyChangePreview();
+            try{lucide.createIcons();}catch(e){}
+        };
+        window.dfCloseStrategyChange = function(){ const el=document.getElementById('df-strategy-change-modal'); if(el)el.classList.add('hidden'); };
+        window.dfStrategyChangeSetupChanged = function(){
+            const setupId=document.getElementById('df-strategy-change-setup')?.value||'premium';
+            dfV7FillSlotSelect('df-strategy-change-slot',setupId,dfV7Setup(setupId).slots[0].slot);
+            window.dfUpdateStrategyChangePreview();
+        };
+        window.dfUpdateStrategyChangePreview = function(){
+            const setupId=document.getElementById('df-strategy-change-setup')?.value||'premium';
+            const slot=document.getElementById('df-strategy-change-slot')?.value||dfV7Setup(setupId).slots[0].slot;
+            const date=document.getElementById('df-strategy-change-date')?.value||'';
+            const current=dfV7CurrentVersion(setupId,slot), latest=dfV7LatestVersion(setupId,slot), next=dfV7NextVersion(setupId,slot);
+            const currentBox=document.getElementById('df-strategy-change-current');
+            const impactBox=document.getElementById('df-strategy-change-impact');
+            if(currentBox) currentBox.innerHTML=`<strong>Estratégia atual:</strong> ${escapeHtml(current?current.name:'—')}<br><span class="text-slate-500">Período: ${current?dfV7Period(current):'—'}${next?` · Próxima agendada: ${escapeHtml(next.name)} em ${dfV7FormatDate(next.startDate)}`:''}</span>`;
+            if(!impactBox)return;
+            if(!dfV7ValidISO(date)){impactBox.textContent='Escolha uma data válida.';return;}
+            const affected=dfV7ImpactCount(setupId,slot,date);
+            let warning='';
+            if(latest&&date<=latest.startDate)warning=` A data deve ser posterior ao início da última versão (${dfV7FormatDate(latest.startDate)}).`;
+            impactBox.innerHTML=`<strong>Prévia:</strong> a versão anterior terminará em ${dfV7FormatDate(dfV7PreviousISO(date))}. ${affected} operação(ões) já existente(s), considerando todas as contas, ficam no período da nova versão. Nenhum registro será apagado.${warning}`;
+        };
+        window.dfSaveStrategyVersionChange = async function(){
+            const session=promptAdminCredentials('Criar uma nova versão da estratégia exige acesso administrativo.','admin'); if(!session)return;
+            const setupId=document.getElementById('df-strategy-change-setup')?.value||'premium';
+            const slot=document.getElementById('df-strategy-change-slot')?.value||dfV7Setup(setupId).slots[0].slot;
+            const name=String(document.getElementById('df-strategy-change-name')?.value||'').trim().replace(/\s+/g,' ');
+            const date=String(document.getElementById('df-strategy-change-date')?.value||'');
+            const note=String(document.getElementById('df-strategy-change-note')?.value||'').trim();
+            if(!name){alert('Informe o nome da nova estratégia.');return;}
+            if(!dfV7ValidISO(date)){alert('Informe uma data válida.');return;}
+            const lineage=dfV7GetLineage(setupId,slot), latest=dfV7LatestVersion(setupId,slot), current=dfV7CurrentVersion(setupId,slot);
+            if(!lineage||!latest){alert('Não foi possível localizar a linha técnica.');return;}
+            if(date<=latest.startDate){alert(`A nova versão deve começar depois de ${dfV7FormatDate(latest.startDate)}. Para corrigir uma versão futura, cancele o agendamento no histórico.`);return;}
+            if(current&&current.name.toLowerCase()===name.toLowerCase()){alert('O novo nome é igual ao nome atual.');return;}
+            const affected=dfV7ImpactCount(setupId,slot,date);
+            const ok=confirm(`Encerrar “${latest.name}” em ${dfV7FormatDate(dfV7PreviousISO(date))} e iniciar “${name}” em ${dfV7FormatDate(date)}?\n\n${affected} operação(ões) já existente(s) podem passar a ser analisadas na nova versão. Nenhum dado será apagado.`);
+            if(!ok)return;
+            lineage.versions.push({id:dfV7VersionId(setupId,slot),name,startDate:date,endDate:null,createdAt:new Date().toISOString(),createdBy:session.username,note,origin:'manual-change'});
+            const cfg=__dfV6EnsureOperationalConfig();
+            const normalized=dfV7NormalizeLineage(setupId,slot,lineage,cfg);
+            dfEnsureStrategyVersionHistory().setups[setupId].lineages[slot]=normalized;
+            try{logAdminAction(session.username,`Nova versão de estratégia: ${dfV7Setup(setupId).label} / ${slot}: ${latest.name} → ${name}, início ${date}`);}catch(e){}
+            dfV7SaveHistoryLocal(); await dfV7SaveHistoryCloud();
+            window.dfCloseStrategyChange();
+            dfV7RenderAllAfterChange();
+            try{showToast('Nova versão criada. O histórico anterior foi preservado.','ok',2600);}catch(e){alert('Nova versão criada com histórico preservado.');}
+            const hist=document.getElementById('df-strategy-history-modal'); if(hist&&!hist.classList.contains('hidden'))window.dfOpenStrategyHistory(setupId,slot);
+        };
+
+        function dfV7StatusLabel(status){ return status==='current'?'Atual':(status==='scheduled'?'Agendada':'Encerrada'); }
+        function dfV7StatusClass(status){ return status==='current'?'df-v7-status-current':(status==='scheduled'?'df-v7-status-scheduled':'df-v7-status-archived'); }
+        function dfV7VersionSummary(setupId,slot,version,acc){ const ops=dfV7OperationsForVersion(setupId,slot,version,acc); return {version,ops,metrics:dfV7Metrics(ops),status:dfV7VersionStatus(version)}; }
+
+        function dfV7RenderHistoryChart(items){
+            const canvas=document.getElementById('df-strategy-history-chart'), empty=document.getElementById('df-strategy-history-chart-empty'); if(!canvas)return;
+            if(__dfV7HistoryChart){try{__dfV7HistoryChart.destroy();}catch(e){} __dfV7HistoryChart=null;}
+            const withData=items.filter(x=>x.metrics.trades>0);
+            if(!withData.length){canvas.style.display='none';if(empty){empty.classList.remove('hidden');empty.classList.add('flex');}return;}
+            canvas.style.display='block';if(empty){empty.classList.add('hidden');empty.classList.remove('flex');}
+            const colors=['#94a3b8','#f59e0b','#4f46e5','#0f766e','#dc2626','#7c3aed'];
+            const max=Math.max(...withData.map(x=>x.metrics.curve.length));
+            const labels=Array.from({length:max},(_,i)=>`#${i+1}`);
+            const dark=document.body.classList.contains('dark');
+            const datasets=withData.map((x,i)=>({label:x.version.name,data:x.metrics.curve,borderColor:colors[i%colors.length],backgroundColor:colors[i%colors.length],borderWidth:x.status==='current'?2.8:2,pointRadius:2,tension:.22,spanGaps:true,fill:false,borderDash:x.status==='archived'?[6,4]:[]}));
+            __dfV7HistoryChart=new Chart(canvas.getContext('2d'),{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:dark?'#cbd5e1':'#475569',usePointStyle:true,boxWidth:9,font:{size:10,weight:'700'}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${dfV7Currency(c.raw)}`}}},scales:{x:{grid:{display:false},ticks:{color:dark?'#94a3b8':'#64748b',maxTicksLimit:12}},y:{grid:{color:dark?'rgba(71,85,105,.55)':'rgba(226,232,240,.9)'},ticks:{color:dark?'#94a3b8':'#64748b',callback:v=>'$'+Number(v).toLocaleString()}}}}});
+        }
+        window.dfRenderStrategyHistory = function(){
+            const setupId=document.getElementById('df-strategy-history-setup')?.value||'premium';
+            const slot=document.getElementById('df-strategy-history-slot')?.value||dfV7Setup(setupId).slots[0].slot;
+            const acc=getActive();
+            const versions=dfV7Versions(setupId,slot);
+            const items=versions.map(v=>dfV7VersionSummary(setupId,slot,v,acc));
+            const accountEl=document.getElementById('df-strategy-history-account'); if(accountEl)accountEl.textContent=`Conta selecionada: ${acc&&acc.name?acc.name:'—'}`;
+            const summary=document.getElementById('df-strategy-history-summary');
+            const withData=items.filter(x=>x.metrics.trades>0);
+            const best=withData.slice().sort((a,b)=>b.metrics.net-a.metrics.net)[0];
+            const current=items.find(x=>x.status==='current')||items[items.length-1];
+            if(summary){
+                const totalOps=items.reduce((s,x)=>s+x.metrics.trades,0), totalNet=items.reduce((s,x)=>s+x.metrics.net,0);
+                summary.innerHTML=`<div class="df-v7-history-kpis"><div class="df-v7-history-kpi"><small>Linha técnica</small><strong>${escapeHtml(dfV7SlotMeta(setupId,slot).lineage)}</strong></div><div class="df-v7-history-kpi"><small>Versão atual</small><strong>${escapeHtml(current?current.version.name:'—')}</strong></div><div class="df-v7-history-kpi"><small>Versões</small><strong>${items.length}</strong></div><div class="df-v7-history-kpi"><small>Resultado histórico</small><strong class="${totalNet>0?'text-emerald-600':(totalNet<0?'text-red-600':'')}">${dfV7Currency(totalNet)}</strong></div><div class="df-v7-history-kpi"><small>Melhor versão</small><strong>${best?escapeHtml(best.version.name):'—'}${best?' · '+dfV7Currency(best.metrics.net):''}</strong></div></div><div class="mt-2 text-[11px] text-slate-500 dark:text-slate-400">${totalOps} operação(ões) classificadas nesta linha técnica. A comparação usa somente os dados da conta selecionada.</div>`;
+            }
+            const list=document.getElementById('df-strategy-history-list');
+            if(list) list.innerHTML=items.slice().reverse().map(x=>`<div class="df-v7-version-card ${x.status}"><div class="flex items-start justify-between gap-2"><div class="min-w-0"><div class="font-black text-sm text-slate-800 dark:text-slate-100 truncate">${escapeHtml(x.version.name)}</div><div class="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">${dfV7Period(x.version)}</div></div><span class="df-v7-status-pill ${dfV7StatusClass(x.status)}">${dfV7StatusLabel(x.status)}</span></div><div class="grid grid-cols-3 gap-1 mt-2 text-center"><div class="rounded bg-slate-50 dark:bg-slate-800 p-1"><div class="text-[8px] text-slate-400 uppercase">Ops</div><div class="text-[10px] font-black">${x.metrics.trades}</div></div><div class="rounded bg-slate-50 dark:bg-slate-800 p-1"><div class="text-[8px] text-slate-400 uppercase">Resultado</div><div class="text-[10px] font-black ${x.metrics.net>0?'text-emerald-600':(x.metrics.net<0?'text-red-600':'')}">${dfV7Currency(x.metrics.net)}</div></div><div class="rounded bg-slate-50 dark:bg-slate-800 p-1"><div class="text-[8px] text-slate-400 uppercase">PF</div><div class="text-[10px] font-black">${dfV7Ratio(x.metrics.profitFactor)}</div></div></div>${x.version.note?`<div class="mt-2 text-[10px] text-slate-500 dark:text-slate-400">${escapeHtml(x.version.note)}</div>`:''}${x.status==='scheduled'?`<button type="button" onclick="window.dfCancelScheduledStrategyVersion('${setupId}','${slot}','${x.version.id}')" class="mt-2 text-[10px] font-bold text-red-600 hover:underline">Cancelar agendamento</button>`:''}</div>`).join('');
+            const tbody=document.getElementById('df-strategy-history-table');
+            if(tbody)tbody.innerHTML=items.map(x=>`<tr><td class="px-3 py-2 font-bold text-slate-700 dark:text-slate-200">${escapeHtml(x.version.name)}</td><td class="px-3 py-2 text-slate-500 dark:text-slate-400">${dfV7Period(x.version)}</td><td class="px-3 py-2 text-right">${x.metrics.trades}</td><td class="px-3 py-2 text-right font-bold ${x.metrics.net>0?'text-emerald-600':(x.metrics.net<0?'text-red-600':'')}">${dfV7Currency(x.metrics.net)}</td><td class="px-3 py-2 text-right">${x.metrics.trades?x.metrics.winRate.toFixed(1)+'%':'—'}</td><td class="px-3 py-2 text-right">${dfV7Ratio(x.metrics.profitFactor)}</td><td class="px-3 py-2 text-right">${x.metrics.trades?dfV7Currency(x.metrics.avgTrade):'—'}</td><td class="px-3 py-2 text-right text-red-600">${x.metrics.trades?dfV7Currency(-Math.abs(x.metrics.maxDD)):'—'}</td><td class="px-3 py-2 text-right">${x.metrics.maxLoss}</td></tr>`).join('');
+            dfV7RenderHistoryChart(items);
+            try{lucide.createIcons();}catch(e){}
+        };
+        window.dfOpenStrategyHistory = function(setupId='premium',slot){
+            const modal=document.getElementById('df-strategy-history-modal'), setupEl=document.getElementById('df-strategy-history-setup');
+            if(setupEl)setupEl.value=setupId;
+            dfV7FillSlotSelect('df-strategy-history-slot',setupId,slot||dfV7Setup(setupId).slots[0].slot);
+            if(modal)modal.classList.remove('hidden');
+            window.dfRenderStrategyHistory();
+        };
+        window.dfCloseStrategyHistory = function(){ const el=document.getElementById('df-strategy-history-modal'); if(el)el.classList.add('hidden'); if(__dfV7HistoryChart){try{__dfV7HistoryChart.destroy();}catch(e){}__dfV7HistoryChart=null;} };
+        window.dfStrategyHistorySetupChanged = function(){ const setupId=document.getElementById('df-strategy-history-setup')?.value||'premium';dfV7FillSlotSelect('df-strategy-history-slot',setupId,dfV7Setup(setupId).slots[0].slot);window.dfRenderStrategyHistory(); };
+        window.dfOpenStrategyChangeFromHistory = function(){ const setupId=document.getElementById('df-strategy-history-setup')?.value||'premium';const slot=document.getElementById('df-strategy-history-slot')?.value||dfV7Setup(setupId).slots[0].slot;window.dfOpenStrategyChange(setupId,slot); };
+        window.dfCancelScheduledStrategyVersion = async function(setupId,slot,id){
+            const session=promptAdminCredentials('Cancelar uma versão agendada exige acesso administrativo.','admin');if(!session)return;
+            const lineage=dfV7GetLineage(setupId,slot);if(!lineage)return;
+            const target=lineage.versions.find(v=>v.id===id);if(!target||target.startDate<=dfV7TodayISO()){alert('Somente versões futuras podem ser canceladas por esta opção.');return;}
+            if(!confirm(`Cancelar a versão agendada “${target.name}” para ${dfV7FormatDate(target.startDate)}?`))return;
+            lineage.versions=lineage.versions.filter(v=>v.id!==id);
+            dfEnsureStrategyVersionHistory().setups[setupId].lineages[slot]=dfV7NormalizeLineage(setupId,slot,lineage,__dfV6EnsureOperationalConfig());
+            try{logAdminAction(session.username,`Versão agendada cancelada: ${dfV7Setup(setupId).label} / ${slot} / ${target.name}`);}catch(e){}
+            dfV7SaveHistoryLocal();await dfV7SaveHistoryCloud();dfV7RenderAllAfterChange();window.dfRenderStrategyHistory();
+        };
+
+        function dfV7RenderAdminCards(){
+            const render=(setupId,containerId)=>{
+                const box=document.getElementById(containerId);if(!box)return;
+                box.innerHTML=dfV7Setup(setupId).slots.map(meta=>{
+                    const current=dfV7CurrentVersion(setupId,meta.slot), next=dfV7NextVersion(setupId,meta.slot), count=dfV7Versions(setupId,meta.slot).length;
+                    return `<div class="df-v7-strategy-card"><div class="df-v7-strategy-card-name">${escapeHtml(current?current.name:meta.fallback)}</div><div class="df-v7-strategy-card-meta">${escapeHtml(meta.lineage)} · desde ${current?dfV7FormatDate(current.startDate):'—'}${next?`<br><span class="text-amber-600 dark:text-amber-400">Próxima: ${escapeHtml(next.name)} · ${dfV7FormatDate(next.startDate)}</span>`:''}<br>${count} versão(ões) registrada(s)</div><div class="df-v7-strategy-card-actions"><button type="button" class="df-v7-mini-btn" onclick="window.dfOpenStrategyChange('${setupId}','${meta.slot}')">Alterar</button><button type="button" class="df-v7-mini-btn" onclick="window.dfOpenStrategyHistory('${setupId}','${meta.slot}')">Histórico</button></div></div>`;
+                }).join('');
+            };
+            render('premium','df-premium-strategy-cards');render('ignoredBar','df-ignored-strategy-cards');
+            const badge=document.getElementById('strategy-admin-health');if(badge)badge.textContent='2 setups · 6 linhas técnicas · histórico ativo';
+            try{lucide.createIcons();}catch(e){}
+        }
+
+        renderStrategyManager = function(){
+            try{
+                dfEnsureOperationalConfig();dfEnsureStrategyStructure();dfEnsureStrategyVersionHistory();
+                const cfg=dfEnsureOperationalConfig();
+                const dateEl=document.getElementById('df-operational-cutover-date'), toggleEl=document.getElementById('df-admin-show-legacy-history');
+                if(dateEl)dateEl.value=cfg.cutoverDate;if(toggleEl)toggleEl.checked=cfg.showLegacyHistory!==false;
+                if(els.strategyManagerStatus)els.strategyManagerStatus.textContent=`Marco atual: ${dfFormatCutoverDate(cfg.cutoverDate)}. Alterações de nomes criam versões históricas não destrutivas.`;
+                dfV7RenderAdminCards();dfSyncOperationalUI();
+            }catch(e){console.warn('renderStrategyManager V7 failed:',e);}
+        };
+        function dfV7SyncInitialCutover(previous,next){
+            Object.keys(DF_V7_SETUP_META).forEach(setupId=>{
+                dfV7Setup(setupId).slots.filter(m=>!m.continuity).forEach(meta=>{
+                    const lineage=dfV7GetLineage(setupId,meta.slot);if(!lineage||lineage.versions.length!==1)return;
+                    const first=lineage.versions[0];if(first.origin!=='initial-cutover')return;
+                    first.startDate=next;first.endDate=null;
+                });
+            });
+            dfEnsureStrategyVersionHistory().updatedAt=new Date().toISOString();
+        }
+        window.strategyManagerSave = async function(){
+            try{
+                const session=promptAdminCredentials('Salvar a configuração dos operacionais exige acesso administrativo.','admin');if(!session)return;
+                const dateEl=document.getElementById('df-operational-cutover-date'),toggleEl=document.getElementById('df-admin-show-legacy-history');
+                const date=String(dateEl&&dateEl.value||'').trim();if(!dfV7ValidISO(date)){alert('Informe uma data válida para o marco temporal.');return;}
+                const cfg=dfEnsureOperationalConfig(),previous=cfg.cutoverDate;
+                cfg.cutoverDate=date;cfg.showLegacyHistory=toggleEl?!!toggleEl.checked:true;
+                if(previous!==date)dfV7SyncInitialCutover(previous,date);
+                dfV7SaveHistoryLocal();await dfV7SaveHistoryCloud();
+                try{logAdminAction(session.username,`Configuração operacional salva. Marco ${previous} → ${date}`);}catch(e){}
+                if(els.strategyManagerStatus)els.strategyManagerStatus.textContent=`Configuração salva. Marco: ${dfFormatCutoverDate(date)}.`;
+                dfV7RenderAllAfterChange();alert('Configuração salva. O histórico das estratégias foi preservado.');
+            }catch(err){console.error('strategyManagerSave V7 failed:',err);alert('Não foi possível salvar a configuração.');}
+        };
+        const __dfV6QuickCutoverSave=window.dfSaveCutoverQuickEditor;
+        window.dfSaveCutoverQuickEditor=async function(){
+            const before=dfGetCutoverDate();await __dfV6QuickCutoverSave.apply(this,arguments);const after=dfGetCutoverDate();
+            if(before!==after){dfV7SyncInitialCutover(before,after);dfV7SaveHistoryLocal();await dfV7SaveHistoryCloud();dfV7RenderAllAfterChange();}
+        };
+        const __dfV6CleanupLegacy=window.dfStrategyCleanupLegacyConfig;
+        window.dfStrategyCleanupLegacyConfig=async function(){
+            const before=dfV7Clone(dfEnsureStrategyVersionHistory());await __dfV6CleanupLegacy.apply(this,arguments);
+            if(!store[DF_V7_HISTORY_KEY])store[DF_V7_HISTORY_KEY]=before;
+            dfEnsureStrategyVersionHistory();dfV7SaveHistoryLocal();await dfV7SaveHistoryCloud();dfV7RenderAllAfterChange();
+        };
+
+        // Bootstrap V7 without changing or deleting operational records.
+        try{
+            dfEnsureStrategyVersionHistory();dfEnsureOperationalConfig();dfEnsureStrategyStructure();dfV7SaveHistoryLocal();
+            setTimeout(()=>{try{dfV7RenderAdminCards();dfApplyCurrentStrategyLabelsToStaticUI();}catch(e){}},0);
+        }catch(e){console.warn('DF Strategy History V7 bootstrap failed:',e);}
 
         // === Expose internal state/functions for patch modules (safe & idempotent) ===
         try{
@@ -12853,6 +13728,30 @@ We normalize daily buckets so:
     return true;
   }
 
+  function bindQuickGuideModal(){
+    var overlay=document.getElementById('d2InfoOverlay'),close=document.getElementById('d2InfoClose');
+    if(!overlay||overlay.dataset.dfV8Bound==='1')return;
+    overlay.dataset.dfV8Bound='1';
+    function hide(){overlay.classList.remove('open');overlay.setAttribute('aria-hidden','true');}
+    if(close)close.addEventListener('click',hide);
+    overlay.addEventListener('click',function(e){if(e.target===overlay)hide();});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&overlay.classList.contains('open'))hide();});
+  }
+  window.dfOpenQuickGuide=function(forceTab){
+    bindQuickGuideModal();
+    var overlay=document.getElementById('d2InfoOverlay'),title=document.getElementById('d2InfoTitle'),body=document.getElementById('d2InfoBody');
+    if(!overlay||!title||!body)return;
+    var tab=forceTab||localStorage.getItem(ACTIVE_TAB_KEY)||'performance';
+    var acc=getAccount(),study=acc?ensureStudy(acc):null;
+    var names=study?study.samples.map(function(sample){return sample.name;}).join(' · '):currentStrategyNames().join(' · ');
+    var performance=tab!=='ignored-bar';
+    title.textContent=performance?tr('Guia rápido — Performance Premium','Quick guide — Premium Performance'):tr('Guia rápido — Setup Barra Ignorada','Quick guide — Ignored-Bar Setup');
+    body.innerHTML=performance
+      ? '<div class="df-v8-guide"><div class="df-v8-guide-intro">'+tr('Use esta aba para o operacional Premium e para acompanhar os resultados por período e por versão de estratégia.','Use this tab for the Premium setup and to track results by period and strategy version.')+'</div><div class="df-v8-guide-steps"><div class="df-v8-guide-step"><div><strong>'+tr('Lance os resultados','Enter results')+'</strong><span>'+tr('Registre as operações no calendário. O nome correto da estratégia é definido automaticamente pela data.','Record operations in the calendar. The correct strategy name is resolved automatically by date.')+'</span></div></div><div class="df-v8-guide-step"><div><strong>'+tr('Analise o período','Analyze the period')+'</strong><span>'+tr('Escolha as datas em Análise por Período para ver resultado, risco e consistência.','Choose dates under Period Analysis to see result, risk and consistency.')+'</span></div></div><div class="df-v8-guide-step"><div><strong>'+tr('Compare versões','Compare versions')+'</strong><span>'+tr('Abra Histórico de Estratégias para comparar nomes e regras anteriores com a versão atual.','Open Strategy History to compare prior names and rules with the current version.')+'</span></div></div></div><div class="df-v8-guide-note">'+tr('Alterar nome ou marco não apaga operações.','Changing a name or cutover date does not delete operations.')+'</div></div>'
+      : '<div class="df-v8-guide"><div class="df-v8-guide-intro">'+tr('Setup independente do Premium. Estratégias atuais: ','Independent from Premium. Current strategies: ')+esc(names)+'</div><div class="df-v8-guide-steps"><div class="df-v8-guide-step"><div><strong>'+tr('Escolha a estratégia','Choose the strategy')+'</strong><span>'+tr('Use uma das três abas com os nomes atuais.','Use one of the three tabs showing the current names.')+'</span></div></div><div class="df-v8-guide-step"><div><strong>'+tr('Adicione resultados','Add results')+'</strong><span>'+tr('Informe data e resultado ou cole vários resultados. Pontos e observações são opcionais.','Enter date and result or paste multiple results. Points and notes are optional.')+'</span></div></div><div class="df-v8-guide-step"><div><strong>'+tr('Analise e consulte o histórico','Analyze and review history')+'</strong><span>'+tr('Os indicadores são automáticos. Ao mudar uma estratégia, a versão anterior permanece disponível no Histórico.','Indicators are automatic. When a strategy changes, the prior version remains available in History.')+'</span></div></div></div><div class="df-v8-guide-note">'+tr('As versões anteriores nunca recebem o nome novo.','Prior versions are never relabeled with the new name.')+'</div></div>';
+    overlay.classList.add('open');overlay.setAttribute('aria-hidden','false');
+  };
+
   function boot(){
     if (bindOnce()) return;
 
@@ -13574,8 +14473,8 @@ tr.bg-green-50 td {
 <script id="df-ignored-bar-script">
 (function(){
   'use strict';
-  if(window.__DF_IGNORED_BAR_V5__) return;
-  window.__DF_IGNORED_BAR_V5__ = true;
+  if(window.__DF_IGNORED_BAR_V8__) return;
+  window.__DF_IGNORED_BAR_V8__ = true;
 
   var ACTIVE_SAMPLE_KEY = 'df_ignored_bar_active_sample';
   var ACTIVE_TAB_KEY = 'df_main_active_tab';
@@ -13641,11 +14540,48 @@ tr.bg-green-50 td {
   function getCutover(){
     try{return (window.dfGetCutoverDate && window.dfGetCutoverDate()) || '2026-06-28';}catch(e){return '2026-06-28';}
   }
-  function fixedMeta(index){return IB_STRATEGY_META[index] || IB_STRATEGY_META[0];}
+  function fixedMeta(index){
+    var base=IB_STRATEGY_META[index] || IB_STRATEGY_META[0];
+    var label=base.label;
+    try{label=(window.dfGetStrategyNameForDate&&window.dfGetStrategyNameForDate('ignoredBar',base.slot,todayISO()))||label;}catch(e){}
+    return Object.assign({},base,{label:label});
+  }
+  function currentStrategyNames(){
+    return IB_STRATEGY_META.map(function(meta,index){return fixedMeta(index).label;});
+  }
+  function currentVersionForSample(sample){
+    try{return (window.dfGetCurrentStrategyVersion&&window.dfGetCurrentStrategyVersion('ignoredBar',sample.strategyKey))||null;}catch(e){return null;}
+  }
+  function ensureSampleVersionMeta(sample){
+    if(!sample.versionMeta || typeof sample.versionMeta!=='object') sample.versionMeta={};
+    var version=currentVersionForSample(sample);
+    var versionId=(version&&version.id)||'current';
+    if(!sample.versionMeta[versionId]){
+      var hasPreviousMeta=Object.keys(sample.versionMeta).length>0;
+      sample.versionMeta[versionId]={
+        period:hasPreviousMeta?'':String(sample.period||''),
+        notes:hasPreviousMeta?'':String(sample.notes||''),
+        createdAt:new Date().toISOString()
+      };
+    }
+    sample.currentVersionId=versionId;
+    sample.period=String(sample.versionMeta[versionId].period||'');
+    sample.notes=String(sample.versionMeta[versionId].notes||'');
+    return sample.versionMeta[versionId];
+  }
+  function versionMetaForOperation(sample,op){
+    try{
+      var version=window.dfGetStrategyVersionAtDate&&window.dfGetStrategyVersionAtDate('ignoredBar',sample.strategyKey,String(op&&op.date||''));
+      if(version&&sample.versionMeta&&sample.versionMeta[version.id]) return sample.versionMeta[version.id];
+    }catch(e){}
+    return {period:sample.period||'',notes:sample.notes||''};
+  }
+
   function opEligible(sample,op){
+    var d=String(op&&op.date||'');
+    try{if(window.dfIsCurrentStrategyOperation)return !!window.dfIsCurrentStrategyOperation('ignoredBar',sample.strategyKey,d); }catch(e){}
     var meta=IB_STRATEGY_META.find(function(x){return x.slot===sample.strategyKey;})||fixedMeta(0);
     if(meta.continuity)return true;
-    var d=String(op&&op.date||'');
     if(!d)return false;
     return d>=getCutover();
   }
@@ -13670,7 +14606,7 @@ tr.bg-green-50 td {
       if(old){
         try{acc.ignoredBarLegacyArchiveV4=JSON.parse(JSON.stringify(old));}catch(e){acc.ignoredBarLegacyArchiveV4=old;}
       }
-      var fresh={version:5,setupId:'ignoredBar',updatedAt:null,autoSource:null,migratedAt:new Date().toISOString(),samples:[defaultSample(0),defaultSample(1),defaultSample(2)]};
+      var fresh={version:8,setupId:'ignoredBar',updatedAt:null,autoSource:null,migratedAt:new Date().toISOString(),samples:[defaultSample(0),defaultSample(1),defaultSample(2)]};
       // Preserva apenas registros manuais identificáveis; lançamentos copiados do Premium ficam arquivados.
       if(old && Array.isArray(old.samples)){
         old.samples.forEach(function(sample){
@@ -13690,13 +14626,13 @@ tr.bg-green-50 td {
       acc.ignoredBarStudy=fresh;
     }
     var study=acc.ignoredBarStudy;
-    study.version=5;study.setupId='ignoredBar';study.autoSource=null;
+    study.version=8;study.setupId='ignoredBar';study.autoSource=null;
     study.samples=[0,1,2].map(function(index){
       var meta=fixedMeta(index),sample=(Array.isArray(study.samples)&&study.samples[index]&&typeof study.samples[index]==='object')?study.samples[index]:defaultSample(index);
       sample.id=meta.slot;sample.strategyKey=meta.slot;sample.name=meta.label;
       if(sample.period==null)sample.period='';if(sample.notes==null)sample.notes='';if(!Array.isArray(sample.operations))sample.operations=[];
       sample.operations=sample.operations.map(function(op){op=(op&&typeof op==='object')?op:blankOperation();if(!op.id)op.id=uid('op');if(op.date==null)op.date='';if(op.result==null)op.result='';if(op.points==null)op.points='';if(op.note==null)op.note='';if(!op.createdAt)op.createdAt=new Date().toISOString();return op;});
-      if(!sample.operations.length)sample.operations=[blankOperation()];return sample;
+      if(!sample.operations.length)sample.operations=[blankOperation()];ensureSampleVersionMeta(sample);return sample;
     });
     return study;
   }
@@ -13792,7 +14728,8 @@ tr.bg-green-50 td {
       nav=document.createElement('div'); nav.id='df-main-tabs-shell'; nav.className='no-print';
       nav.innerHTML='<div id="df-main-tabs">'+
         '<button type="button" class="df-main-tab active" data-df-main-tab="performance"><i data-lucide="layout-dashboard" class="w-4 h-4"></i><span>Performance · Premium</span></button>'+
-        '<button type="button" class="df-main-tab" data-df-main-tab="ignored-bar"><i data-lucide="scan-line" class="w-4 h-4"></i><span>Barra Ignorada + Analytics</span></button>'+
+        '<button type="button" class="df-main-tab" data-df-main-tab="ignored-bar"><i data-lucide="scan-line" class="w-4 h-4"></i><span>Setup Barra Ignorada</span></button>'+
+        '<button type="button" class="df-main-help-btn" id="df-main-help-btn" title="Guia rápido"><i data-lucide="circle-help" class="w-4 h-4"></i><span>Ajuda</span></button>'+
       '</div>';
       dashboard.parentNode.insertBefore(nav,dashboard);
     }
@@ -13806,6 +14743,8 @@ tr.bg-green-50 td {
     if(nav.dataset.bound!=='1'){
       nav.dataset.bound='1';
       nav.addEventListener('click',function(e){
+        var help=e.target.closest('#df-main-help-btn');
+        if(help){window.dfOpenQuickGuide&&window.dfOpenQuickGuide();return;}
         var btn=e.target.closest('[data-df-main-tab]'); if(!btn)return;
         setMainTab(btn.getAttribute('data-df-main-tab'));
       });
@@ -13841,17 +14780,18 @@ tr.bg-green-50 td {
   function renderAll(){
     var container=document.getElementById('df-ignored-bar-container'); if(!container)return;
     var tabLabel=document.querySelector('[data-df-main-tab="ignored-bar"] span');
-    if(tabLabel) tabLabel.textContent=tr('Barra Ignorada + Analytics','Ignored Bar + Analytics');
+    if(tabLabel) tabLabel.textContent=tr('Setup Barra Ignorada','Ignored-Bar Setup');
     var acc=getAccount();
     if(!acc){container.innerHTML='<div class="df-ib-card"><div class="df-ib-body"><div class="df-ib-empty">'+tr('Nenhuma conta ativa.','No active account.')+'</div></div></div>';return;}
     var study=ensureStudy(acc); var all=calcMetrics(combinedSample(study));
+    var activeNames=study.samples.map(function(sample){return sample.name;}).join(' · ');
     container.innerHTML='<div class="df-ib-shell">'+
       '<section class="df-ib-card">'+
-        '<div class="df-ib-header"><div><h2 class="df-ib-title"><i data-lucide="scan-line" class="w-5 h-5 text-indigo-600"></i>'+tr('Operação Barra Ignorada','Ignored Bar Operation')+'<span class="info-i" tabindex="0" role="button" aria-label="'+tr('Ajuda: Operação Barra Ignorada','Help: Ignored Bar Operation')+'" data-help-title="Operação Barra Ignorada">i</span></h2><div class="df-ib-sub">'+tr('Conta','Account')+': <strong>'+esc(acc.name||tr('Conta','Account'))+'</strong> · '+tr('Registre e compare 20/60, 25/75 e 30/90 sem compartilhar dados com o Premium.','Record and compare 20/60, 25/75 and 30/90 without sharing data with Premium.')+'</div></div><div id="df-ib-save-status" class="df-ib-save">'+tr('Dados por conta','Account-level data')+'</div></div>'+
+        '<div class="df-ib-header"><div><h2 class="df-ib-title"><i data-lucide="scan-line" class="w-5 h-5 text-indigo-600"></i>'+tr('Setup Barra Ignorada','Ignored-Bar Setup')+'<span class="info-i" tabindex="0" role="button" aria-label="'+tr('Ajuda: Setup Barra Ignorada','Help: Ignored-Bar Setup')+'" data-help-title="Setup Barra Ignorada">i</span></h2><div class="df-ib-sub">'+tr('Conta','Account')+': <strong>'+esc(acc.name||tr('Conta','Account'))+'</strong> · '+tr('Estratégias atuais: ','Current strategies: ')+esc(activeNames)+'</div></div><div id="df-ib-save-status" class="df-ib-save">'+tr('Dados por conta','Account-level data')+'</div></div>'+
         '<div class="df-ib-body">'+overviewHTML(all,study)+'</div>'+
       '</section>'+
-      '<section class="df-ib-card"><div class="df-ib-header"><div><h3 class="df-ib-title" style="font-size:15px"><i data-lucide="database" class="w-4 h-4 text-indigo-600"></i>'+tr('Registro das Estratégias','Strategy Records')+'</h3><div class="df-ib-sub">'+tr('Cada linha representa uma operação. O resultado financeiro alimenta todos os cálculos automaticamente.','Each row represents one operation. The financial result feeds all calculations automatically.')+'</div></div><div class="df-ib-actions"><button type="button" class="df-ib-btn" id="df-ib-export"><i data-lucide="download" class="w-3.5 h-3.5"></i>CSV</button><button type="button" class="df-ib-btn danger" id="df-ib-clear-sample"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>'+tr('Limpar estratégia','Clear strategy')+'</button></div></div><div class="df-ib-body"><div id="df-ib-editor"></div></div></section>'+
-      '<section class="df-ib-card"><div class="df-ib-header"><div><h3 class="df-ib-title" style="font-size:15px"><i data-lucide="chart-no-axes-combined" class="w-4 h-4 text-indigo-600"></i>'+tr('Análise Comparativa','Comparative Analytics')+'</h3><div class="df-ib-sub">'+tr('Leitura individual e consolidada das três estratégias da Barra Ignorada.','Individual and consolidated reading of the three Ignored Bar strategies.')+'</div></div></div><div class="df-ib-body"><div id="df-ib-analytics"></div></div></section>'+
+      '<section class="df-ib-card"><div class="df-ib-header"><div><h3 class="df-ib-title" style="font-size:15px"><i data-lucide="database" class="w-4 h-4 text-indigo-600"></i>'+tr('Registro das Estratégias','Strategy Records')+'<span class="info-i" tabindex="0" role="button" aria-label="'+tr('Ajuda: Registro das Estratégias','Help: Strategy Records')+'" data-help-title="Registro das Estratégias">i</span></h3><div class="df-ib-sub">'+tr('Cada linha representa uma operação. O resultado financeiro alimenta todos os cálculos automaticamente.','Each row represents one operation. The financial result feeds all calculations automatically.')+'</div></div><div class="df-ib-actions"><button type="button" class="df-ib-btn" id="df-ib-export"><i data-lucide="download" class="w-3.5 h-3.5"></i>CSV</button><button type="button" class="df-ib-btn danger" id="df-ib-clear-sample"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i>'+tr('Limpar estratégia','Clear strategy')+'</button></div></div><div class="df-ib-body"><div id="df-ib-editor"></div></div></section>'+
+      '<section class="df-ib-card"><div class="df-ib-header"><div><h3 class="df-ib-title" style="font-size:15px"><i data-lucide="chart-no-axes-combined" class="w-4 h-4 text-indigo-600"></i>'+tr('Análise Comparativa','Comparative Analytics')+'<span class="info-i" tabindex="0" role="button" aria-label="'+tr('Ajuda: Análise Comparativa','Help: Comparative Analytics')+'" data-help-title="Análise Comparativa">i</span></h3><div class="df-ib-sub">'+tr('Leitura individual e consolidada das três estratégias deste setup.','Individual and consolidated reading of this setup’s three strategies.')+'</div></div></div><div class="df-ib-body"><div id="df-ib-analytics"></div></div></section>'+
     '</div>';
     bindContainer(); renderEditor(); renderAnalytics();
     try{window.lucide&&window.lucide.createIcons&&window.lucide.createIcons();}catch(e){}
@@ -13873,7 +14813,8 @@ tr.bg-green-50 td {
   }
 
   function operationRows(sample){
-    return (sample.operations||[]).map(function(op,index){
+    var visible=(sample.operations||[]).filter(function(op){return opEligible(sample,op);});
+    return visible.map(function(op,index){
       var out=outcome(op);
       return '<tr data-op-id="'+esc(op.id)+'">'+
         '<td class="df-ib-index">'+(index+1)+'</td>'+
@@ -13890,10 +14831,10 @@ tr.bg-green-50 td {
   function isolatedSetupHTML(study){
     var cut=getCutover();
     return '<div class="df-ib-auto">'+
-      '<div class="df-ib-auto-head"><div><div class="df-ib-auto-title"><i data-lucide="shield-check" class="w-4 h-4"></i>'+tr('Setup isolado','Isolated setup')+'</div>'+
-      '<div class="df-ib-sub">'+tr('Os dados desta aba não são copiados nem calculados a partir do Premium. Use as abas 20/60, 25/75 e 30/90 para registrar somente as operações da Barra Ignorada.','Data in this tab is not copied or calculated from Premium. Use the 20/60, 25/75 and 30/90 tabs to record Ignored Bar operations only.')+'</div></div>'+
-      '<span class="df-ib-auto-badge"><i data-lucide="calendar-clock" class="w-3 h-3"></i>'+tr('Marco: ','Cutover: ')+formatRangeDate(cut)+'</span></div>'+
-      '<div class="df-ib-auto-preview"><span>'+tr('20/60 e 30/90 contam desde o marco. 25/75 mantém continuidade histórica.','20/60 and 30/90 count from the cutover. 25/75 keeps historical continuity.')+'</span></div>'+
+      '<div class="df-ib-auto-head"><div><div class="df-ib-auto-title"><i data-lucide="shield-check" class="w-4 h-4"></i>'+tr('Setup independente','Independent setup')+'<span class="info-i" tabindex="0" role="button" aria-label="'+tr('Ajuda: Setup Barra Ignorada','Help: Ignored-Bar Setup')+'" data-help-title="Setup Barra Ignorada">i</span></div>'+
+      '<div class="df-ib-sub">'+tr('Este ambiente não copia dados do Premium. Estratégias atuais: ','This environment does not copy Premium data. Current strategies: ')+esc(study.samples.map(function(sample){return sample.name;}).join(' · '))+'</div></div>'+
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><button type="button" class="df-ib-btn" onclick="window.dfOpenStrategyHistory&&window.dfOpenStrategyHistory(\'ignoredBar\',\''+study.samples[0].strategyKey+'\')"><i data-lucide="history" class="w-3.5 h-3.5"></i>'+tr('Histórico','History')+'</button><span class="df-ib-auto-badge"><i data-lucide="calendar-clock" class="w-3 h-3"></i>'+tr('Marco: ','Cutover: ')+formatRangeDate(cut)+'</span></div></div>'+
+      '<div class="df-ib-auto-preview"><span>'+tr('Cada linha usa somente a versão atual. Versões encerradas permanecem salvas para consulta e comparação.','Each line uses only its current version. Closed versions remain saved for consultation and comparison.')+'</span></div>'+
     '</div>';
   }
 
@@ -13909,7 +14850,7 @@ tr.bg-green-50 td {
       '</div>'+
       '<div class="df-ib-field"><label>'+tr('Observações da estratégia','Strategy notes')+'</label><textarea id="df-ib-sample-notes" placeholder="'+tr('Contexto, regra aplicada, mercado, horário ou qualquer observação relevante.','Context, rule applied, market, time, or any relevant note.')+'">'+esc(sample.notes)+'</textarea></div>'+
       '<div id="df-ib-sample-metrics" class="df-ib-sample-metrics">'+sampleMetricsHTML(m)+'</div>'+
-      '<div class="df-ib-toolbar"><div class="df-ib-toolbar-title">'+tr('Operações da ','Operations for ')+esc(sample.name)+'</div><div class="df-ib-actions"><button type="button" class="df-ib-btn primary" id="df-ib-add-op"><i data-lucide="plus" class="w-3.5 h-3.5"></i>'+tr('Adicionar operação','Add operation')+'</button></div></div>'+
+      '<div class="df-ib-toolbar"><div><div class="df-ib-toolbar-title">'+tr('Operações da versão atual: ','Current-version operations: ')+esc(sample.name)+'</div><div class="df-ib-sub">'+tr('Operações de versões encerradas ficam disponíveis em Histórico.','Closed-version operations remain available under History.')+'</div></div><div class="df-ib-actions"><button type="button" class="df-ib-btn primary" id="df-ib-add-op"><i data-lucide="plus" class="w-3.5 h-3.5"></i>'+tr('Adicionar operação','Add operation')+'</button></div></div>'+
       '<div class="df-ib-table-wrap"><table class="df-ib-table"><thead><tr><th style="text-align:center">#</th><th>'+tr('Data','Date')+'</th><th>'+tr('Resultado ($)','Result ($)')+'</th><th>'+tr('Pontos','Points')+'</th><th style="text-align:center">Status</th><th>'+tr('Observação','Note')+'</th><th></th></tr></thead><tbody id="df-ib-ops-body">'+operationRows(sample)+'</tbody></table></div>'+
       '<div class="df-ib-paste"><div class="df-ib-paste-grid"><div><div class="df-ib-toolbar-title">'+tr('Colagem rápida de resultados','Quick result paste')+'</div><textarea id="df-ib-quick-paste" placeholder="'+tr('Um resultado por linha, por exemplo:','One result per line, for example:')+'\n250\n-120\n375"></textarea><div class="df-ib-paste-help">'+tr('Linhas vazias são ignoradas. Os valores serão adicionados ao final da estratégia ativa.','Blank lines are ignored. Values are appended to the active strategy.')+'</div></div><button type="button" class="df-ib-btn primary" id="df-ib-import-results"><i data-lucide="clipboard-paste" class="w-3.5 h-3.5"></i>'+tr('Importar resultados','Import results')+'</button></div></div>';
     try{window.lucide&&window.lucide.createIcons&&window.lucide.createIcons();}catch(e){}
@@ -14041,13 +14982,14 @@ tr.bg-green-50 td {
     container.addEventListener('input',function(e){
       var study=ensureStudy(getAccount()); if(!study)return; var sample=study.samples[activeSampleIndex];
       if(e.target.id==='df-ib-sample-name'){return;}
-      if(e.target.id==='df-ib-sample-period'){sample.period=e.target.value;scheduleSave();renderAnalytics();return;}
-      if(e.target.id==='df-ib-sample-notes'){sample.notes=e.target.value;scheduleSave();return;}
+      if(e.target.id==='df-ib-sample-period'){sample.period=e.target.value;var meta=ensureSampleVersionMeta(sample);meta.period=e.target.value;scheduleSave();renderAnalytics();return;}
+      if(e.target.id==='df-ib-sample-notes'){sample.notes=e.target.value;var meta=ensureSampleVersionMeta(sample);meta.notes=e.target.value;scheduleSave();return;}
       var field=e.target.getAttribute('data-op-field'); if(!field)return;
       var row=e.target.closest('[data-op-id]'); if(!row)return; var op=sample.operations.find(function(x){return x.id===row.getAttribute('data-op-id');}); if(!op)return;
       if(field==='result'||field==='points'){var parsed=parseLooseNumber(e.target.value);op[field]=e.target.value===''?'':(parsed===null?e.target.value:parsed);}else op[field]=e.target.value;
       if(field==='result'){var badge=row.querySelector('.df-ib-outcome'),out=outcome(op);if(badge){badge.className='df-ib-outcome '+out.cls;badge.textContent=out.label;}refreshSampleMetrics();renderAnalytics();}
       scheduleSave();
+      if(field==='date'){setTimeout(function(){renderEditor();renderAnalytics();},0);}
     });
   }
 
@@ -14063,9 +15005,11 @@ tr.bg-green-50 td {
 
   function clearActiveSample(){
     var study=ensureStudy(getAccount()),sample=study.samples[activeSampleIndex];
-    if(!confirm(tr('Limpar todas as operações e observações de "','Clear all operations and notes from "')+sample.name+'"?'))return;
-    var meta=fixedMeta(activeSampleIndex);
-    study.samples[activeSampleIndex]={id:meta.slot,strategyKey:meta.slot,name:meta.label,period:'',notes:'',operations:[blankOperation()]};
+    if(!confirm(tr('Limpar somente as operações da versão atual de "','Clear only the current-version operations from "')+sample.name+'"? '+tr('O histórico encerrado será preservado.','Closed history will be preserved.')))return;
+    var archived=(sample.operations||[]).filter(function(op){return !opEligible(sample,op);});
+    sample.operations=archived.concat([blankOperation()]);
+    sample.period='';sample.notes='';
+    var meta=ensureSampleVersionMeta(sample);meta.period='';meta.notes='';
     scheduleSave();renderEditor();renderAnalytics();
   }
 
@@ -14078,7 +15022,10 @@ tr.bg-green-50 td {
     study.samples.forEach(function(sample){
       (sample.operations||[]).forEach(function(op,index){
         var out=outcome(op);
-        rows.push(['Barra Ignorada',sample.name||'',sample.period||'',index+1,op.date||'',op.result===''?'':op.result,op.points===''?'':op.points,out.label,opEligible(sample,op)?tr('Sim','Yes'):tr('Não','No'),op.note||'']);
+        var versionName=sample.name||'';
+        try{versionName=(window.dfGetStrategyNameForDate&&window.dfGetStrategyNameForDate('ignoredBar',sample.strategyKey,op.date||''))||versionName;}catch(e){}
+        var opMeta=versionMetaForOperation(sample,op);
+        rows.push(['Setup Barra Ignorada',versionName,opMeta.period||'',index+1,op.date||'',op.result===''?'':op.result,op.points===''?'':op.points,out.label,opEligible(sample,op)?tr('Sim','Yes'):tr('Não','No'),op.note||'']);
       });
     });
     rows.push([]);
@@ -14115,7 +15062,7 @@ tr.bg-green-50 td {
   function boot(){
     bootAttempts++;
     if(!buildShell()){if(bootAttempts<80)setTimeout(boot,250);return;}
-    wrapAccountChange();observeAccountName();observeTheme();
+    wrapAccountChange();observeAccountName();observeTheme();bindQuickGuideModal();
     var preferred=localStorage.getItem(ACTIVE_TAB_KEY)||'performance';
     setMainTab(preferred);
     try{window.lucide&&window.lucide.createIcons&&window.lucide.createIcons();}catch(e){}
@@ -14128,5 +15075,21 @@ tr.bg-green-50 td {
 })();
 </script>
 
+
+<script id="df-v8-help-fallback">
+(function(){
+  if(window.__dfV8HelpFallbackBound)return;window.__dfV8HelpFallbackBound=true;
+  document.addEventListener('click',function(e){
+    var icon=e.target&&e.target.closest?e.target.closest('.info-i, .info-icon-btn'):null;
+    if(!icon)return;
+    setTimeout(function(){
+      var pop=document.getElementById('help-popover');
+      if(pop && !pop.classList.contains('hidden'))return;
+      var title=icon.getAttribute('data-help-title')||'';
+      if(title==='Setup Barra Ignorada' && window.dfOpenQuickGuide)window.dfOpenQuickGuide('ignored-bar');
+    },50);
+  },true);
+})();
+</script>
 </body>
 </html>
