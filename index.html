@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: DF-STRATEGY-CLEAN-ADMIN-V14-UI-V7-IGNORED-BAR-AUTO-V4-2026-06-28 -->
+<!-- BUILD_ID: DF-AUTO-RECOVERY-V10-SAFE-SIDECARS-2026-06-29 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Performance Report - DF Strategic V9</title>
+    <title>Performance Report - DF Strategic V10</title>
     
     <link rel="apple-touch-icon" sizes="180x180" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
     <link rel="icon" type="image/png" sizes="32x32" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
@@ -867,6 +867,14 @@ body.dark #period-analysis-card.period-v4 .period-mini-value{
     width:100%;
   }
 }
+
+/* V10 automatic recovery status */
+#df-auto-recovery-banner{margin:0 auto 14px;max-width:calc(100% - 2rem);border:1px solid rgba(16,185,129,.35);background:rgba(236,253,245,.96);color:#065f46;border-radius:14px;padding:12px 14px;box-shadow:0 10px 30px rgba(15,23,42,.08);font-size:12px;line-height:1.45;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+#df-auto-recovery-banner.hidden{display:none}
+#df-auto-recovery-banner strong{display:block;font-size:13px;margin-bottom:2px}
+#df-auto-recovery-banner button{border:1px solid rgba(5,150,105,.25);background:white;color:#047857;border-radius:9px;padding:6px 10px;font-size:11px;font-weight:800;white-space:nowrap;cursor:pointer}
+body.dark #df-auto-recovery-banner{background:rgba(6,78,59,.40);border-color:rgba(52,211,153,.35);color:#d1fae5}
+body.dark #df-auto-recovery-banner button{background:#0f172a;color:#a7f3d0;border-color:#065f46}
 </style>
 
 <style id="d2-info-modal-styles">
@@ -1701,6 +1709,12 @@ tr.bg-green-50 td {
         </div>
     </div>
 
+
+    <div id="df-auto-recovery-banner" class="hidden no-print" role="status" aria-live="polite">
+      <div><strong id="df-auto-recovery-title">Recuperação automática concluída</strong><span id="df-auto-recovery-text"></span></div>
+      <button type="button" id="df-auto-recovery-close" onclick="this.closest('#df-auto-recovery-banner').classList.add('hidden')">Fechar</button>
+    </div>
+
     <div class="container mx-auto px-4 py-6 space-y-6">
         
         <div class="space-y-6">
@@ -2342,6 +2356,7 @@ tr.bg-green-50 td {
             try {
                 renderSidebar();
                 if (store && store.activeId) loadAccount(store.activeId);
+                try{ showAutomaticRecoveryBanner(); }catch(e){}
                 try { store.date = (store && store.date instanceof Date) ? store.date : new Date(store?.date || Date.now()); } catch(_) {}
                 syncDatesToView();
                 setOnlineStatus();
@@ -2534,7 +2549,7 @@ Usuário administrador:`) || '';
 
 
         // --- Build/Version guard (prevents stale cached builds from overwriting cloud) ---
-        const APP_BUILD_ID = "DF-CLOUD-RECOVERY-V9-2026-06-29";
+        const APP_BUILD_ID = "DF-AUTO-RECOVERY-V10-2026-06-29";
         function touchStore(){
           try {
             const now = Date.now();
@@ -7819,22 +7834,180 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             }
         }
 
+        function countOperationalEntriesInStore(src){
+            try{
+                let total = 0;
+                const accounts = (src && src.accounts && typeof src.accounts === 'object') ? src.accounts : {};
+                Object.values(accounts).forEach(acc => {
+                    total += Object.keys((acc && acc.data && typeof acc.data === 'object') ? acc.data : {}).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).length;
+                });
+                return total;
+            }catch(e){ return 0; }
+        }
+
+        function parseStoreJsonSafe(raw){
+            try{
+                if(typeof raw !== 'string' || !raw.trim()) return null;
+                const parsed = JSON.parse(raw);
+                return (parsed && typeof parsed === 'object' && parsed.accounts && typeof parsed.accounts === 'object') ? parsed : null;
+            }catch(e){ return null; }
+        }
+
+        function operationalEntryRichness(entry){
+            try{
+                if(!entry || typeof entry !== 'object') return 0;
+                let score = Object.keys(entry).length;
+                ['t0','t1','t2','t3','t4','val','note'].forEach(k => {
+                    const v = entry[k];
+                    if(v !== undefined && v !== null && String(v).trim() !== '' && Number(v) !== 0) score += 4;
+                });
+                return score;
+            }catch(e){ return 0; }
+        }
+
+        function mergeOperationalEntry(targetData, iso, incoming){
+            const current = targetData[iso];
+            if(!current || operationalEntryRichness(incoming) > operationalEntryRichness(current)){
+                targetData[iso] = clonePlain(incoming || {});
+                return true;
+            }
+            return false;
+        }
+
+        function ensureRecoveredAccount(accountId, metadataAccounts){
+            if(!store.accounts || typeof store.accounts !== 'object') store.accounts = {};
+            if(store.accounts[accountId]){
+                if(!store.accounts[accountId].data || typeof store.accounts[accountId].data !== 'object') store.accounts[accountId].data = {};
+                return { account: store.accounts[accountId], created:false };
+            }
+            const meta = metadataAccounts && metadataAccounts[accountId] ? clonePlain(metadataAccounts[accountId]) : null;
+            const account = (meta && typeof meta === 'object') ? meta : {
+                id: accountId,
+                name: `Conta Recuperada (${String(accountId).slice(-6)})`,
+                size: '50k', monthType: 1, payouts: [], createdAt: new Date().toISOString(),
+                favorite: false, status: 'active', companyGroup: 'Recuperação automática'
+            };
+            account.id = accountId;
+            account.data = (account.data && typeof account.data === 'object') ? account.data : {};
+            account.payouts = Array.isArray(account.payouts) ? account.payouts : [];
+            store.accounts[accountId] = account;
+            return { account, created:true };
+        }
+
+        function mergeRecoveryStoreSource(sourceStore, label, report){
+            if(!sourceStore || !sourceStore.accounts || typeof sourceStore.accounts !== 'object') return;
+            for(const [accountId, srcAcc] of Object.entries(sourceStore.accounts)){
+                if(!srcAcc || typeof srcAcc !== 'object') continue;
+                const ensured = ensureRecoveredAccount(accountId, sourceStore.accounts);
+                const target = ensured.account;
+                if(ensured.created){ report.accountsCreated += 1; report.sources.add(label); }
+                const srcData = (srcAcc.data && typeof srcAcc.data === 'object') ? srcAcc.data : {};
+                for(const [iso, entry] of Object.entries(srcData)){
+                    if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+                    if(mergeOperationalEntry(target.data, iso, entry)){
+                        report.entriesMerged += 1;
+                        report.sources.add(label);
+                    }
+                }
+            }
+        }
+
+        function removeEmptyGeneratedPlaceholder(recoveredIds){
+            try{
+                if(!Array.isArray(recoveredIds) || !recoveredIds.length) return;
+                const ids = Object.keys(store.accounts || {});
+                ids.forEach(id => {
+                    if(recoveredIds.includes(id)) return;
+                    const acc = store.accounts[id];
+                    const emptyData = countOperationalEntriesInStore({accounts:{x:acc}}) === 0;
+                    const emptyPayouts = !Array.isArray(acc && acc.payouts) || acc.payouts.length === 0;
+                    const generic = acc && (acc.name === 'Conta Principal' || /^Conta Recuperada/.test(acc.name || ''));
+                    if(emptyData && emptyPayouts && generic && ids.length > recoveredIds.length){
+                        delete store.accounts[id];
+                    }
+                });
+            }catch(e){}
+        }
+
+        function showAutomaticRecoveryBanner(){
+            try{
+                const report = window.__DF_AUTO_RECOVERY_REPORT__;
+                const banner = document.getElementById('df-auto-recovery-banner');
+                const title = document.getElementById('df-auto-recovery-title');
+                const text = document.getElementById('df-auto-recovery-text');
+                if(!banner || !report || !report.recovered) return;
+                const sources = Array.from(report.sources || []).join(', ');
+                if(title) title.textContent = CURRENT_LANG === 'en' ? 'Historical data recovered automatically' : 'Dados históricos recuperados automaticamente';
+                if(text) text.textContent = CURRENT_LANG === 'en'
+                    ? `${report.totalEntries} dated record(s) are available again across ${report.accountCount} account(s). Sources: ${sources || 'cloud recovery sources'}. No record was deleted.`
+                    : `${report.totalEntries} registro(s) com data voltaram a ficar disponíveis em ${report.accountCount} conta(s). Fontes: ${sources || 'fontes de recuperação da nuvem'}. Nenhum registro foi apagado.`;
+                banner.classList.remove('hidden');
+            }catch(e){}
+        }
+        window.showAutomaticRecoveryBanner = showAutomaticRecoveryBanner;
+
         async function loadCloudOperationalPeriods(){
             try{
                 if(isOffline || !db || !getDocs || !collection) return false;
-                const snap = await getDocs(getCloudPeriodsColRef());
+                const [snap, backupSnap, mainSnap] = await Promise.all([
+                    getDocs(getCloudPeriodsColRef()),
+                    getDoc(getCloudBackupRef()).catch(()=>null),
+                    getDoc(getCloudDocRef()).catch(()=>null)
+                ]);
+
+                const backupData = backupSnap && backupSnap.exists() ? (backupSnap.data() || {}) : {};
+                const mainData = mainSnap && mainSnap.exists() ? (mainSnap.data() || {}) : {};
+                const backupStore = parseStoreJsonSafe(backupData.store_json || '');
+                const legacyPrevStore = parseStoreJsonSafe(mainData.prev_store_json || '');
+                const metadataAccounts = {
+                    ...((legacyPrevStore && legacyPrevStore.accounts) || {}),
+                    ...((backupStore && backupStore.accounts) || {})
+                };
+
+                const report = { recovered:false, accountsCreated:0, entriesMerged:0, totalEntries:0, accountCount:0, sources:new Set() };
                 const seen = {};
+                const recoveredIds = [];
+
                 snap.forEach((docSnap) => {
                     const raw = docSnap.data() || {};
                     const accountId = String(raw.accountId || '');
                     const entries = (raw.entries && typeof raw.entries === 'object') ? raw.entries : {};
-                    if(!accountId || !store.accounts || !store.accounts[accountId]) return;
-                    const acc = store.accounts[accountId];
-                    if(!acc.data || typeof acc.data !== 'object') acc.data = {};
-                    Object.assign(acc.data, clonePlain(entries));
+                    if(!accountId) return;
+                    const ensured = ensureRecoveredAccount(accountId, metadataAccounts);
+                    if(ensured.created){
+                        report.accountsCreated += 1;
+                        recoveredIds.push(accountId);
+                        report.sources.add('Firestore periods');
+                    }
+                    for(const [iso, entry] of Object.entries(entries)){
+                        if(!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+                        if(mergeOperationalEntry(ensured.account.data, iso, entry)){
+                            report.entriesMerged += 1;
+                            report.sources.add('Firestore periods');
+                        }
+                    }
                     try{ seen[docSnap.id] = JSON.stringify(entries || {}); }catch(e){ seen[docSnap.id] = ''; }
                 });
+
+                // Merge non-destructive recovery sources. They only fill missing/richer dated entries.
+                if(backupStore) mergeRecoveryStoreSource(backupStore, 'cloud backup', report);
+                if(legacyPrevStore) mergeRecoveryStoreSource(legacyPrevStore, 'legacy cloud backup', report);
+                try{ mergeRecoveryStoreSource(JSON.parse(localStorage.getItem('df_backup_local') || '{}'), 'local backup', report); }catch(e){}
+                try{ mergeRecoveryStoreSource(JSON.parse(localStorage.getItem(LOCAL_STORE_KEY) || '{}'), 'local store', report); }catch(e){}
+
                 __lastOperationalDocHashes = seen;
+                removeEmptyGeneratedPlaceholder(recoveredIds);
+
+                // Prefer the recovered account with the most records when the current account is empty.
+                const accountEntries = Object.entries(store.accounts || {}).map(([id,acc]) => [id, Object.keys((acc && acc.data) || {}).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).length]);
+                accountEntries.sort((a,b)=>b[1]-a[1]);
+                const currentCount = store.activeId && store.accounts[store.activeId] ? Object.keys(store.accounts[store.activeId].data || {}).length : 0;
+                if(accountEntries.length && accountEntries[0][1] > 0 && currentCount === 0) store.activeId = accountEntries[0][0];
+
+                report.totalEntries = countOperationalEntriesInStore(store);
+                report.accountCount = Object.keys(store.accounts || {}).length;
+                report.recovered = report.totalEntries > 0 && (report.accountsCreated > 0 || report.entriesMerged > 0);
+                window.__DF_AUTO_RECOVERY_REPORT__ = report;
                 return true;
             }catch(e){
                 console.warn('loadCloudOperationalPeriods failed:', e);
@@ -7842,33 +8015,46 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             }
         }
 
-        async function saveCloudOperationalPeriodsNow(){
+        async function saveCloudOperationalPeriodsNow(force=false){
             try{
                 if(isOffline || !db || !writeBatch) return false;
                 const payloads = buildOperationalPeriodPayloads(store);
+                const remoteSnap = await getDocs(getCloudPeriodsColRef()).catch(()=>null);
+                const remoteCounts = {};
+                if(remoteSnap){
+                    remoteSnap.forEach(d => {
+                        const x = d.data() || {};
+                        remoteCounts[d.id] = Object.keys((x.entries && typeof x.entries === 'object') ? x.entries : {}).length;
+                    });
+                }
+
                 const nextHashes = {};
-                let changedIds = [];
+                const changedIds = [];
                 for(const [docId, payload] of Object.entries(payloads)){
                     let h = '';
                     try{ h = JSON.stringify(payload.entries || {}); }catch(e){ h = ''; }
                     nextHashes[docId] = h;
+                    const localCount = Object.keys(payload.entries || {}).length;
+                    const remoteCount = Number(remoteCounts[docId] || 0);
+                    if(!force && remoteCount >= 5 && localCount < Math.max(1, Math.floor(remoteCount * 0.55))){
+                        throw new Error(`PROTEÇÃO OPERACIONAL: ${docId} possui ${remoteCount} registros na nuvem e apenas ${localCount} localmente. Salvamento interrompido antes de qualquer alteração.`);
+                    }
                     if(__lastOperationalDocHashes[docId] !== h) changedIds.push(docId);
                 }
-                const removedIds = Object.keys(__lastOperationalDocHashes || {}).filter(id => !(id in nextHashes));
-                if(!changedIds.length && !removedIds.length){
-                    __lastOperationalDocHashes = nextHashes;
+
+                // V10 safety rule: never delete an entire historical period automatically.
+                // Missing local period documents remain preserved in Firestore for recovery.
+                if(!changedIds.length){
+                    __lastOperationalDocHashes = { ...__lastOperationalDocHashes, ...nextHashes };
                     return true;
                 }
+
                 let batch = writeBatch(db);
                 let ops = 0;
                 const nowMs = Date.now();
                 const nowIso = new Date(nowMs).toISOString();
                 const flush = async () => {
-                    if(ops > 0){
-                        await batch.commit();
-                        batch = writeBatch(db);
-                        ops = 0;
-                    }
+                    if(ops > 0){ await batch.commit(); batch = writeBatch(db); ops = 0; }
                 };
                 for(const docId of changedIds){
                     const payload = payloads[docId];
@@ -7877,24 +8063,19 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
                         period: payload.period,
                         entries: payload.entries || {},
                         source_client_id: CLIENT_ID,
-                        schema_version: 1,
+                        schema_version: 2,
                         last_update_ms: nowMs,
                         last_update_iso: nowIso
-                    }, { merge:true });
-                    ops += 1;
-                    if(ops >= 350) await flush();
-                }
-                for(const docId of removedIds){
-                    batch.delete(getCloudPeriodDocRef(docId));
+                    });
                     ops += 1;
                     if(ops >= 350) await flush();
                 }
                 await flush();
-                __lastOperationalDocHashes = nextHashes;
+                __lastOperationalDocHashes = { ...__lastOperationalDocHashes, ...nextHashes };
                 return true;
             }catch(e){
                 console.warn('saveCloudOperationalPeriodsNow failed:', e);
-                return false;
+                throw e;
             }
         }
 
@@ -8065,8 +8246,22 @@ async function saveToCloudNow() {
             setCloudStatus('saving', (CURRENT_LANG==='en' ? "Saving..." : "Salvando..."));
 
             try {
-                // Persist heavy operational data outside the main store_json first
-                const operationalOk = await saveCloudOperationalPeriodsNow();
+                // V10 preflight: validate the main cloud document before any operational write.
+                const preflightSnap = await getDoc(docRef);
+                if(preflightSnap.exists()){
+                    const preflight = preflightSnap.data() || {};
+                    const remoteLen = getComparableStoreJsonLength(preflight.store_json || '');
+                    const remoteMs = Number(preflight.last_update_ms || 0) || 0;
+                    const localKnownMs = Math.max(Number(__lastRemoteUpdateMs || 0) || 0, Number(__lastCloudWriteMs || 0) || 0);
+                    if(!force && localKnownMs && remoteMs > localKnownMs) throw new Error('CONFLITO');
+                    if(!force && remoteLen > 0 && newLen < Math.max(20, Math.floor(remoteLen * 0.58))){
+                        throw new Error(CURRENT_LANG==='en'
+                            ? 'Cloud safety protection: local metadata is much smaller than the cloud copy. No operational document was changed.'
+                            : 'Proteção da nuvem: os metadados locais são muito menores que a cópia da nuvem. Nenhum documento operacional foi alterado.');
+                    }
+                }
+                // Persist operational data only after the preflight succeeds.
+                const operationalOk = await saveCloudOperationalPeriodsNow(force);
                 if(!operationalOk){
                     throw new Error((CURRENT_LANG==='en' ? 'Failed to save operational periods' : 'Falha ao salvar períodos operacionais'));
                 }
@@ -9309,7 +9504,8 @@ if (!store.activeId) {
             }
 
             renderSidebar();
-            if (store.activeId) loadAccount(store.activeId); 
+            if (store.activeId) loadAccount(store.activeId);
+            try{ showAutomaticRecoveryBanner(); }catch(e){} 
             store.date = new Date(); 
             syncDatesToView();
             setTimeout(() => {
@@ -13896,6 +14092,7 @@ We normalize daily buckets so:
     overlay.addEventListener('click',function(e){if(e.target===overlay)hide();});
     document.addEventListener('keydown',function(e){if(e.key==='Escape'&&overlay.classList.contains('open'))hide();});
   }
+  window.bindQuickGuideModal=bindQuickGuideModal;
   window.dfOpenQuickGuide=function(forceTab){
     bindQuickGuideModal();
     var overlay=document.getElementById('d2InfoOverlay'),title=document.getElementById('d2InfoTitle'),body=document.getElementById('d2InfoBody');
@@ -15221,7 +15418,7 @@ tr.bg-green-50 td {
   function boot(){
     bootAttempts++;
     if(!buildShell()){if(bootAttempts<80)setTimeout(boot,250);return;}
-    wrapAccountChange();observeAccountName();observeTheme();bindQuickGuideModal();
+    wrapAccountChange();observeAccountName();observeTheme();if(typeof window.bindQuickGuideModal==='function')window.bindQuickGuideModal();
     var preferred=localStorage.getItem(ACTIVE_TAB_KEY)||'performance';
     setMainTab(preferred);
     try{window.lucide&&window.lucide.createIcons&&window.lucide.createIcons();}catch(e){}
