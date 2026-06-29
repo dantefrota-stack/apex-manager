@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: DF-AUTO-RECOVERY-V10-SAFE-SIDECARS-2026-06-29 -->
+<!-- BUILD_ID: DF-AUTO-RECOVERY-V11-FIXED-BOOT-AUTO-SCAN-2026-06-29 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -2256,6 +2256,15 @@ tr.bg-green-50 td {
     let chartInstance = null; 
     let db = window.db; // Atalho para o código legado
 
+    // V11: Firebase já é inicializado acima. Esta função existe para as rotinas
+    // administrativas e de recuperação poderem validar a conexão sem ReferenceError.
+    async function __initFirebaseIfPossible(){
+        if(!db) db = getFirestore(app);
+        if(!window.db) window.db = db;
+        return db;
+    }
+    window.__initFirebaseIfPossible = __initFirebaseIfPossible;
+
 
     // Estado legado: várias rotinas referenciam `store` diretamente.
     // Em módulos (type="module") isso precisa existir no escopo, senão gera ReferenceError.
@@ -2549,7 +2558,7 @@ Usuário administrador:`) || '';
 
 
         // --- Build/Version guard (prevents stale cached builds from overwriting cloud) ---
-        const APP_BUILD_ID = "DF-AUTO-RECOVERY-V10-2026-06-29";
+        const APP_BUILD_ID = "DF-AUTO-RECOVERY-V11-2026-06-29";
         function touchStore(){
           try {
             const now = Date.now();
@@ -7935,13 +7944,31 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
                 const banner = document.getElementById('df-auto-recovery-banner');
                 const title = document.getElementById('df-auto-recovery-title');
                 const text = document.getElementById('df-auto-recovery-text');
-                if(!banner || !report || !report.recovered) return;
+                if(!banner || !report) return;
                 const sources = Array.from(report.sources || []).join(', ');
-                if(title) title.textContent = CURRENT_LANG === 'en' ? 'Historical data recovered automatically' : 'Dados históricos recuperados automaticamente';
-                if(text) text.textContent = CURRENT_LANG === 'en'
-                    ? `${report.totalEntries} dated record(s) are available again across ${report.accountCount} account(s). Sources: ${sources || 'cloud recovery sources'}. No record was deleted.`
-                    : `${report.totalEntries} registro(s) com data voltaram a ficar disponíveis em ${report.accountCount} conta(s). Fontes: ${sources || 'fontes de recuperação da nuvem'}. Nenhum registro foi apagado.`;
-                banner.classList.remove('hidden');
+                if(report.recovered){
+                    if(title) title.textContent = CURRENT_LANG === 'en' ? 'Historical data recovered automatically' : 'Dados históricos recuperados automaticamente';
+                    if(text) text.textContent = CURRENT_LANG === 'en'
+                        ? `${report.totalEntries} dated record(s) are available again across ${report.accountCount} account(s). Sources: ${sources || 'cloud recovery sources'}. No record was deleted.`
+                        : `${report.totalEntries} registro(s) com data voltaram a ficar disponíveis em ${report.accountCount} conta(s). Fontes: ${sources || 'fontes de recuperação da nuvem'}. Nenhum registro foi apagado.`;
+                    banner.style.background = '';
+                    banner.style.borderColor = '';
+                    banner.style.color = '';
+                    banner.classList.remove('hidden');
+                    return;
+                }
+                if(report.scanned){
+                    if(title) title.textContent = CURRENT_LANG === 'en' ? 'Recovery scan completed' : 'Varredura de recuperação concluída';
+                    if(text) text.textContent = report.error
+                        ? report.error
+                        : (CURRENT_LANG === 'en'
+                            ? `No dated historical record was found in the sources accessible to this session. The system did not save or delete anything.`
+                            : `Nenhum registro histórico com data foi encontrado nas fontes acessíveis nesta sessão. O sistema não salvou nem apagou nada.`);
+                    banner.style.background = 'rgba(255,247,237,.98)';
+                    banner.style.borderColor = 'rgba(245,158,11,.45)';
+                    banner.style.color = '#9a3412';
+                    banner.classList.remove('hidden');
+                }
             }catch(e){}
         }
         window.showAutomaticRecoveryBanner = showAutomaticRecoveryBanner;
@@ -8125,89 +8152,112 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
 
         async function loadFromCloud(options = {}) {
             const forceCloud = !!(options && options.force);
-            const docRef = getCloudDocRef();
-            const docSnap = await Promise.race([
-                getDoc(docRef),
-                new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout ao conectar no Firestore.")), 10000))
-            ]);
+            await __initFirebaseIfPossible();
 
-            if (!docSnap.exists()) { __cloudHydrated = true; __lastLoadedCloudLen = 0; return; }
-
-            const data = docSnap.data() || {};
-            const ms = Number(data.last_update_ms || 0) || 0;
-            if(ms) __lastRemoteUpdateMs = ms;
-
-            if (!data.store_json) { __cloudHydrated = true; __lastLoadedCloudLen = 0; return; }
-
+            let docSnap = null;
+            let data = {};
             let parsed = null;
-            try { parsed = JSON.parse(data.store_json); } catch(e){
-                console.warn('[sync] invalid cloud JSON; ignoring remote state', e);
-                __cloudHydrated = true;
-                __lastLoadedCloudLen = getComparableStoreJsonLength(data.store_json || '');
-                return;
-            }
-            if(!parsed || typeof parsed !== 'object' || !parsed.accounts || typeof parsed.accounts !== 'object'){
-                console.warn('[sync] cloud state missing accounts; ignoring remote state');
-                __cloudHydrated = true;
-                __lastLoadedCloudLen = getComparableStoreJsonLength(data.store_json || '');
-                return;
-            }
+            let remoteValid = false;
+            let remoteMs = 0;
+
             try{
-                const localAccCount = Object.keys((store && store.accounts) || {}).length;
-                const remoteAccCount = Object.keys(parsed.accounts || {}).length;
-                if(localAccCount > 0 && remoteAccCount === 0){
-                    console.warn('[sync] cloud state has 0 accounts; ignoring remote state');
-                    __cloudHydrated = true;
-                    __lastLoadedCloudLen = getComparableStoreJsonLength(data.store_json || '');
-                    return;
+                docSnap = await Promise.race([
+                    getDoc(getCloudDocRef()),
+                    new Promise((_, rej) => setTimeout(() => rej(new Error("Timeout ao conectar no Firestore.")), 12000))
+                ]);
+                if(docSnap && docSnap.exists()){
+                    data = docSnap.data() || {};
+                    remoteMs = Number(data.last_update_ms || 0) || 0;
+                    if(remoteMs) __lastRemoteUpdateMs = remoteMs;
+                    if(typeof data.store_json === 'string' && data.store_json.length > 10){
+                        try{
+                            parsed = JSON.parse(data.store_json);
+                            remoteValid = !!(parsed && typeof parsed === 'object' && parsed.accounts && typeof parsed.accounts === 'object');
+                        }catch(e){
+                            console.warn('[sync V11] JSON principal inválido; continuando a varredura das fontes de recuperação.', e);
+                        }
+                    }
                 }
-            }catch(e){}
-
-            // Proteção contra "rollback":
-            // Se o local estiver mais recente que o cloud, NÃO sobrescreve (mantém local).
-            const localMs = Number((store && store.last_update_ms) ? store.last_update_ms : 0) || 0;
-            if(!forceCloud && localMs && ms && localMs > ms){
-                __cloudHydrated = true;
-                __lastLoadedCloudLen = getComparableStoreJsonLength(data.store_json || '');
-                // opcional: tenta enviar o local para o cloud em background (sem travar a UI)
-                try{ window.__D2_NEEDS_CLOUD_PUSH = true; }catch(e){}
-                return;
+            }catch(err){
+                console.warn('[sync V11] Falha ao ler documento principal; tentando fontes auxiliares.', err);
+                data = {};
             }
 
+            const countDated = (obj) => {
+                let n = 0;
+                try{
+                    const accounts = (obj && obj.accounts && typeof obj.accounts === 'object') ? obj.accounts : {};
+                    Object.values(accounts).forEach(a => {
+                        n += Object.keys((a && a.data && typeof a.data === 'object') ? a.data : {}).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).length;
+                    });
+                }catch(e){}
+                return n;
+            };
 
-            // manter data/conta ativa por-device
-            const localDate = (store && store.date) ? new Date(store.date) : new Date();
+            const localSnapshot = (store && typeof store === 'object') ? store : {};
+            const localCount = countDated(localSnapshot);
+            const remoteCount = remoteValid ? countDated(parsed) : 0;
+            const localMs = Number(localSnapshot.last_update_ms || 0) || 0;
+            const localDate = localSnapshot.date ? new Date(localSnapshot.date) : new Date();
             const lastLocalActive = (() => { try { return localStorage.getItem('df_last_activeId'); } catch (e) { return null; } })();
 
-            store = parsed || store;
-            store.date = localDate;
+            // Escolhe a base mais rica. O timestamp sozinho nunca vence um conjunto com mais dados.
+            if(remoteValid){
+                const useRemote = forceCloud || remoteCount > localCount || localCount === 0 || (remoteCount === localCount && remoteMs >= localMs);
+                if(useRemote) store = parsed;
+            }
 
-            // UI state: sempre iniciar com detalhes fechados
+            if(!store || typeof store !== 'object') store = {};
+            if(!store.accounts || typeof store.accounts !== 'object') store.accounts = {};
+            store.date = isNaN(localDate) ? new Date() : localDate;
             try{ delete store.dayDetailsOpen; delete store.tradeDetailsOpen; }catch(e){}
 
-            // preferir última conta deste dispositivo
-            if (lastLocalActive && store.accounts && store.accounts[lastLocalActive]) {
-                store.activeId = lastLocalActive;
-            } else if (!store.activeId && store.accounts) {
-                store.activeId = Object.keys(store.accounts)[0] || null;
-            }
+            if(lastLocalActive && store.accounts[lastLocalActive]) store.activeId = lastLocalActive;
+            if(!store.activeId || !store.accounts[store.activeId]) store.activeId = Object.keys(store.accounts)[0] || null;
+            try{ window.store = store; }catch(e){}
 
-            // Mark cloud as hydrated so saves can proceed
             __cloudHydrated = true;
-            try { __lastLoadedCloudLen = getComparableStoreJsonLength(data.store_json || ''); } catch(e) { __lastLoadedCloudLen = 0; }
+            try { __lastLoadedCloudLen = getComparableStoreJsonLength((data && data.store_json) || ''); } catch(e) { __lastLoadedCloudLen = 0; }
 
-            // Sidecars: admin logs / import audit (kept out of main store_json)
-            await loadCloudSidecarDocs();
-            // Operational data sidecar: per-account/per-period entries
-            await loadCloudOperationalPeriods();
+            // V11: estas fontes são verificadas SEMPRE, inclusive quando o documento principal
+            // está vazio ou quando o cache local possui timestamp mais recente.
+            try{ await loadCloudSidecarDocs(); }catch(e){ console.warn('[sync V11] sidecars de auditoria:', e); }
+            let periodsLoaded = false;
+            try{ periodsLoaded = await loadCloudOperationalPeriods(); }catch(e){ console.warn('[sync V11] períodos operacionais:', e); }
 
-            // If the user made changes before the cloud finished loading, flush them now
-            if (__pendingSaveBeforeHydrate) {
+            // Seleciona automaticamente a conta recuperada com mais registros se a atual estiver vazia.
+            try{
+                const ranked = Object.entries(store.accounts || {}).map(([id,a]) => [id, Object.keys((a && a.data) || {}).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).length]);
+                ranked.sort((a,b)=>b[1]-a[1]);
+                const activeCount = store.activeId && store.accounts[store.activeId]
+                    ? Object.keys(store.accounts[store.activeId].data || {}).filter(k => /^\d{4}-\d{2}-\d{2}$/.test(k)).length : 0;
+                if(ranked.length && ranked[0][1] > activeCount) store.activeId = ranked[0][0];
+            }catch(e){}
+
+            try{ saveStoreToLocal(); }catch(e){}
+            try{ window.__DF_RECOVERY_SCAN_DONE__ = true; }catch(e){}
+
+            // Não envia automaticamente um conjunto vazio depois de uma recuperação incompleta.
+            if(__pendingSaveBeforeHydrate){
                 __pendingSaveBeforeHydrate = false;
-                try { scheduleSaveToCloud(); } catch(e) { try { saveToCloudNow(); } catch(_){} }
+                const totalNow = countDated(store);
+                if(totalNow > 0){
+                    try { scheduleSaveToCloud(); } catch(e) {}
+                }else{
+                    console.warn('[sync V11] Salvamento pendente cancelado: nenhuma operação histórica foi carregada.');
+                }
             }
-        saveStoreToLocal();
-      }
+
+            // Garante retorno visual mesmo quando nenhuma fonte possui dados.
+            if(!window.__DF_AUTO_RECOVERY_REPORT__){
+                window.__DF_AUTO_RECOVERY_REPORT__ = {
+                    recovered:false, scanned:true, totalEntries:countDated(store), accountCount:Object.keys(store.accounts || {}).length,
+                    sources:new Set(), error: periodsLoaded === false ? 'Não foi possível carregar os períodos operacionais.' : ''
+                };
+            }else{
+                window.__DF_AUTO_RECOVERY_REPORT__.scanned = true;
+            }
+        }
 
 async function saveToCloudNow() {
             if (isOffline) {
