@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: DF-AUTO-RECOVERY-V13-CROSS-TAB-HELP-FIX-2026-06-29 -->
+<!-- BUILD_ID: DF-AUTO-RECOVERY-V14-GLOBAL-HELP-CENTER-2026-06-29 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Performance Report - DF Strategic V13</title>
+    <title>Performance Report - DF Strategic V14</title>
     
     <link rel="apple-touch-icon" sizes="180x180" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
     <link rel="icon" type="image/png" sizes="32x32" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
@@ -15774,6 +15774,133 @@ tr.bg-green-50 td {
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind,{once:true});
   else bind();
   window.addEventListener('load',function(){setTimeout(bind,50);});
+})();
+</script>
+<!-- =============================================================
+     DF V14 — CENTRAL DE AJUDA GLOBAL
+     Corrige o botão principal "Ajuda" sem tocar em dados/Firebase.
+============================================================== -->
+<style id="df-help-center-v14-styles">
+  #df-help-center-v14{position:fixed;inset:0;z-index:10050;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(15,23,42,.62);backdrop-filter:blur(3px)}
+  #df-help-center-v14.open{display:flex}
+  #df-help-center-v14 .dfhc-panel{width:min(720px,96vw);max-height:90vh;overflow:hidden;border-radius:18px;background:#fff;border:1px solid #e2e8f0;box-shadow:0 28px 80px rgba(2,6,23,.32);display:flex;flex-direction:column}
+  body.dark #df-help-center-v14 .dfhc-panel{background:#0f172a;border-color:#334155}
+  #df-help-center-v14 .dfhc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:18px 20px;border-bottom:1px solid #e2e8f0}
+  body.dark #df-help-center-v14 .dfhc-head{border-color:#334155}
+  #df-help-center-v14 .dfhc-title{font-size:17px;font-weight:900;color:#0f172a;line-height:1.25}
+  body.dark #df-help-center-v14 .dfhc-title{color:#f8fafc}
+  #df-help-center-v14 .dfhc-sub{margin-top:4px;font-size:12px;color:#64748b}
+  body.dark #df-help-center-v14 .dfhc-sub{color:#94a3b8}
+  #df-help-center-v14 .dfhc-close{flex:0 0 auto;width:36px;height:36px;border-radius:10px;border:1px solid #cbd5e1;background:#fff;color:#475569;font-size:22px;line-height:1;cursor:pointer}
+  body.dark #df-help-center-v14 .dfhc-close{background:#1e293b;border-color:#475569;color:#cbd5e1}
+  #df-help-center-v14 .dfhc-body{padding:18px 20px 20px;overflow:auto}
+  #df-help-center-v14 .dfhc-intro{padding:12px 14px;border-radius:12px;background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;font-size:12px;line-height:1.5}
+  body.dark #df-help-center-v14 .dfhc-intro{background:rgba(79,70,229,.14);border-color:rgba(99,102,241,.35);color:#c7d2fe}
+  #df-help-center-v14 .dfhc-steps{display:grid;gap:10px;margin-top:14px;counter-reset:dfhc}
+  #df-help-center-v14 .dfhc-step{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;padding:11px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff}
+  body.dark #df-help-center-v14 .dfhc-step{background:#1e293b;border-color:#334155}
+  #df-help-center-v14 .dfhc-step:before{counter-increment:dfhc;content:counter(dfhc);display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:999px;background:#4f46e5;color:#fff;font-size:11px;font-weight:900}
+  #df-help-center-v14 .dfhc-step strong{display:block;font-size:12px;color:#0f172a;margin-bottom:3px}
+  body.dark #df-help-center-v14 .dfhc-step strong{color:#f8fafc}
+  #df-help-center-v14 .dfhc-step span{display:block;font-size:11px;line-height:1.45;color:#64748b}
+  body.dark #df-help-center-v14 .dfhc-step span{color:#94a3b8}
+  #df-help-center-v14 .dfhc-note{margin-top:14px;padding:10px 12px;border-radius:11px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11px;line-height:1.45;color:#475569}
+  body.dark #df-help-center-v14 .dfhc-note{background:#111827;border-color:#334155;color:#cbd5e1}
+  #df-main-help-btn{position:relative}
+  #df-main-help-btn:focus-visible{outline:3px solid rgba(99,102,241,.35);outline-offset:2px}
+</style>
+<div id="df-help-center-v14" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="dfhc-title">
+  <div class="dfhc-panel" role="document">
+    <div class="dfhc-head">
+      <div><div class="dfhc-title" id="dfhc-title">Ajuda rápida</div><div class="dfhc-sub" id="dfhc-sub">Orientação da tela atual</div></div>
+      <button type="button" class="dfhc-close" id="dfhc-close" aria-label="Fechar">×</button>
+    </div>
+    <div class="dfhc-body" id="dfhc-body"></div>
+  </div>
+</div>
+<script id="df-help-center-v14-script">
+(function(){
+  'use strict';
+  if(window.__dfHelpCenterV14Installed) return;
+  window.__dfHelpCenterV14Installed=true;
+
+  function isEnglish(){
+    try{return String(window.CURRENT_LANG||localStorage.getItem('df_app_lang')||'pt').toLowerCase().startsWith('en');}catch(e){return false;}
+  }
+  function activeTab(){
+    var active=document.querySelector('[data-df-main-tab].active');
+    if(active) return active.getAttribute('data-df-main-tab')==='ignored-bar'?'ignored-bar':'performance';
+    var ib=document.getElementById('df-ignored-bar-container');
+    if(ib && !ib.classList.contains('hidden')) return 'ignored-bar';
+    try{return localStorage.getItem('df_main_active_tab')==='ignored-bar'?'ignored-bar':'performance';}catch(e){return 'performance';}
+  }
+  function strategyNames(){
+    var names=[];
+    document.querySelectorAll('#df-ib-sample-tabs [data-sample-index], #df-ib-sample-tabs button').forEach(function(b){
+      var t=(b.textContent||'').replace(/\s+/g,' ').trim(); if(t && names.indexOf(t)<0) names.push(t);
+    });
+    if(!names.length) names=['20/60','25/75','30/90'];
+    return names.slice(0,3).join(' · ');
+  }
+  function content(tab){
+    var en=isEnglish();
+    if(tab==='ignored-bar'){
+      return {
+        title:en?'Quick help — Ignored-Bar Setup':'Ajuda rápida — Setup Barra Ignorada',
+        sub:en?'Independent operating environment':'Ambiente operacional independente',
+        html:'<div class="dfhc-intro">'+(en?'This setup is independent from Premium. Current strategies: ':'Este setup é independente do Premium. Estratégias atuais: ')+'<strong>'+strategyNames()+'</strong>.</div>'+ 
+          '<div class="dfhc-steps">'+
+            '<div class="dfhc-step"><div><strong>'+(en?'Choose a strategy':'Escolha a estratégia')+'</strong><span>'+(en?'Use one of the three tabs. Each one stores and calculates its own operations.':'Use uma das três abas. Cada uma armazena e calcula suas próprias operações.')+'</span></div></div>'+ 
+            '<div class="dfhc-step"><div><strong>'+(en?'Enter results':'Registre os resultados')+'</strong><span>'+(en?'Enter date and financial result, or paste several results. Points and notes are optional.':'Informe data e resultado financeiro ou cole vários resultados. Pontos e observações são opcionais.')+'</span></div></div>'+ 
+            '<div class="dfhc-step"><div><strong>'+(en?'Review analytics':'Analise os indicadores')+'</strong><span>'+(en?'Result, win rate, profit factor, payoff, drawdown and comparisons are calculated automatically.':'Resultado, taxa de acerto, fator de lucro, payoff, drawdown e comparações são calculados automaticamente.')+'</span></div></div>'+ 
+            '<div class="dfhc-step"><div><strong>'+(en?'Consult prior versions':'Consulte versões anteriores')+'</strong><span>'+(en?'When a strategy changes, its previous name and operations remain available in Strategy History.':'Quando uma estratégia muda, o nome e as operações anteriores permanecem disponíveis no Histórico de Estratégias.')+'</span></div></div>'+ 
+          '</div><div class="dfhc-note">'+(en?'This setup never inherits Premium results. Changing a strategy name does not delete prior operations.':'Este setup não herda resultados do Premium. Alterar o nome de uma estratégia não apaga operações anteriores.')+'</div>'
+      };
+    }
+    return {
+      title:en?'Quick help — Premium Performance':'Ajuda rápida — Performance Premium',
+      sub:en?'Main operating environment':'Ambiente operacional principal',
+      html:'<div class="dfhc-intro">'+(en?'Use this screen to enter and analyze the Premium setup.':'Use esta tela para registrar e analisar o setup Premium.')+'</div>'+ 
+        '<div class="dfhc-steps">'+
+          '<div class="dfhc-step"><div><strong>'+(en?'Enter daily operations':'Registre as operações diárias')+'</strong><span>'+(en?'Use the calendar. The strategy name valid on each date is assigned automatically.':'Use o calendário. O nome da estratégia válido em cada data é atribuído automaticamente.')+'</span></div></div>'+ 
+          '<div class="dfhc-step"><div><strong>'+(en?'Analyze a period':'Analise um período')+'</strong><span>'+(en?'Select start and end dates to calculate result, win rate, risk and consistency.':'Selecione as datas inicial e final para calcular resultado, taxa de acerto, risco e consistência.')+'</span></div></div>'+ 
+          '<div class="dfhc-step"><div><strong>'+(en?'Read the chart':'Leia o gráfico')+'</strong><span>'+(en?'The old line stops at the cutover date and the current line continues from there.':'A linha antiga termina no marco temporal e a linha atual continua a partir dali.')+'</span></div></div>'+ 
+          '<div class="dfhc-step"><div><strong>'+(en?'Compare strategy versions':'Compare versões das estratégias')+'</strong><span>'+(en?'Open Strategy History to compare the current version with prior versions.':'Abra Histórico de Estratégias para comparar a versão atual com as anteriores.')+'</span></div></div>'+ 
+        '</div><div class="dfhc-note">'+(en?'The small (i) icons explain the specific panel beside them.':'Os pequenos ícones (i) explicam especificamente o painel ao lado.')+'</div>'
+    };
+  }
+  function elements(){return {overlay:document.getElementById('df-help-center-v14'),title:document.getElementById('dfhc-title'),sub:document.getElementById('dfhc-sub'),body:document.getElementById('dfhc-body'),close:document.getElementById('dfhc-close')};}
+  function open(forceTab){
+    var el=elements(); if(!el.overlay||!el.body) return;
+    var c=content(forceTab||activeTab());
+    el.title.textContent=c.title; el.sub.textContent=c.sub; el.body.innerHTML=c.html;
+    el.overlay.classList.add('open'); el.overlay.setAttribute('aria-hidden','false');
+    document.body.style.overflow='hidden';
+    setTimeout(function(){try{el.close.focus();}catch(e){}},0);
+  }
+  function close(){
+    var el=elements(); if(!el.overlay) return;
+    el.overlay.classList.remove('open'); el.overlay.setAttribute('aria-hidden','true');
+    document.body.style.overflow='';
+  }
+  window.dfOpenQuickGuide=open;
+  window.dfCloseQuickGuide=close;
+
+  document.addEventListener('click',function(e){
+    var btn=e.target&&e.target.closest?e.target.closest('#df-main-help-btn'):null;
+    if(btn){e.preventDefault();e.stopImmediatePropagation();open();return;}
+    var el=elements();
+    if(el.close && (e.target===el.close || (e.target.closest&&e.target.closest('#dfhc-close')))){e.preventDefault();close();return;}
+    if(el.overlay && e.target===el.overlay) close();
+  },true);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape') close();},true);
+
+  function prepare(){
+    var b=document.getElementById('df-main-help-btn');
+    if(b){b.setAttribute('aria-label',isEnglish()?'Open quick help':'Abrir ajuda rápida');b.setAttribute('title',isEnglish()?'Open quick help':'Abrir ajuda rápida');b.onclick=function(e){e.preventDefault();e.stopPropagation();open();};}
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',prepare,{once:true}); else prepare();
+  try{new MutationObserver(prepare).observe(document.body,{childList:true,subtree:true});}catch(e){}
 })();
 </script>
 </body>
