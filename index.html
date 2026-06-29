@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: DF-AUTO-RECOVERY-V12-HELP-SYSTEM-FIXED-2026-06-29 -->
+<!-- BUILD_ID: DF-AUTO-RECOVERY-V13-CROSS-TAB-HELP-FIX-2026-06-29 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Performance Report - DF Strategic V12</title>
+    <title>Performance Report - DF Strategic V13</title>
     
     <link rel="apple-touch-icon" sizes="180x180" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
     <link rel="icon" type="image/png" sizes="32x32" href="https://cdn-icons-png.flaticon.com/512/2910/2910791.png">
@@ -15640,6 +15640,13 @@ tr.bg-green-50 td {
 
   function getElements(){
     var pop=document.getElementById('help-popover');
+    /* The original popover is inside the Premium dashboard. That dashboard is
+       hidden when the Ignored-Bar tab opens, so the help was opening inside a
+       display:none ancestor. Keep the single popover at body level so it works
+       identically in both main tabs. */
+    if(pop && pop.parentElement !== document.body){
+      document.body.appendChild(pop);
+    }
     if(!pop){
       pop=document.createElement('div');
       pop.id='help-popover'; pop.className='hidden'; pop.setAttribute('role','dialog');
@@ -15719,8 +15726,9 @@ tr.bg-green-50 td {
   }
 
   function bind(){
-    if(window.__dfContextHelpV12Bound){prepareIcons(document);return;}
-    window.__dfContextHelpV12Bound=true;
+    getElements();
+    if(window.__dfContextHelpV13Bound){prepareIcons(document);return;}
+    window.__dfContextHelpV13Bound=true;
     prepareIcons(document);
 
     document.addEventListener('click',function(e){
@@ -15756,6 +15764,7 @@ tr.bg-green-50 td {
     }catch(e){}
   }
 
+  window.dfBindContextHelpV13=bind;
   window.dfBindContextHelpV12=bind;
   window.dfOpenContextHelp=function(title,anchor){
     var target=anchor&&anchor.getBoundingClientRect?anchor:document.querySelector('.info-i,.info-icon-btn,.help-icon');
