@@ -5250,7 +5250,7 @@ Resumo por Estratégia,,,,,
                     </td>
                     <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="active" ${s.active ? 'checked' : ''}></td>
                     <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="visible" ${s.visible ? 'checked' : ''}></td>
-                    <td class="py-2 text-[11px] text-slate-500 dark:text-slate-400">${meta.breakout ? 'Mantém checkbox de rompimento' : 'Padrão'}</td>
+                    <td class="py-2 text-[11px] text-slate-500 dark:text-slate-400">${meta.breakout ? 'Mantém checkbox de barra ignorada' : 'Padrão'}</td>
                 </tr>`;
             }).join('');
             if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Pronto para salvar.';
@@ -5877,7 +5877,7 @@ function renderCalendar(acc) {
 
                 const visibleBlocks = getVisibleStrategyEntriesForDay(entry, iso);
                 const hasBlockTrades = (block) => [block.legs.leg1, block.legs.leg2, block.legs.leg3, block.legs.leg4].some(v => v !== '' && v !== null && v !== undefined);
-                const breakoutLabel = CURRENT_LANG === 'en' ? 'Breakout' : 'Rompimento';
+                const breakoutLabel = CURRENT_LANG === 'en' ? 'Breakout' : 'Barra ignorada';
                 const renderTradeEditorRows = (block) => [1, 2, 3, 4].map((idx) => `
                                         <label class="flex items-center justify-between gap-2 min-w-0">
                                             <span class="text-slate-500 shrink-0">Trade ${idx}</span>
@@ -10834,7 +10834,7 @@ renderStrategyManager = function(){
             </td>
             <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="active" ${s.active ? 'checked' : ''}></td>
             <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="visible" ${s.visible ? 'checked' : ''}></td>
-            <td class="py-2 text-[11px] text-slate-500 dark:text-slate-400">${meta.breakout ? 'Rompimento disponível' : 'Padrão'}</td>
+            <td class="py-2 text-[11px] text-slate-500 dark:text-slate-400">${meta.breakout ? 'Barra ignorada disponível' : 'Padrão'}</td>
         </tr>`;
     }).join('');
 
@@ -11081,7 +11081,7 @@ window.updateTradeBreakout = function(iso, legKey, legIndex, checked){
         try{ renderDashboard(); }catch(e){ console.warn('renderDashboard failed after updateTradeBreakout:', e); }
     }catch(err){
         console.error('updateTradeBreakout failed:', err);
-        alert('Erro ao gravar rompimento: ' + (err && err.message ? err.message : err));
+        alert('Erro ao gravar barra ignorada: ' + (err && err.message ? err.message : err));
     }
 };
 
