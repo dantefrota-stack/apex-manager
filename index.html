@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: DF-STRATEGY-SAVE-RESET-V13-UI-V4-STABLE-2026-06-03 -->
+<!-- BUILD_ID: DF-STRATEGY-SAVE-RESET-V14-TRADE-COUNT-UI-STABLE-2026-07-06 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -1082,7 +1082,7 @@ tr.bg-green-50 td {
                             <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                                 <i data-lucide="sliders-horizontal" class="w-4 h-4 text-indigo-500"></i> Gerenciador de Estratégias
                             </h4>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Edite nomes, ordem, ativação e visibilidade da estrutura atual. Use Reset completo para limpar tudo mantendo as contas.</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Edite nomes, ordem, quantidade de trades, ativação e visibilidade da estrutura atual. Use Reset completo para limpar tudo mantendo as contas.</p>
                         </div>
                         <div class="text-[11px] text-slate-400">Slots internos preservados: t0, t3, t4, t1, t2</div>
                     </div>
@@ -1103,16 +1103,17 @@ tr.bg-green-50 td {
                                     <input id="strategy-effective-date" type="date" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
                                 </div>
                                 <div class="md:col-span-2 flex items-end">
-                                    <div id="strategy-editor-hint" class="text-xs text-slate-500 dark:text-slate-400">Estrutura única atual. Campos vazios e desmarcados não aparecem nos gráficos, calendário ou relatórios.</div>
+                                    <div id="strategy-editor-hint" class="text-xs text-slate-500 dark:text-slate-400">Estrutura única atual. Ajuste também quantos Trades aparecem por estratégia. Campos vazios e desmarcados não aparecem nos gráficos, calendário ou relatórios.</div>
                                 </div>
                             </div>
                             <div class="overflow-x-auto">
-                                <table class="min-w-[760px] w-full text-sm">
+                                <table class="min-w-[860px] w-full text-sm">
                                     <thead>
                                         <tr class="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                                             <th class="py-2">Slot</th>
                                             <th class="py-2">Nome exibido</th>
                                             <th class="py-2 text-center">Ordem</th>
+                                            <th class="py-2 text-center">Trades</th>
                                             <th class="py-2 text-center">Ativa</th>
                                             <th class="py-2 text-center">Visível</th>
                                             <th class="py-2">Observação</th>
@@ -2286,7 +2287,7 @@ Usuário administrador:`) || '';
 
 
         // --- Build/Version guard (prevents stale cached builds from overwriting cloud) ---
-        const APP_BUILD_ID = "2026-01-28-import-ui-unified-applyfix2";
+        const APP_BUILD_ID = "2026-07-06-trade-count-admin";
         function touchStore(){
           try {
             const now = Date.now();
@@ -5876,9 +5877,14 @@ function renderCalendar(acc) {
                 tr.className = `dark:border-slate-700 ${isOutsideMonth ? 'opacity-60 bg-slate-50 dark:bg-slate-800/40' : ''} ${isToday ? 'today-row' : ''}`;
 
                 const visibleBlocks = getVisibleStrategyEntriesForDay(entry, iso);
-                const hasBlockTrades = (block) => [block.legs.leg1, block.legs.leg2, block.legs.leg3, block.legs.leg4].some(v => v !== '' && v !== null && v !== undefined);
+                const hasBlockTrades = (block) => {
+                    const indexes = (window.dfTradeIndexesForBlock ? window.dfTradeIndexesForBlock(block) : [1, 2, 3, 4]);
+                    return indexes.some(idx => block.legs[`leg${idx}`] !== '' && block.legs[`leg${idx}`] !== null && block.legs[`leg${idx}`] !== undefined);
+                };
                 const breakoutLabel = CURRENT_LANG === 'en' ? 'Breakout' : 'Barra ignorada';
-                const renderTradeEditorRows = (block) => [1, 2, 3, 4].map((idx) => `
+                const renderTradeEditorRows = (block) => {
+                    const indexes = (window.dfTradeIndexesForBlock ? window.dfTradeIndexesForBlock(block) : [1, 2, 3, 4]);
+                    return indexes.map((idx) => `
                                         <label class="flex items-center justify-between gap-2 min-w-0">
                                             <span class="text-slate-500 shrink-0">Trade ${idx}</span>
                                             <div class="flex items-center gap-2 min-w-0 flex-1 justify-end">
@@ -5891,6 +5897,7 @@ function renderCalendar(acc) {
                                             </div>
                                         </label>
                                     `).join('');
+                };
 
                 const hasNote = entry.note && entry.note.trim().length > 0;
                 const noteIcon = hasNote ? 'message-circle' : 'message-square';
@@ -10575,7 +10582,7 @@ _cashShowPreview(_cashPlanToText(__cashHistoryImportPlan));
 // 3) usar uma estrutura atual única em store.strategyStructure;
 // 4) permitir labels vazios sem fallback para 25/50, 30/60, 35/70, 40/80, Condução Técnica;
 // 5) manter reset completo seguro preservando contas.
-const DF_STRATEGY_RESET_BUILD = 'RESET-SAVE-STRUCTURE-V13-2026-06-02';
+const DF_STRATEGY_RESET_BUILD = 'RESET-SAVE-STRUCTURE-V14-TRADE-COUNT-2026-07-06';
 
 function dfStrategySlots(){
     return STRATEGY_SLOT_META.map(meta => meta.slot);
@@ -10595,6 +10602,40 @@ function dfStrategyMeta(slot){
 function dfNormalizeBool(value){
     return value === true || value === 'true' || value === 1 || value === '1';
 }
+
+const DF_MAX_TRADES_PER_STRATEGY = 4;
+const DF_DEFAULT_TRADES_PER_STRATEGY = 4;
+
+function dfNormalizeTradeCount(value, fallback = DF_DEFAULT_TRADES_PER_STRATEGY){
+    const parsed = parseInt(value, 10);
+    const base = Number.isFinite(parsed) ? parsed : fallback;
+    return Math.max(1, Math.min(DF_MAX_TRADES_PER_STRATEGY, base));
+}
+
+function dfTradeIndexesForCount(count){
+    const n = dfNormalizeTradeCount(count);
+    return Array.from({ length: n }, (_, idx) => idx + 1);
+}
+
+function dfGetTradeCountForSlot(slot){
+    try{
+        const structure = (store && store.strategyStructure && Array.isArray(store.strategyStructure.slots))
+            ? store.strategyStructure
+            : dfEnsureStrategyStructure();
+        const found = (structure.slots || []).find(s => s && s.slot === slot);
+        return dfNormalizeTradeCount(found && (found.tradeCount ?? found.trades ?? found.maxTrades));
+    }catch(e){
+        return DF_DEFAULT_TRADES_PER_STRATEGY;
+    }
+}
+
+function dfVisibleTradeIndexesForSlot(slot){
+    return dfTradeIndexesForCount(dfGetTradeCountForSlot(slot));
+}
+
+window.dfTradeIndexesForBlock = function(block){
+    return dfTradeIndexesForCount(block && (block.tradeCount ?? block.trades ?? block.maxTrades));
+};
 
 function dfNormalizeStrategySlots(rawSlots, opts = {}){
     const slots = Array.isArray(rawSlots) ? rawSlots : [];
@@ -10618,10 +10659,12 @@ function dfNormalizeStrategySlots(rawSlots, opts = {}){
         seenOrders.add(order);
 
         const hasLabelText = label.length > 0;
+        const tradeCount = dfNormalizeTradeCount(found && (found.tradeCount ?? found.trades ?? found.maxTrades));
         return {
             slot: meta.slot,
             label,
             order,
+            tradeCount,
             active: hasLabelText && (found ? dfNormalizeBool(found.active) : allowDefaults),
             visible: hasLabelText && (found ? dfNormalizeBool(found.visible) : allowDefaults)
         };
@@ -10667,6 +10710,7 @@ function dfStrategyVersionFromStructure(structure){
             slot: s.slot,
             label: String(s.label || '').trim(),
             order: Number(s.order || 0),
+            tradeCount: dfNormalizeTradeCount(s.tradeCount),
             active: !!s.active && String(s.label || '').trim().length > 0,
             visible: !!s.visible && String(s.label || '').trim().length > 0
         }))
@@ -10786,11 +10830,99 @@ getStrategySummaryForDate = function(iso){
     return STRATEGY_SLOT_META.map(meta => getStrategyLabelForSlot(meta.slot, iso));
 };
 
+function dfHasAnyExplicitTradeLeg(meta){
+    return !!meta && (
+        Object.prototype.hasOwnProperty.call(meta, 'leg1') ||
+        Object.prototype.hasOwnProperty.call(meta, 'leg2') ||
+        Object.prototype.hasOwnProperty.call(meta, 'leg3') ||
+        Object.prototype.hasOwnProperty.call(meta, 'leg4')
+    );
+}
+
+function dfNormalizeLegValue(value){
+    return (value === '' || value === null || value === undefined) ? '' : value;
+}
+
+function dfNumericLegValue(value){
+    return parseFloat(value) || 0;
+}
+
+function dfCalculateSlotSubtotalForEntry(entry, slot){
+    if(!entry || typeof entry !== 'object') return 0;
+    const metaKey = `${slot}meta`;
+    const meta = entry[metaKey] || {};
+    const hasExplicitLegs = dfHasAnyExplicitTradeLeg(meta);
+
+    if(!hasExplicitLegs){
+        return parseFloat(entry[slot]) || 0;
+    }
+
+    return dfVisibleTradeIndexesForSlot(slot).reduce((sum, idx) => sum + dfNumericLegValue(meta[`leg${idx}`]), 0);
+}
+
+function dfRecalculateEntryTotalsForTradeCounts(entry){
+    if(!entry || typeof entry !== 'object') return 0;
+    let grandTotal = 0;
+    STRATEGY_SLOT_META.forEach(meta => {
+        const subtotal = dfCalculateSlotSubtotalForEntry(entry, meta.slot);
+        entry[meta.slot] = subtotal === 0 ? '' : subtotal;
+        grandTotal += subtotal;
+    });
+    entry.val = grandTotal === 0 ? 0 : grandTotal;
+    return grandTotal;
+}
+
+function dfRecalculateAllAccountEntriesForTradeCounts(){
+    try{
+        Object.values((store && store.accounts) || {}).forEach(acc => {
+            Object.values((acc && acc.data) || {}).forEach(entry => dfRecalculateEntryTotalsForTradeCounts(entry));
+        });
+    }catch(e){
+        console.warn('dfRecalculateAllAccountEntriesForTradeCounts failed:', e);
+    }
+}
+
+getTradeLegValues = function(entry, legKey){
+    const metaKey = `${legKey}meta`;
+    const meta = (entry && entry[metaKey]) ? entry[metaKey] : {};
+    const visible = new Set(dfVisibleTradeIndexesForSlot(legKey));
+    const hasExplicitLegs = dfHasAnyExplicitTradeLeg(meta);
+
+    const result = {
+        leg1: '',
+        leg2: '',
+        leg3: '',
+        leg4: '',
+        breakout1: false,
+        breakout2: false,
+        breakout3: false,
+        breakout4: false,
+        subtotal: 0
+    };
+
+    if(hasExplicitLegs){
+        [1, 2, 3, 4].forEach(idx => {
+            if(!visible.has(idx)) return;
+            const value = dfNormalizeLegValue(meta[`leg${idx}`]);
+            result[`leg${idx}`] = value;
+            result[`breakout${idx}`] = !!meta[`breakout${idx}`];
+            result.subtotal += dfNumericLegValue(value);
+        });
+        return result;
+    }
+
+    const legacy = (entry && entry[legKey] !== '' && entry[legKey] !== null && entry[legKey] !== undefined) ? entry[legKey] : '';
+    result.leg1 = legacy;
+    result.breakout1 = !!meta.breakout1;
+    result.subtotal = dfNumericLegValue(legacy);
+    return result;
+};
+
 renderStrategyVersionList = function(){
     if(!els.strategyVersionList) return;
 
     const labels = getCurrentStrategies({ includeInactive:false, includeHidden:false })
-        .map(s => s.label)
+        .map(s => `${s.label} (${dfNormalizeTradeCount(s.tradeCount)} trade${dfNormalizeTradeCount(s.tradeCount) > 1 ? 's' : ''})`)
         .filter(Boolean)
         .join(' • ') || 'Nenhuma estratégia ativa';
 
@@ -10832,6 +10964,11 @@ renderStrategyManager = function(){
             <td class="py-2 pr-3 text-center">
                 <input type="number" min="1" max="5" value="${Number(s.order) || meta.defaultOrder}" data-field="order" class="w-20 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-center">
             </td>
+            <td class="py-2 pr-3 text-center">
+                <select data-field="tradeCount" class="w-24 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-center">
+                    ${dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY).map(n => `<option value="${n}" ${dfNormalizeTradeCount(s.tradeCount) === n ? 'selected' : ''}>${n}</option>`).join('')}
+                </select>
+            </td>
             <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="active" ${s.active ? 'checked' : ''}></td>
             <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="visible" ${s.visible ? 'checked' : ''}></td>
             <td class="py-2 text-[11px] text-slate-500 dark:text-slate-400">${meta.breakout ? 'Barra ignorada disponível' : 'Padrão'}</td>
@@ -10839,7 +10976,7 @@ renderStrategyManager = function(){
     }).join('');
 
     if(els.strategyManagerStatus){
-        els.strategyManagerStatus.textContent = 'Estrutura atual única. Campos vazios não aparecem e não herdam nomes antigos.';
+        els.strategyManagerStatus.textContent = 'Estrutura atual única. A coluna Trades controla quantas linhas aparecem e entram nos totais.';
     }
 
     try{ lucide.createIcons(); }catch(e){}
@@ -10858,14 +10995,17 @@ readStrategyEditorVersion = function(){
         while(seenOrders.has(order)) order += 1;
         seenOrders.add(order);
 
+        const tradeCount = dfNormalizeTradeCount(tr.querySelector('[data-field="tradeCount"]')?.value);
+
         if(!label){
-            return { slot, label:'', order, active:false, visible:false };
+            return { slot, label:'', order, tradeCount, active:false, visible:false };
         }
 
         return {
             slot,
             label,
             order,
+            tradeCount,
             active: !!tr.querySelector('[data-field="active"]')?.checked,
             visible: !!tr.querySelector('[data-field="visible"]')?.checked
         };
@@ -11035,25 +11175,7 @@ window.updateTradeLeg = function(iso, legKey, legIndex, rawVal){
 
         entry[metaKey][`leg${legIndex}`] = cleanVal;
 
-        const hasExplicitLegs = Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg1')
-            || Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg2')
-            || Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg3')
-            || Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg4');
-
-        const leg1 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg1) || 0) : (parseFloat(entry[legKey]) || 0);
-        const leg2 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg2) || 0) : 0;
-        const leg3 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg3) || 0) : 0;
-        const leg4 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg4) || 0) : 0;
-        const subtotal = leg1 + leg2 + leg3 + leg4;
-
-        entry[legKey] = subtotal === 0 ? '' : subtotal;
-
-        const t0 = parseFloat(entry.t0) || 0;
-        const t1 = parseFloat(entry.t1) || 0;
-        const t2 = parseFloat(entry.t2) || 0;
-        const t3 = parseFloat(entry.t3) || 0;
-        const t4 = parseFloat(entry.t4) || 0;
-        entry.val = t0 + t1 + t2 + t3 + t4;
+        dfRecalculateEntryTotalsForTradeCounts(entry);
 
         dfPersistAfterUserInput();
 
@@ -11157,13 +11279,22 @@ async function dfSaveStructureNow(showAlert = true){
         store.strategyConfigs = [dfStrategyVersionFromStructure(structure)];
         __strategyManagerSelectedVersionId = 'current-structure';
 
+        dfRecalculateAllAccountEntriesForTradeCounts();
+        dfTouchStoreSafely();
+        dfSaveLocalImmediate();
+        try{
+            if(typeof saveCloudOperationalPeriodsNow === 'function') await saveCloudOperationalPeriodsNow();
+        }catch(e){
+            console.warn('saveCloudOperationalPeriodsNow after trade-count change failed:', e);
+        }
+
         await dfSaveCloudImmediate();
 
         if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Estrutura salva.';
         dfRenderEverythingSafely();
 
         if(showAlert){
-            alert('Estrutura salva. Campos vazios/desmarcados não aparecerão no calendário, gráficos ou relatórios.');
+            alert('Estrutura salva. A coluna Trades controla quantas linhas aparecem por estratégia e quais trades entram nos totais.');
         }
 
         return true;
