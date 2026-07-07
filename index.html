@@ -2718,7 +2718,7 @@ async function callOpenAI(question){
             const instructions = [
                 'Você é um assistente dentro de um aplicativo de performance (trading) baseado em regras da Apex Trader Funding.',
                 'Responda no mesmo idioma da pergunta (português ou inglês).',
-                'Você deve ajudar o usuário a entender e analisar os números e informações armazenadas no aplicativo (trades, ciclos, médias, filtros, relatórios, campos de Trade 1/Trade 2/Trade 3/Trade 4, etc.).',
+                'Você deve ajudar o usuário a entender e analisar os números e informações armazenadas no aplicativo (trades, ciclos, médias, filtros, relatórios, campos de Trade 1/Trade 2/Trade 3/Trade 4/Trade 5, etc.).',
                 'Use SOMENTE o contexto JSON fornecido (monthEntries, recentEntries, analysisRangeEntries, stats, questionRangeEntries). Não invente dados.',
                 'Se o usuário pedir um relatório por período, priorize o intervalo informado em analysisFilter/start-end e/ou analysisRangeSummary. Se o usuário mencionar um intervalo na pergunta, use questionRangeSummary/questionRangeEntries.',
                 'Você não tem acesso a preços ao vivo. Se pedirem cotação atual, explique essa limitação e sugira consultar a corretora.',
@@ -4550,12 +4550,14 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const hasExplicitLegs = Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg1')
                 || Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg2')
                 || Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg3')
-                || Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg4');
+                || Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg4')
+                || Object.prototype.hasOwnProperty.call(entry[metaKey], 'leg5');
             const leg1 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg1) || 0) : (parseFloat(entry[legKey]) || 0);
             const leg2 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg2) || 0) : 0;
             const leg3 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg3) || 0) : 0;
             const leg4 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg4) || 0) : 0;
-            const subtotal = leg1 + leg2 + leg3 + leg4;
+            const leg5 = hasExplicitLegs ? (parseFloat(entry[metaKey].leg5) || 0) : 0;
+            const subtotal = leg1 + leg2 + leg3 + leg4 + leg5;
 
             entry[legKey] = subtotal === 0 ? '' : subtotal;
 
@@ -4591,28 +4593,33 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const hasExplicitLegs = Object.prototype.hasOwnProperty.call(meta, 'leg1')
                 || Object.prototype.hasOwnProperty.call(meta, 'leg2')
                 || Object.prototype.hasOwnProperty.call(meta, 'leg3')
-                || Object.prototype.hasOwnProperty.call(meta, 'leg4');
+                || Object.prototype.hasOwnProperty.call(meta, 'leg4')
+                || Object.prototype.hasOwnProperty.call(meta, 'leg5');
 
             const breakout1 = !!meta.breakout1;
             const breakout2 = !!meta.breakout2;
             const breakout3 = !!meta.breakout3;
             const breakout4 = !!meta.breakout4;
+            const breakout5 = !!meta.breakout5;
 
             if (hasExplicitLegs) {
                 const v1 = (meta.leg1 === '' || meta.leg1 === null || meta.leg1 === undefined) ? '' : meta.leg1;
                 const v2 = (meta.leg2 === '' || meta.leg2 === null || meta.leg2 === undefined) ? '' : meta.leg2;
                 const v3 = (meta.leg3 === '' || meta.leg3 === null || meta.leg3 === undefined) ? '' : meta.leg3;
                 const v4 = (meta.leg4 === '' || meta.leg4 === null || meta.leg4 === undefined) ? '' : meta.leg4;
+                const v5 = (meta.leg5 === '' || meta.leg5 === null || meta.leg5 === undefined) ? '' : meta.leg5;
                 return {
                     leg1: v1,
                     leg2: v2,
                     leg3: v3,
                     leg4: v4,
+                    leg5: v5,
                     breakout1,
                     breakout2,
                     breakout3,
                     breakout4,
-                    subtotal: (parseFloat(v1) || 0) + (parseFloat(v2) || 0) + (parseFloat(v3) || 0) + (parseFloat(v4) || 0)
+                    breakout5,
+                    subtotal: (parseFloat(v1) || 0) + (parseFloat(v2) || 0) + (parseFloat(v3) || 0) + (parseFloat(v4) || 0) + (parseFloat(v5) || 0)
                 };
             }
             const legacy = (entry[legKey] === '' || entry[legKey] === null || entry[legKey] === undefined) ? '' : entry[legKey];
@@ -4621,10 +4628,12 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 leg2: '',
                 leg3: '',
                 leg4: '',
+                leg5: '',
                 breakout1,
                 breakout2,
                 breakout3,
                 breakout4,
+                breakout5,
                 subtotal: parseFloat(legacy) || 0
             };
         }
@@ -4658,7 +4667,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         };
 
 
-        // Abrir/fechar detalhes do Trade 1/Trade 2/Trade 3/Trade 4 (por dia) — somente no clique
+        // Abrir/fechar detalhes do Trade 1/Trade 2/Trade 3/Trade 4/Trade 5 (por dia) — somente no clique
         window.toggleTradeDetails = (iso, which) => {
             const acc = getActive();
             if (!store.tradeDetailsOpen) store.tradeDetailsOpen = {};
@@ -5157,7 +5166,7 @@ Resumo por Estratégia,,,,,
                     }
                     const s = bucketMap.get(bucketKey);
                     const subtotal = Number(entry.legs.subtotal || 0);
-                    const legs = [entry.legs.leg1, entry.legs.leg2, entry.legs.leg3, entry.legs.leg4]
+                    const legs = dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY).map(idx => entry.legs[`leg${idx}`])
                         .map(v => (v === '' || v === null || v === undefined) ? null : Number(v))
                         .filter(v => v !== null && !isNaN(v) && v !== 0);
                     if (subtotal > 0) s.greenDays += 1;
@@ -5348,7 +5357,7 @@ Resumo por Estratégia,,,,,
             const blocks = getStrategyEntriesForDay(e || {}, iso || getTodayISO(), { includeInactive:false, includeHidden:false });
             const out = [];
             blocks.forEach((block) => {
-                const legVals = [block.legs.leg1, block.legs.leg2, block.legs.leg3, block.legs.leg4]
+                const legVals = (window.dfTradeIndexesForBlock ? window.dfTradeIndexesForBlock(block) : dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY)).map(idx => block.legs[`leg${idx}`])
                     .map(v => (v === '' || v === null || v === undefined) ? null : Number(v))
                     .filter(v => v !== null && !isNaN(v) && v !== 0);
                 legVals.forEach((v, idx) => out.push({ strategy:block.slot, tradeIndex: idx + 1, value:v, label:block.label }));
@@ -5878,12 +5887,12 @@ function renderCalendar(acc) {
 
                 const visibleBlocks = getVisibleStrategyEntriesForDay(entry, iso);
                 const hasBlockTrades = (block) => {
-                    const indexes = (window.dfTradeIndexesForBlock ? window.dfTradeIndexesForBlock(block) : [1, 2, 3, 4]);
+                    const indexes = (window.dfTradeIndexesForBlock ? window.dfTradeIndexesForBlock(block) : [1, 2, 3, 4, 5]);
                     return indexes.some(idx => block.legs[`leg${idx}`] !== '' && block.legs[`leg${idx}`] !== null && block.legs[`leg${idx}`] !== undefined);
                 };
                 const breakoutLabel = CURRENT_LANG === 'en' ? 'Breakout' : 'Barra ignorada';
                 const renderTradeEditorRows = (block) => {
-                    const indexes = (window.dfTradeIndexesForBlock ? window.dfTradeIndexesForBlock(block) : [1, 2, 3, 4]);
+                    const indexes = (window.dfTradeIndexesForBlock ? window.dfTradeIndexesForBlock(block) : [1, 2, 3, 4, 5]);
                     return indexes.map((idx) => `
                                         <label class="flex items-center justify-between gap-2 min-w-0">
                                             <span class="text-slate-500 shrink-0">Trade ${idx}</span>
@@ -10603,8 +10612,8 @@ function dfNormalizeBool(value){
     return value === true || value === 'true' || value === 1 || value === '1';
 }
 
-const DF_MAX_TRADES_PER_STRATEGY = 4;
-const DF_DEFAULT_TRADES_PER_STRATEGY = 4;
+const DF_MAX_TRADES_PER_STRATEGY = 5;
+const DF_DEFAULT_TRADES_PER_STRATEGY = 5;
 
 function dfNormalizeTradeCount(value, fallback = DF_DEFAULT_TRADES_PER_STRATEGY){
     const parsed = parseInt(value, 10);
@@ -10835,7 +10844,8 @@ function dfHasAnyExplicitTradeLeg(meta){
         Object.prototype.hasOwnProperty.call(meta, 'leg1') ||
         Object.prototype.hasOwnProperty.call(meta, 'leg2') ||
         Object.prototype.hasOwnProperty.call(meta, 'leg3') ||
-        Object.prototype.hasOwnProperty.call(meta, 'leg4')
+        Object.prototype.hasOwnProperty.call(meta, 'leg4') ||
+        Object.prototype.hasOwnProperty.call(meta, 'leg5')
     );
 }
 
@@ -10893,15 +10903,17 @@ getTradeLegValues = function(entry, legKey){
         leg2: '',
         leg3: '',
         leg4: '',
+        leg5: '',
         breakout1: false,
         breakout2: false,
         breakout3: false,
         breakout4: false,
+        breakout5: false,
         subtotal: 0
     };
 
     if(hasExplicitLegs){
-        [1, 2, 3, 4].forEach(idx => {
+        dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY).forEach(idx => {
             if(!visible.has(idx)) return;
             const value = dfNormalizeLegValue(meta[`leg${idx}`]);
             result[`leg${idx}`] = value;
