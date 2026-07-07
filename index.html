@@ -1107,13 +1107,16 @@ tr.bg-green-50 td {
                                 </div>
                             </div>
                             <div class="overflow-x-auto">
-                                <table class="min-w-[860px] w-full text-sm">
+                                <table class="min-w-[1180px] w-full text-sm">
                                     <thead>
                                         <tr class="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                                             <th class="py-2">Slot</th>
                                             <th class="py-2">Nome exibido</th>
                                             <th class="py-2 text-center">Ordem</th>
                                             <th class="py-2 text-center">Trades</th>
+                                            <th class="py-2">Check 1</th>
+                                            <th class="py-2">Check 2</th>
+                                            <th class="py-2">Check 3</th>
                                             <th class="py-2 text-center">Ativa</th>
                                             <th class="py-2 text-center">Visível</th>
                                             <th class="py-2">Observação</th>
@@ -5891,17 +5894,32 @@ function renderCalendar(acc) {
                     return indexes.some(idx => block.legs[`leg${idx}`] !== '' && block.legs[`leg${idx}`] !== null && block.legs[`leg${idx}`] !== undefined);
                 };
                 const breakoutLabel = CURRENT_LANG === 'en' ? 'Breakout' : 'Barra ignorada';
+                const getBlockCheckLabels = (block) => {
+                    const raw = Array.isArray(block.checkLabels) ? block.checkLabels : (block.breakout ? [breakoutLabel] : []);
+                    return raw.map(v => String(v || '').trim()).filter(Boolean).slice(0, 3);
+                };
+                const getTradeCheckValue = (block, idx, checkIndex) => {
+                    const key = checkIndex === 1 ? `breakout${idx}` : `flag${checkIndex}_${idx}`;
+                    return !!(block.legs && block.legs[key]);
+                };
+                const renderTradeCheckTags = (block, idx) => {
+                    const labels = getBlockCheckLabels(block);
+                    if(!labels.length) return '';
+                    return `<div class="flex flex-wrap items-center justify-end gap-2 min-w-0">${labels.map((label, pos) => {
+                        const checkIndex = pos + 1;
+                        return `<label class="inline-flex items-center gap-1 text-[11px] text-slate-500 select-none cursor-pointer shrink-0">
+                            <input type="checkbox" class="rounded border-slate-300 dark:border-slate-600" ${getTradeCheckValue(block, idx, checkIndex) ? 'checked' : ''} onchange="window.updateTradeCheck('${iso}','${block.slot}',${idx},${checkIndex},this.checked)">
+                            <span>${escapeHtml(label)}</span>
+                        </label>`;
+                    }).join('')}</div>`;
+                };
                 const renderTradeEditorRows = (block) => {
                     const indexes = (window.dfTradeIndexesForBlock ? window.dfTradeIndexesForBlock(block) : [1, 2, 3, 4, 5]);
                     return indexes.map((idx) => `
-                                        <label class="flex items-center justify-between gap-2 min-w-0">
-                                            <span class="text-slate-500 shrink-0">Trade ${idx}</span>
-                                            <div class="flex items-center gap-2 min-w-0 flex-1 justify-end">
-                                                ${block.breakout ? `
-                                                <label class="inline-flex items-center gap-1 text-[11px] text-slate-500 select-none cursor-pointer shrink-0">
-                                                    <input type="checkbox" class="rounded border-slate-300 dark:border-slate-600" ${block.legs[`breakout${idx}`] ? 'checked' : ''} onchange="window.updateTradeBreakout('${iso}','${block.slot}',${idx},this.checked)">
-                                                    <span>${breakoutLabel}</span>
-                                                </label>` : ''}
+                                        <label class="flex items-start justify-between gap-2 min-w-0">
+                                            <span class="text-slate-500 shrink-0 pt-1.5">Trade ${idx}</span>
+                                            <div class="flex flex-wrap items-center gap-2 min-w-0 flex-1 justify-end">
+                                                ${renderTradeCheckTags(block, idx)}
                                                 <input type="number" placeholder="0" class="w-20 md:w-24 xl:w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 min-w-0" value="${block.legs[`leg${idx}`] ?? ''}" onblur="window.updateTradeLeg('${iso}','${block.slot}',${idx},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
                                             </div>
                                         </label>
@@ -10669,11 +10687,18 @@ function dfNormalizeStrategySlots(rawSlots, opts = {}){
 
         const hasLabelText = label.length > 0;
         const tradeCount = dfNormalizeTradeCount(found && (found.tradeCount ?? found.trades ?? found.maxTrades));
+        const rawCheckLabels = found && Array.isArray(found.checkLabels) ? found.checkLabels : null;
+        const defaultCheckLabels = meta.breakout ? ['Barra ignorada', 'Rompimento', 'Reteste'] : ['', '', ''];
+        const checkLabels = (rawCheckLabels || defaultCheckLabels)
+            .slice(0, 3)
+            .map(v => String(v || '').trim());
+        while(checkLabels.length < 3) checkLabels.push('');
         return {
             slot: meta.slot,
             label,
             order,
             tradeCount,
+            checkLabels,
             active: hasLabelText && (found ? dfNormalizeBool(found.active) : allowDefaults),
             visible: hasLabelText && (found ? dfNormalizeBool(found.visible) : allowDefaults)
         };
@@ -10720,6 +10745,7 @@ function dfStrategyVersionFromStructure(structure){
             label: String(s.label || '').trim(),
             order: Number(s.order || 0),
             tradeCount: dfNormalizeTradeCount(s.tradeCount),
+            checkLabels: Array.isArray(s.checkLabels) ? s.checkLabels.slice(0, 3).map(v => String(v || '').trim()) : ['', '', ''],
             active: !!s.active && String(s.label || '').trim().length > 0,
             visible: !!s.visible && String(s.label || '').trim().length > 0
         }))
@@ -10909,6 +10935,16 @@ getTradeLegValues = function(entry, legKey){
         breakout3: false,
         breakout4: false,
         breakout5: false,
+        flag2_1: false,
+        flag2_2: false,
+        flag2_3: false,
+        flag2_4: false,
+        flag2_5: false,
+        flag3_1: false,
+        flag3_2: false,
+        flag3_3: false,
+        flag3_4: false,
+        flag3_5: false,
         subtotal: 0
     };
 
@@ -10917,7 +10953,9 @@ getTradeLegValues = function(entry, legKey){
             if(!visible.has(idx)) return;
             const value = dfNormalizeLegValue(meta[`leg${idx}`]);
             result[`leg${idx}`] = value;
-            result[`breakout${idx}`] = !!meta[`breakout${idx}`];
+            result[`breakout${idx}`] = !!(meta[`breakout${idx}`] || meta[`flag1_${idx}`]);
+            result[`flag2_${idx}`] = !!meta[`flag2_${idx}`];
+            result[`flag3_${idx}`] = !!meta[`flag3_${idx}`];
             result.subtotal += dfNumericLegValue(value);
         });
         return result;
@@ -10925,7 +10963,9 @@ getTradeLegValues = function(entry, legKey){
 
     const legacy = (entry && entry[legKey] !== '' && entry[legKey] !== null && entry[legKey] !== undefined) ? entry[legKey] : '';
     result.leg1 = legacy;
-    result.breakout1 = !!meta.breakout1;
+    result.breakout1 = !!(meta.breakout1 || meta.flag1_1);
+    result.flag2_1 = !!meta.flag2_1;
+    result.flag3_1 = !!meta.flag3_1;
     result.subtotal = dfNumericLegValue(legacy);
     return result;
 };
@@ -10981,14 +11021,23 @@ renderStrategyManager = function(){
                     ${dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY).map(n => `<option value="${n}" ${dfNormalizeTradeCount(s.tradeCount) === n ? 'selected' : ''}>${n}</option>`).join('')}
                 </select>
             </td>
+            <td class="py-2 pr-3">
+                <input type="text" value="${escapeHtml((s.checkLabels && s.checkLabels[0]) || '')}" data-field="checkLabel1" placeholder="Ex.: Barra ignorada" class="w-36 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+            </td>
+            <td class="py-2 pr-3">
+                <input type="text" value="${escapeHtml((s.checkLabels && s.checkLabels[1]) || '')}" data-field="checkLabel2" placeholder="Ex.: Rompimento" class="w-36 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+            </td>
+            <td class="py-2 pr-3">
+                <input type="text" value="${escapeHtml((s.checkLabels && s.checkLabels[2]) || '')}" data-field="checkLabel3" placeholder="Ex.: Reteste" class="w-36 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+            </td>
             <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="active" ${s.active ? 'checked' : ''}></td>
             <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="visible" ${s.visible ? 'checked' : ''}></td>
-            <td class="py-2 text-[11px] text-slate-500 dark:text-slate-400">${meta.breakout ? 'Barra ignorada disponível' : 'Padrão'}</td>
+            <td class="py-2 text-[11px] text-slate-500 dark:text-slate-400">Checks editáveis por trade</td>
         </tr>`;
     }).join('');
 
     if(els.strategyManagerStatus){
-        els.strategyManagerStatus.textContent = 'Estrutura atual única. A coluna Trades controla quantas linhas aparecem e entram nos totais.';
+        els.strategyManagerStatus.textContent = 'Estrutura atual única. Trades controla quantas linhas aparecem; Check 1, 2 e 3 controlam os checkboxes exibidos em cada trade.';
     }
 
     try{ lucide.createIcons(); }catch(e){}
@@ -11008,9 +11057,10 @@ readStrategyEditorVersion = function(){
         seenOrders.add(order);
 
         const tradeCount = dfNormalizeTradeCount(tr.querySelector('[data-field="tradeCount"]')?.value);
+        const checkLabels = [1, 2, 3].map(n => (tr.querySelector(`[data-field="checkLabel${n}"]`)?.value || '').trim());
 
         if(!label){
-            return { slot, label:'', order, tradeCount, active:false, visible:false };
+            return { slot, label:'', order, tradeCount, checkLabels, active:false, visible:false };
         }
 
         return {
@@ -11018,6 +11068,7 @@ readStrategyEditorVersion = function(){
             label,
             order,
             tradeCount,
+            checkLabels,
             active: !!tr.querySelector('[data-field="active"]')?.checked,
             visible: !!tr.querySelector('[data-field="visible"]')?.checked
         };
@@ -11198,7 +11249,7 @@ window.updateTradeLeg = function(iso, legKey, legIndex, rawVal){
     }
 };
 
-window.updateTradeBreakout = function(iso, legKey, legIndex, checked){
+window.updateTradeCheck = function(iso, legKey, legIndex, checkIndex, checked){
     try{
         const acc = getActive();
         if(!acc) return;
@@ -11208,15 +11259,25 @@ window.updateTradeBreakout = function(iso, legKey, legIndex, checked){
         const entry = acc.data[iso];
         const metaKey = `${legKey}meta`;
         if(!entry[metaKey]) entry[metaKey] = {};
-        entry[metaKey][`breakout${legIndex}`] = !!checked;
+
+        const idx = Number(checkIndex) || 1;
+        const key = idx === 1 ? `breakout${legIndex}` : `flag${idx}_${legIndex}`;
+        entry[metaKey][key] = !!checked;
+        if(idx === 1){
+            entry[metaKey][`flag1_${legIndex}`] = !!checked;
+        }
 
         dfPersistAfterUserInput();
 
-        try{ renderDashboard(); }catch(e){ console.warn('renderDashboard failed after updateTradeBreakout:', e); }
+        try{ renderDashboard(); }catch(e){ console.warn('renderDashboard failed after updateTradeCheck:', e); }
     }catch(err){
-        console.error('updateTradeBreakout failed:', err);
-        alert('Erro ao gravar barra ignorada: ' + (err && err.message ? err.message : err));
+        console.error('updateTradeCheck failed:', err);
+        alert('Erro ao gravar check do trade: ' + (err && err.message ? err.message : err));
     }
+};
+
+window.updateTradeBreakout = function(iso, legKey, legIndex, checked){
+    return window.updateTradeCheck(iso, legKey, legIndex, 1, checked);
 };
 
 
