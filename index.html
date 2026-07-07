@@ -888,46 +888,53 @@ body.dark .day-details-row .df-trade-editor-title{
   font-weight:700;
 }
 .day-details-row .df-trade-checks{
-  display:grid;
-  grid-template-columns:minmax(104px,1.25fr) minmax(92px,1fr) minmax(68px,.75fr);
-  gap:.35rem;
-  margin-top:.45rem;
+  display:flex;
+  flex-direction:column;
+  gap:.32rem;
+  margin-top:.52rem;
+  padding-left:.15rem;
 }
 .day-details-row .df-trade-check-pill{
-  display:inline-flex;
+  display:flex;
   align-items:center;
-  gap:.33rem;
+  gap:.45rem;
+  width:100%;
   min-width:0;
-  padding:.26rem .44rem;
-  border:1px solid #e2e8f0;
-  border-radius:999px;
-  background:#f8fafc;
+  padding:.28rem .45rem;
+  border:1px solid transparent;
+  border-radius:.55rem;
+  background:transparent;
   color:#475569;
-  font-size:.68rem;
-  line-height:1;
-  font-weight:700;
+  font-size:.74rem;
+  line-height:1.15;
+  font-weight:600;
   cursor:pointer;
   user-select:none;
 }
+.day-details-row .df-trade-check-pill:hover{
+  background:#f8fafc;
+  border-color:#e2e8f0;
+}
 body.dark .day-details-row .df-trade-check-pill{
-  background:rgba(15,23,42,.55);
-  border-color:#334155;
+  background:transparent;
+  border-color:transparent;
   color:#cbd5e1;
 }
+body.dark .day-details-row .df-trade-check-pill:hover{
+  background:rgba(15,23,42,.55);
+  border-color:#334155;
+}
 .day-details-row .df-trade-check-pill span{
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
+  overflow:visible;
+  text-overflow:clip;
+  white-space:normal;
 }
 .day-details-row .df-trade-check-pill input{
-  width:13px;
-  height:13px;
+  width:14px;
+  height:14px;
   flex:0 0 auto;
 }
 @media (max-width: 520px){
-  .day-details-row .df-trade-checks{
-    grid-template-columns:1fr 1fr;
-  }
   .day-details-row .df-trade-editor-input{
     width:6.75rem;
   }
