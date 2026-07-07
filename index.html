@@ -851,6 +851,88 @@ body.dark #period-analysis-card.period-v4 .period-mini-value{
     width:100%;
   }
 }
+
+
+/* Trade checks compact design */
+.day-details-row .df-trade-editor-row{
+  padding:.56rem 0;
+  border-bottom:1px solid rgba(226,232,240,.75);
+}
+body.dark .day-details-row .df-trade-editor-row{
+  border-bottom-color:rgba(51,65,85,.85);
+}
+.day-details-row .df-trade-editor-row:last-child{
+  border-bottom:none;
+}
+.day-details-row .df-trade-editor-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.75rem;
+}
+.day-details-row .df-trade-editor-title{
+  font-size:.82rem;
+  font-weight:700;
+  color:#64748b;
+  white-space:nowrap;
+}
+body.dark .day-details-row .df-trade-editor-title{
+  color:#94a3b8;
+}
+.day-details-row .df-trade-editor-input{
+  width:7.75rem;
+  height:34px;
+  padding:.38rem .6rem !important;
+  border-radius:.65rem;
+  font-size:.86rem !important;
+  font-weight:700;
+}
+.day-details-row .df-trade-checks{
+  display:grid;
+  grid-template-columns:minmax(104px,1.25fr) minmax(92px,1fr) minmax(68px,.75fr);
+  gap:.35rem;
+  margin-top:.45rem;
+}
+.day-details-row .df-trade-check-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:.33rem;
+  min-width:0;
+  padding:.26rem .44rem;
+  border:1px solid #e2e8f0;
+  border-radius:999px;
+  background:#f8fafc;
+  color:#475569;
+  font-size:.68rem;
+  line-height:1;
+  font-weight:700;
+  cursor:pointer;
+  user-select:none;
+}
+body.dark .day-details-row .df-trade-check-pill{
+  background:rgba(15,23,42,.55);
+  border-color:#334155;
+  color:#cbd5e1;
+}
+.day-details-row .df-trade-check-pill span{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.day-details-row .df-trade-check-pill input{
+  width:13px;
+  height:13px;
+  flex:0 0 auto;
+}
+@media (max-width: 520px){
+  .day-details-row .df-trade-checks{
+    grid-template-columns:1fr 1fr;
+  }
+  .day-details-row .df-trade-editor-input{
+    width:6.75rem;
+  }
+}
+
 </style>
 
 <style id="d2-info-modal-styles">
@@ -5905,9 +5987,9 @@ function renderCalendar(acc) {
                 const renderTradeCheckTags = (block, idx) => {
                     const labels = getBlockCheckLabels(block);
                     if(!labels.length) return '';
-                    return `<div class="flex flex-wrap items-center justify-end gap-2 min-w-0">${labels.map((label, pos) => {
+                    return `<div class="df-trade-checks">${labels.map((label, pos) => {
                         const checkIndex = pos + 1;
-                        return `<label class="inline-flex items-center gap-1 text-[11px] text-slate-500 select-none cursor-pointer shrink-0">
+                        return `<label class="df-trade-check-pill" title="${escapeHtml(label)}">
                             <input type="checkbox" class="rounded border-slate-300 dark:border-slate-600" ${getTradeCheckValue(block, idx, checkIndex) ? 'checked' : ''} onchange="window.updateTradeCheck('${iso}','${block.slot}',${idx},${checkIndex},this.checked)">
                             <span>${escapeHtml(label)}</span>
                         </label>`;
@@ -5916,13 +5998,13 @@ function renderCalendar(acc) {
                 const renderTradeEditorRows = (block) => {
                     const indexes = (window.dfTradeIndexesForBlock ? window.dfTradeIndexesForBlock(block) : [1, 2, 3, 4, 5]);
                     return indexes.map((idx) => `
-                                        <label class="flex items-start justify-between gap-2 min-w-0">
-                                            <span class="text-slate-500 shrink-0 pt-1.5">Trade ${idx}</span>
-                                            <div class="flex flex-wrap items-center gap-2 min-w-0 flex-1 justify-end">
-                                                ${renderTradeCheckTags(block, idx)}
-                                                <input type="number" placeholder="0" class="w-20 md:w-24 xl:w-28 py-1 px-2 text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 min-w-0" value="${block.legs[`leg${idx}`] ?? ''}" onblur="window.updateTradeLeg('${iso}','${block.slot}',${idx},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
+                                        <div class="df-trade-editor-row">
+                                            <div class="df-trade-editor-top">
+                                                <span class="df-trade-editor-title">Trade ${idx}</span>
+                                                <input type="number" placeholder="0" class="df-trade-editor-input text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 min-w-0" value="${block.legs[`leg${idx}`] ?? ''}" onblur="window.updateTradeLeg('${iso}','${block.slot}',${idx},this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
                                             </div>
-                                        </label>
+                                            ${renderTradeCheckTags(block, idx)}
+                                        </div>
                                     `).join('');
                 };
 
