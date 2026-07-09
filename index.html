@@ -2460,12 +2460,18 @@ let isOffline = false;
         function dfNormalizeNoteSettings(raw){
             const def = dfDefaultNoteSettings();
             raw = (raw && typeof raw === 'object') ? raw : {};
+            const pick = (key, legacyKey, fallback) => {
+                if(Object.prototype.hasOwnProperty.call(raw, key)) return String(raw[key] ?? '').trim();
+                if(Object.prototype.hasOwnProperty.call(raw, legacyKey)) return String(raw[legacyKey] ?? '').trim();
+                return fallback;
+            };
             return {
-                aTitle: String(raw.aTitle || raw.groupATitle || def.aTitle).trim() || def.aTitle,
-                aSubtitle: String(raw.aSubtitle || raw.groupASubtitle || def.aSubtitle).trim(),
+                // Importante: preserva string vazia quando o admin quiser deixar o campo em branco.
+                aTitle: pick('aTitle', 'groupATitle', def.aTitle),
+                aSubtitle: pick('aSubtitle', 'groupASubtitle', def.aSubtitle),
                 bEnabled: raw.bEnabled === undefined ? def.bEnabled : dfNormalizeBool(raw.bEnabled),
-                bTitle: String(raw.bTitle || raw.groupBTitle || def.bTitle).trim() || def.bTitle,
-                bSubtitle: String(raw.bSubtitle || raw.groupBSubtitle || def.bSubtitle).trim()
+                bTitle: pick('bTitle', 'groupBTitle', def.bTitle),
+                bSubtitle: pick('bSubtitle', 'groupBSubtitle', def.bSubtitle)
             };
         }
 
@@ -2499,12 +2505,15 @@ let isOffline = false;
 
         function dfReadNoteSettingsEditor(){
             const cur = dfGetNoteSettings();
-            const val = id => (document.getElementById(id)?.value || '').trim();
+            const val = id => {
+                const el = document.getElementById(id);
+                return el ? String(el.value ?? '').trim() : '';
+            };
             return dfNormalizeNoteSettings({
-                aTitle: val('note-setting-a-title') || cur.aTitle,
+                aTitle: val('note-setting-a-title'),
                 aSubtitle: val('note-setting-a-subtitle'),
                 bEnabled: !!document.getElementById('note-setting-b-enabled')?.checked,
-                bTitle: val('note-setting-b-title') || cur.bTitle,
+                bTitle: val('note-setting-b-title'),
                 bSubtitle: val('note-setting-b-subtitle')
             });
         }
@@ -2521,8 +2530,8 @@ let isOffline = false;
             if(labelA) labelA.innerHTML = `${escapeHtml(ns.aTitle)}${ns.aSubtitle ? ` <span class="normal-case font-medium text-slate-400">${escapeHtml(ns.aSubtitle)}</span>` : ''}`;
             if(labelB) labelB.innerHTML = `${escapeHtml(ns.bTitle)}${ns.bSubtitle ? ` <span class="normal-case font-medium text-slate-400">${escapeHtml(ns.bSubtitle)}</span>` : ''}`;
             if(blockB) blockB.classList.toggle('hidden', !ns.bEnabled);
-            if(inputA) inputA.placeholder = `Notas do ${ns.aTitle}...`;
-            if(inputB) inputB.placeholder = `Notas do ${ns.bTitle}...`;
+            if(inputA) inputA.placeholder = ns.aTitle ? `Notas do ${ns.aTitle}...` : 'Notas...';
+            if(inputB) inputB.placeholder = ns.bTitle ? `Notas do ${ns.bTitle}...` : 'Notas...';
         }
 
         // ELEMENTS
