@@ -1060,13 +1060,13 @@ tr.bg-green-50 td {
                 </div>
                 <button onclick="closeNoteModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                    <label class="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2 block">Grupo A <span class="normal-case font-medium text-slate-400">contas 1 a 10</span></label>
+            <div id="note-modal-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div id="note-modal-block-a">
+                    <label id="note-modal-label-a" class="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2 block">Grupo A <span class="normal-case font-medium text-slate-400">contas 1 a 10</span></label>
                     <textarea id="note-modal-input" rows="8" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none resize-none leading-relaxed" placeholder="Notas do Grupo A..."></textarea>
                 </div>
-                <div>
-                    <label class="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2 block">Grupo B <span class="normal-case font-medium text-slate-400">contas 11 a 20</span></label>
+                <div id="note-modal-block-b">
+                    <label id="note-modal-label-b" class="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400 mb-2 block">Grupo B <span class="normal-case font-medium text-slate-400">contas 11 a 20</span></label>
                     <textarea id="note-modal-input-b" rows="8" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none resize-none leading-relaxed" placeholder="Notas do Grupo B..."></textarea>
                 </div>
             </div>
@@ -1223,6 +1223,31 @@ tr.bg-green-50 td {
                                     <tbody id="strategy-editor-body"></tbody>
                                 </table>
                             </div>
+                            <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-3">
+                                <div class="flex items-start justify-between gap-3 mb-3">
+                                    <div>
+                                        <div class="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Notas por Grupo</div>
+                                        <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Controle se o segundo bloco aparece e edite os títulos usados no calendário, CSV, PDF e relatórios.</div>
+                                    </div>
+                                    <label class="inline-flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 select-none">
+                                        <input id="note-setting-b-enabled" type="checkbox" class="rounded border-slate-300 dark:border-slate-600">
+                                        Mostrar segundo bloco
+                                    </label>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Título do bloco 1</label>
+                                        <input id="note-setting-a-title" type="text" placeholder="Grupo A" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+                                        <input id="note-setting-a-subtitle" type="text" placeholder="contas 1 a 10" class="mt-2 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+                                    </div>
+                                    <div>
+                                        <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Título do bloco 2</label>
+                                        <input id="note-setting-b-title" type="text" placeholder="Grupo B" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+                                        <input id="note-setting-b-subtitle" type="text" placeholder="contas 11 a 20" class="mt-2 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="flex items-center justify-between gap-3 flex-wrap pt-2 border-t border-slate-200 dark:border-slate-700">
                                 <div id="strategy-manager-status" class="text-xs text-slate-500 dark:text-slate-400">Sem alterações.</div>
                                 <div class="flex items-center gap-2 flex-wrap">
@@ -2050,8 +2075,8 @@ tr.bg-green-50 td {
                                 <th>35/70</th>
                                 <th>40/80</th>
                                 <th>Condução Técnica</th>
-                                <th>Grupo A</th>
-                                <th>Grupo B</th>
+                                <th id="period-modal-note-a-head">Grupo A</th>
+                                <th id="period-modal-note-b-head">Grupo B</th>
                             </tr>
                         </thead>
                         <tbody id="period-modal-tbody"></tbody>
@@ -2389,7 +2414,7 @@ Usuário administrador:`) || '';
 
 
         // --- Build/Version guard (prevents stale cached builds from overwriting cloud) ---
-        const APP_BUILD_ID = "2026-07-06-trade-count-admin";
+        const APP_BUILD_ID = "2026-07-09-admin-note-groups";
         function touchStore(){
           try {
             const now = Date.now();
@@ -2410,6 +2435,7 @@ let isOffline = false;
         }
         function dfNoteB(entry){
             entry = entry || {};
+            if(!dfNoteBEnabled()) return '';
             return String(entry.noteB || '');
         }
         function dfHasAnyNote(entry){
@@ -2419,12 +2445,84 @@ let isOffline = false;
             const a = dfNoteA(entry).trim();
             const b = dfNoteB(entry).trim();
             const parts = [];
-            if(a) parts.push('Grupo A: ' + a);
-            if(b) parts.push('Grupo B: ' + b);
+            if(a) parts.push(dfNoteLabel('a') + ': ' + a);
+            if(b) parts.push(dfNoteLabel('b') + ': ' + b);
             return parts.join(' | ');
         }
         function dfCsvSafe(value){
             return String(value || '').replace(/[\n\r]+/g, ' ').replace(/,/g, ';');
+        }
+
+        function dfDefaultNoteSettings(){
+            return { aTitle: 'Grupo A', aSubtitle: 'contas 1 a 10', bEnabled: true, bTitle: 'Grupo B', bSubtitle: 'contas 11 a 20' };
+        }
+
+        function dfNormalizeNoteSettings(raw){
+            const def = dfDefaultNoteSettings();
+            raw = (raw && typeof raw === 'object') ? raw : {};
+            return {
+                aTitle: String(raw.aTitle || raw.groupATitle || def.aTitle).trim() || def.aTitle,
+                aSubtitle: String(raw.aSubtitle || raw.groupASubtitle || def.aSubtitle).trim(),
+                bEnabled: raw.bEnabled === undefined ? def.bEnabled : dfNormalizeBool(raw.bEnabled),
+                bTitle: String(raw.bTitle || raw.groupBTitle || def.bTitle).trim() || def.bTitle,
+                bSubtitle: String(raw.bSubtitle || raw.groupBSubtitle || def.bSubtitle).trim()
+            };
+        }
+
+        function dfGetNoteSettings(){
+            try{
+                const settings = dfNormalizeNoteSettings(store && store.noteSettings);
+                if(store && typeof store === 'object') store.noteSettings = settings;
+                return settings;
+            }catch(e){ return dfDefaultNoteSettings(); }
+        }
+
+        function dfNoteBEnabled(){ return !!dfGetNoteSettings().bEnabled; }
+
+        function dfNoteLabel(which, withSubtitle = false){
+            const ns = dfGetNoteSettings();
+            const title = which === 'b' ? ns.bTitle : ns.aTitle;
+            const subtitle = which === 'b' ? ns.bSubtitle : ns.aSubtitle;
+            return withSubtitle && subtitle ? `${title} (${subtitle})` : title;
+        }
+
+        function dfRenderNoteSettingsEditor(){
+            const ns = dfGetNoteSettings();
+            const setVal = (id, v) => { const el = document.getElementById(id); if(el) el.value = v; };
+            setVal('note-setting-a-title', ns.aTitle);
+            setVal('note-setting-a-subtitle', ns.aSubtitle);
+            setVal('note-setting-b-title', ns.bTitle);
+            setVal('note-setting-b-subtitle', ns.bSubtitle);
+            const en = document.getElementById('note-setting-b-enabled');
+            if(en) en.checked = !!ns.bEnabled;
+        }
+
+        function dfReadNoteSettingsEditor(){
+            const cur = dfGetNoteSettings();
+            const val = id => (document.getElementById(id)?.value || '').trim();
+            return dfNormalizeNoteSettings({
+                aTitle: val('note-setting-a-title') || cur.aTitle,
+                aSubtitle: val('note-setting-a-subtitle'),
+                bEnabled: !!document.getElementById('note-setting-b-enabled')?.checked,
+                bTitle: val('note-setting-b-title') || cur.bTitle,
+                bSubtitle: val('note-setting-b-subtitle')
+            });
+        }
+
+        function dfApplyNoteSettingsToModal(){
+            const ns = dfGetNoteSettings();
+            const grid = document.getElementById('note-modal-grid');
+            const labelA = document.getElementById('note-modal-label-a');
+            const labelB = document.getElementById('note-modal-label-b');
+            const blockB = document.getElementById('note-modal-block-b');
+            const inputA = document.getElementById('note-modal-input');
+            const inputB = document.getElementById('note-modal-input-b');
+            if(grid) grid.className = ns.bEnabled ? 'grid grid-cols-1 md:grid-cols-2 gap-4 mb-4' : 'grid grid-cols-1 gap-4 mb-4';
+            if(labelA) labelA.innerHTML = `${escapeHtml(ns.aTitle)}${ns.aSubtitle ? ` <span class="normal-case font-medium text-slate-400">${escapeHtml(ns.aSubtitle)}</span>` : ''}`;
+            if(labelB) labelB.innerHTML = `${escapeHtml(ns.bTitle)}${ns.bSubtitle ? ` <span class="normal-case font-medium text-slate-400">${escapeHtml(ns.bSubtitle)}</span>` : ''}`;
+            if(blockB) blockB.classList.toggle('hidden', !ns.bEnabled);
+            if(inputA) inputA.placeholder = `Notas do ${ns.aTitle}...`;
+            if(inputB) inputB.placeholder = `Notas do ${ns.bTitle}...`;
         }
 
         // ELEMENTS
@@ -4864,10 +4962,11 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const entry = acc.data[iso] || {};
             const dateStr = formatDateShort(parseISODateLocal(iso));
             document.getElementById('note-modal-date').textContent = dateStr;
+            dfApplyNoteSettingsToModal();
             const noteInput = document.getElementById('note-modal-input');
             const noteInputB = document.getElementById('note-modal-input-b');
             noteInput.value = dfNoteA(entry);
-            if(noteInputB) noteInputB.value = dfNoteB(entry);
+            if(noteInputB) noteInputB.value = String(entry.noteB || '');
             [noteInput, noteInputB].filter(Boolean).forEach(input => {
                 input.readOnly = currentNoteReadOnly;
                 input.classList.toggle('opacity-70', currentNoteReadOnly);
@@ -4916,13 +5015,13 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(!currentNoteIso) return;
             if (currentNoteReadOnly) { closeNoteModal(); return; }
             const valA = (document.getElementById('note-modal-input') || {}).value || '';
-            const valB = (document.getElementById('note-modal-input-b') || {}).value || '';
+            const valB = dfNoteBEnabled() ? ((document.getElementById('note-modal-input-b') || {}).value || '') : null;
             const acc = getActive();
             if(acc){
                 if(!acc.data) acc.data = {};
                 if(!acc.data[currentNoteIso]) acc.data[currentNoteIso] = {};
                 acc.data[currentNoteIso].noteA = valA;
-                acc.data[currentNoteIso].noteB = valB;
+                if(valB !== null) acc.data[currentNoteIso].noteB = valB;
                 acc.data[currentNoteIso].note = valA; // compatibilidade com relatórios/versões antigas
                 dfPersistAfterUserInput();
                 try{ renderDashboard(); }catch(e){ console.warn('renderDashboard failed after saveNote:', e); }
@@ -4935,7 +5034,9 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const fs = (document.getElementById('filter-start') || {}).value || '';
             const fe = (document.getElementById('filter-end') || {}).value || '';
             const headerLabels = getStrategiesForDate(fe || fs || getTodayISO(), { includeInactive:false, includeHidden:false }).map(s => s.label);
-            let csvContent = `data:text/csv;charset=utf-8,Data,${headerLabels.join(',')},Nota Grupo A,Nota Grupo B
+            const noteHeaders = [dfNoteLabel('a')];
+            if(dfNoteBEnabled()) noteHeaders.push(dfNoteLabel('b'));
+            let csvContent = `data:text/csv;charset=utf-8,Data,${headerLabels.join(',')},${noteHeaders.map(h => 'Nota ' + dfCsvSafe(h)).join(',')}
 `;
             const dates = Object.keys(acc.data).sort();
             dates.forEach(iso => {
@@ -4946,9 +5047,11 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 const blocks = getVisibleStrategyEntriesForDay(d, iso);
                 const noteA = dfCsvSafe(dfNoteA(d));
                 const noteB = dfCsvSafe(dfNoteB(d));
-                const hasValues = blocks.some(b => Number(b.subtotal || 0) !== 0) || noteA !== '' || noteB !== '';
+                const noteValues = [noteA];
+                if(dfNoteBEnabled()) noteValues.push(noteB);
+                const hasValues = blocks.some(b => Number(b.subtotal || 0) !== 0) || noteValues.some(v => v !== '');
                 if (hasValues) {
-                    csvContent += `${dateStr},${blocks.map(b => Number(b.subtotal || 0).toFixed(2)).join(',')},${noteA},${noteB}
+                    csvContent += `${dateStr},${blocks.map(b => Number(b.subtotal || 0).toFixed(2)).join(',')},${noteValues.join(',')}
 `;
                 }
             });
@@ -9016,8 +9119,12 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             const sum = document.getElementById('period-modal-summary');
             const tot = document.getElementById('period-modal-total');
             const tbody = document.getElementById('period-modal-tbody');
+            const noteAHead = document.getElementById('period-modal-note-a-head');
+            const noteBHead = document.getElementById('period-modal-note-b-head');
 
             if(!modal || !ttl || !rng || !sum || !tot || !tbody) return;
+            if(noteAHead) noteAHead.textContent = dfNoteLabel('a');
+            if(noteBHead){ noteBHead.textContent = dfNoteLabel('b'); noteBHead.style.display = dfNoteBEnabled() ? '' : 'none'; }
 
             const res = _buildPeriodRows(acc, startISO, endISO);
 
@@ -9038,7 +9145,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                     <td>${formatCurrency(r.t3)}</td>
                     <td>${formatCurrency(r.t2)}</td>
                     <td>${(r.noteA || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
-                    <td>${(r.noteB || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+                    ${dfNoteBEnabled() ? `<td>${(r.noteB || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>` : ''}
                 `;
                 tbody.appendChild(tr);
             });
@@ -9195,10 +9302,10 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                         let noteLines = [];
                         const noteW = contentW - 20; // leve recuo
                         if(noteA){
-                            noteLines = noteLines.concat(doc.splitTextToSize('Grupo A: ' + noteA, noteW));
+                            noteLines = noteLines.concat(doc.splitTextToSize(dfNoteLabel('a') + ': ' + noteA, noteW));
                         }
                         if(noteB){
-                            noteLines = noteLines.concat(doc.splitTextToSize('Grupo B: ' + noteB, noteW));
+                            noteLines = noteLines.concat(doc.splitTextToSize(dfNoteLabel('b') + ': ' + noteB, noteW));
                         }
 
                         const rowLineH = 14;
@@ -9274,7 +9381,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                     <td style="text-align:right;">${formatCurrency(r.t3)}</td>
                     <td style="text-align:right;">${formatCurrency(r.t2)}</td>
                     <td>${(r.noteA || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
-                    <td>${(r.noteB || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
+                    ${dfNoteBEnabled() ? `<td>${(r.noteB || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>` : ''}
                 </tr>
             `).join('');
 
@@ -9303,8 +9410,8 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                                 <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">35/70</th>
                                 <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">40/80</th>
                                 <th style="text-align:right;border-bottom:1px solid #ccc;padding:6px;">Condução Técnica</th>
-                                <th style="text-align:left;border-bottom:1px solid #ccc;padding:6px;">Grupo A</th>
-                                <th style="text-align:left;border-bottom:1px solid #ccc;padding:6px;">Grupo B</th>
+                                <th style="text-align:left;border-bottom:1px solid #ccc;padding:6px;">${dfNoteLabel('a')}</th>
+                                ${dfNoteBEnabled() ? `<th style="text-align:left;border-bottom:1px solid #ccc;padding:6px;">${dfNoteLabel('b')}</th>` : ''}
                             </tr>
                         </thead>
                         <tbody>
@@ -10938,6 +11045,7 @@ function dfEnsureStrategyStructure(){
     // Compatibilidade controlada: mantém strategyConfigs como espelho, não como fonte.
     // Isso evita quebrar funções antigas que ainda esperam esse array existir.
     store.strategyConfigs = [dfStrategyVersionFromStructure(structure)];
+    store.noteSettings = dfNormalizeNoteSettings(store.noteSettings);
 
     __strategyManagerSelectedVersionId = 'current-structure';
     return store.strategyStructure;
@@ -11191,8 +11299,10 @@ renderStrategyManager = function(){
         </tr>`;
     }).join('');
 
+    dfRenderNoteSettingsEditor();
+
     if(els.strategyManagerStatus){
-        els.strategyManagerStatus.textContent = 'Estrutura atual única. Trades controla quantas linhas aparecem; Check 1, 2 e 3 controlam os checkboxes exibidos em cada trade.';
+        els.strategyManagerStatus.textContent = 'Estrutura atual única. Trades controla quantas linhas aparecem; Check 1, 2 e 3 controlam os checkboxes exibidos em cada trade. As notas por grupo controlam o modal e os relatórios.';
     }
 
     try{ lucide.createIcons(); }catch(e){}
@@ -11505,6 +11615,7 @@ async function dfSaveStructureNow(showAlert = true){
 
         store.strategyStructure = structure;
         store.strategyConfigs = [dfStrategyVersionFromStructure(structure)];
+        store.noteSettings = dfReadNoteSettingsEditor();
         __strategyManagerSelectedVersionId = 'current-structure';
 
         dfRecalculateAllAccountEntriesForTradeCounts();
