@@ -934,6 +934,27 @@ body.dark .day-details-row .df-trade-check-pill:hover{
   height:14px;
   flex:0 0 auto;
 }
+.df-empty-group-mark{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:26px;
+  height:26px;
+  padding:0 .55rem;
+  border-radius:999px;
+  border:1px dashed #cbd5e1;
+  background:rgba(255,255,255,.78);
+  color:#94a3b8;
+  font-size:.72rem;
+  font-weight:800;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+body.dark .df-empty-group-mark{
+  border-color:#475569;
+  background:rgba(15,23,42,.45);
+  color:#94a3b8;
+}
 @media (max-width: 520px){
   .day-details-row .df-trade-editor-input{
     width:6.75rem;
@@ -1740,7 +1761,7 @@ tr.bg-green-50 td {
                                 <div class="period-stat-row"><span>Dias operados</span><span id="kpi-days" class="font-bold text-slate-800 dark:text-white">--</span></div>
                                 <div class="period-stat-row"><span>Dias verdes / vermelhos</span><span id="kpi-days-gr" class="font-bold text-slate-800 dark:text-white">--</span></div>
                                 <div class="period-stat-row"><span>Avg por dia</span><span id="kpi-avg-day" class="font-bold text-slate-800 dark:text-white">--</span></div>
-                                <div class="period-stat-row"><span>Max Drawdown</span><span id="kpi-maxdd" class="font-bold text-red-600">--</span></div>
+                                <div class="period-stat-row"><span>Max DD por grupo</span><span id="kpi-maxdd" class="font-bold text-red-600">--</span></div>
                             </div>
                         </div>
                     </div>
@@ -5788,6 +5809,26 @@ Resumo por Estratégia,,,,,
             updateChart(chartLabels, chartDatasets);
 
             const strat = _computeStrategyAnalytics(acc, start, end);
+            const dfPeriodStrategyRows = Array.isArray(strat.__rows)
+                ? strat.__rows
+                : [strat.t2550, strat.t4040, strat.t3570, strat.t4080, strat.ct].filter(Boolean);
+            const dfCompactGroupMarker = (label, idx) => {
+                const match = String(label || '').match(/grupo\s*([a-z0-9]+)/i);
+                if(match && match[1]) return match[1].toUpperCase();
+                return String.fromCharCode(65 + idx);
+            };
+            const dfMaxDDByGroupText = (rows) => {
+                const activeRows = (rows || []).filter(s => s && (Number(s.trades || 0) > 0 || Number(s.total || 0) !== 0 || Number(s.maxDD || 0) > 0));
+                if(!activeRows.length) return '--';
+                return activeRows.map((s, idx) => {
+                    const marker = dfCompactGroupMarker(s.label, idx);
+                    return `${marker}: ${formatCurrency(-(Number(s.maxDD || 0)))}`;
+                }).join(' / ');
+            };
+            const dfMaxDDByGroupFullTitle = (rows) => {
+                const activeRows = (rows || []).filter(s => s && (Number(s.trades || 0) > 0 || Number(s.total || 0) !== 0 || Number(s.maxDD || 0) > 0));
+                return activeRows.map(s => `${s.label}: ${formatCurrency(-(Number(s.maxDD || 0)))}`).join(' | ');
+            };
             const fillStrategy = (prefix, obj) => {
                 const totalEl = document.getElementById(`strategy-${prefix}-total`);
                 const tradesEl = document.getElementById(`strategy-${prefix}-trades`);
@@ -5816,12 +5857,16 @@ Resumo por Estratégia,,,,,
             if (els.kpiDays) els.kpiDays.textContent = tradedDays ? String(tradedDays) : "--";
             if (els.kpiDaysGR) els.kpiDaysGR.textContent = tradedDays ? `${greenDays} / ${redDays}` : "--";
             if (els.kpiAvgDay) els.kpiAvgDay.textContent = tradedDays ? formatCurrency(avgDay) : "--";
-            if (els.kpiMaxDD) els.kpiMaxDD.textContent = tradedDays ? formatCurrency(maxDDNeg) : "--";
+            if (els.kpiMaxDD) {
+                const groupDDText = dfMaxDDByGroupText(dfPeriodStrategyRows);
+                els.kpiMaxDD.textContent = tradedDays ? groupDDText : "--";
+                try{ els.kpiMaxDD.title = dfMaxDDByGroupFullTitle(dfPeriodStrategyRows) || ''; }catch(e){}
+            }
 
             const strategyRows = document.getElementById('strategy-breakdown-body');
             if(strategyRows){
                 strategyRows.innerHTML = '';
-                [strat.t2550, strat.t4040, strat.t3570, strat.t4080, strat.ct].forEach((s) => {
+                dfPeriodStrategyRows.forEach((s) => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td class="py-2 text-left">${s.label}</td>
@@ -6147,6 +6192,40 @@ function renderCalendar(acc) {
                     const indexes = (window.dfTradeIndexesForBlock ? window.dfTradeIndexesForBlock(block) : [1, 2, 3, 4, 5]);
                     return indexes.some(idx => block.legs[`leg${idx}`] !== '' && block.legs[`leg${idx}`] !== null && block.legs[`leg${idx}`] !== undefined);
                 };
+                const groupBaseLabel = (label) => String(label || '')
+                    .replace(/\s*-\s*grupo\s*[a-z0-9]+$/i, '')
+                    .trim()
+                    .toLowerCase();
+                const duplicateGroupMap = (() => {
+                    const map = new Map();
+                    visibleBlocks.forEach((block, blockIndex) => {
+                        const base = groupBaseLabel(block.label);
+                        if(!base) return;
+                        const list = map.get(base) || [];
+                        list.push({ block, blockIndex });
+                        map.set(base, list);
+                    });
+                    return map;
+                })();
+                const getBlockEmptyMarker = (block, blockIndex) => {
+                    const explicit = String(block.label || '').match(/grupo\s*([a-z0-9]+)/i);
+                    if(explicit && explicit[1]) return explicit[1].toUpperCase();
+                    const dupes = duplicateGroupMap.get(groupBaseLabel(block.label)) || [];
+                    if(dupes.length > 1){
+                        const pos = dupes.findIndex(item => item.blockIndex === blockIndex);
+                        if(pos >= 0) return String.fromCharCode(65 + pos);
+                    }
+                    return '--';
+                };
+                const renderBlockCellSummary = (block, blockIndex) => {
+                    if(hasBlockTrades(block)){
+                        return `<span class="font-semibold ${block.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatCurrency(block.subtotal)}</span>`;
+                    }
+                    const marker = getBlockEmptyMarker(block, blockIndex);
+                    return marker === '--'
+                        ? '<span class="font-semibold text-slate-400">--</span>'
+                        : `<span class="df-empty-group-mark">${escapeHtml(marker)}</span>`;
+                };
                 const breakoutLabel = CURRENT_LANG === 'en' ? 'Breakout' : 'Barra ignorada';
                 const getBlockCheckLabels = (block) => {
                     const raw = Array.isArray(block.checkLabels) ? block.checkLabels : (block.breakout ? [breakoutLabel] : []);
@@ -6194,7 +6273,7 @@ function renderCalendar(acc) {
                         </button>
                         <span>${dayLabel}</span>
                     </td>
-                    ${visibleBlocks.map(block => `<td class="px-2 py-2 text-center w-28"><span class="font-semibold ${block.subtotal >= 0 ? 'text-emerald-600' : 'text-red-600'}">${hasBlockTrades(block) ? formatCurrency(block.subtotal) : '--'}</span></td>`).join('')}
+                    ${visibleBlocks.map((block, blockIndex) => `<td class="px-2 py-2 text-center w-28">${renderBlockCellSummary(block, blockIndex)}</td>`).join('')}
                     <td class="px-4 py-2 text-center w-16">
                         <button onclick="openNoteModal('${iso}', false)" class="p-1.5 rounded-lg border transition ${noteBtnClass}" title="Editar Nota">
                             <i data-lucide="${noteIcon}" class="w-4 h-4"></i>
@@ -7072,7 +7151,7 @@ ${period} • ${(acc?.name || 'Conta')}
                 drawMetric(col2, y, 'Dias operados', kpiDays);
                 drawMetric(col2, y+26, 'Dias verdes / vermelhos', kpiDaysGR);
                 drawMetric(col2, y+52, 'Avg por dia', kpiAvgDay);
-                drawMetric(col2, y+78, 'Max Drawdown', kpiMaxDD, [220,38,38]);
+                drawMetric(col2, y+78, 'Max DD por grupo', kpiMaxDD, [220,38,38]);
                 y += 116;
 
                 doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(15,23,42);
