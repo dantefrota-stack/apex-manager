@@ -2688,50 +2688,18 @@ let isOffline = false;
 
                 function normalizeEntry(iso){
                     const e = (acc.data && acc.data[iso]) ? acc.data[iso] : {};
-                    const t0 = (e.t0 === '' || e.t0 === null || e.t0 === undefined) ? 0 : (parseFloat(e.t0) || 0);
-                    const t1 = (e.t1 === '' || e.t1 === null || e.t1 === undefined) ? 0 : (parseFloat(e.t1) || 0);
-                    const t2 = (e.t2 === '' || e.t2 === null || e.t2 === undefined) ? 0 : (parseFloat(e.t2) || 0);
-                    const t3 = (e.t3 === '' || e.t3 === null || e.t3 === undefined) ? 0 : (parseFloat(e.t3) || 0);
-                    const hasVal = !(e.val === undefined || e.val === null || e.val === '');
-                    const total = hasVal ? (parseFloat(e.val) || 0) : (t0 + t1 + t2 + t3 + t4);
-                    const noteA = dfNoteA(e);
-                    const noteB = dfNoteB(e);
-                    const note = dfNotesCombined(e);
-                    const holiday = !!e.holiday;
-                    const t1meta = e.t1meta || { add:false, targetPts:0, riskPts:0, viability:'', exit2r:'', breakeven:'', above2rPts:0, retraceAfter2rPts:0 };
-                    const t2meta = e.t2meta || { add:false, targetPts:0, riskPts:0, viability:'', exit2r:'', breakeven:'', above2rPts:0, retraceAfter2rPts:0 };
-
-                    const hasMeta =
-                        !!(t1meta && (t1meta.add || Number(t1meta.targetPts) || Number(t1meta.riskPts) || (t1meta.viability||'').trim())) ||
-                        !!(t2meta && (t2meta.add || Number(t2meta.targetPts) || Number(t2meta.riskPts) || (t2meta.viability||'').trim()));
-
-                    const hasActivity = (t0 !== 0 || t1 !== 0 || t2 !== 0 || t3 !== 0 || total !== 0 || noteA.trim() || noteB.trim() || holiday || hasMeta);
-
-                    return {
-                        date: iso,
-                        t0,
-                        t1,
-                        t2,
-                        t3,
-                        total,
-                        holiday,
-                        note: note.slice(0, 1000),
-                        noteA: noteA.slice(0, 800),
-                        noteB: noteB.slice(0, 800),
-                        t1meta: {
-                            add: !!t1meta.add,
-                            targetPts: Number(t1meta.targetPts) || 0,
-                            riskPts: Number(t1meta.riskPts) || 0,
-                            viability: (t1meta.viability || '').toString()
-                        },
-                        t2meta: {
-                            add: !!t2meta.add,
-                            targetPts: Number(t2meta.targetPts) || 0,
-                            riskPts: Number(t2meta.riskPts) || 0,
-                            viability: (t2meta.viability || '').toString()
-                        },
-                        hasActivity
-                    };
+                    const legacyValue = (slot) => (e[slot] === '' || e[slot] === null || e[slot] === undefined) ? 0 : (Number(e[slot]) || 0);
+                    const t0 = legacyValue('t0'), t1 = legacyValue('t1'), t2 = legacyValue('t2'), t3 = legacyValue('t3'), t4 = legacyValue('t4');
+                    const strategyEntries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false }).map(block => {
+                        const indexes = window.dfTradeIndexesForBlock ? window.dfTradeIndexesForBlock(block) : dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY);
+                        const trades = indexes.map(idx => ({ trade:idx, result:Number(block.legs?.[`leg${idx}`]) || 0 })).filter(item => item.result !== 0);
+                        return { slot:block.slot, label:block.label, total:Number(block.legs?.subtotal || block.subtotal || 0), trades };
+                    });
+                    const total = strategyEntries.reduce((sum, item) => sum + item.total, 0);
+                    const noteA = dfNoteA(e), noteB = dfNoteB(e), note = dfNotesCombined(e), holiday = !!e.holiday;
+                    const hasMeta = strategyEntries.some(item => { const meta = e[`${item.slot}meta`] || {}; return !!(meta.add || Number(meta.targetPts) || Number(meta.riskPts) || String(meta.viability || '').trim()); });
+                    const hasActivity = strategyEntries.some(item => item.total !== 0 || item.trades.length > 0) || !!noteA.trim() || !!noteB.trim() || holiday || hasMeta;
+                    return { date:iso, t0,t1,t2,t3,t4, total:holiday ? 0 : total, holiday, strategies:strategyEntries, note:note.slice(0,1000), noteA:noteA.slice(0,800), noteB:noteB.slice(0,800), hasActivity };
                 }
 
                 // 1) Entradas do mês atual (para contexto rápido)
@@ -2777,10 +2745,13 @@ let isOffline = false;
                         let sum = 0;
                         let wins = 0;
                         let losses = 0;
+                        let operationalDays = 0;
                         let best = { date:null, total:-Infinity };
                         let worst = { date:null, total:Infinity };
                         for (const e of tmp) {
+                            if (e.holiday || !e.hasActivity) continue;
                             const t = Number(e.total) || 0;
+                            operationalDays++;
                             sum += t;
                             if (t > 0) wins++;
                             if (t < 0) losses++;
@@ -2790,7 +2761,8 @@ let isOffline = false;
                         analysisRangeSummary = {
                             start: fs,
                             end: fe,
-                            days: tmp.length,
+                            calendarDays: tmp.length,
+                            operationalDays,
                             total: round2(sum),
                             winDays: wins,
                             lossDays: losses,
@@ -2800,6 +2772,18 @@ let isOffline = false;
                         };
                     }
                 }
+
+                const reportStart = (fs && fe) ? fs : isoStart;
+                const reportEnd = (fs && fe) ? fe : isoEnd;
+                const reportEntries = Object.keys(acc.data || {}).filter(iso => /^\d{4}-\d{2}-\d{2}$/.test(iso) && iso >= reportStart && iso <= reportEnd).sort().map(normalizeEntry).filter(entry => !entry.holiday && entry.hasActivity);
+                const reportTrades = reportEntries.flatMap(entry => (entry.strategies || []).flatMap(strategy => strategy.trades || []));
+                const reportWins = reportTrades.filter(item => Number(item.result) > 0), reportLosses = reportTrades.filter(item => Number(item.result) < 0);
+                const grossProfit = reportWins.reduce((sum,item)=>sum+Number(item.result||0),0), grossLoss = Math.abs(reportLosses.reduce((sum,item)=>sum+Number(item.result||0),0));
+                let cumulative = 0, peak = 0, maxDrawdown = 0;
+                const cumulativeSeries = reportEntries.map(entry => { cumulative += Number(entry.total||0); peak = Math.max(peak,cumulative); maxDrawdown = Math.max(maxDrawdown,peak-cumulative); return {date:entry.date,value:round2(cumulative)}; });
+                const strategyBreakdown = getStrategyRowsForPeriod(acc, reportStart, reportEnd, {includeInactive:false,includeHidden:false}).map(row => ({slot:row.slot,label:row.label,total:round2(row.total),trades:row.trades,wins:row.wins,losses:row.losses,winRatePct:round2((row.winRate||0)*100),profitFactor:row.grossLoss>0?round2(row.grossWin/row.grossLoss):null,payoff:Number.isFinite(row.payoff)?round2(row.payoff):null,expectancy:round2(row.expectancy||0),maxDrawdown:round2(row.maxDD||0)}));
+                const reportTotal = reportEntries.reduce((sum,entry)=>sum+Number(entry.total||0),0);
+                const reportAnalytics = {range:{start:reportStart,end:reportEnd},total:round2(reportTotal),operationalDays:reportEntries.length,greenDays:reportEntries.filter(e=>e.total>0).length,redDays:reportEntries.filter(e=>e.total<0).length,totalTrades:reportTrades.length,wins:reportWins.length,losses:reportLosses.length,winRatePct:reportTrades.length?round2(reportWins.length/reportTrades.length*100):0,averageTrade:reportTrades.length?round2(reportTotal/reportTrades.length):0,profitFactor:grossLoss>0?round2(grossProfit/grossLoss):null,maxDrawdown:round2(maxDrawdown),strategyBreakdown,cumulativeSeries};
 
                 return {
                     account: { id: acc.id, name: acc.name, size: acc.size, monthType: acc.monthType },
@@ -2821,7 +2805,8 @@ let isOffline = false;
                     recentEntries,
                     analysisFilter: { start: fs, end: fe },
                     analysisRangeEntries,
-                    analysisRangeSummary
+                    analysisRangeSummary,
+                    reportAnalytics
                 };
             } catch (err) {
                 return { error: String(err) };
@@ -2913,27 +2898,29 @@ let isOffline = false;
                 // Safety cap
                 const MAX = 400;
                 let count=0;
-                let sum=0, wins=0, losses=0;
+                let sum=0, wins=0, losses=0, operationalDays=0;
                 let best={date:null,total:-Infinity}, worst={date:null,total:Infinity};
                 const d = new Date(s);
                 while(d<=e && count<MAX){
                     const iso = toISODateLocal(d);
                     const raw = (acc && acc.data && acc.data[iso]) ? acc.data[iso] : {};
-                    const t1 = Number(raw.t1)||0;
-                    const t2 = Number(raw.t2)||0;
-                    const total = round2(t1+t2);
-                    out.push({ date: iso, t1, t2, total, holiday: !!raw.holiday, note: (raw.note||'').toString().slice(0,800) });
-                    sum += total;
-                    if(total>0) wins++; else if(total<0) losses++;
-                    if(total>best.total){ best={date:iso,total}; }
-                    if(total<worst.total){ worst={date:iso,total}; }
+                    const strategies = getStrategyEntriesForDay(raw, iso, {includeInactive:false,includeHidden:false}).map(block => {
+                        const indexes = window.dfTradeIndexesForBlock ? window.dfTradeIndexesForBlock(block) : dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY);
+                        return {slot:block.slot,label:block.label,total:round2(Number(block.legs?.subtotal||block.subtotal||0)),trades:indexes.map(idx=>Number(block.legs?.[`leg${idx}`])||0).filter(v=>v!==0)};
+                    });
+                    const holiday = !!raw.holiday;
+                    const total = holiday ? 0 : round2(strategies.reduce((daySum,strategy)=>daySum+strategy.total,0));
+                    const hasActivity = strategies.some(strategy=>strategy.total!==0||strategy.trades.length>0) || !!dfNotesCombined(raw).trim();
+                    out.push({date:iso,strategies,total,holiday,note:dfNotesCombined(raw).slice(0,800),hasActivity});
+                    if(!holiday && hasActivity){ operationalDays++; sum+=total; if(total>0)wins++; else if(total<0)losses++; if(total>best.total)best={date:iso,total}; if(total<worst.total)worst={date:iso,total}; }
                     d.setDate(d.getDate()+1);
                     count++;
                 }
                 const summary = {
                     start: startISO,
                     end: endISO,
-                    days: out.length,
+                    calendarDays: out.length,
+                    operationalDays,
                     total: round2(sum),
                     winDays: wins,
                     lossDays: losses,
@@ -2954,10 +2941,14 @@ let isOffline = false;
                 if(!parsed) return baseContext;
                 const { startISO, endISO } = parsed;
                 const { entries, summary } = computeRangeFromAccount(acc, startISO, endISO);
+                let cumulative = 0;
+                const cumulativeSeries = entries.filter(entry=>!entry.holiday&&entry.hasActivity).map(entry=>{cumulative+=Number(entry.total||0);return {date:entry.date,value:round2(cumulative)};});
+                const strategyBreakdown = getStrategyRowsForPeriod(acc,startISO,endISO,{includeInactive:false,includeHidden:false}).map(row=>({label:row.label,total:round2(row.total),trades:row.trades,wins:row.wins,losses:row.losses,winRatePct:round2((row.winRate||0)*100),expectancy:round2(row.expectancy||0),maxDrawdown:round2(row.maxDD||0)}));
                 return Object.assign({}, baseContext, {
                     questionRange: { start: startISO, end: endISO },
                     questionRangeEntries: entries,
-                    questionRangeSummary: summary
+                    questionRangeSummary: summary,
+                    questionReportAnalytics: { ...summary, strategyBreakdown, cumulativeSeries }
                 });
             }catch(e){
                 return baseContext;
@@ -2976,8 +2967,10 @@ async function callOpenAI(question){
                 'Você é um assistente dentro de um aplicativo de performance (trading) baseado em regras da Apex Trader Funding.',
                 'Responda no mesmo idioma da pergunta (português ou inglês).',
                 'Você deve ajudar o usuário a entender e analisar os números e informações armazenadas no aplicativo (trades, ciclos, médias, filtros, relatórios, campos de Trade 1/Trade 2/Trade 3/Trade 4/Trade 5, etc.).',
-                'Use SOMENTE o contexto JSON fornecido (monthEntries, recentEntries, analysisRangeEntries, stats, questionRangeEntries). Não invente dados.',
-                'Se o usuário pedir um relatório por período, priorize o intervalo informado em analysisFilter/start-end e/ou analysisRangeSummary. Se o usuário mencionar um intervalo na pergunta, use questionRangeSummary/questionRangeEntries.',
+                'Use SOMENTE o contexto JSON fornecido (monthEntries, recentEntries, analysisRangeEntries, stats, questionRangeEntries e reportAnalytics). Não invente dados.',
+                'Se o usuário pedir um relatório por período, priorize o intervalo informado em analysisFilter/start-end e/ou analysisRangeSummary. Se o usuário mencionar um intervalo na pergunta, use questionReportAnalytics/questionRangeSummary/questionRangeEntries.',
+                'Para relatórios analíticos, use reportAnalytics como fonte principal: apresente resumo executivo, KPIs, breakdown de todas as estratégias ativas, risco/drawdown, consistência e conclusões acionáveis.',
+                'Quando cumulativeSeries estiver disponível, descreva objetivamente a tendência do gráfico; nunca afirme que não há dados sem conferir operationalDays, totalTrades e strategyBreakdown.',
                 'Você não tem acesso a preços ao vivo. Se pedirem cotação atual, explique essa limitação e sugira consultar a corretora.',
                 'Quando citar regras da Apex, mencione o nome da regra e inclua o link oficial quando apropriado.',
                 `Link base das regras: ${apexRulesLink}`
@@ -2996,7 +2989,7 @@ async function callOpenAI(question){
                 model,
                 instructions,
                 input,
-                max_output_tokens: 800,
+                max_output_tokens: /relat[oó]rio|report|an[aá]lise|analysis/i.test(question) ? 2000 : 1000,
                 store: false
             };
 
@@ -3885,7 +3878,7 @@ function _openPrintWindow(htmlStr){
             accountsOverviewPrint();
         }
         async function accountsOverviewShare(){
-            const list = (window._accountsOverviewComputed || []).slice();
+            const list = (window._accountsOverviewComputedAll || window._accountsOverviewComputed || []).slice();
             const text = _accountsOverviewBuildTextSummary(list);
             // copy
             let copied = false;
@@ -5061,54 +5054,54 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
         window.exportCSV = () => {
             const acc = getActive();
+            if(!acc || !acc.data) return;
             const fs = (document.getElementById('filter-start') || {}).value || '';
             const fe = (document.getElementById('filter-end') || {}).value || '';
-            const headerLabels = getStrategiesForDate(fe || fs || getTodayISO(), { includeInactive:false, includeHidden:false }).map(s => s.label);
-            const noteHeaders = [dfNoteLabel('a')];
-            if(dfNoteBEnabled()) noteHeaders.push(dfNoteLabel('b'));
-            let csvContent = `data:text/csv;charset=utf-8,Data,${headerLabels.join(',')},${noteHeaders.map(h => 'Nota ' + dfCsvSafe(h)).join(',')}
-`;
+            if(fs && fe && fe < fs){ alert(translateString('A data final deve ser maior ou igual a data inicial.')); return; }
+            const strategyDefs = getStrategiesForDate(fe || fs || getTodayISO(), {includeInactive:false,includeHidden:false});
+            const csvCell = value => { const text=String(value??'').replace(/\r?\n/g,' '); return /[",\n]/.test(text)?`"${text.replace(/"/g,'""')}"`:text; };
+            const lines=[];
+            const headers=['Data ISO','Data',...strategyDefs.map(s=>s.label),'Resultado do Dia','Resultado Acumulado','Feriado',`Nota ${dfNoteLabel('a')}`];
+            if(dfNoteBEnabled()) headers.push(`Nota ${dfNoteLabel('b')}`);
+            lines.push(headers.map(csvCell).join(','));
+            let cumulative=0;
             const dates = Object.keys(acc.data).sort();
             dates.forEach(iso => {
                 if(fs && iso < fs) return;
                 if(fe && iso > fe) return;
                 const d = acc.data[iso] || {};
                 const dateStr = formatDateShort(parseISODateLocal(iso));
-                const blocks = getVisibleStrategyEntriesForDay(d, iso);
-                const noteA = dfCsvSafe(dfNoteA(d));
-                const noteB = dfCsvSafe(dfNoteB(d));
-                const noteValues = [noteA];
-                if(dfNoteBEnabled()) noteValues.push(noteB);
-                const hasValues = blocks.some(b => Number(b.subtotal || 0) !== 0) || noteValues.some(v => v !== '');
-                if (hasValues) {
-                    csvContent += `${dateStr},${blocks.map(b => Number(b.subtotal || 0).toFixed(2)).join(',')},${noteValues.join(',')}
-`;
-                }
+                const blocks=getStrategyEntriesForDay(d,iso,{includeInactive:false,includeHidden:false});
+                const bySlot=new Map(blocks.map(b=>[b.slot,Number(b.legs?.subtotal||b.subtotal||0)]));
+                const holiday=!!d.holiday, noteA=dfNoteA(d), noteB=dfNoteB(d);
+                const dayTotal=holiday?0:strategyDefs.reduce((sum,s)=>sum+Number(bySlot.get(s.slot)||0),0);
+                if(!strategyDefs.some(s=>Number(bySlot.get(s.slot)||0)!==0)&&!noteA.trim()&&!noteB.trim()&&!holiday)return;
+                if(!holiday)cumulative+=dayTotal;
+                const values=[iso,dateStr,...strategyDefs.map(s=>Number(bySlot.get(s.slot)||0).toFixed(2)),dayTotal.toFixed(2),cumulative.toFixed(2),holiday?'Sim':'Não',noteA];
+                if(dfNoteBEnabled())values.push(noteB); lines.push(values.map(csvCell).join(','));
             });
 
             if(fs && fe){
                 const rows = getStrategyRowsForPeriod(acc, fs, fe, { includeInactive:false, includeHidden:false });
-                csvContent += `
-Resumo por Estratégia,,,,,
-`;
-                csvContent += `Estratégia,Resultado,Trades,Win Rate,Payoff,Expectancy
-`;
+                lines.push(''); lines.push('Resumo por Estratégia');
+                lines.push(['Estratégia','Resultado','Trades','Wins','Losses','Win Rate','Avg Win','Avg Loss','Profit Factor','Payoff','Expectancy','Max Drawdown'].map(csvCell).join(','));
                 rows.forEach((s)=>{
                     const wr = s.trades > 0 ? `${(s.winRate*100).toFixed(0)}%` : '--';
                     const payoff = (s.payoff === null || !isFinite(s.payoff)) ? '--' : s.payoff.toFixed(2);
-                    const expectancy = s.trades > 0 ? formatCurrency(s.expectancy) : '--';
-                    csvContent += `${s.label},${s.total.toFixed(2)},${s.trades},${wr},${payoff},${String(expectancy).replace(/,/g,';')}
-`;
+                    const profitFactor=s.grossLoss>0?(s.grossWin/s.grossLoss).toFixed(2):(s.grossWin>0?'∞':'--');
+                    lines.push([s.label,s.total.toFixed(2),s.trades,s.wins,s.losses,wr,Number(s.avgWin||0).toFixed(2),Number(s.avgLoss||0).toFixed(2),profitFactor,payoff,Number(s.expectancy||0).toFixed(2),Number(s.maxDD||0).toFixed(2)].map(csvCell).join(','));
                 });
             }
 
-            const encodedUri = encodeURI(csvContent);
+            const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+            const encodedUri=URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
             link.setAttribute("download", `${getActive().name || 'report'}_${(fe || getTodayISO())}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+            setTimeout(()=>URL.revokeObjectURL(encodedUri),1000);
         };
 
 /* ===== App Loader helpers (avoid startup loop) ===== */
@@ -5704,8 +5697,9 @@ Resumo por Estratégia,,,,,
         function filterReportInternal() {
             const start = els.filterStart.value; 
             const end = els.filterEnd.value;
-            if(!start || !end) return;
+            if(!start || !end || end < start) return;
             const acc = getActive();
+            if(!acc || !acc.data) return;
 
             let sum = 0;
             let wins = 0;
@@ -5730,7 +5724,7 @@ Resumo por Estratégia,,,,,
             let maxDD = 0;
 
             const chartStrategyDefs = getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
-                .map(cfg => ({ ...cfg, legacyKey: cfg.legacyKey || cfg.slot, data: [] }));
+                .map(cfg => ({ ...cfg, legacyKey: cfg.legacyKey || cfg.slot, data: [], hasTrades:false }));
             const strategyCum = {};
             chartStrategyDefs.forEach(cfg => { strategyCum[cfg.legacyKey] = 0; });
 
@@ -5739,7 +5733,7 @@ Resumo por Estratégia,,,,,
                 const e = acc.data[iso] || {};
                 if(e.holiday) return;
 
-                const tradeVals = _individualTradeValuesForDay(e).map(t => Number(t.value || 0)).filter(v => !isNaN(v) && v !== 0);
+                const tradeVals = _individualTradeValuesForDay(e, iso).map(t => Number(t.value || 0)).filter(v => !isNaN(v) && v !== 0);
                 const blocks = _strategyBlocksForDay(e, iso);
                 const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false });
                 const dayTotal = dayEntries.reduce((s,b)=> s + (Number(b.legs.subtotal) || 0), 0);
@@ -5775,6 +5769,7 @@ Resumo por Estratégia,,,,,
                     chartStrategyDefs.forEach(cfg => {
                         const key = cfg.legacyKey;
                         const block = blocks[key] || blocks[cfg.slot];
+                        if (_individualTradeValuesForDay(e, iso).some(item => item.strategy === cfg.slot)) cfg.hasTrades = true;
                         strategyCum[key] += Number(block?.legs?.subtotal || 0);
                         cfg.data.push(strategyCum[key]);
                     });
@@ -5787,7 +5782,7 @@ Resumo por Estratégia,,,,,
                     borderColor: cfg.color || (strategyMetaBySlot(cfg.slot)?.color) || '#4f46e5',
                     backgroundColor: 'rgba(79,70,229,0.10)'
                 }))
-                .filter(ds => ds.data.some(v => Number(v || 0) !== 0));
+                .filter((ds, idx) => chartStrategyDefs[idx]?.hasTrades || ds.data.some(v => Number(v || 0) !== 0));
 
             els.customResult.textContent = formatCurrency(sum); 
             els.customResult.className = sum >= 0 ? "font-bold text-green-600" : "font-bold text-red-600";
@@ -5832,8 +5827,8 @@ Resumo por Estratégia,,,,,
             const fillStrategy = (prefix, obj) => {
                 const totalEl = document.getElementById(`strategy-${prefix}-total`);
                 const tradesEl = document.getElementById(`strategy-${prefix}-trades`);
-                if(totalEl) totalEl.textContent = formatCurrency(obj.total);
-                if(tradesEl) tradesEl.textContent = `${obj.trades} (${obj.wins}/${obj.losses})`;
+                if(totalEl) totalEl.textContent = obj ? formatCurrency(obj.total) : '--';
+                if(tradesEl) tradesEl.textContent = obj ? `${obj.trades} (${obj.wins}/${obj.losses})` : '--';
             };
             fillStrategy('2550', strat.t2550);
             fillStrategy('4040', strat.t4040);
@@ -5881,15 +5876,21 @@ Resumo por Estratégia,,,,,
                 });
             }
 
-            const bestStrategy = Object.values(strat).slice().sort((a,b)=> b.total - a.total)[0];
-            const worstStrategy = Object.values(strat).slice().sort((a,b)=> a.total - b.total)[0];
+            const strategyCards = document.getElementById('period-strategy-cards');
+            if(strategyCards){
+                strategyCards.innerHTML = dfPeriodStrategyRows.map(s => `<div class="period-strategy-card"><div class="period-strategy-head"><span class="period-strategy-name" title="${escapeHtml(s.label)}">${escapeHtml(s.label)}</span><span class="period-strategy-result ${s.total>=0?'text-emerald-600':'text-red-600'}">${formatCurrency(s.total)}</span></div><div class="period-mini-grid"><div class="period-mini-stat"><span class="period-mini-label">Trades</span><span class="period-mini-value">${s.trades} (${s.wins}/${s.losses})</span></div><div class="period-mini-stat"><span class="period-mini-label">Win%</span><span class="period-mini-value">${Math.round((s.winRate||0)*100)}%</span></div><div class="period-mini-stat"><span class="period-mini-label">Max DD</span><span class="period-mini-value text-red-600">${formatCurrency(-(s.maxDD||0))}</span></div></div><div class="period-mini-grid mt-1"><div class="period-mini-stat"><span class="period-mini-label">Payoff</span><span class="period-mini-value">${s.payoff===null?'--':(s.payoff===Infinity?'∞':s.payoff.toFixed(2))}</span></div><div class="period-mini-stat"><span class="period-mini-label">Expect.</span><span class="period-mini-value ${s.expectancy>=0?'text-emerald-600':'text-red-600'}">${formatCurrency(s.expectancy||0)}</span></div><div class="period-mini-stat"><span class="period-mini-label">Dias</span><span class="period-mini-value">${s.greenDays||0}/${s.redDays||0}</span></div></div></div>`).join('') || `<div class="col-span-full text-xs text-slate-500">Sem operações no período selecionado.</div>`;
+            }
+
+            const rankedStrategies = dfPeriodStrategyRows.filter(row=>Number(row.trades||0)>0||Number(row.total||0)!==0);
+            const bestStrategy = rankedStrategies.slice().sort((a,b)=>b.total-a.total)[0] || null;
+            const worstStrategy = rankedStrategies.slice().sort((a,b)=>a.total-b.total)[0] || null;
             const overallExpectancy = totalTrades > 0 ? (sum / totalTrades) : 0;
             const overallTradeSequence = [];
             Object.keys(acc.data || {}).sort().forEach(iso => {
                 if(iso < start || iso > end) return;
                 const e = acc.data[iso] || {};
                 if(e.holiday) return;
-                overallTradeSequence.push(..._individualTradeValuesForDay(e).map(t => t.value).filter(v => Number(v) !== 0));
+                overallTradeSequence.push(..._individualTradeValuesForDay(e, iso).map(t => t.value).filter(v => Number(v) !== 0));
             });
             let curLose = 0, maxLose = 0, curWin = 0, maxWin = 0;
             overallTradeSequence.forEach(v => {
@@ -5918,12 +5919,12 @@ Resumo por Estratégia,,,,,
                 else el.classList.add('text-slate-500');
             };
             if(riskBestStrategy) {
-                riskBestStrategy.textContent = `${bestStrategy.label} — ${formatCurrency(bestStrategy.total)}`;
-                applyStrategyTone(riskBestStrategy, bestStrategy.total);
+                riskBestStrategy.textContent = bestStrategy ? `${bestStrategy.label} — ${formatCurrency(bestStrategy.total)}` : '--';
+                applyStrategyTone(riskBestStrategy, bestStrategy?.total || 0);
             }
             if(riskWorstStrategy) {
-                riskWorstStrategy.textContent = `${worstStrategy.label} — ${formatCurrency(worstStrategy.total)}`;
-                applyStrategyTone(riskWorstStrategy, worstStrategy.total);
+                riskWorstStrategy.textContent = worstStrategy ? `${worstStrategy.label} — ${formatCurrency(worstStrategy.total)}` : '--';
+                applyStrategyTone(riskWorstStrategy, worstStrategy?.total || 0);
             }
             if(riskDaysBalance) riskDaysBalance.textContent = `${greenDays} / ${redDays}`;
 
@@ -5934,7 +5935,9 @@ Resumo por Estratégia,,,,,
         }
 
         function updateChart(labels, datasets) {
-            const ctx = document.getElementById('equityChart').getContext('2d');
+            const canvas = document.getElementById('equityChart');
+            if(!canvas || typeof Chart === 'undefined') return;
+            const ctx = canvas.getContext('2d');
             if(chartInstance) chartInstance.destroy();
             const isDark = document.body.classList.contains('dark');
             const gridColor = isDark ? '#334155' : '#f3f4f6';
@@ -6844,9 +6847,11 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
 
                 function shareReportInternal() {
             const acc = getActive();
+            if(!acc || !acc.data) return;
             const hasRange = !!(els.filterStart?.value && els.filterEnd?.value);
-            const start = els.filterStart?.value || '';
-            const end = els.filterEnd?.value || '';
+            const dataDates=Object.keys(acc.data||{}).filter(iso=>/^\d{4}-\d{2}-\d{2}$/.test(iso)).sort();
+            const start=els.filterStart?.value||dataDates[0]||getTodayISO();
+            const end=els.filterEnd?.value||dataDates[dataDates.length-1]||getTodayISO();
             const period = hasRange
                 ? `(${formatDateShort(parseISODateLocal(start))} - ${formatDateShort(parseISODateLocal(end))})`
                 : "(Geral)";
@@ -6860,9 +6865,10 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             const riskExpectancyOverall = (document.getElementById('risk-expectancy-overall')?.textContent || '--').trim();
 
             const strat = _computeStrategyAnalytics(acc, start, end);
-            const strategies = [strat.t3570, strat.t4080, strat.t2550, strat.t4040, strat.ct];
-            const bestStrategy = strategies.slice().sort((a,b)=> b.total - a.total)[0];
-            const worstStrategy = strategies.slice().sort((a,b)=> a.total - b.total)[0];
+            const strategies=(Array.isArray(strat.__rows)?strat.__rows:[]).filter(Boolean);
+            const rankedStrategies=strategies.filter(r=>Number(r.trades||0)>0||Number(r.total||0)!==0);
+            const bestStrategy=rankedStrategies.slice().sort((a,b)=>b.total-a.total)[0]||null;
+            const worstStrategy=rankedStrategies.slice().sort((a,b)=>a.total-b.total)[0]||null;
             const periodSummary = _periodTradeSummary(acc, start, end);
             const singleDayMode = periodSummary.tradedDays <= 1;
 
@@ -6870,23 +6876,15 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             if(singleDayMode && periodSummary.byDay.length === 1){
                 const day = periodSummary.byDay[0];
                 const fmtLeg = (legs, idx) => formatTradeLegDisplay(legs, idx);
+                const operationLines=(day.blocks||[]).map(block=>{const indexes=window.dfTradeIndexesForBlock?window.dfTradeIndexesForBlock(block):dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY);return `• ${block.label} → ${indexes.map(idx=>`T${idx} ${fmtLeg(block.legs,idx)}`).join(' | ')} | Total ${formatCurrency(block.legs?.subtotal||0)}`;}).join('\n');
                 detailsText =
 `
 *Operações do Dia* (${formatDateShort(parseISODateLocal(day.iso))})
-• 25/50 → T1 ${fmtLeg(day.blocks.t2550.legs, 1)} | T2 ${fmtLeg(day.blocks.t2550.legs, 2)} | T3 ${fmtLeg(day.blocks.t2550.legs, 3)} | T4 ${fmtLeg(day.blocks.t2550.legs, 4)} | Total ${formatCurrency(day.blocks.t2550.legs.subtotal)}
-• 30/60 → T1 ${fmtLeg(day.blocks.t4040.legs, 1)} | T2 ${fmtLeg(day.blocks.t4040.legs, 2)} | T3 ${fmtLeg(day.blocks.t4040.legs, 3)} | T4 ${fmtLeg(day.blocks.t4040.legs, 4)} | Total ${formatCurrency(day.blocks.t4040.legs.subtotal)}
-• 35/70 → T1 ${fmtLeg(day.blocks.t3570.legs, 1)} | T2 ${fmtLeg(day.blocks.t3570.legs, 2)} | T3 ${fmtLeg(day.blocks.t3570.legs, 3)} | T4 ${fmtLeg(day.blocks.t3570.legs, 4)} | Total ${formatCurrency(day.blocks.t3570.legs.subtotal)}
-• 40/80 → T1 ${fmtLeg(day.blocks.t4080.legs, 1)} | T2 ${fmtLeg(day.blocks.t4080.legs, 2)} | T3 ${fmtLeg(day.blocks.t4080.legs, 3)} | T4 ${fmtLeg(day.blocks.t4080.legs, 4)} | Total ${formatCurrency(day.blocks.t4080.legs.subtotal)}
-• Condução Técnica → T1 ${fmtLeg(day.blocks.ct.legs, 1)} | T2 ${fmtLeg(day.blocks.ct.legs, 2)} | T3 ${fmtLeg(day.blocks.ct.legs, 3)} | T4 ${fmtLeg(day.blocks.ct.legs, 4)} | Total ${formatCurrency(day.blocks.ct.legs.subtotal)}`;
+${operationLines}`;
             }
 
-            const strategyText =
-`\n*Breakdown por Estratégia*
-• 25/50: ${formatCurrency(strat.t2550.total)} | Trades ${strat.t2550.trades} (${strat.t2550.wins}/${strat.t2550.losses}) | WR ${Math.round((strat.t2550.winRate||0)*100)}% | Exp ${formatCurrency(strat.t2550.expectancy||0)}
-• 30/60: ${formatCurrency(strat.t4040.total)} | Trades ${strat.t4040.trades} (${strat.t4040.wins}/${strat.t4040.losses}) | WR ${Math.round((strat.t4040.winRate||0)*100)}% | Exp ${formatCurrency(strat.t4040.expectancy||0)}
-• 35/70: ${formatCurrency(strat.t3570.total)} | Trades ${strat.t3570.trades} (${strat.t3570.wins}/${strat.t3570.losses}) | WR ${Math.round((strat.t3570.winRate||0)*100)}% | Exp ${formatCurrency(strat.t3570.expectancy||0)}
-• 40/80: ${formatCurrency(strat.t4080.total)} | Trades ${strat.t4080.trades} (${strat.t4080.wins}/${strat.t4080.losses}) | WR ${Math.round((strat.t4080.winRate||0)*100)}% | Exp ${formatCurrency(strat.t4080.expectancy||0)}
-• Condução Técnica: ${formatCurrency(strat.ct.total)} | Trades ${strat.ct.trades} (${strat.ct.wins}/${strat.ct.losses}) | WR ${Math.round((strat.ct.winRate||0)*100)}% | Exp ${formatCurrency(strat.ct.expectancy||0)}`;
+            const strategyLines=strategies.length?strategies.map(s=>`• ${s.label}: ${formatCurrency(s.total)} | Trades ${s.trades} (${s.wins}/${s.losses}) | WR ${Math.round((s.winRate||0)*100)}% | Exp ${formatCurrency(s.expectancy||0)} | Max DD ${formatCurrency(-(s.maxDD||0))}`).join('\n'):'• Sem operações no período.';
+            const strategyText=`\n*Breakdown por Estratégia*\n${strategyLines}`;
 
             const riskText =
 `\n*Risco & Consistência*
@@ -6960,9 +6958,10 @@ ${period} • ${(acc?.name || 'Conta')}
             const kpiMaxDD = (els.kpiMaxDD?.textContent || '--').trim();
 
             const strat = _computeStrategyAnalytics(acc, start, end);
-            const strategies = [strat.t3570, strat.t4080, strat.t2550, strat.t4040, strat.ct];
-            const bestStrategy = strategies.slice().sort((a,b)=> b.total - a.total)[0];
-            const worstStrategy = strategies.slice().sort((a,b)=> a.total - b.total)[0];
+            const strategies=(Array.isArray(strat.__rows)?strat.__rows:[]).filter(Boolean);
+            const rankedStrategies=strategies.filter(r=>Number(r.trades||0)>0||Number(r.total||0)!==0);
+            const bestStrategy=rankedStrategies.slice().sort((a,b)=>b.total-a.total)[0]||null;
+            const worstStrategy=rankedStrategies.slice().sort((a,b)=>a.total-b.total)[0]||null;
             const riskMaxLosing = (document.getElementById('risk-max-losing')?.textContent || '--').trim();
             const riskMaxWinning = (document.getElementById('risk-max-winning')?.textContent || '--').trim();
             const riskExpectancyOverall = (document.getElementById('risk-expectancy-overall')?.textContent || '--').trim();
@@ -7005,7 +7004,7 @@ ${period} • ${(acc?.name || 'Conta')}
                 try {
                     if (!window.Chart) return null;
                     let chartLabels = [];
-                    const pdfChartStrategyDefs = getStrategiesForDate(endISO, { includeInactive:false, includeHidden:false })
+                    const pdfChartStrategyDefs = getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
                         .map(cfg => ({
                             ...cfg,
                             key: cfg.legacyKey || cfg.slot,
@@ -7023,7 +7022,7 @@ ${period} • ${(acc?.name || 'Conta')}
                         const blocks = _strategyBlocksForDay(e, iso);
                         const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false });
                         const dayTotal = dayEntries.reduce((sum,b)=> sum + (Number(b.legs.subtotal) || 0), 0);
-                        if (dayTotal === 0) return;
+                        if (dayTotal === 0 && !_individualTradeValuesForDay(e, iso).length) return;
                         chartLabels.push(formatDateShort(parseISODateLocal(iso)));
                         datasets.forEach(ds => {
                             const block = blocks[ds.key] || blocks[ds.slot];
@@ -7058,6 +7057,8 @@ ${period} • ${(acc?.name || 'Conta')}
                 const doc = new JsPDF({ unit:'pt', format:'letter' });
                 const pageW = 612, pageH = 792, margin = 34, contentW = pageW - margin*2;
                 let y = 42;
+                const addReportPage=()=>{doc.addPage();y=42;doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(15,23,42);doc.text(title,margin,y);y+=16;doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(100,116,139);doc.text(rangeText,margin,y);y+=18;};
+                const ensureReportSpace=needed=>{if(y+needed>pageH-38)addReportPage();};
 
                 const drawCard = (x, y0, w, h, titleTxt, valueTxt, color=[17,24,39]) => {
                     doc.setDrawColor(226,232,240);
@@ -7154,10 +7155,12 @@ ${period} • ${(acc?.name || 'Conta')}
                 drawMetric(col2, y+78, 'Max DD por grupo', kpiMaxDD, [220,38,38]);
                 y += 116;
 
+                ensureReportSpace(40+(strategies.length+1)*20);
                 doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(15,23,42);
                 doc.text('Breakdown por Estratégia', margin, y); y += 10;
                 drawStrategyTable(strategies);
 
+                ensureReportSpace(150);
                 doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(15,23,42);
                 doc.text('Risco & Consistência', margin, y); y += 12;
                 drawCard(margin, y, cardW, 54, 'Max Losing Streak', riskMaxLosing, [220,38,38]);
@@ -7167,6 +7170,7 @@ ${period} • ${(acc?.name || 'Conta')}
                 drawCard(margin + cardW + gap, y, cardW, 54, 'Dias Verdes/Vermelhos', riskDaysBalance, [15,23,42]);
                 y += 70;
 
+                ensureReportSpace(singleDayMode?90:105);
                 doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(15,23,42);
                 doc.text('Leitura Executiva', margin, y); y += 10;
                 doc.setDrawColor(226,232,240);
@@ -7189,8 +7193,8 @@ ${period} • ${(acc?.name || 'Conta')}
                     split.forEach(part => { doc.text(part, margin + 10, ly); ly += 11; });
                 });
 
-                doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(148,163,184);
-                doc.text('Relatório analítico DF Strategic • métricas do período filtrado • versão compacta profissional', margin, pageH - 20);
+                const pageCount=doc.getNumberOfPages();
+                for(let pageNumber=1;pageNumber<=pageCount;pageNumber++){doc.setPage(pageNumber);doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(148,163,184);doc.text(`Relatório analítico DF Strategic • página ${pageNumber}/${pageCount}`,margin,pageH-20);}
                 doc.save(buildFileName());
             }).catch((err)=>{
                 console.warn('Falha ao gerar PDF analítico:', err);
@@ -9147,6 +9151,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
         function _buildPeriodRows(acc, startISO, endISO){
             const start = parseISODateLocal(startISO);
             const end = parseISODateLocal(endISO);
+            const strategies=getStrategiesForDate(endISO||startISO||getTodayISO(),{includeInactive:false,includeHidden:false});
 
             let total = 0;
             let tradedDays = 0;
@@ -9159,6 +9164,9 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
                 const iso = toISODateLocal(d);
                 const e = (acc.data && acc.data[iso]) ? acc.data[iso] : {};
+                const dayEntries=getStrategyEntriesForDay(e,iso,{includeInactive:false,includeHidden:false});
+                const valuesBySlot={}; let hasTrades=false;
+                dayEntries.forEach(entry=>{valuesBySlot[entry.slot]=Number(entry.legs?.subtotal||entry.subtotal||0);const indexes=window.dfTradeIndexesForBlock?window.dfTradeIndexesForBlock(entry):dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY);if(indexes.some(idx=>Number(entry.legs?.[`leg${idx}`]||0)!==0))hasTrades=true;});
 
                 // Compat: versões antigas tinham apenas t1/t2 (sem t0).
                 let t0 = Number(e.t0 || 0);
@@ -9174,7 +9182,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                     t2 = Number(e.t2 || 0);
                 }
 
-                const val = (e.val !== undefined && e.val !== null) ? Number(e.val || 0) : (t4 + t1 + t0 + t3 + t2);
+                const val = strategies.reduce((sum,strategy)=>sum+Number(valuesBySlot[strategy.slot]||0),0);
                 const noteA = dfNoteA(e);
                 const noteB = dfNoteB(e);
                 const note = dfNotesCombined(e);
@@ -9183,18 +9191,18 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
                 if(isHoliday) holidayDays += 1;
 
                 if(!isHoliday) total += val;
-                if((t0 !== 0) || (t3 !== 0) || (t4 !== 0) || (t1 !== 0) || (t2 !== 0) || (val !== 0)) tradedDays += 1;
+                if(!isHoliday && (val !== 0 || hasTrades)) tradedDays += 1;
 
                 rows.push({
                     iso,
-                    t0, t3, t4, t1, t2, val,
+                    t0, t3, t4, t1, t2, valuesBySlot, val,
                     note,
                     noteA: isHoliday ? (noteA ? `Feriado • ${noteA}` : "Feriado") : noteA,
                     noteB
                 });
             }
 
-            return { rows, total, tradedDays, holidayDays };
+            return { rows, total, tradedDays, holidayDays, strategies };
         }
 
         function openPeriodModal(opts){
@@ -9215,23 +9223,23 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             if(noteBHead){ noteBHead.textContent = dfNoteLabel('b'); noteBHead.style.display = dfNoteBEnabled() ? '' : 'none'; }
 
             const res = _buildPeriodRows(acc, startISO, endISO);
+            const headRow=tbody.closest('table')?.querySelector('thead tr');
+            if(headRow)headRow.innerHTML=`<th>Data</th>${res.strategies.map(s=>`<th>${escapeHtml(s.label)}</th>`).join('')}<th>Total</th><th>${escapeHtml(dfNoteLabel('a'))}</th>${dfNoteBEnabled()?`<th>${escapeHtml(dfNoteLabel('b'))}</th>`:''}`;
 
             ttl.textContent = title || "Detalhes do período";
             rng.textContent = `${_formatDM(startISO)} – ${_formatDM(endISO)} • ${acc.name || (CURRENT_LANG==='en'?'Account':'Conta')}`;
             const strat = _computeStrategyAnalytics(acc, startISO, endISO);
-            sum.textContent = `Dias com trade: ${res.tradedDays} • 25/50 ${formatCurrency(strat.t2550.total)} • 30/60 ${formatCurrency(strat.t4040.total)} • 35/70 ${formatCurrency(strat.t3570.total)} • 40/80 ${formatCurrency(strat.t4080.total)} • CT ${formatCurrency(strat.ct.total)}`;
-            tot.textContent = CURRENT_LANG==='en' ? "Independent strategy view" : "Estratégias independentes";
+            const summaryRows=Array.isArray(strat.__rows)?strat.__rows:[];
+            sum.textContent=`Dias com trade: ${res.tradedDays}${summaryRows.length?' • '+summaryRows.map(r=>`${r.label} ${formatCurrency(r.total)}`).join(' • '):''}`;
+            tot.textContent=`${CURRENT_LANG==='en'?'Period total':'Total do período'}: ${formatCurrency(res.total)}`;
 
             tbody.innerHTML = '';
             res.rows.forEach(r=>{
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${_formatDM(r.iso)} (${r.iso})</td>
-                    <td>${formatCurrency(r.t4)}</td>
-                    <td>${formatCurrency(r.t1)}</td>
-                    <td>${formatCurrency(r.t0)}</td>
-                    <td>${formatCurrency(r.t3)}</td>
-                    <td>${formatCurrency(r.t2)}</td>
+                    ${res.strategies.map(s=>`<td>${formatCurrency(r.valuesBySlot[s.slot]||0)}</td>`).join('')}
+                    <td class="font-bold">${formatCurrency(r.val||0)}</td>
                     <td>${(r.noteA || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
                     ${dfNoteBEnabled() ? `<td>${(r.noteB || '').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>` : ''}
                 `;
@@ -9253,6 +9261,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
         }
 
         function printPeriodModal(){
+            return printPeriodModalV2();
             const modal = document.getElementById('period-modal');
             const printArea = document.getElementById('print-area');
             if(!modal) return;
@@ -9520,6 +9529,20 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             }
         }
 
+        async function printPeriodModalV2(){
+            const modal=document.getElementById('period-modal'), acc=getActive();
+            if(!modal||!acc)return;
+            const startISO=modal.dataset.printStart,endISO=modal.dataset.printEnd,title=modal.dataset.printTitle||'Detalhes do período',range=modal.dataset.printRange||'';
+            const res=_buildPeriodRows(acc,startISO,endISO), analytics=getStrategyRowsForPeriod(acc,startISO,endISO,{includeInactive:false,includeHidden:false});
+            let chartSrc='';
+            try{if(typeof Chart!=='undefined'){const active=res.rows.filter(row=>!String(row.noteA||'').startsWith('Feriado')&&res.strategies.some(s=>Number(row.valuesBySlot[s.slot]||0)!==0));if(active.length){const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=380;const cum=Object.fromEntries(res.strategies.map(s=>[s.slot,0]));const chart=new Chart(canvas.getContext('2d'),{type:'line',data:{labels:active.map(r=>_formatDM(r.iso)),datasets:res.strategies.map(s=>({label:s.label,borderColor:s.color||'#4f46e5',backgroundColor:'transparent',data:active.map(r=>cum[s.slot]+=Number(r.valuesBySlot[s.slot]||0))}))},options:{responsive:false,animation:false}});chart.update();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));chartSrc=canvas.toDataURL('image/png',1);chart.destroy();}}}catch(e){}
+            const detailRows=res.rows.map(r=>`<tr><td>${_formatDM(r.iso)}</td>${res.strategies.map(s=>`<td class="n">${formatCurrency(r.valuesBySlot[s.slot]||0)}</td>`).join('')}<td class="n"><b>${formatCurrency(r.val||0)}</b></td><td>${escapeHtml(r.noteA||'')}</td>${dfNoteBEnabled()?`<td>${escapeHtml(r.noteB||'')}</td>`:''}</tr>`).join('');
+            const analyticsRows=analytics.map(r=>`<tr><td>${escapeHtml(r.label)}</td><td class="n">${formatCurrency(r.total)}</td><td class="n">${r.trades}</td><td class="n">${r.wins}/${r.losses}</td><td class="n">${Math.round((r.winRate||0)*100)}%</td><td class="n">${r.payoff===null?'--':Number(r.payoff).toFixed(2)}</td><td class="n">${formatCurrency(r.expectancy||0)}</td><td class="n">${formatCurrency(-(r.maxDD||0))}</td></tr>`).join('')||'<tr><td colspan="8">Sem operações no período.</td></tr>';
+            const totalTrades=analytics.reduce((s,r)=>s+Number(r.trades||0),0),wins=analytics.reduce((s,r)=>s+Number(r.wins||0),0),gw=analytics.reduce((s,r)=>s+Number(r.grossWin||0),0),gl=analytics.reduce((s,r)=>s+Number(r.grossLoss||0),0),maxDD=analytics.reduce((m,r)=>Math.max(m,Number(r.maxDD||0)),0),pf=gl>0?(gw/gl).toFixed(2):(gw>0?'∞':'--');
+            const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>@page{size:landscape;margin:10mm}body{font:11px Arial;color:#0f172a}h1{font-size:20px;margin:0}h2{font-size:14px;margin:18px 0 7px}.muted{color:#64748b}.k{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:14px 0}.k div{border:1px solid #cbd5e1;border-radius:8px;padding:9px}.k b{display:block;font-size:14px;margin-top:4px}img{width:100%;height:220px;object-fit:contain}table{width:100%;border-collapse:collapse}thead{display:table-header-group}tr{break-inside:avoid}th,td{border-bottom:1px solid #e2e8f0;padding:6px;vertical-align:top}.n{text-align:right;white-space:nowrap}</style></head><body><h1>${escapeHtml(title)}</h1><div class="muted">${escapeHtml(range)} • ${escapeHtml(new Date().toLocaleString())}</div><div class="k"><div>Resultado<b>${formatCurrency(res.total)}</b></div><div>Dias operados<b>${res.tradedDays}</b></div><div>Trades<b>${totalTrades}</b></div><div>Win Rate<b>${totalTrades?Math.round(wins/totalTrades*100):0}%</b></div><div>PF / Max DD<b>${pf} / ${formatCurrency(-maxDD)}</b></div></div>${chartSrc?`<h2>Evolução por Estratégia</h2><img src="${chartSrc}">`:''}<h2>Resumo Analítico</h2><table><thead><tr><th>Estratégia</th><th>Resultado</th><th>Trades</th><th>W/L</th><th>Win%</th><th>Payoff</th><th>Expect.</th><th>Max DD</th></tr></thead><tbody>${analyticsRows}</tbody></table><h2>Dados Diários</h2><table><thead><tr><th>Data</th>${res.strategies.map(s=>`<th>${escapeHtml(s.label)}</th>`).join('')}<th>Total</th><th>${escapeHtml(dfNoteLabel('a'))}</th>${dfNoteBEnabled()?`<th>${escapeHtml(dfNoteLabel('b'))}</th>`:''}</tr></thead><tbody>${detailRows}</tbody></table></body></html>`;
+            if(!_openPrintWindow(html))alert('Não foi possível abrir a impressão do relatório. Verifique o bloqueio de pop-ups.');
+        }
+
         let _periodBound = false;
         function bindPeriodInteractions(){
             if(_periodBound) return;
@@ -9575,7 +9598,7 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
 
             if(close1) close1.addEventListener('click', closePeriodModal);
             if(close2) close2.addEventListener('click', closePeriodModal);
-            if(pdfBtn) pdfBtn.addEventListener('click', printPeriodModal);
+            if(pdfBtn) pdfBtn.addEventListener('click', printPeriodModalV2);
 
             if(modal){
                 modal.addEventListener('click', (e)=>{
