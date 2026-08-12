@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: DF-GROUP-CARDS-SIDE-BY-SIDE-2026-08-12 -->
+<!-- BUILD_ID: DF-SAFE-STRATEGY-REORDER-2026-08-12 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -1018,6 +1018,65 @@ body.dark .df-empty-group-mark{
   background:rgba(15,23,42,.45);
   color:#94a3b8;
 }
+.df-order-controls{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:.35rem;
+  white-space:nowrap;
+}
+.df-order-btn{
+  width:30px;
+  height:30px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid #cbd5e1;
+  border-radius:.55rem;
+  background:#fff;
+  color:#475569;
+  font-size:15px;
+  font-weight:900;
+  line-height:1;
+  cursor:pointer;
+  transition:background-color .15s,border-color .15s,color .15s,transform .15s;
+}
+.df-order-btn:hover:not(:disabled){
+  background:#eef2ff;
+  border-color:#818cf8;
+  color:#4f46e5;
+  transform:translateY(-1px);
+}
+.df-order-btn:disabled{
+  opacity:.28;
+  cursor:not-allowed;
+}
+.df-order-position{
+  min-width:28px;
+  height:30px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:.55rem;
+  background:#f1f5f9;
+  color:#334155;
+  font-size:.75rem;
+  font-weight:900;
+}
+body.dark .df-order-btn{
+  background:#0f172a;
+  border-color:#475569;
+  color:#cbd5e1;
+}
+body.dark .df-order-btn:hover:not(:disabled){
+  background:rgba(79,70,229,.22);
+  border-color:#818cf8;
+  color:#c7d2fe;
+}
+body.dark .df-order-position{
+  background:#1e293b;
+  color:#e2e8f0;
+}
 @media (max-width: 520px){
   .day-details-row .df-trade-editor-input{
     width:6.75rem;
@@ -1264,7 +1323,7 @@ tr.bg-green-50 td {
                             <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
                                 <i data-lucide="sliders-horizontal" class="w-4 h-4 text-indigo-500"></i> Gerenciador de Estratégias
                             </h4>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">Edite nomes, ordem, quantidade de trades, ativação e visibilidade da estrutura atual. Use Reset completo para limpar tudo mantendo as contas.</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Use as setas para mudar a posição sem trocar nomes nem alterar o histórico. Edite também quantidade de trades, ativação e visibilidade da estrutura atual.</p>
                         </div>
                         <div class="text-[11px] text-slate-400">Slots internos preservados: t0, t3, t4, t1, t2</div>
                     </div>
@@ -1294,7 +1353,7 @@ tr.bg-green-50 td {
                                         <tr class="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                                             <th class="py-2">Slot</th>
                                             <th class="py-2">Nome exibido</th>
-                                            <th class="py-2 text-center">Ordem</th>
+                                            <th class="py-2 text-center">Posição</th>
                                             <th class="py-2 text-center">Trades</th>
                                             <th class="py-2">Check 1</th>
                                             <th class="py-2">Check 2</th>
@@ -11555,7 +11614,12 @@ renderStrategyManager = function(){
                 <input type="text" value="${escapeHtml(s.label || '')}" data-field="label" placeholder="Nome da estratégia" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
             </td>
             <td class="py-2 pr-3 text-center">
-                <input type="number" min="1" max="5" value="${Number(s.order) || meta.defaultOrder}" data-field="order" class="w-20 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-center">
+                <div class="df-order-controls" role="group" aria-label="Alterar posição de ${escapeHtml(s.label || 'estratégia')}">
+                    <button type="button" class="df-order-btn" data-order-action="up" onclick="window.strategyManagerMoveSlot('${s.slot}',-1)" title="Subir uma posição" aria-label="Subir ${escapeHtml(s.label || 'estratégia')} uma posição">↑</button>
+                    <span class="df-order-position" data-order-position>${Number(s.order) || meta.defaultOrder}</span>
+                    <input type="hidden" value="${Number(s.order) || meta.defaultOrder}" data-field="order">
+                    <button type="button" class="df-order-btn" data-order-action="down" onclick="window.strategyManagerMoveSlot('${s.slot}',1)" title="Descer uma posição" aria-label="Descer ${escapeHtml(s.label || 'estratégia')} uma posição">↓</button>
+                </div>
             </td>
             <td class="py-2 pr-3 text-center">
                 <select data-field="tradeCount" class="w-24 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-center">
@@ -11580,10 +11644,51 @@ renderStrategyManager = function(){
     dfRenderNoteSettingsEditor();
 
     if(els.strategyManagerStatus){
-        els.strategyManagerStatus.textContent = 'Estrutura atual única. Trades controla quantas linhas aparecem; Check 1, 2 e 3 controlam os checkboxes exibidos em cada trade. As notas por grupo controlam o modal e os relatórios.';
+        els.strategyManagerStatus.textContent = 'Use ↑ e ↓ para mudar apenas a posição. O slot fixo preserva todos os resultados históricos da estratégia.';
+        els.strategyManagerStatus.className = 'text-xs text-slate-500 dark:text-slate-400';
     }
 
+    dfRefreshStrategyOrderControls();
     try{ lucide.createIcons(); }catch(e){}
+};
+
+function dfRefreshStrategyOrderControls(){
+    const body = els.strategyEditorBody;
+    if(!body) return;
+    const rows = Array.from(body.querySelectorAll('tr[data-slot]'));
+    rows.forEach((row, index) => {
+        const position = index + 1;
+        const orderInput = row.querySelector('[data-field="order"]');
+        const orderLabel = row.querySelector('[data-order-position]');
+        const upButton = row.querySelector('[data-order-action="up"]');
+        const downButton = row.querySelector('[data-order-action="down"]');
+        if(orderInput) orderInput.value = String(position);
+        if(orderLabel) orderLabel.textContent = String(position);
+        if(upButton) upButton.disabled = index === 0;
+        if(downButton) downButton.disabled = index === rows.length - 1;
+    });
+}
+
+window.strategyManagerMoveSlot = function(slot, direction){
+    const body = els.strategyEditorBody;
+    if(!body) return;
+
+    const rows = Array.from(body.querySelectorAll('tr[data-slot]'));
+    const row = rows.find(item => item.getAttribute('data-slot') === String(slot));
+    const currentIndex = rows.indexOf(row);
+    const step = Number(direction) < 0 ? -1 : 1;
+    const targetIndex = currentIndex + step;
+    if(!row || currentIndex < 0 || targetIndex < 0 || targetIndex >= rows.length) return;
+
+    const targetRow = rows[targetIndex];
+    if(step < 0) body.insertBefore(row, targetRow);
+    else body.insertBefore(targetRow, row);
+
+    dfRefreshStrategyOrderControls();
+    if(els.strategyManagerStatus){
+        els.strategyManagerStatus.textContent = 'Ordem alterada. Clique em “Salvar estrutura” para aplicar ao calendário, gráficos e relatórios. Nenhum resultado histórico será movido.';
+        els.strategyManagerStatus.className = 'text-xs font-semibold text-amber-600 dark:text-amber-400';
+    }
 };
 
 readStrategyEditorVersion = function(){
@@ -11888,26 +11993,39 @@ async function dfDeleteAllOperationalPeriodDocs(){
 
 async function dfSaveStructureNow(showAlert = true){
     try{
+        const previousStructure = dfEnsureStrategyStructure();
         const version = readStrategyEditorVersion();
         const structure = dfStructureFromVersion(version, { allowDefaults:false });
+        const tradeCountChanged = STRATEGY_SLOT_META.some(meta => {
+            const previous = (previousStructure.slots || []).find(item => item && item.slot === meta.slot);
+            const next = (structure.slots || []).find(item => item && item.slot === meta.slot);
+            return dfNormalizeTradeCount(previous && previous.tradeCount) !== dfNormalizeTradeCount(next && next.tradeCount);
+        });
 
         store.strategyStructure = structure;
         store.strategyConfigs = [dfStrategyVersionFromStructure(structure)];
         store.noteSettings = dfReadNoteSettingsEditor();
         __strategyManagerSelectedVersionId = 'current-structure';
 
-        dfRecalculateAllAccountEntriesForTradeCounts();
+        // Reordenar, renomear ou editar checks nunca toca nos registros operacionais.
+        // O recálculo só é necessário quando a quantidade de trades realmente muda.
+        if(tradeCountChanged) dfRecalculateAllAccountEntriesForTradeCounts();
         dfTouchStoreSafely();
         dfSaveLocalImmediate();
-        try{
-            if(typeof saveCloudOperationalPeriodsNow === 'function') await saveCloudOperationalPeriodsNow();
-        }catch(e){
-            console.warn('saveCloudOperationalPeriodsNow after trade-count change failed:', e);
+        if(tradeCountChanged){
+            try{
+                if(typeof saveCloudOperationalPeriodsNow === 'function') await saveCloudOperationalPeriodsNow();
+            }catch(e){
+                console.warn('saveCloudOperationalPeriodsNow after trade-count change failed:', e);
+            }
         }
 
         await dfSaveCloudImmediate();
 
-        if(els.strategyManagerStatus) els.strategyManagerStatus.textContent = 'Estrutura salva.';
+        if(els.strategyManagerStatus){
+            els.strategyManagerStatus.textContent = 'Estrutura salva. A nova ordem foi aplicada sem alterar o histórico.';
+            els.strategyManagerStatus.className = 'text-xs font-semibold text-emerald-600 dark:text-emerald-400';
+        }
         dfRenderEverythingSafely();
 
         if(showAlert){
