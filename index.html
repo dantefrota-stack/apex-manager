@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: DF-STRATEGY-SAVE-RESET-V14-TRADE-COUNT-UI-STABLE-2026-07-06 -->
+<!-- BUILD_ID: DF-GROUP-CARDS-SIDE-BY-SIDE-2026-08-12 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -16,6 +16,69 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" data-jspdf-preload defer></script>
+
+    <script>
+        // PDF loader resiliente: usa a biblioteca pré-carregada e tenta um CDN alternativo.
+        window.dfEnsureJsPDF = function(){
+            if(window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
+            if(window.__dfJsPDFPromise) return window.__dfJsPDFPromise;
+            const sources = [
+                'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+                'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+            ];
+            window.__dfJsPDFPromise = new Promise((resolve, reject) => {
+                const trySource = (index) => {
+                    if(window.jspdf && window.jspdf.jsPDF) return resolve(window.jspdf.jsPDF);
+                    if(index >= sources.length) return reject(new Error('Biblioteca PDF indisponível'));
+                    const script = document.createElement('script');
+                    let settled = false;
+                    const timer = setTimeout(() => {
+                        if(settled) return;
+                        settled = true;
+                        try { script.remove(); } catch(e) {}
+                        trySource(index + 1);
+                    }, 8000);
+                    script.src = sources[index];
+                    script.async = true;
+                    script.dataset.jspdfRuntime = String(index + 1);
+                    script.onload = () => {
+                        if(settled) return;
+                        settled = true;
+                        clearTimeout(timer);
+                        if(window.jspdf && window.jspdf.jsPDF) resolve(window.jspdf.jsPDF);
+                        else trySource(index + 1);
+                    };
+                    script.onerror = () => {
+                        if(settled) return;
+                        settled = true;
+                        clearTimeout(timer);
+                        try { script.remove(); } catch(e) {}
+                        trySource(index + 1);
+                    };
+                    document.head.appendChild(script);
+                };
+                trySource(0);
+            }).catch(err => {
+                window.__dfJsPDFPromise = null;
+                throw err;
+            });
+            return window.__dfJsPDFPromise;
+        };
+
+        window.dfDownloadTextFile = function(filename, content, mime){
+            const blob = new Blob([content], { type: mime || 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 1500);
+        };
+    </script>
 
     <script>
         tailwind.config = {
@@ -456,9 +519,9 @@ body.dark tr.today-row + tr.day-details-row .rounded-xl {
 }
 
 
-/* Day details grid stays aligned after adding 35/70 */
+/* Detalhes do dia: grupos lado a lado em tablets e telas maiores. */
 .day-details-row .trade-strategy-grid{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:.85rem;align-items:start;}
-@media (min-width: 900px){.day-details-row .trade-strategy-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media (min-width: 640px){.day-details-row .trade-strategy-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
 @media (min-width: 1200px){.day-details-row .trade-strategy-grid{grid-template-columns:repeat(3,minmax(0,1fr));}}
 @media (min-width: 1536px){.day-details-row .trade-strategy-grid{grid-template-columns:repeat(5,minmax(0,1fr));}}
 .day-details-row .trade-strategy-grid > div{min-width:0;}
@@ -2246,6 +2309,7 @@ tr.bg-green-50 td {
                 try { store.date = (store && store.date instanceof Date) ? store.date : new Date(store?.date || Date.now()); } catch(_) {}
                 syncDatesToView();
                 setOnlineStatus();
+                try { if (typeof dfInitializeReportFeatures === 'function') dfInitializeReportFeatures(); } catch(e) { console.warn('Falha ao inicializar relatórios:', e); }
             } catch (e) {
                 console.warn("Falha no render inicial:", e);
             }
@@ -3873,9 +3937,121 @@ function _openPrintWindow(htmlStr){
             const htmlStr = await _accountsOverviewBuildPrintableHTML({ includeChart: include });
             _openPrintWindow(htmlStr);
         }
-        function accountsOverviewPDF(){
-            // Reliable: uses browser “Save as PDF” destination
-            accountsOverviewPrint();
+        async function accountsOverviewPDF(){
+            try { renderAccountsOverview(); } catch(e) {}
+
+            const list = (window._accountsOverviewComputedAll || window._accountsOverviewComputed || []).slice();
+            if(!list.length){
+                alert('Não há contas disponíveis para gerar o relatório.');
+                return false;
+            }
+
+            const includeChart = !!document.getElementById('accounts-overview-export-chart')?.checked;
+            const prefs = window.accountsOverviewPrefs || {};
+            const isEN = ((localStorage.getItem(LANG_STORAGE_KEY) || window.CURRENT_LANG || document.documentElement.lang || 'pt').toString().toLowerCase().startsWith('en'));
+            const safeDate = new Date().toISOString().slice(0,10);
+            const fileName = `${isEN ? 'Accounts_Overview' : 'Resumo_de_Contas'}_${safeDate}.pdf`;
+
+            try{
+                const JsPDF = await (window.dfEnsureJsPDF
+                    ? window.dfEnsureJsPDF()
+                    : Promise.reject(new Error('Gerador de PDF não inicializado')));
+                const doc = new JsPDF({ orientation:'landscape', unit:'pt', format:'letter' });
+                const pageW = 792, pageH = 612, margin = 30, contentW = pageW - margin * 2;
+                const pageSize = 10;
+                const metric = prefs.chartMetric || 'progress';
+                const totalEquity = list.reduce((s,r)=>s + Number(r.equity || 0), 0);
+                const totalAvailable = list.reduce((s,r)=>s + Number(r.available || 0), 0);
+                const eligible = list.filter(r=>Number(r.available || 0) >= 500).length;
+                const groups = [];
+                for(let i=0;i<list.length;i+=pageSize) groups.push(list.slice(i, i+pageSize));
+
+                const drawText = (value, x, y, options) => doc.text(String(value == null ? '' : value), x, y, options || {});
+                const money = (value) => formatCurrency(Number(value || 0));
+
+                for(let gi=0; gi<groups.length; gi++){
+                    if(gi > 0) doc.addPage();
+                    const chunk = groups[gi];
+                    let y = 34;
+
+                    doc.setFont('helvetica','bold'); doc.setFontSize(17); doc.setTextColor(15,23,42);
+                    drawText(isEN ? 'Accounts Overview' : 'Resumo de Contas', margin, y);
+                    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(100,116,139);
+                    drawText(`${new Date().toLocaleString()} • ${gi*pageSize+1}-${Math.min((gi+1)*pageSize,list.length)} / ${list.length}`, pageW-margin, y, {align:'right'});
+                    y += 20;
+
+                    if(gi === 0){
+                        const cards = [
+                            [isEN?'Accounts':'Contas', String(list.length)],
+                            [isEN?'Total Equity':'Equity Total', money(totalEquity)],
+                            [isEN?'Available':'Disponível', money(totalAvailable)],
+                            [isEN?'Eligible':'Elegíveis', String(eligible)]
+                        ];
+                        const gap=8, cw=(contentW-gap*3)/4;
+                        cards.forEach((c,i)=>{
+                            const x=margin+i*(cw+gap);
+                            doc.setDrawColor(226,232,240); doc.setFillColor(248,250,252); doc.roundedRect(x,y,cw,42,6,6,'FD');
+                            doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(100,116,139); drawText(c[0],x+9,y+14);
+                            doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(15,23,42); drawText(c[1],x+9,y+31);
+                        });
+                        y += 52;
+                    }
+
+                    if(includeChart){
+                        const chartUrl = await _accountsOverviewRenderChunkChartDataUrl({ metric, chunk, prefs, isEN });
+                        if(chartUrl){
+                            const chartH = gi === 0 ? 150 : 185;
+                            doc.addImage(chartUrl, 'PNG', margin, y, contentW, chartH);
+                            y += chartH + 10;
+                        }
+                    }
+
+                    const cols = [
+                        {label:isEN?'Account':'Conta', x:margin+8, align:'left'},
+                        {label:isEN?'Size':'Plano', x:margin+215, align:'right'},
+                        {label:'Equity', x:margin+315, align:'right'},
+                        {label:isEN?'Available':'Disponível', x:margin+420, align:'right'},
+                        {label:isEN?'Missing':'Falta', x:margin+515, align:'right'},
+                        {label:'DD', x:margin+620, align:'right'},
+                        {label:isEN?'Days':'Dias', x:pageW-margin-8, align:'right'}
+                    ];
+                    const rowH=20, tableH=rowH*(chunk.length+1)+8;
+                    doc.setDrawColor(226,232,240); doc.setFillColor(248,250,252); doc.roundedRect(margin,y,contentW,tableH,7,7,'FD');
+                    let yy=y+16;
+                    doc.setFont('helvetica','bold'); doc.setFontSize(7.8); doc.setTextColor(100,116,139);
+                    cols.forEach(c=>drawText(c.label,c.x,yy,{align:c.align}));
+                    yy+=8; doc.line(margin+7,yy,pageW-margin-7,yy); yy+=14;
+                    chunk.forEach((r,idx)=>{
+                        const dd = (r.ddBuffer === null || !Number.isFinite(r.ddBuffer)) ? '--' : money(r.ddBuffer);
+                        const values=[String(r.name||r.id||'').slice(0,34),String(r.size||'--'),money(r.equity),Number(r.available||0)>=500?money(r.available):'--',Number(r.missingTo500||0)<=0?'OK':money(r.missingTo500),dd,String(r.daysOperated||0)];
+                        doc.setFont('helvetica','normal'); doc.setFontSize(8.2); doc.setTextColor(15,23,42);
+                        values.forEach((v,i)=>drawText(v,cols[i].x,yy,{align:cols[i].align}));
+                        if(idx<chunk.length-1){doc.setDrawColor(241,245,249);doc.line(margin+7,yy+6,pageW-margin-7,yy+6);}
+                        yy+=rowH;
+                    });
+                }
+
+                const pageCount=doc.getNumberOfPages();
+                for(let p=1;p<=pageCount;p++){
+                    doc.setPage(p); doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(148,163,184);
+                    drawText(`DF Strategic • ${isEN?'page':'página'} ${p}/${pageCount}`,pageW-margin,pageH-15,{align:'right'});
+                }
+                doc.save(fileName);
+                try { showToast(isEN ? 'PDF downloaded.' : 'PDF baixado com sucesso.'); } catch(e) {}
+                return true;
+            }catch(err){
+                console.warn('Falha ao gerar PDF de contas:', err);
+                try{
+                    const htmlStr = await _accountsOverviewBuildPrintableHTML({ includeChart });
+                    window.dfDownloadTextFile(fileName.replace(/\.pdf$/i,'.html'), htmlStr, 'text/html;charset=utf-8');
+                    alert('O navegador bloqueou o gerador de PDF. O mesmo relatório foi baixado em HTML.');
+                    return true;
+                }catch(fallbackErr){
+                    console.error('Falha no relatório alternativo:', fallbackErr);
+                    alert('Não foi possível gerar o relatório. Verifique a conexão e tente novamente.');
+                    return false;
+                }
+            }
         }
         async function accountsOverviewShare(){
             const list = (window._accountsOverviewComputedAll || window._accountsOverviewComputed || []).slice();
@@ -5173,7 +5349,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         window.forceOfflineMode = () => {
             isOffline = true;
             const localBackup = localStorage.getItem('df_backup_local');
-            if (localBackup) { try { store = JSON.parse(localBackup);
+            if (localBackup) { try {
+                    const parsedBackup = JSON.parse(localBackup);
+                    if(!parsedBackup || !parsedBackup.accounts || !Object.keys(parsedBackup.accounts).length) throw new Error('Backup local incompleto');
+                    store = parsedBackup;
                     // UI state: sempre iniciar com detalhes fechados
                     delete store.dayDetailsOpen;
                     delete store.tradeDetailsOpen; store.date = new Date(store.date || new Date());
@@ -5184,6 +5363,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             document.getElementById('status-text').textContent = (CURRENT_LANG==='en' ? "Offline Mode" : "Modo Offline");
             document.getElementById('status-text').className = "text-yellow-500 font-bold";
             renderSidebar(); loadAccount(store.activeId); store.date = new Date(); syncDatesToView();
+            try { if (typeof dfInitializeReportFeatures === 'function') dfInitializeReportFeatures(); } catch(e) { console.warn('Falha ao inicializar relatórios offline:', e); }
             try { hideAppLoader(); } catch(e) { const loader=document.getElementById('app-loader'); if(loader) loader.style.display='none'; }
         };
 
@@ -6969,25 +7149,9 @@ ${period} • ${(acc?.name || 'Conta')}
             const periodSummary = _periodTradeSummary(acc, start, end);
             const singleDayMode = periodSummary.tradedDays <= 1;
 
-            const ensureJsPDF = () => new Promise((resolve, reject)=>{
-                try{
-                    if(window.jspdf && window.jspdf.jsPDF) return resolve(window.jspdf.jsPDF);
-                    const existing = document.querySelector('script[data-jspdf]');
-                    if(existing){
-                        existing.addEventListener('load', ()=> resolve(window.jspdf && window.jspdf.jsPDF));
-                        existing.addEventListener('error', ()=> reject(new Error('Falha ao carregar jsPDF')));
-                        return;
-                    }
-                    const s = document.createElement('script');
-                    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-                    s.async = true;
-                    s.defer = true;
-                    s.setAttribute('data-jspdf','1');
-                    s.onload = ()=> resolve(window.jspdf && window.jspdf.jsPDF);
-                    s.onerror = ()=> reject(new Error('Falha ao carregar jsPDF'));
-                    document.head.appendChild(s);
-                }catch(err){ reject(err); }
-            });
+            const ensureJsPDF = () => window.dfEnsureJsPDF
+                ? window.dfEnsureJsPDF()
+                : Promise.reject(new Error('Gerador de PDF não inicializado'));
 
             const buildFileName = ()=>{
                 const safe = (s)=> (s||'').toString().replace(/[^a-z0-9\-_]+/gi,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
@@ -7052,7 +7216,7 @@ ${period} • ${(acc?.name || 'Conta')}
                 } catch (e) { return null; }
             };
 
-            ensureJsPDF().then(async (JsPDF)=>{
+            return ensureJsPDF().then(async (JsPDF)=>{
                 chartDataUrl = await buildChartImageForRange();
                 const doc = new JsPDF({ unit:'pt', format:'letter' });
                 const pageW = 612, pageH = 792, margin = 34, contentW = pageW - margin*2;
@@ -7198,7 +7362,17 @@ ${period} • ${(acc?.name || 'Conta')}
                 doc.save(buildFileName());
             }).catch((err)=>{
                 console.warn('Falha ao gerar PDF analítico:', err);
-                alert('Falha ao gerar o PDF analítico. Tente novamente.');
+                const esc = (value)=>String(value == null ? '' : value).replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+                const rows = strategies.map(r=>`<tr><td>${esc(r.label)}</td><td>${esc(formatCurrency(r.total))}</td><td>${esc(r.trades)}</td><td>${esc(Math.round((r.winRate||0)*100)+'%')}</td><td>${esc(formatCurrency(r.expectancy||0))}</td></tr>`).join('');
+                const fallbackHtml = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(title)}</title><style>body{font:14px Arial;color:#0f172a;max-width:1000px;margin:30px auto;padding:0 20px}h1{margin-bottom:4px}.muted{color:#64748b}.k{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:20px 0}.k div{border:1px solid #cbd5e1;border-radius:8px;padding:12px}.k b{display:block;font-size:18px;margin-top:5px}img{width:100%;max-height:360px;object-fit:contain}table{width:100%;border-collapse:collapse;margin-top:15px}th,td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:right}th:first-child,td:first-child{text-align:left}@media print{@page{margin:12mm}}</style></head><body><h1>${esc(title)}</h1><div class="muted">${esc(rangeText)}</div><div class="k"><div>Resultado<b>${esc(metricResult)}</b></div><div>Win Rate<b>${esc(metricWin)}</b></div><div>Trades<b>${esc(kpiTrades)}</b></div><div>Profit Factor<b>${esc(kpiPF)}</b></div></div>${chartDataUrl?`<img src="${chartDataUrl}" alt="Gráfico do período">`:''}<h2>Estratégias</h2><table><thead><tr><th>Estratégia</th><th>Resultado</th><th>Trades</th><th>Win%</th><th>Expectativa</th></tr></thead><tbody>${rows||'<tr><td colspan="5">Sem operações no período.</td></tr>'}</tbody></table></body></html>`;
+                try{
+                    window.dfDownloadTextFile(buildFileName().replace(/\.pdf$/i,'.html'), fallbackHtml, 'text/html;charset=utf-8');
+                    alert('O navegador bloqueou o gerador de PDF. O relatório foi baixado em HTML.');
+                    return true;
+                }catch(fallbackErr){
+                    alert('Falha ao gerar o relatório. Verifique a conexão e tente novamente.');
+                    return false;
+                }
             });
         }
 
@@ -9274,25 +9448,9 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             const res = _buildPeriodRows(acc, startISO, endISO);
 
             // Preferir PDF real (jsPDF) para funcionar no Android (evita preview em branco do window.print)
-            const ensureJsPDF = () => new Promise((resolve, reject)=>{
-                try{
-                    if(window.jspdf && window.jspdf.jsPDF) return resolve(window.jspdf.jsPDF);
-                    const existing = document.querySelector('script[data-jspdf]');
-                    if(existing){
-                        existing.addEventListener('load', ()=> resolve(window.jspdf?.jsPDF));
-                        existing.addEventListener('error', ()=> reject(new Error('Falha ao carregar jsPDF')));
-                        return;
-                    }
-                    const s = document.createElement('script');
-                    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-                    s.async = true;
-                    s.defer = true;
-                    s.setAttribute('data-jspdf','1');
-                    s.onload = ()=> resolve(window.jspdf?.jsPDF);
-                    s.onerror = ()=> reject(new Error('Falha ao carregar jsPDF'));
-                    document.head.appendChild(s);
-                }catch(err){ reject(err); }
-            });
+            const ensureJsPDF = () => window.dfEnsureJsPDF
+                ? window.dfEnsureJsPDF()
+                : Promise.reject(new Error('Gerador de PDF não inicializado'));
 
             const buildFileName = () => {
                 const safe = (s)=> (s||'').toString().replace(/[^a-z0-9\-_]+/gi,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
@@ -9533,6 +9691,15 @@ window.addEventListener('scroll', ()=>{ if(!pop.classList.contains('hidden')) hi
             const modal=document.getElementById('period-modal'), acc=getActive();
             if(!modal||!acc)return;
             const startISO=modal.dataset.printStart,endISO=modal.dataset.printEnd,title=modal.dataset.printTitle||'Detalhes do período',range=modal.dataset.printRange||'';
+            // Reutiliza o relatório analítico completo e baixa o arquivo diretamente,
+            // sem depender de pop-up ou da caixa de impressão do navegador.
+            if(startISO && endISO && els.filterStart && els.filterEnd){
+                els.filterStart.value = startISO;
+                els.filterEnd.value = endISO;
+                try { filterReportInternal(); } catch(e) { console.warn('Falha ao preparar período:', e); }
+                try { closePeriodModal(); } catch(e) {}
+                return pdfFilteredReportInternal();
+            }
             const res=_buildPeriodRows(acc,startISO,endISO), analytics=getStrategyRowsForPeriod(acc,startISO,endISO,{includeInactive:false,includeHidden:false});
             let chartSrc='';
             try{if(typeof Chart!=='undefined'){const active=res.rows.filter(row=>!String(row.noteA||'').startsWith('Feriado')&&res.strategies.some(s=>Number(row.valuesBySlot[s.slot]||0)!==0));if(active.length){const canvas=document.createElement('canvas');canvas.width=1200;canvas.height=380;const cum=Object.fromEntries(res.strategies.map(s=>[s.slot,0]));const chart=new Chart(canvas.getContext('2d'),{type:'line',data:{labels:active.map(r=>_formatDM(r.iso)),datasets:res.strategies.map(s=>({label:s.label,borderColor:s.color||'#4f46e5',backgroundColor:'transparent',data:active.map(r=>cum[s.slot]+=Number(r.valuesBySlot[s.slot]||0))}))},options:{responsive:false,animation:false}});chart.update();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));chartSrc=canvas.toDataURL('image/png',1);chart.destroy();}}}catch(e){}
@@ -11932,9 +12099,22 @@ try{
 // Boot/migração segura após carregar o app.
 try{
     dfEnsureStrategyStructure();
-    dfSaveLocalImmediate();
+    if(store && store.accounts && Object.keys(store.accounts).length) dfSaveLocalImmediate();
 }catch(e){
     console.warn('DF strategy V13 boot migration failed:', e);
+}
+
+// Inicializa todos os relatórios independentemente do fluxo online/offline.
+function dfInitializeReportFeatures(){
+    try { bindPeriodInteractions(); } catch(e) { console.warn('bindPeriodInteractions failed:', e); }
+    try { bindAccountsOverviewExportButtons(); } catch(e) { console.warn('bindAccountsOverviewExportButtons failed:', e); }
+    try { ensureInfoIcons(); bindHelpPopover(); } catch(e) {}
+}
+window.dfInitializeReportFeatures = dfInitializeReportFeatures;
+if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', dfInitializeReportFeatures, { once:true });
+}else{
+    dfInitializeReportFeatures();
 }
 
         // === Expose internal state/functions for patch modules (safe & idempotent) ===
