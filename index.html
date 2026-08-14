@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<!-- BUILD_ID: DF-EQUAL-STRATEGY-CARD-HEIGHTS-2026-08-12 -->
+<!-- BUILD_ID: DF-MARKET-REGION-CHECKS-2026-08-14 -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -955,8 +955,8 @@ body.dark .day-details-row .df-trade-editor-title{
   font-weight:700;
 }
 .day-details-row .df-trade-checks{
-  display:flex;
-  flex-direction:column;
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
   gap:.32rem;
   margin-top:.52rem;
   padding-left:.15rem;
@@ -1081,9 +1081,22 @@ body.dark .df-order-position{
   background:#1e293b;
   color:#e2e8f0;
 }
+.df-admin-check-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(9rem,1fr));
+  gap:.4rem;
+  min-width:19rem;
+}
+.df-admin-check-grid input{
+  width:100%;
+  min-width:0;
+}
 @media (max-width: 520px){
   .day-details-row .df-trade-editor-input{
     width:6.75rem;
+  }
+  .day-details-row .df-trade-checks{
+    grid-template-columns:1fr;
   }
 }
 
@@ -1359,9 +1372,7 @@ tr.bg-green-50 td {
                                             <th class="py-2">Nome exibido</th>
                                             <th class="py-2 text-center">Posição</th>
                                             <th class="py-2 text-center">Trades</th>
-                                            <th class="py-2">Check 1</th>
-                                            <th class="py-2">Check 2</th>
-                                            <th class="py-2">Check 3</th>
+                                            <th class="py-2">Checks do trade</th>
                                             <th class="py-2 text-center">Ativa</th>
                                             <th class="py-2 text-center">Visível</th>
                                             <th class="py-2">Observação</th>
@@ -6475,7 +6486,7 @@ function renderCalendar(acc) {
                 const breakoutLabel = CURRENT_LANG === 'en' ? 'Breakout' : 'Barra ignorada';
                 const getBlockCheckLabels = (block) => {
                     const raw = Array.isArray(block.checkLabels) ? block.checkLabels : (block.breakout ? [breakoutLabel] : []);
-                    return raw.map(v => String(v || '').trim()).filter(Boolean).slice(0, 3);
+                    return raw.map(v => String(v || '').trim()).filter(Boolean).slice(0, DF_MAX_CHECKS_PER_TRADE);
                 };
                 const getTradeCheckValue = (block, idx, checkIndex) => {
                     const key = checkIndex === 1 ? `breakout${idx}` : `flag${checkIndex}_${idx}`;
@@ -11235,6 +11246,31 @@ function dfNormalizeBool(value){
 
 const DF_MAX_TRADES_PER_STRATEGY = 5;
 const DF_DEFAULT_TRADES_PER_STRATEGY = 5;
+const DF_MAX_CHECKS_PER_TRADE = 8;
+const DF_MARKET_REGION_CHECK_LABELS = [
+    'Gamma Wall',
+    'Flip Zone',
+    'Call Wall',
+    'Put Wall',
+    'Maior barra do Volume at Price — VAP'
+];
+
+function dfNormalizeCheckLabels(rawLabels, meta){
+    const base = Array.isArray(rawLabels)
+        ? rawLabels.map(v => String(v || '').trim()).filter(Boolean)
+        : (meta && meta.breakout ? ['Barra ignorada', 'Rompimento', 'Reteste'] : []);
+    const normalizedKeys = new Set(base.map(v => v.toLocaleLowerCase('pt-BR')));
+    DF_MARKET_REGION_CHECK_LABELS.forEach(label => {
+        const key = label.toLocaleLowerCase('pt-BR');
+        if(!normalizedKeys.has(key)){
+            base.push(label);
+            normalizedKeys.add(key);
+        }
+    });
+    const result = base.slice(0, DF_MAX_CHECKS_PER_TRADE);
+    while(result.length < DF_MAX_CHECKS_PER_TRADE) result.push('');
+    return result;
+}
 
 function dfNormalizeTradeCount(value, fallback = DF_DEFAULT_TRADES_PER_STRATEGY){
     const parsed = parseInt(value, 10);
@@ -11291,11 +11327,7 @@ function dfNormalizeStrategySlots(rawSlots, opts = {}){
         const hasLabelText = label.length > 0;
         const tradeCount = dfNormalizeTradeCount(found && (found.tradeCount ?? found.trades ?? found.maxTrades));
         const rawCheckLabels = found && Array.isArray(found.checkLabels) ? found.checkLabels : null;
-        const defaultCheckLabels = meta.breakout ? ['Barra ignorada', 'Rompimento', 'Reteste'] : ['', '', ''];
-        const checkLabels = (rawCheckLabels || defaultCheckLabels)
-            .slice(0, 3)
-            .map(v => String(v || '').trim());
-        while(checkLabels.length < 3) checkLabels.push('');
+        const checkLabels = dfNormalizeCheckLabels(rawCheckLabels, meta);
         return {
             slot: meta.slot,
             label,
@@ -11348,7 +11380,7 @@ function dfStrategyVersionFromStructure(structure){
             label: String(s.label || '').trim(),
             order: Number(s.order || 0),
             tradeCount: dfNormalizeTradeCount(s.tradeCount),
-            checkLabels: Array.isArray(s.checkLabels) ? s.checkLabels.slice(0, 3).map(v => String(v || '').trim()) : ['', '', ''],
+            checkLabels: dfNormalizeCheckLabels(s.checkLabels, dfStrategyMeta(s.slot)),
             active: !!s.active && String(s.label || '').trim().length > 0,
             visible: !!s.visible && String(s.label || '').trim().length > 0
         }))
@@ -11539,18 +11571,14 @@ getTradeLegValues = function(entry, legKey){
         breakout3: false,
         breakout4: false,
         breakout5: false,
-        flag2_1: false,
-        flag2_2: false,
-        flag2_3: false,
-        flag2_4: false,
-        flag2_5: false,
-        flag3_1: false,
-        flag3_2: false,
-        flag3_3: false,
-        flag3_4: false,
-        flag3_5: false,
         subtotal: 0
     };
+
+    for(let checkIndex = 2; checkIndex <= DF_MAX_CHECKS_PER_TRADE; checkIndex++){
+        dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY).forEach(idx => {
+            result[`flag${checkIndex}_${idx}`] = false;
+        });
+    }
 
     if(hasExplicitLegs){
         dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY).forEach(idx => {
@@ -11558,8 +11586,9 @@ getTradeLegValues = function(entry, legKey){
             const value = dfNormalizeLegValue(meta[`leg${idx}`]);
             result[`leg${idx}`] = value;
             result[`breakout${idx}`] = !!(meta[`breakout${idx}`] || meta[`flag1_${idx}`]);
-            result[`flag2_${idx}`] = !!meta[`flag2_${idx}`];
-            result[`flag3_${idx}`] = !!meta[`flag3_${idx}`];
+            for(let checkIndex = 2; checkIndex <= DF_MAX_CHECKS_PER_TRADE; checkIndex++){
+                result[`flag${checkIndex}_${idx}`] = !!meta[`flag${checkIndex}_${idx}`];
+            }
             result.subtotal += dfNumericLegValue(value);
         });
         return result;
@@ -11568,8 +11597,9 @@ getTradeLegValues = function(entry, legKey){
     const legacy = (entry && entry[legKey] !== '' && entry[legKey] !== null && entry[legKey] !== undefined) ? entry[legKey] : '';
     result.leg1 = legacy;
     result.breakout1 = !!(meta.breakout1 || meta.flag1_1);
-    result.flag2_1 = !!meta.flag2_1;
-    result.flag3_1 = !!meta.flag3_1;
+    for(let checkIndex = 2; checkIndex <= DF_MAX_CHECKS_PER_TRADE; checkIndex++){
+        result[`flag${checkIndex}_1`] = !!meta[`flag${checkIndex}_1`];
+    }
     result.subtotal = dfNumericLegValue(legacy);
     return result;
 };
@@ -11631,13 +11661,14 @@ renderStrategyManager = function(){
                 </select>
             </td>
             <td class="py-2 pr-3">
-                <input type="text" value="${escapeHtml((s.checkLabels && s.checkLabels[0]) || '')}" data-field="checkLabel1" placeholder="Ex.: Barra ignorada" class="w-36 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
-            </td>
-            <td class="py-2 pr-3">
-                <input type="text" value="${escapeHtml((s.checkLabels && s.checkLabels[1]) || '')}" data-field="checkLabel2" placeholder="Ex.: Rompimento" class="w-36 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
-            </td>
-            <td class="py-2 pr-3">
-                <input type="text" value="${escapeHtml((s.checkLabels && s.checkLabels[2]) || '')}" data-field="checkLabel3" placeholder="Ex.: Reteste" class="w-36 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">
+                <div class="df-admin-check-grid">
+                    ${Array.from({length:DF_MAX_CHECKS_PER_TRADE},(_,index)=>{
+                        const n=index+1;
+                        const value=(s.checkLabels&&s.checkLabels[index])||'';
+                        const placeholder=index<2?`Check ${n}`:(DF_MARKET_REGION_CHECK_LABELS[index-2]||`Check ${n}`);
+                        return `<input type="text" value="${escapeHtml(value)}" data-field="checkLabel${n}" placeholder="${escapeHtml(placeholder)}" class="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100">`;
+                    }).join('')}
+                </div>
             </td>
             <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="active" ${s.active ? 'checked' : ''}></td>
             <td class="py-2 pr-3 text-center"><input type="checkbox" data-field="visible" ${s.visible ? 'checked' : ''}></td>
@@ -11648,7 +11679,7 @@ renderStrategyManager = function(){
     dfRenderNoteSettingsEditor();
 
     if(els.strategyManagerStatus){
-        els.strategyManagerStatus.textContent = 'Use ↑ e ↓ para mudar apenas a posição. O slot fixo preserva todos os resultados históricos da estratégia.';
+        els.strategyManagerStatus.textContent = 'Use ↑ e ↓ para mudar apenas a posição. Cada trade aceita até 8 checks, incluindo Gamma Wall, Flip Zone, Call Wall, Put Wall e VAP.';
         els.strategyManagerStatus.className = 'text-xs text-slate-500 dark:text-slate-400';
     }
 
@@ -11709,7 +11740,10 @@ readStrategyEditorVersion = function(){
         seenOrders.add(order);
 
         const tradeCount = dfNormalizeTradeCount(tr.querySelector('[data-field="tradeCount"]')?.value);
-        const checkLabels = [1, 2, 3].map(n => (tr.querySelector(`[data-field="checkLabel${n}"]`)?.value || '').trim());
+        const checkLabels = Array.from({length:DF_MAX_CHECKS_PER_TRADE},(_,index) => {
+            const n=index+1;
+            return (tr.querySelector(`[data-field="checkLabel${n}"]`)?.value || '').trim();
+        });
 
         if(!label){
             return { slot, label:'', order, tradeCount, checkLabels, active:false, visible:false };
