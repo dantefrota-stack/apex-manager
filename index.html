@@ -1629,8 +1629,12 @@ tr.bg-green-50 td {
                     </select>
                 </div>
                 <div>
-                    <label class="text-[11px] uppercase tracking-wider text-slate-500 font-bold block mb-1">Grupos de empresa</label>
-                    <div id="account-group-filters" class="space-y-1.5 max-h-28 overflow-y-auto pr-1"></div>
+                    <div class="mb-1 flex items-center justify-between gap-2">
+                        <label class="text-[11px] uppercase tracking-wider text-slate-500 font-bold">Grupos de empresa</label>
+                        <button type="button" onclick="createCompanyGroup()" class="rounded px-2 py-1 text-[10px] font-bold text-indigo-300 hover:bg-indigo-500/10 hover:text-indigo-200" title="Adicionar grupo">+ Grupo</button>
+                    </div>
+                    <div id="account-group-filters" class="space-y-1.5 max-h-36 overflow-y-auto pr-1"></div>
+                    <p class="mt-1.5 text-[10px] leading-snug text-slate-500">A lixeira transfere as contas do grupo para “Sem grupo”, sem apagar o histórico.</p>
                 </div>
             </div>
         </div>
@@ -1660,6 +1664,9 @@ tr.bg-green-50 td {
                 </div>
                 
                 <div class="flex items-center gap-2 flex-wrap">
+                    <button type="button" onclick="openAccountsComparison()" class="px-3 py-1.5 rounded-md bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold flex items-center gap-1">
+                        <i data-lucide="git-compare-arrows" class="w-4 h-4"></i> Comparar 2 contas
+                    </button>
                     <label class="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 select-none">
                         <input id="accounts-overview-export-chart" type="checkbox" class="accent-indigo-600" checked>
                         Incluir gráfico
@@ -1805,6 +1812,73 @@ tr.bg-green-50 td {
 
                 <div class="text-[11px] text-slate-500 dark:text-slate-400">
                     * “Days Traded” = business days with any record (Trade 1, Trade 2, Trade 3, Trade 4, Trade 5, or Total), excluding holidays marked in the app.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TWO-ACCOUNT COMPARISON MODAL -->
+    <div id="accounts-compare-modal" class="fixed inset-0 z-[75] hidden no-print">
+        <div class="absolute inset-0 bg-black/65 backdrop-blur-sm" onclick="closeAccountsComparison()"></div>
+        <div class="absolute left-1/2 top-1/2 flex h-[94vh] w-[97vw] max-w-[1500px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900">
+            <div class="flex flex-none items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700 sm:px-5">
+                <div class="flex min-w-0 items-center gap-3">
+                    <div class="rounded-lg bg-violet-100 p-2 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300"><i data-lucide="git-compare-arrows" class="h-5 w-5"></i></div>
+                    <div class="min-w-0">
+                        <h2 class="font-bold text-slate-800 dark:text-white">Comparativo de Contas por Período</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Análise independente e consolidada, sem modificar os históricos.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeAccountsComparison()" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white" aria-label="Fechar comparativo"><i data-lucide="x" class="h-5 w-5"></i></button>
+            </div>
+
+            <div class="flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
+                <div class="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_155px_155px_auto]">
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400">Conta A
+                        <select id="compare-account-a" class="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white"></select>
+                    </label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400">Conta B
+                        <select id="compare-account-b" class="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white"></select>
+                    </label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400">Data inicial
+                        <input id="compare-start" type="date" class="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
+                    </label>
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400">Data final
+                        <input id="compare-end" type="date" class="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-violet-500 dark:border-slate-600 dark:bg-slate-900 dark:text-white">
+                    </label>
+                    <button type="button" onclick="renderAccountsComparison()" class="self-end rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-violet-700"><span class="inline-flex items-center gap-2"><i data-lucide="bar-chart-3" class="h-4 w-4"></i>Analisar</span></button>
+                </div>
+
+                <div id="accounts-compare-empty" class="rounded-xl border border-dashed border-slate-300 px-5 py-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">Selecione duas contas diferentes e clique em “Analisar”.</div>
+                <div id="accounts-compare-results" class="hidden space-y-4">
+                    <div id="accounts-compare-kpis" class="grid grid-cols-1 gap-3 md:grid-cols-3"></div>
+                    <div class="rounded-xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
+                        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                            <div><h3 class="text-sm font-bold text-slate-800 dark:text-white">Evolução acumulada</h3><p class="text-[11px] text-slate-500 dark:text-slate-400">Conta A, Conta B e resultado consolidado no período.</p></div>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button" onclick="accountsComparisonCSV()" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"><span class="inline-flex items-center gap-1.5"><i data-lucide="sheet" class="h-4 w-4"></i>CSV</span></button>
+                                <button type="button" onclick="accountsComparisonHTML()" class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"><span class="inline-flex items-center gap-1.5"><i data-lucide="file-code-2" class="h-4 w-4"></i>HTML</span></button>
+                                <button type="button" onclick="accountsComparisonPDF()" class="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-bold text-white hover:bg-indigo-700"><span class="inline-flex items-center gap-1.5"><i data-lucide="file-text" class="h-4 w-4"></i>PDF</span></button>
+                            </div>
+                        </div>
+                        <div class="h-72 w-full"><canvas id="accounts-compare-chart"></canvas></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                        <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                            <div class="bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">Resultados por estratégia</div>
+                            <div class="overflow-x-auto"><table class="w-full min-w-[620px] text-xs"><thead class="bg-white text-slate-400 dark:bg-slate-900"><tr><th class="px-3 py-2 text-left">Estratégia</th><th id="compare-strategy-head-a" class="px-3 py-2 text-right">Conta A</th><th id="compare-strategy-head-b" class="px-3 py-2 text-right">Conta B</th><th class="px-3 py-2 text-right">Diferença</th></tr></thead><tbody id="accounts-compare-strategies" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody></table></div>
+                        </div>
+                        <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                            <div class="bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">Regiões e contextos marcados</div>
+                            <div class="max-h-80 overflow-auto"><table class="w-full min-w-[620px] text-xs"><thead class="sticky top-0 bg-white text-slate-400 dark:bg-slate-900"><tr><th class="px-3 py-2 text-left">Estratégia / item</th><th id="compare-check-head-a" class="px-3 py-2 text-right">Conta A</th><th id="compare-check-head-b" class="px-3 py-2 text-right">Conta B</th></tr></thead><tbody id="accounts-compare-checks" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody></table></div>
+                        </div>
+                    </div>
+
+                    <div class="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                        <div class="bg-slate-50 px-4 py-3 text-xs font-bold uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">Resultado diário comparativo</div>
+                        <div class="max-h-96 overflow-auto"><table class="w-full min-w-[650px] text-xs"><thead class="sticky top-0 bg-white text-slate-400 dark:bg-slate-900"><tr><th class="px-3 py-2 text-left">Data</th><th id="compare-daily-head-a" class="px-3 py-2 text-right">Conta A</th><th id="compare-daily-head-b" class="px-3 py-2 text-right">Conta B</th><th class="px-3 py-2 text-right">Consolidado</th></tr></thead><tbody id="accounts-compare-daily" class="divide-y divide-slate-100 dark:divide-slate-700"></tbody></table></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2184,7 +2258,8 @@ tr.bg-green-50 td {
                 </div>
                 <div>
                     <label class="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1">Grupo de Empresa</label>
-                    <input id="account-meta-group" type="text" placeholder="Ex.: DF, CA" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <input id="account-meta-group" type="text" list="company-group-options" placeholder="Ex.: DF, CA" class="w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <datalist id="company-group-options"></datalist>
                     <p class="text-[11px] text-slate-400 mt-1">Use o mesmo nome para agrupar contas relacionadas.</p>
                 </div>
                 <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-3">
@@ -4151,6 +4226,278 @@ function _openPrintWindow(htmlStr){
             const url = 'https://wa.me/?text=' + encodeURIComponent(text);
             try { window.open(url, '_blank'); } catch(e){ window.location.href = url; }
         }
+
+        let accountsComparisonChart = null;
+        let __accountsComparisonSnapshot = null;
+
+        function dfBuildAccountComparisonMetrics(acc, startISO, endISO){
+            const daily = [];
+            let total = 0, trades = 0, wins = 0, losses = 0, grossWin = 0, grossLoss = 0;
+            let bestDay = null, worstDay = null, cumulative = 0, peak = 0, maxDD = 0;
+
+            Object.keys((acc && acc.data) || {}).sort().forEach(iso => {
+                if(iso < startISO || iso > endISO) return;
+                const entry = acc.data[iso] || {};
+                if(entry.holiday) return;
+                const strategyEntries = getStrategyEntriesForDay(entry, iso, { includeInactive:false, includeHidden:false });
+                const dayTotal = strategyEntries.length
+                    ? strategyEntries.reduce((sum, block) => sum + Number(block.legs?.subtotal || block.subtotal || 0), 0)
+                    : Number(entry.val || 0);
+                let tradeValues = [];
+                try{ tradeValues = _individualTradeValuesForDay(entry, iso).map(item => Number(item.value || 0)).filter(value => Number.isFinite(value) && value !== 0); }catch(e){}
+                if(dayTotal === 0 && !tradeValues.length) return;
+
+                tradeValues.forEach(value => {
+                    trades += 1;
+                    if(value > 0){ wins += 1; grossWin += value; }
+                    else if(value < 0){ losses += 1; grossLoss += Math.abs(value); }
+                });
+                total += dayTotal;
+                cumulative += dayTotal;
+                peak = Math.max(peak, cumulative);
+                maxDD = Math.max(maxDD, peak - cumulative);
+                if(!bestDay || dayTotal > bestDay.value) bestDay = { iso, value:dayTotal };
+                if(!worstDay || dayTotal < worstDay.value) worstDay = { iso, value:dayTotal };
+                daily.push({ iso, value:dayTotal, cumulative });
+            });
+
+            const strategyRows = getStrategyRowsForPeriod(acc, startISO, endISO, { includeInactive:false, includeHidden:false });
+            const checkRows = strategyRows.flatMap(strategy => (strategy.checkRows || []).map(item => ({
+                slot: strategy.slot,
+                strategy: strategy.label,
+                label: item.label,
+                marked: Number(item.marked || 0),
+                opportunities: Number(item.opportunities || 0),
+                rate: Number(item.rate || 0)
+            })));
+            const winRate = trades ? wins / trades : 0;
+            const avgWin = wins ? grossWin / wins : 0;
+            const avgLoss = losses ? grossLoss / losses : 0;
+            const profitFactor = grossLoss > 0 ? grossWin / grossLoss : (grossWin > 0 ? Infinity : null);
+            const expectancy = (winRate * avgWin) - ((1 - winRate) * avgLoss);
+
+            return {
+                id: acc.id,
+                name: acc.name || acc.id || 'Conta',
+                size: acc.size || '',
+                total, trades, wins, losses, grossWin, grossLoss, winRate,
+                averageTrade: trades ? total / trades : 0,
+                profitFactor, expectancy, maxDD,
+                tradedDays: daily.length, bestDay, worstDay, daily, strategyRows, checkRows
+            };
+        }
+
+        function dfBuildCombinedComparisonMetrics(accountA, accountB, dailyRows){
+            const combined = {
+                name:'Consolidado', total:accountA.total + accountB.total,
+                trades:accountA.trades + accountB.trades, wins:accountA.wins + accountB.wins,
+                losses:accountA.losses + accountB.losses, grossWin:accountA.grossWin + accountB.grossWin,
+                grossLoss:accountA.grossLoss + accountB.grossLoss, tradedDays:dailyRows.filter(row => row.combined !== 0).length,
+                maxDD:0, bestDay:null, worstDay:null
+            };
+            combined.winRate = combined.trades ? combined.wins / combined.trades : 0;
+            combined.averageTrade = combined.trades ? combined.total / combined.trades : 0;
+            combined.profitFactor = combined.grossLoss > 0 ? combined.grossWin / combined.grossLoss : (combined.grossWin > 0 ? Infinity : null);
+            const avgWin = combined.wins ? combined.grossWin / combined.wins : 0;
+            const avgLoss = combined.losses ? combined.grossLoss / combined.losses : 0;
+            combined.expectancy = (combined.winRate * avgWin) - ((1 - combined.winRate) * avgLoss);
+            let cumulative = 0, peak = 0;
+            dailyRows.forEach(row => {
+                cumulative += row.combined;
+                peak = Math.max(peak, cumulative);
+                combined.maxDD = Math.max(combined.maxDD, peak - cumulative);
+                if(!combined.bestDay || row.combined > combined.bestDay.value) combined.bestDay = { iso:row.iso, value:row.combined };
+                if(!combined.worstDay || row.combined < combined.worstDay.value) combined.worstDay = { iso:row.iso, value:row.combined };
+            });
+            return combined;
+        }
+
+        function dfComparisonMetricCard(metric, tone){
+            const resultClass = metric.total >= 0 ? 'text-emerald-600' : 'text-red-600';
+            const pf = metric.profitFactor === Infinity ? '∞' : (metric.profitFactor === null ? '--' : Number(metric.profitFactor).toFixed(2));
+            return `<section class="rounded-xl border ${tone} p-4">
+                <div class="flex items-center justify-between gap-2"><div><div class="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">${escapeHtml(metric.name)}</div><div class="text-[11px] text-slate-400">${escapeHtml(metric.size || 'Duas contas somadas')}</div></div><div class="text-xl font-black ${resultClass}">${formatCurrency(metric.total)}</div></div>
+                <div class="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-xs sm:grid-cols-3">
+                    <div><span class="block text-slate-400">Trades (W/L)</span><b class="text-slate-700 dark:text-slate-200">${metric.trades} (${metric.wins}/${metric.losses})</b></div>
+                    <div><span class="block text-slate-400">Win Rate</span><b class="text-slate-700 dark:text-slate-200">${Math.round(metric.winRate*100)}%</b></div>
+                    <div><span class="block text-slate-400">Profit Factor</span><b class="text-slate-700 dark:text-slate-200">${pf}</b></div>
+                    <div><span class="block text-slate-400">Média/trade</span><b class="text-slate-700 dark:text-slate-200">${formatCurrency(metric.averageTrade)}</b></div>
+                    <div><span class="block text-slate-400">Expectancy</span><b class="text-slate-700 dark:text-slate-200">${formatCurrency(metric.expectancy)}</b></div>
+                    <div><span class="block text-slate-400">Max Drawdown</span><b class="text-red-600">${formatCurrency(-metric.maxDD)}</b></div>
+                    <div><span class="block text-slate-400">Dias operados</span><b class="text-slate-700 dark:text-slate-200">${metric.tradedDays}</b></div>
+                    <div><span class="block text-slate-400">Melhor dia</span><b class="text-emerald-600">${metric.bestDay ? formatCurrency(metric.bestDay.value) : '--'}</b></div>
+                    <div><span class="block text-slate-400">Pior dia</span><b class="text-red-600">${metric.worstDay ? formatCurrency(metric.worstDay.value) : '--'}</b></div>
+                </div>
+            </section>`;
+        }
+
+        function openAccountsComparison(){
+            const modal = document.getElementById('accounts-compare-modal');
+            const selectA = document.getElementById('compare-account-a');
+            const selectB = document.getElementById('compare-account-b');
+            if(!modal || !selectA || !selectB) return;
+            const accounts = Object.values(store.accounts || {}).map(normalizeAccountMeta).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'pt-BR',{numeric:true,sensitivity:'base'}));
+            if(accounts.length < 2){ alert('Crie pelo menos duas contas para usar o relatório comparativo.'); return; }
+            const options = accounts.map(acc => `<option value="${escapeHtml(acc.id)}">${escapeHtml(acc.name || acc.id)} • ${escapeHtml(acc.size || '')} • ${escapeHtml(acc.status === 'active' ? 'Ativa' : (acc.status === 'suspended' ? 'Suspensa' : 'Arquivada'))}</option>`).join('');
+            selectA.innerHTML = options; selectB.innerHTML = options;
+            const activeId = store.activeId && store.accounts[store.activeId] ? store.activeId : accounts[0].id;
+            selectA.value = activeId;
+            selectB.value = (accounts.find(acc => acc.id !== activeId) || accounts[1]).id;
+            const startEl = document.getElementById('compare-start'), endEl = document.getElementById('compare-end');
+            const y = store.date.getFullYear(), m = store.date.getMonth();
+            if(startEl && !startEl.value) startEl.value = toISODateLocal(new Date(y,m,1));
+            if(endEl && !endEl.value) endEl.value = toISODateLocal(new Date(y,m+1,0));
+            modal.classList.remove('hidden');
+            try{ lucide.createIcons(); }catch(e){}
+            renderAccountsComparison();
+        }
+
+        function closeAccountsComparison(){
+            document.getElementById('accounts-compare-modal')?.classList.add('hidden');
+        }
+
+        function renderAccountsComparison(){
+            const idA = document.getElementById('compare-account-a')?.value;
+            const idB = document.getElementById('compare-account-b')?.value;
+            const start = document.getElementById('compare-start')?.value;
+            const end = document.getElementById('compare-end')?.value;
+            if(!idA || !idB || !start || !end){ alert('Selecione as duas contas e o período.'); return false; }
+            if(idA === idB){ alert('Selecione duas contas diferentes.'); return false; }
+            if(end < start){ alert('A data final deve ser maior ou igual à data inicial.'); return false; }
+            const sourceA = store.accounts[idA], sourceB = store.accounts[idB];
+            if(!sourceA || !sourceB){ alert('Uma das contas selecionadas não foi encontrada.'); return false; }
+
+            const accountA = dfBuildAccountComparisonMetrics(sourceA, start, end);
+            const accountB = dfBuildAccountComparisonMetrics(sourceB, start, end);
+            const mapA = new Map(accountA.daily.map(row => [row.iso,row.value]));
+            const mapB = new Map(accountB.daily.map(row => [row.iso,row.value]));
+            const dates = Array.from(new Set([...mapA.keys(),...mapB.keys()])).sort();
+            let cumA = 0, cumB = 0;
+            const dailyRows = dates.map(iso => {
+                const valueA = Number(mapA.get(iso) || 0), valueB = Number(mapB.get(iso) || 0);
+                cumA += valueA; cumB += valueB;
+                return { iso, valueA, valueB, combined:valueA+valueB, cumA, cumB, cumCombined:cumA+cumB };
+            });
+            const combined = dfBuildCombinedComparisonMetrics(accountA, accountB, dailyRows);
+
+            const strategyA = new Map(accountA.strategyRows.map(row => [row.slot,row]));
+            const strategyB = new Map(accountB.strategyRows.map(row => [row.slot,row]));
+            const slots = Array.from(new Set([...strategyA.keys(),...strategyB.keys()]));
+            const strategyRows = slots.map(slot => {
+                const a = strategyA.get(slot), b = strategyB.get(slot);
+                return { slot, label:(a?.label || b?.label || slot), totalA:Number(a?.total||0), totalB:Number(b?.total||0), tradesA:Number(a?.trades||0), tradesB:Number(b?.trades||0) };
+            });
+
+            const checkMapA = new Map(accountA.checkRows.map(row => [`${row.slot}__${row.label}`,row]));
+            const checkMapB = new Map(accountB.checkRows.map(row => [`${row.slot}__${row.label}`,row]));
+            const checkKeys = Array.from(new Set([...checkMapA.keys(),...checkMapB.keys()]));
+            const checkRows = checkKeys.map(key => {
+                const a = checkMapA.get(key), b = checkMapB.get(key);
+                return { key, strategy:a?.strategy||b?.strategy||'', label:a?.label||b?.label||'', a:a||{marked:0,opportunities:0,rate:0}, b:b||{marked:0,opportunities:0,rate:0} };
+            });
+
+            __accountsComparisonSnapshot = { start, end, accountA, accountB, combined, dailyRows, strategyRows, checkRows };
+            document.getElementById('accounts-compare-empty')?.classList.add('hidden');
+            document.getElementById('accounts-compare-results')?.classList.remove('hidden');
+            const kpis = document.getElementById('accounts-compare-kpis');
+            if(kpis) kpis.innerHTML = dfComparisonMetricCard(accountA,'border-indigo-200 bg-indigo-50/50 dark:border-indigo-900 dark:bg-indigo-950/20') + dfComparisonMetricCard(accountB,'border-violet-200 bg-violet-50/50 dark:border-violet-900 dark:bg-violet-950/20') + dfComparisonMetricCard(combined,'border-emerald-200 bg-emerald-50/50 dark:border-emerald-900 dark:bg-emerald-950/20');
+            ['compare-strategy-head-a','compare-check-head-a','compare-daily-head-a'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=accountA.name;});
+            ['compare-strategy-head-b','compare-check-head-b','compare-daily-head-b'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=accountB.name;});
+
+            const strategyBody = document.getElementById('accounts-compare-strategies');
+            if(strategyBody) strategyBody.innerHTML = strategyRows.length ? strategyRows.map(row => `<tr><td class="px-3 py-2.5 font-semibold text-slate-700 dark:text-slate-200">${escapeHtml(row.label)}<span class="ml-1 text-[10px] font-normal text-slate-400">(${row.tradesA}/${row.tradesB} trades)</span></td><td class="px-3 py-2.5 text-right ${row.totalA>=0?'text-emerald-600':'text-red-600'}">${formatCurrency(row.totalA)}</td><td class="px-3 py-2.5 text-right ${row.totalB>=0?'text-emerald-600':'text-red-600'}">${formatCurrency(row.totalB)}</td><td class="px-3 py-2.5 text-right font-bold ${row.totalA-row.totalB>=0?'text-emerald-600':'text-red-600'}">${formatCurrency(row.totalA-row.totalB)}</td></tr>`).join('') : '<tr><td colspan="4" class="px-3 py-6 text-center text-slate-400">Sem operações no período.</td></tr>';
+            const checkBody = document.getElementById('accounts-compare-checks');
+            if(checkBody) checkBody.innerHTML = checkRows.length ? checkRows.map(row => `<tr><td class="px-3 py-2.5 text-slate-700 dark:text-slate-200"><b>${escapeHtml(row.strategy)}</b><span class="block text-[10px] text-slate-400">${escapeHtml(row.label)}</span></td><td class="px-3 py-2.5 text-right text-slate-700 dark:text-slate-200">${row.a.marked}/${row.a.opportunities} <b>(${Math.round(row.a.rate*100)}%)</b></td><td class="px-3 py-2.5 text-right text-slate-700 dark:text-slate-200">${row.b.marked}/${row.b.opportunities} <b>(${Math.round(row.b.rate*100)}%)</b></td></tr>`).join('') : '<tr><td colspan="3" class="px-3 py-6 text-center text-slate-400">Nenhum item marcado no período.</td></tr>';
+            const dailyBody = document.getElementById('accounts-compare-daily');
+            if(dailyBody) dailyBody.innerHTML = dailyRows.length ? dailyRows.map(row => `<tr><td class="px-3 py-2.5 text-slate-600 dark:text-slate-300">${escapeHtml(formatDateShort(parseISODateLocal(row.iso)))}</td><td class="px-3 py-2.5 text-right ${row.valueA>=0?'text-emerald-600':'text-red-600'}">${formatCurrency(row.valueA)}</td><td class="px-3 py-2.5 text-right ${row.valueB>=0?'text-emerald-600':'text-red-600'}">${formatCurrency(row.valueB)}</td><td class="px-3 py-2.5 text-right font-bold ${row.combined>=0?'text-emerald-600':'text-red-600'}">${formatCurrency(row.combined)}</td></tr>`).join('') : '<tr><td colspan="4" class="px-3 py-6 text-center text-slate-400">Sem operações no período.</td></tr>';
+
+            const canvas = document.getElementById('accounts-compare-chart');
+            try{
+                if(accountsComparisonChart){ accountsComparisonChart.destroy(); accountsComparisonChart = null; }
+                if(canvas && window.Chart){
+                    const dark = document.documentElement.classList.contains('dark');
+                    accountsComparisonChart = new Chart(canvas.getContext('2d'), {type:'line',data:{labels:dailyRows.map(row=>formatDateShort(parseISODateLocal(row.iso))),datasets:[{label:accountA.name,data:dailyRows.map(row=>row.cumA),borderColor:'#4f46e5',backgroundColor:'transparent',borderWidth:2.5,pointRadius:dailyRows.length<3?4:1.5,tension:.3},{label:accountB.name,data:dailyRows.map(row=>row.cumB),borderColor:'#9333ea',backgroundColor:'transparent',borderWidth:2.5,pointRadius:dailyRows.length<3?4:1.5,tension:.3},{label:'Consolidado',data:dailyRows.map(row=>row.cumCombined),borderColor:'#059669',backgroundColor:'transparent',borderWidth:3,pointRadius:dailyRows.length<3?4:1.5,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,animation:false,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:dark?'#cbd5e1':'#475569',usePointStyle:true}}},scales:{x:{grid:{display:false},ticks:{color:dark?'#94a3b8':'#64748b',maxTicksLimit:12}},y:{grid:{color:dark?'#334155':'#e2e8f0'},ticks:{color:dark?'#94a3b8':'#64748b',callback:value=>formatCurrency(value)}}}}});
+                }
+            }catch(e){ console.warn('Falha no gráfico comparativo:',e); }
+            try{ lucide.createIcons(); }catch(e){}
+            return true;
+        }
+
+        function dfComparisonFileBase(snapshot){
+            const safe = value => String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9_-]+/gi,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
+            return `Comparativo_${safe(snapshot.accountA.name)}_x_${safe(snapshot.accountB.name)}_${snapshot.start}_${snapshot.end}`.slice(0,150);
+        }
+
+        function dfBuildAccountsComparisonHTML(snapshot){
+            const esc = value => escapeHtml(String(value == null ? '' : value));
+            const pf = metric => metric.profitFactor === Infinity ? '∞' : (metric.profitFactor === null ? '--' : Number(metric.profitFactor).toFixed(2));
+            const metricRow = metric => `<tr><td>${esc(metric.name)}</td><td class="n">${esc(formatCurrency(metric.total))}</td><td class="n">${metric.trades} (${metric.wins}/${metric.losses})</td><td class="n">${Math.round(metric.winRate*100)}%</td><td class="n">${pf(metric)}</td><td class="n">${esc(formatCurrency(metric.expectancy))}</td><td class="n">${esc(formatCurrency(-metric.maxDD))}</td><td class="n">${metric.tradedDays}</td></tr>`;
+            let chartImage = '';
+            try{ const url=document.getElementById('accounts-compare-chart')?.toDataURL('image/png',1);if(url)chartImage=`<img src="${url}" alt="Evolução comparativa">`; }catch(e){}
+            const strategyRows = snapshot.strategyRows.map(row=>`<tr><td>${esc(row.label)}</td><td class="n">${esc(formatCurrency(row.totalA))}</td><td class="n">${esc(formatCurrency(row.totalB))}</td><td class="n">${esc(formatCurrency(row.totalA-row.totalB))}</td></tr>`).join('');
+            const checkRows = snapshot.checkRows.map(row=>`<tr><td>${esc(row.strategy)}</td><td>${esc(row.label)}</td><td class="n">${row.a.marked}/${row.a.opportunities} (${Math.round(row.a.rate*100)}%)</td><td class="n">${row.b.marked}/${row.b.opportunities} (${Math.round(row.b.rate*100)}%)</td></tr>`).join('');
+            const dailyRows = snapshot.dailyRows.map(row=>`<tr><td>${esc(formatDateShort(parseISODateLocal(row.iso)))}</td><td class="n">${esc(formatCurrency(row.valueA))}</td><td class="n">${esc(formatCurrency(row.valueB))}</td><td class="n"><b>${esc(formatCurrency(row.combined))}</b></td></tr>`).join('');
+            return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Comparativo de Contas</title><style>@page{size:landscape;margin:10mm}body{font:12px Arial;color:#0f172a;margin:24px}h1{margin:0 0 4px}h2{font-size:15px;margin-top:20px}.muted{color:#64748b}table{width:100%;border-collapse:collapse;margin-top:8px}th,td{padding:7px;border-bottom:1px solid #e2e8f0;text-align:left}th{background:#f8fafc}.n{text-align:right}img{width:100%;height:260px;object-fit:contain;margin-top:14px}tr{break-inside:avoid}</style></head><body><h1>Comparativo de Contas por Período</h1><div class="muted">${esc(snapshot.accountA.name)} × ${esc(snapshot.accountB.name)} • ${esc(snapshot.start)} a ${esc(snapshot.end)} • ${esc(new Date().toLocaleString())}</div><h2>KPIs</h2><table><thead><tr><th>Conta</th><th>Resultado</th><th>Trades (W/L)</th><th>Win%</th><th>PF</th><th>Expectancy</th><th>Max DD</th><th>Dias</th></tr></thead><tbody>${metricRow(snapshot.accountA)}${metricRow(snapshot.accountB)}${metricRow(snapshot.combined)}</tbody></table>${chartImage}<h2>Resultados por Estratégia</h2><table><thead><tr><th>Estratégia</th><th>${esc(snapshot.accountA.name)}</th><th>${esc(snapshot.accountB.name)}</th><th>Diferença A-B</th></tr></thead><tbody>${strategyRows||'<tr><td colspan="4">Sem operações.</td></tr>'}</tbody></table>${checkRows?`<h2>Regiões e Contextos Marcados</h2><table><thead><tr><th>Estratégia</th><th>Item</th><th>${esc(snapshot.accountA.name)}</th><th>${esc(snapshot.accountB.name)}</th></tr></thead><tbody>${checkRows}</tbody></table>`:''}<h2>Resultado Diário</h2><table><thead><tr><th>Data</th><th>${esc(snapshot.accountA.name)}</th><th>${esc(snapshot.accountB.name)}</th><th>Consolidado</th></tr></thead><tbody>${dailyRows||'<tr><td colspan="4">Sem operações.</td></tr>'}</tbody></table></body></html>`;
+        }
+
+        function accountsComparisonHTML(){
+            const snapshot = __accountsComparisonSnapshot;
+            if(!snapshot && !renderAccountsComparison()) return;
+            const data = __accountsComparisonSnapshot;
+            window.dfDownloadTextFile(`${dfComparisonFileBase(data)}.html`,dfBuildAccountsComparisonHTML(data),'text/html;charset=utf-8');
+        }
+
+        function accountsComparisonCSV(){
+            const snapshot = __accountsComparisonSnapshot;
+            if(!snapshot && !renderAccountsComparison()) return;
+            const data = __accountsComparisonSnapshot;
+            const quote = value => `"${String(value == null ? '' : value).replace(/"/g,'""')}"`;
+            const lines = [['Data',data.accountA.name,data.accountB.name,'Consolidado'].map(quote).join(';')];
+            data.dailyRows.forEach(row=>lines.push([row.iso,row.valueA.toFixed(2),row.valueB.toFixed(2),row.combined.toFixed(2)].map(quote).join(';')));
+            lines.push('');lines.push(['Estratégia',data.accountA.name,data.accountB.name,'Diferença A-B'].map(quote).join(';'));
+            data.strategyRows.forEach(row=>lines.push([row.label,row.totalA.toFixed(2),row.totalB.toFixed(2),(row.totalA-row.totalB).toFixed(2)].map(quote).join(';')));
+            lines.push('');lines.push(['Estratégia','Região / contexto',data.accountA.name,data.accountB.name].map(quote).join(';'));
+            data.checkRows.forEach(row=>lines.push([row.strategy,row.label,`${row.a.marked}/${row.a.opportunities} (${Math.round(row.a.rate*100)}%)`,`${row.b.marked}/${row.b.opportunities} (${Math.round(row.b.rate*100)}%)`].map(quote).join(';')));
+            window.dfDownloadTextFile(`${dfComparisonFileBase(data)}.csv`,'\uFEFF'+lines.join('\r\n'),'text/csv;charset=utf-8');
+        }
+
+        async function accountsComparisonPDF(){
+            if(!__accountsComparisonSnapshot && !renderAccountsComparison()) return false;
+            const data = __accountsComparisonSnapshot;
+            try{
+                const JsPDF = await (window.dfEnsureJsPDF ? window.dfEnsureJsPDF() : Promise.reject(new Error('Gerador de PDF não inicializado')));
+                const doc = new JsPDF({orientation:'landscape',unit:'pt',format:'letter'});
+                const pageW=792,pageH=612,margin=30,contentW=pageW-margin*2;let y=34;
+                const header=()=>{doc.setFont('helvetica','bold');doc.setFontSize(15);doc.setTextColor(15,23,42);doc.text('Comparativo de Contas por Período',margin,y);doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(100,116,139);doc.text(`${data.accountA.name} x ${data.accountB.name} • ${data.start} a ${data.end}`,margin,y+14);y+=30;};
+                const newPage=()=>{doc.addPage();y=34;header();};
+                const ensure=height=>{if(y+height>pageH-28)newPage();};
+                const pf=metric=>metric.profitFactor===Infinity?'∞':(metric.profitFactor===null?'--':Number(metric.profitFactor).toFixed(2));
+                const table=(title,headers,rows,widths)=>{ensure(42);doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.setTextColor(15,23,42);doc.text(title,margin,y);y+=10;const drawHead=()=>{doc.setFillColor(248,250,252);doc.rect(margin,y,contentW,20,'F');doc.setFont('helvetica','bold');doc.setFontSize(7.5);doc.setTextColor(100,116,139);let x=margin+6;headers.forEach((h,i)=>{doc.text(String(h).slice(0,36),x,y+13);x+=widths[i]});y+=20;};drawHead();rows.forEach(row=>{if(y+18>pageH-28){newPage();drawHead()}doc.setFont('helvetica','normal');doc.setFontSize(7.8);doc.setTextColor(15,23,42);let x=margin+6;row.forEach((value,i)=>{const txt=String(value==null?'':value).slice(0,i===0?42:32);doc.text(txt,x,y+12);x+=widths[i]});doc.setDrawColor(241,245,249);doc.line(margin,y+18,pageW-margin,y+18);y+=18});y+=12;};
+                header();
+                table('KPIs',['Conta','Resultado','Trades W/L','Win%','PF','Expect.','Max DD','Dias'],[data.accountA,data.accountB,data.combined].map(metric=>[metric.name,formatCurrency(metric.total),`${metric.trades} (${metric.wins}/${metric.losses})`,`${Math.round(metric.winRate*100)}%`,pf(metric),formatCurrency(metric.expectancy),formatCurrency(-metric.maxDD),metric.tradedDays]),[150,95,85,55,45,90,90,60]);
+                try{const chart=document.getElementById('accounts-compare-chart')?.toDataURL('image/png',1);if(chart){ensure(175);doc.addImage(chart,'PNG',margin,y,contentW,160);y+=172;}}catch(e){}
+                table('Resultados por Estratégia',['Estratégia',data.accountA.name,data.accountB.name,'Diferença A-B'],data.strategyRows.map(row=>[row.label,formatCurrency(row.totalA),formatCurrency(row.totalB),formatCurrency(row.totalA-row.totalB)]),[260,155,155,150]);
+                if(data.checkRows.length)table('Regiões e Contextos Marcados',['Estratégia / item',data.accountA.name,data.accountB.name],data.checkRows.map(row=>[`${row.strategy} — ${row.label}`,`${row.a.marked}/${row.a.opportunities} (${Math.round(row.a.rate*100)}%)`,`${row.b.marked}/${row.b.opportunities} (${Math.round(row.b.rate*100)}%)`]),[370,175,175]);
+                table('Resultado Diário',['Data',data.accountA.name,data.accountB.name,'Consolidado'],data.dailyRows.map(row=>[formatDateShort(parseISODateLocal(row.iso)),formatCurrency(row.valueA),formatCurrency(row.valueB),formatCurrency(row.combined)]),[190,175,175,175]);
+                const pages=doc.getNumberOfPages();for(let p=1;p<=pages;p++){doc.setPage(p);doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(148,163,184);doc.text(`DF Strategic • página ${p}/${pages}`,pageW-margin,pageH-14,{align:'right'});}doc.save(`${dfComparisonFileBase(data)}.pdf`);return true;
+            }catch(error){
+                console.warn('Falha no PDF comparativo:',error);
+                window.dfDownloadTextFile(`${dfComparisonFileBase(data)}.html`,dfBuildAccountsComparisonHTML(data),'text/html;charset=utf-8');
+                alert('O navegador bloqueou o PDF. O relatório comparativo completo foi baixado em HTML.');
+                return true;
+            }
+        }
+
+        window.openAccountsComparison=openAccountsComparison;
+        window.closeAccountsComparison=closeAccountsComparison;
+        window.renderAccountsComparison=renderAccountsComparison;
+        window.accountsComparisonPDF=accountsComparisonPDF;
+        window.accountsComparisonHTML=accountsComparisonHTML;
+        window.accountsComparisonCSV=accountsComparisonCSV;
+        try{
+            const comparisonModal = document.getElementById('accounts-compare-modal');
+            if(comparisonModal && comparisonModal.parentElement !== document.body) document.body.appendChild(comparisonModal);
+        }catch(e){}
 
         function bindAccountsOverviewExportButtons(){
             const pdfBtn = document.getElementById('btn-accounts-overview-pdf');
@@ -6881,6 +7228,17 @@ function renderGlobalInsights(){
 
         function ensureAllAccountsMeta(){
             Object.values(store.accounts || {}).forEach(normalizeAccountMeta);
+            if(!Array.isArray(store.companyGroups)) store.companyGroups = [];
+            const knownGroupKeys = new Set(store.companyGroups.map(group => _normText(group)));
+            Object.values(store.accounts || {}).forEach(acc => {
+                const group = normalizeAccountMeta(acc).companyGroup || 'Sem grupo';
+                const key = _normText(group);
+                if(!knownGroupKeys.has(key)){
+                    store.companyGroups.push(group);
+                    knownGroupKeys.add(key);
+                }
+            });
+            if(!knownGroupKeys.has(_normText('Sem grupo'))) store.companyGroups.push('Sem grupo');
             if(!store.accountFilters || typeof store.accountFilters !== 'object'){
                 store.accountFilters = { status: 'active', groups: [] };
             }
@@ -6890,7 +7248,7 @@ function renderGlobalInsights(){
 
         function getAllCompanyGroups(){
             ensureAllAccountsMeta();
-            const groups = Array.from(new Set(Object.values(store.accounts || {}).map(a => normalizeAccountMeta(a).companyGroup || 'Sem grupo')));
+            const groups = Array.from(new Set((store.companyGroups || []).map(group => String(group || '').trim()).filter(Boolean)));
             return groups.sort((a,b)=> String(a).localeCompare(String(b), 'pt-BR', { sensitivity:'base', numeric:true }));
         }
 
@@ -6920,15 +7278,60 @@ function renderGlobalInsights(){
                 return;
             }
             els.accountGroupFilters.innerHTML = groups.map(group => `
-                <label class="flex items-center gap-2 text-xs text-slate-200">
-                    <input type="checkbox" class="rounded accent-indigo-500" data-group-filter="${escapeHtml(group)}" ${selected.has(group) ? 'checked' : ''}>
-                    <span class="truncate">${escapeHtml(group)}</span>
-                </label>
+                <div class="flex items-center gap-2 text-xs text-slate-200 group/company">
+                    <label class="flex min-w-0 flex-1 items-center gap-2">
+                        <input type="checkbox" class="rounded accent-indigo-500" data-group-filter="${escapeHtml(group)}" ${selected.has(group) ? 'checked' : ''}>
+                        <span class="truncate">${escapeHtml(group)}</span>
+                    </label>
+                    ${_normText(group) === _normText('Sem grupo') ? '' : `<button type="button" data-delete-company-group="${escapeHtml(group)}" class="rounded p-1 text-slate-500 opacity-70 hover:bg-red-500/10 hover:text-red-300 group-hover/company:opacity-100" title="Excluir grupo ${escapeHtml(group)}" aria-label="Excluir grupo ${escapeHtml(group)}"><i data-lucide="trash-2" class="h-3.5 w-3.5"></i></button>`}
+                </div>
             `).join('');
             els.accountGroupFilters.querySelectorAll('input[data-group-filter]').forEach(el => {
                 el.addEventListener('change', updateAccountFilters);
             });
+            els.accountGroupFilters.querySelectorAll('button[data-delete-company-group]').forEach(button => {
+                button.addEventListener('click', event => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    window.deleteCompanyGroup(button.getAttribute('data-delete-company-group'));
+                });
+            });
+            const datalist = document.getElementById('company-group-options');
+            if(datalist) datalist.innerHTML = groups.map(group => `<option value="${escapeHtml(group)}"></option>`).join('');
+            try{ lucide.createIcons(); }catch(e){}
         }
+
+        window.createCompanyGroup = () => {
+            ensureAllAccountsMeta();
+            const raw = prompt('Nome do novo grupo:');
+            if(raw === null) return;
+            const name = String(raw || '').trim();
+            if(!name){ alert('Informe um nome para o grupo.'); return; }
+            const existing = getAllCompanyGroups().find(group => _normText(group) === _normText(name));
+            if(existing){ alert(`O grupo “${existing}” já existe.`); return; }
+            store.companyGroups.push(name);
+            saveToCloud();
+            renderAccountGroupFilters();
+        };
+
+        window.deleteCompanyGroup = (groupName) => {
+            ensureAllAccountsMeta();
+            const group = getAllCompanyGroups().find(item => _normText(item) === _normText(groupName));
+            if(!group || _normText(group) === _normText('Sem grupo')) return;
+            const affected = Object.values(store.accounts || {}).filter(acc => _normText(normalizeAccountMeta(acc).companyGroup) === _normText(group));
+            const message = affected.length
+                ? `Excluir o grupo “${group}”? ${affected.length} conta${affected.length === 1 ? '' : 's'}, inclusive suspensas ou arquivadas, ser${affected.length === 1 ? 'á' : 'ão'} transferida${affected.length === 1 ? '' : 's'} para “Sem grupo”. Nenhum histórico será apagado.`
+                : `Excluir o grupo vazio “${group}”?`;
+            if(!confirm(message)) return;
+            affected.forEach(acc => { acc.companyGroup = 'Sem grupo'; });
+            store.companyGroups = (store.companyGroups || []).filter(item => _normText(item) !== _normText(group));
+            store.accountFilters.groups = (store.accountFilters.groups || []).filter(item => _normText(item) !== _normText(group));
+            saveToCloud();
+            renderAccountGroupFilters();
+            renderSidebar();
+            try{ renderGlobalInsights(); }catch(e){}
+            try{ renderAccountsOverview(); }catch(e){}
+        };
 
         window.updateAccountFilters = () => {
             ensureAllAccountsMeta();
@@ -6975,6 +7378,7 @@ function renderGlobalInsights(){
             normalizeAccountMeta(acc);
             acc.status = (els.accountMetaStatus && els.accountMetaStatus.value) || 'active';
             acc.companyGroup = ((els.accountMetaGroup && els.accountMetaGroup.value) || 'Sem grupo').trim() || 'Sem grupo';
+            if(!store.companyGroups.some(group => _normText(group) === _normText(acc.companyGroup))) store.companyGroups.push(acc.companyGroup);
             if(acc.status !== 'active' && store.activeId === id){
                 // keep active if desired; no change
             }
