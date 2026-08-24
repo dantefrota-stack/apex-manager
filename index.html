@@ -1733,7 +1733,6 @@ tr.bg-green-50 td {
                         <option value="ab" selected>Grupo A + B</option>
                         <option value="a">Grupo A</option>
                         <option value="b">Grupo B</option>
-                        <option value="opening">Setup abertura</option>
                         <option value="all">Todos</option>
                     </select>
                     <button onclick="filterReport()" class="bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700"><i data-lucide="search" class="w-4 h-4"></i></button>
@@ -5437,17 +5436,60 @@ Resumo por Estratégia,,,,,
             const label = String((entryOrLabel && entryOrLabel.label !== undefined) ? entryOrLabel.label : entryOrLabel || '').toLowerCase();
             if(/grupo\s*a\b/.test(label) || /\bgroup\s*a\b/.test(label)) return 'a';
             if(/grupo\s*b\b/.test(label) || /\bgroup\s*b\b/.test(label)) return 'b';
-            if(label.includes('abertura') || label.includes('opening') || label.includes('setup')) return 'opening';
             return 'other';
         }
+        function dfPeriodStrategyFilterOptions(iso){
+            const target = iso || (els && els.filterEnd && els.filterEnd.value) || getTodayISO();
+            const baseOptions = [
+                { value:'ab', label:'Grupo A + B' },
+                { value:'a', label:'Grupo A' },
+                { value:'b', label:'Grupo B' }
+            ];
+            const extras = [];
+            const seen = new Set(baseOptions.map(o => o.value));
+            try{
+                getStrategiesForDate(target, { includeInactive:false, includeHidden:false }).forEach(s => {
+                    const cat = dfPeriodEntryCategory(s);
+                    if(cat === 'a' || cat === 'b') return;
+                    const value = `slot:${s.slot}`;
+                    if(seen.has(value)) return;
+                    seen.add(value);
+                    extras.push({ value, label: String(s.label || s.slot || 'Outro grupo').trim() || 'Outro grupo' });
+                });
+            }catch(e){}
+            return [...baseOptions, ...extras, { value:'all', label:'Todos' }];
+        }
+        function dfRefreshPeriodGroupFilterOptions(iso){
+            try{
+                const el = document.getElementById('period-group-filter');
+                if(!el) return;
+                const previous = el.value || 'ab';
+                const options = dfPeriodStrategyFilterOptions(iso);
+                el.innerHTML = options.map(o => `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`).join('');
+                const available = options.some(o => o.value === previous);
+                if(available) el.value = previous;
+                else if(previous === 'opening'){
+                    const opening = options.find(o => /abert|opening|setup/i.test(o.label));
+                    el.value = opening ? opening.value : 'ab';
+                }else{
+                    el.value = 'ab';
+                }
+            }catch(e){}
+        }
         function dfPeriodEntryMatches(entry, filterValue){
-            const f = String(filterValue || dfPeriodGroupFilterValue() || 'ab').toLowerCase();
+            const fRaw = String(filterValue || dfPeriodGroupFilterValue() || 'ab');
+            const f = fRaw.toLowerCase();
             const cat = dfPeriodEntryCategory(entry);
             if(f === 'all') return true;
             if(f === 'a') return cat === 'a';
             if(f === 'b') return cat === 'b';
-            if(f === 'opening') return cat === 'opening';
             if(f === 'ab' || f === 'both' || f === 'groups') return cat === 'a' || cat === 'b';
+            if(f.startsWith('slot:')) return String(entry && entry.slot || '').toLowerCase() === f.slice(5);
+            if(f.startsWith('label:')) return String(entry && entry.label || '').trim().toLowerCase() === fRaw.slice(6).trim().toLowerCase();
+            if(f === 'opening'){
+                const label = String((entry && entry.label) || '').toLowerCase();
+                return label.includes('abertura') || label.includes('opening') || label.includes('setup') || label.includes('abert');
+            }
             return true;
         }
         function dfTradeValuesFromStrategyEntries(entries){
@@ -5751,6 +5793,7 @@ Resumo por Estratégia,,,,,
             const start = els.filterStart.value; 
             const end = els.filterEnd.value;
             if(!start || !end) return;
+            try { dfRefreshPeriodGroupFilterOptions(end); } catch(e) {}
             const acc = getActive();
             const periodGroupFilter = dfPeriodGroupFilterValue();
 
