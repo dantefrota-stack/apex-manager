@@ -5707,8 +5707,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const fe = (document.getElementById('filter-end') || {}).value || '';
             if(fs && fe && fe < fs){ alert(translateString('A data final deve ser maior ou igual a data inicial.')); return; }
             const selectedSlot = getPeriodSelectedSlot(fe || fs || getTodayISO());
-            const strategyDefs = getStrategiesForDate(fe || fs || getTodayISO(), {includeInactive:false,includeHidden:false})
-                .filter(strategy => selectedSlot === 'all' || strategy.slot === selectedSlot);
+            const strategyDefs = isPeriodGroupABSelection(selectedSlot)
+                ? [getPeriodGroupABDefinition()]
+                : getStrategiesForDate(fe || fs || getTodayISO(), {includeInactive:false,includeHidden:false})
+                    .filter(strategy => selectedSlot === 'all' || strategy.slot === selectedSlot);
             const csvCell = value => { const text=String(value??'').replace(/\r?\n/g,' '); return /[",\n]/.test(text)?`"${text.replace(/"/g,'""')}"`:text; };
             const lines=[];
             const headers=['Data ISO','Data',...strategyDefs.map(s=>s.label),'Resultado do Dia','Resultado Acumulado','Feriado',`Nota ${dfNoteLabel('a')}`];
@@ -5724,10 +5726,13 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 const blocks=getStrategyEntriesForDay(d,iso,{includeInactive:false,includeHidden:false});
                 const bySlot=new Map(blocks.map(b=>[b.slot,Number(b.legs?.subtotal||b.subtotal||0)]));
                 const holiday=!!d.holiday, noteA=dfNoteA(d), noteB=dfNoteB(d);
-                const dayTotal=holiday?0:strategyDefs.reduce((sum,s)=>sum+Number(bySlot.get(s.slot)||0),0);
-                if(!strategyDefs.some(s=>Number(bySlot.get(s.slot)||0)!==0)&&!noteA.trim()&&!noteB.trim()&&!holiday)return;
+                const valueForStrategy = (strategy) => isPeriodGroupABSelection(selectedSlot)
+                    ? blocks.filter(b => isPeriodGroupABLabel(b.label)).reduce((sum,b)=>sum+Number(b.legs?.subtotal||b.subtotal||0),0)
+                    : Number(bySlot.get(strategy.slot)||0);
+                const dayTotal=holiday?0:strategyDefs.reduce((sum,strategy)=>sum+valueForStrategy(strategy),0);
+                if(!strategyDefs.some(strategy=>valueForStrategy(strategy)!==0)&&!noteA.trim()&&!noteB.trim()&&!holiday)return;
                 if(!holiday)cumulative+=dayTotal;
-                const values=[iso,dateStr,...strategyDefs.map(s=>Number(bySlot.get(s.slot)||0).toFixed(2)),dayTotal.toFixed(2),cumulative.toFixed(2),holiday?'Sim':'Não',noteA];
+                const values=[iso,dateStr,...strategyDefs.map(strategy=>valueForStrategy(strategy).toFixed(2)),dayTotal.toFixed(2),cumulative.toFixed(2),holiday?'Sim':'Não',noteA];
                 if(dfNoteBEnabled())values.push(noteB); lines.push(values.map(csvCell).join(','));
             });
 
@@ -6066,6 +6071,27 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             getStrategiesForDate(iso, { includeInactive:true, includeHidden:true }).forEach(s => map[s.slot] = s.label);
             return map;
         }
+        // Period report composite filter: Grupo A + Grupo B
+        const PERIOD_GROUP_AB_SLOT = '__period_group_ab__';
+        function isPeriodGroupABSelection(slot){ return slot === PERIOD_GROUP_AB_SLOT; }
+        function isPeriodGroupABLabel(label){
+            const text = String(label || '').trim();
+            return /grupo\s*a(?:\b|$)/i.test(text) || /grupo\s*b(?:\b|$)/i.test(text);
+        }
+        function periodSelectionMatchesEntry(selectedSlot, entry){
+            if(selectedSlot === 'all') return true;
+            if(isPeriodGroupABSelection(selectedSlot)) return isPeriodGroupABLabel(entry?.label);
+            return entry?.slot === selectedSlot;
+        }
+        function periodSelectionMatchesTrade(selectedSlot, trade){
+            if(selectedSlot === 'all') return true;
+            if(isPeriodGroupABSelection(selectedSlot)) return isPeriodGroupABLabel(trade?.label);
+            return trade?.strategy === selectedSlot;
+        }
+        function getPeriodGroupABDefinition(){
+            return { slot: PERIOD_GROUP_AB_SLOT, legacyKey: PERIOD_GROUP_AB_SLOT, label: 'A + B', order: 999, color: '#6366f1' };
+        }
+
         function getStrategyRowsForPeriod(acc, startISO, endISO, opts={}){
             const bucketMap = new Map();
             const includeInactive = !!opts.includeInactive;
@@ -6074,16 +6100,18 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 if (iso < startISO || iso > endISO) return;
                 const e = acc.data[iso] || {};
                 if (e.holiday) return;
-                getStrategyEntriesForDay(e, iso, { includeInactive, includeHidden }).forEach(entry => {
-                    if (opts.slot && opts.slot !== 'all' && entry.slot !== opts.slot) return;
-                    const bucketKey = `${entry.slot}__${entry.label}`;
+                const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive, includeHidden })
+                    .filter(entry => !opts.slot || periodSelectionMatchesEntry(opts.slot, entry));
+                dayEntries.forEach(entry => {
+                    const isAB = isPeriodGroupABSelection(opts.slot);
+                    const bucketKey = isAB ? PERIOD_GROUP_AB_SLOT : `${entry.slot}__${entry.label}`;
                     if (!bucketMap.has(bucketKey)) {
                         bucketMap.set(bucketKey, {
                             key: bucketKey,
-                            slot: entry.slot,
-                            label: entry.label,
-                            order: entry.order,
-                            color: entry.color,
+                            slot: isAB ? PERIOD_GROUP_AB_SLOT : entry.slot,
+                            label: isAB ? 'A + B' : entry.label,
+                            order: isAB ? 999 : entry.order,
+                            color: isAB ? '#6366f1' : entry.color,
                             total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0,
                             winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0,
                             maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0,
@@ -6095,8 +6123,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                     const legs = dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY).map(idx => entry.legs[`leg${idx}`])
                         .map(v => (v === '' || v === null || v === undefined) ? null : Number(v))
                         .filter(v => v !== null && !isNaN(v) && v !== 0);
-                    if (subtotal > 0) s.greenDays += 1;
-                    else if (subtotal < 0) s.redDays += 1;
+                    if (!isAB) {
+                        if (subtotal > 0) s.greenDays += 1;
+                        else if (subtotal < 0) s.redDays += 1;
+                    }
                     legs.forEach(v => {
                         s.trades += 1;
                         if (v > 0) {
@@ -6124,7 +6154,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                             s.checkStats[label] = stat;
                         });
                     });
-                    if (subtotal !== 0 || legs.length) {
+                    if (!isAB && (subtotal !== 0 || legs.length)) {
                         s.total += subtotal;
                         s.cum += subtotal;
                         if (s.cum > s.peak) s.peak = s.cum;
@@ -6134,6 +6164,26 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                         s.curveData.push(s.cum);
                     }
                 });
+                if (isPeriodGroupABSelection(opts.slot)) {
+                    const ab = dayEntries.reduce((sum, entry) => sum + Number(entry.legs?.subtotal || 0), 0);
+                    const abTrades = dayEntries.reduce((count, entry) => {
+                        const vals = dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY).map(idx => entry.legs[`leg${idx}`])
+                            .filter(v => v !== '' && v !== null && v !== undefined && !isNaN(Number(v)) && Number(v) !== 0);
+                        return count + vals.length;
+                    }, 0);
+                    const s = bucketMap.get(PERIOD_GROUP_AB_SLOT);
+                    if (s && (ab !== 0 || abTrades)) {
+                        if (ab > 0) s.greenDays += 1;
+                        else if (ab < 0) s.redDays += 1;
+                        s.total += ab;
+                        s.cum += ab;
+                        if (s.cum > s.peak) s.peak = s.cum;
+                        const dd = s.peak - s.cum;
+                        if (dd > s.maxDD) s.maxDD = dd;
+                        s.curveLabels.push(formatDateShort(parseISODateLocal(iso)));
+                        s.curveData.push(s.cum);
+                    }
+                }
             });
             const rows = Array.from(bucketMap.values()).sort((a,b) => (a.order - b.order) || String(a.label).localeCompare(String(b.label)));
             rows.forEach(s => {
@@ -6321,10 +6371,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 if (e.holiday) return;
 
                 const blocks = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false })
-                    .filter(block => selectedSlot === 'all' || block.slot === selectedSlot);
+                    .filter(block => periodSelectionMatchesEntry(selectedSlot, block));
                 const total = blocks.reduce((sum, b) => sum + (Number(b.legs.subtotal) || 0), 0);
                 const trades = _individualTradeValuesForDay(e, iso)
-                    .filter(trade => selectedSlot === 'all' || trade.strategy === selectedSlot);
+                    .filter(trade => periodSelectionMatchesTrade(selectedSlot, trade));
                 if (total !== 0 || trades.length) {
                     tradedDays += 1;
                     if(!firstTradeDay) firstTradeDay = iso;
@@ -6373,10 +6423,15 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(!select) return 'all';
             const previous = select.value || 'all';
             const strategies = getStrategiesForDate(iso || getTodayISO(), { includeInactive:false, includeHidden:false });
+            const hasGroupA = strategies.some(strategy => /grupo\s*a(?:\b|$)/i.test(String(strategy.label || '')));
+            const hasGroupB = strategies.some(strategy => /grupo\s*b(?:\b|$)/i.test(String(strategy.label || '')));
+            const hasGroupAB = hasGroupA && hasGroupB;
             select.innerHTML = '<option value="all">Todos</option>' + strategies.map(strategy =>
                 `<option value="${escapeHtml(strategy.slot)}">${escapeHtml(strategy.label)}</option>`
-            ).join('');
-            select.value = strategies.some(strategy => strategy.slot === previous) ? previous : 'all';
+            ).join('') + (hasGroupAB ? `<option value="${PERIOD_GROUP_AB_SLOT}">A + B</option>` : '');
+            select.value = (previous === PERIOD_GROUP_AB_SLOT && hasGroupAB)
+                ? PERIOD_GROUP_AB_SLOT
+                : (strategies.some(strategy => strategy.slot === previous) ? previous : 'all');
             return select.value || 'all';
         }
 
@@ -6415,9 +6470,11 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             let peak = 0;
             let maxDD = 0;
 
-            const chartStrategyDefs = getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
-                .filter(cfg => selectedSlot === 'all' || cfg.slot === selectedSlot)
-                .map(cfg => ({ ...cfg, legacyKey: cfg.legacyKey || cfg.slot, data: [], hasTrades:false }));
+            const chartStrategyDefs = isPeriodGroupABSelection(selectedSlot)
+                ? [{ ...getPeriodGroupABDefinition(), data: [], hasTrades:false }]
+                : getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
+                    .filter(cfg => selectedSlot === 'all' || cfg.slot === selectedSlot)
+                    .map(cfg => ({ ...cfg, legacyKey: cfg.legacyKey || cfg.slot, data: [], hasTrades:false }));
             const strategyCum = {};
             chartStrategyDefs.forEach(cfg => { strategyCum[cfg.legacyKey] = 0; });
 
@@ -6427,11 +6484,11 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 if(e.holiday) return;
 
                 const tradeVals = _individualTradeValuesForDay(e, iso)
-                    .filter(t => selectedSlot === 'all' || t.strategy === selectedSlot)
+                    .filter(t => periodSelectionMatchesTrade(selectedSlot, t))
                     .map(t => Number(t.value || 0)).filter(v => !isNaN(v) && v !== 0);
                 const blocks = _strategyBlocksForDay(e, iso);
                 const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false })
-                    .filter(entry => selectedSlot === 'all' || entry.slot === selectedSlot);
+                    .filter(entry => periodSelectionMatchesEntry(selectedSlot, entry));
                 const dayTotal = dayEntries.reduce((s,b)=> s + (Number(b.legs.subtotal) || 0), 0);
 
                 tradeVals.forEach(tv => {
@@ -6464,9 +6521,14 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                     chartLabels.push(formatDateShort(parseISODateLocal(iso)));
                     chartStrategyDefs.forEach(cfg => {
                         const key = cfg.legacyKey;
-                        const block = blocks[key] || blocks[cfg.slot];
-                        if (_individualTradeValuesForDay(e, iso).some(item => item.strategy === cfg.slot)) cfg.hasTrades = true;
-                        strategyCum[key] += Number(block?.legs?.subtotal || 0);
+                        if(isPeriodGroupABSelection(selectedSlot)){
+                            if(tradeVals.length) cfg.hasTrades = true;
+                            strategyCum[key] += dayTotal;
+                        }else{
+                            const block = blocks[key] || blocks[cfg.slot];
+                            if (_individualTradeValuesForDay(e, iso).some(item => item.strategy === cfg.slot)) cfg.hasTrades = true;
+                            strategyCum[key] += Number(block?.legs?.subtotal || 0);
+                        }
                         cfg.data.push(strategyCum[key]);
                     });
                 }
@@ -6587,7 +6649,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 const e = acc.data[iso] || {};
                 if(e.holiday) return;
                 overallTradeSequence.push(..._individualTradeValuesForDay(e, iso)
-                    .filter(t => selectedSlot === 'all' || t.strategy === selectedSlot)
+                    .filter(t => periodSelectionMatchesTrade(selectedSlot, t))
                     .map(t => t.value).filter(v => Number(v) !== 0));
             });
             let curLose = 0, maxLose = 0, curWin = 0, maxWin = 0;
@@ -7716,7 +7778,9 @@ ${period} • ${(acc?.name || 'Conta')}
             const selectedSlot = getPeriodSelectedSlot(end);
             const selectedStrategy = selectedSlot === 'all'
                 ? null
-                : getStrategiesForDate(end, { includeInactive:false, includeHidden:false }).find(strategy => strategy.slot === selectedSlot);
+                : (isPeriodGroupABSelection(selectedSlot)
+                    ? getPeriodGroupABDefinition()
+                    : getStrategiesForDate(end, { includeInactive:false, includeHidden:false }).find(strategy => strategy.slot === selectedSlot));
             const title = 'Análise por Período';
             const rangeText = `${formatDateShort(parseISODateLocal(start))} - ${formatDateShort(parseISODateLocal(end))} • ${acc?.name || 'Conta'} • ${selectedStrategy?.label || 'Todos'}`;
             const metricResult = (els.customResult?.textContent || '--').trim();
@@ -7771,15 +7835,17 @@ ${period} • ${(acc?.name || 'Conta')}
                 try {
                     if (!window.Chart) return null;
                     let chartLabels = [];
-                    const pdfChartStrategyDefs = getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
-                        .filter(cfg => selectedSlot === 'all' || cfg.slot === selectedSlot)
-                        .map(cfg => ({
-                            ...cfg,
-                            key: cfg.legacyKey || cfg.slot,
-                            label: cfg.label,
-                            borderColor: cfg.color || (strategyMetaBySlot(cfg.slot)?.color) || '#4f46e5',
-                            data:[]
-                        }));
+                    const pdfChartStrategyDefs = isPeriodGroupABSelection(selectedSlot)
+                        ? [{ ...getPeriodGroupABDefinition(), key: PERIOD_GROUP_AB_SLOT, label:'A + B', borderColor:'#6366f1', data:[] }]
+                        : getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
+                            .filter(cfg => selectedSlot === 'all' || cfg.slot === selectedSlot)
+                            .map(cfg => ({
+                                ...cfg,
+                                key: cfg.legacyKey || cfg.slot,
+                                label: cfg.label,
+                                borderColor: cfg.color || (strategyMetaBySlot(cfg.slot)?.color) || '#4f46e5',
+                                data:[]
+                            }));
                     const strategyCum = {};
                     pdfChartStrategyDefs.forEach(ds => { strategyCum[ds.key] = 0; });
                     const datasets = pdfChartStrategyDefs;
@@ -7789,15 +7855,19 @@ ${period} • ${(acc?.name || 'Conta')}
                         if (e.holiday) return;
                         const blocks = _strategyBlocksForDay(e, iso);
                         const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false })
-                            .filter(entry => selectedSlot === 'all' || entry.slot === selectedSlot);
+                            .filter(entry => periodSelectionMatchesEntry(selectedSlot, entry));
                         const dayTotal = dayEntries.reduce((sum,b)=> sum + (Number(b.legs.subtotal) || 0), 0);
                         const selectedDayTrades = _individualTradeValuesForDay(e, iso)
-                            .filter(trade => selectedSlot === 'all' || trade.strategy === selectedSlot);
+                            .filter(trade => periodSelectionMatchesTrade(selectedSlot, trade));
                         if (dayTotal === 0 && !selectedDayTrades.length) return;
                         chartLabels.push(formatDateShort(parseISODateLocal(iso)));
                         datasets.forEach(ds => {
-                            const block = blocks[ds.key] || blocks[ds.slot];
-                            strategyCum[ds.key] += Number(block?.legs?.subtotal || 0);
+                            if(isPeriodGroupABSelection(selectedSlot)){
+                                strategyCum[ds.key] += dayTotal;
+                            }else{
+                                const block = blocks[ds.key] || blocks[ds.slot];
+                                strategyCum[ds.key] += Number(block?.legs?.subtotal || 0);
+                            }
                             ds.data.push(strategyCum[ds.key]);
                         });
                     });
