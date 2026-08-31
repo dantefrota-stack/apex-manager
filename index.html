@@ -5709,8 +5709,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const selectedSlot = getPeriodSelectedSlot(fe || fs || getTodayISO());
             const strategyDefs = isPeriodGroupABSelection(selectedSlot)
                 ? [getPeriodGroupABDefinition()]
-                : getStrategiesForDate(fe || fs || getTodayISO(), {includeInactive:false,includeHidden:false})
-                    .filter(strategy => selectedSlot === 'all' || strategy.slot === selectedSlot);
+                : isPeriodGroupABLinesSelection(selectedSlot)
+                    ? getPeriodGroupABLinesDefinitions(fe || fs || getTodayISO())
+                    : getStrategiesForDate(fe || fs || getTodayISO(), {includeInactive:false,includeHidden:false})
+                        .filter(strategy => selectedSlot === 'all' || strategy.slot === selectedSlot);
             const csvCell = value => { const text=String(value??'').replace(/\r?\n/g,' '); return /[",\n]/.test(text)?`"${text.replace(/"/g,'""')}"`:text; };
             const lines=[];
             const headers=['Data ISO','Data',...strategyDefs.map(s=>s.label),'Resultado do Dia','Resultado Acumulado','Feriado',`Nota ${dfNoteLabel('a')}`];
@@ -6073,23 +6075,30 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         }
         // Period report composite filter: Grupo A + Grupo B
         const PERIOD_GROUP_AB_SLOT = '__period_group_ab__';
+        const PERIOD_GROUP_AB_LINES_SLOT = '__period_group_ab_lines__';
         function isPeriodGroupABSelection(slot){ return slot === PERIOD_GROUP_AB_SLOT; }
+        function isPeriodGroupABLinesSelection(slot){ return slot === PERIOD_GROUP_AB_LINES_SLOT; }
+        function isPeriodGroupABAnySelection(slot){ return isPeriodGroupABSelection(slot) || isPeriodGroupABLinesSelection(slot); }
         function isPeriodGroupABLabel(label){
             const text = String(label || '').trim();
             return /grupo\s*a(?:\b|$)/i.test(text) || /grupo\s*b(?:\b|$)/i.test(text);
         }
         function periodSelectionMatchesEntry(selectedSlot, entry){
             if(selectedSlot === 'all') return true;
-            if(isPeriodGroupABSelection(selectedSlot)) return isPeriodGroupABLabel(entry?.label);
+            if(isPeriodGroupABAnySelection(selectedSlot)) return isPeriodGroupABLabel(entry?.label);
             return entry?.slot === selectedSlot;
         }
         function periodSelectionMatchesTrade(selectedSlot, trade){
             if(selectedSlot === 'all') return true;
-            if(isPeriodGroupABSelection(selectedSlot)) return isPeriodGroupABLabel(trade?.label);
+            if(isPeriodGroupABAnySelection(selectedSlot)) return isPeriodGroupABLabel(trade?.label);
             return trade?.strategy === selectedSlot;
         }
         function getPeriodGroupABDefinition(){
             return { slot: PERIOD_GROUP_AB_SLOT, legacyKey: PERIOD_GROUP_AB_SLOT, label: 'A + B', order: 999, color: '#6366f1' };
+        }
+        function getPeriodGroupABLinesDefinitions(iso){
+            return getStrategiesForDate(iso || getTodayISO(), { includeInactive:false, includeHidden:false })
+                .filter(strategy => /grupo\s*a(?:\b|$)/i.test(String(strategy.label || '')) || /grupo\s*b(?:\b|$)/i.test(String(strategy.label || '')));
         }
 
         function getStrategyRowsForPeriod(acc, startISO, endISO, opts={}){
@@ -6428,10 +6437,14 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const hasGroupAB = hasGroupA && hasGroupB;
             select.innerHTML = '<option value="all">Todos</option>' + strategies.map(strategy =>
                 `<option value="${escapeHtml(strategy.slot)}">${escapeHtml(strategy.label)}</option>`
-            ).join('') + (hasGroupAB ? `<option value="${PERIOD_GROUP_AB_SLOT}">A + B</option>` : '');
+            ).join('')
+                + (hasGroupAB ? `<option value="${PERIOD_GROUP_AB_SLOT}">A + B</option>` : '')
+                + (hasGroupAB ? `<option value="${PERIOD_GROUP_AB_LINES_SLOT}">A + B (Linhas)</option>` : '');
             select.value = (previous === PERIOD_GROUP_AB_SLOT && hasGroupAB)
                 ? PERIOD_GROUP_AB_SLOT
-                : (strategies.some(strategy => strategy.slot === previous) ? previous : 'all');
+                : (previous === PERIOD_GROUP_AB_LINES_SLOT && hasGroupAB)
+                    ? PERIOD_GROUP_AB_LINES_SLOT
+                    : (strategies.some(strategy => strategy.slot === previous) ? previous : 'all');
             return select.value || 'all';
         }
 
@@ -6472,9 +6485,11 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
             const chartStrategyDefs = isPeriodGroupABSelection(selectedSlot)
                 ? [{ ...getPeriodGroupABDefinition(), data: [], hasTrades:false }]
-                : getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
-                    .filter(cfg => selectedSlot === 'all' || cfg.slot === selectedSlot)
-                    .map(cfg => ({ ...cfg, legacyKey: cfg.legacyKey || cfg.slot, data: [], hasTrades:false }));
+                : isPeriodGroupABLinesSelection(selectedSlot)
+                    ? getPeriodGroupABLinesDefinitions(end).map(cfg => ({ ...cfg, legacyKey: cfg.legacyKey || cfg.slot, data: [], hasTrades:false }))
+                    : getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
+                        .filter(cfg => selectedSlot === 'all' || cfg.slot === selectedSlot)
+                        .map(cfg => ({ ...cfg, legacyKey: cfg.legacyKey || cfg.slot, data: [], hasTrades:false }));
             const strategyCum = {};
             chartStrategyDefs.forEach(cfg => { strategyCum[cfg.legacyKey] = 0; });
 
@@ -7778,8 +7793,8 @@ ${period} • ${(acc?.name || 'Conta')}
             const selectedSlot = getPeriodSelectedSlot(end);
             const selectedStrategy = selectedSlot === 'all'
                 ? null
-                : (isPeriodGroupABSelection(selectedSlot)
-                    ? getPeriodGroupABDefinition()
+                : (isPeriodGroupABSelection(selectedSlot) || isPeriodGroupABLinesSelection(selectedSlot)
+                    ? { label: isPeriodGroupABLinesSelection(selectedSlot) ? 'A + B (Linhas)' : 'A + B' }
                     : getStrategiesForDate(end, { includeInactive:false, includeHidden:false }).find(strategy => strategy.slot === selectedSlot));
             const title = 'Análise por Período';
             const rangeText = `${formatDateShort(parseISODateLocal(start))} - ${formatDateShort(parseISODateLocal(end))} • ${acc?.name || 'Conta'} • ${selectedStrategy?.label || 'Todos'}`;
@@ -7837,7 +7852,15 @@ ${period} • ${(acc?.name || 'Conta')}
                     let chartLabels = [];
                     const pdfChartStrategyDefs = isPeriodGroupABSelection(selectedSlot)
                         ? [{ ...getPeriodGroupABDefinition(), key: PERIOD_GROUP_AB_SLOT, label:'A + B', borderColor:'#6366f1', data:[] }]
-                        : getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
+                        : isPeriodGroupABLinesSelection(selectedSlot)
+                            ? getPeriodGroupABLinesDefinitions(end).map(cfg => ({
+                                ...cfg,
+                                key: cfg.legacyKey || cfg.slot,
+                                label: cfg.label,
+                                borderColor: cfg.color || (strategyMetaBySlot(cfg.slot)?.color) || '#4f46e5',
+                                data:[]
+                            }))
+                            : getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
                             .filter(cfg => selectedSlot === 'all' || cfg.slot === selectedSlot)
                             .map(cfg => ({
                                 ...cfg,
