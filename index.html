@@ -1309,23 +1309,13 @@ tr.bg-green-50 td {
 
             <!-- AUTH -->
             <div id="admin-auth" class="space-y-3">
-                <p class="text-sm text-slate-600 dark:text-slate-300">Entre com seu usuário e senha de administrador.</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                        <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Usuário</label>
-                        <input id="admin-username" type="text" placeholder="Dante ou Felipe" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                    </div>
-                    <div>
-                        <label class="text-xs font-semibold text-slate-500 dark:text-slate-400">Senha</label>
-                        <input id="admin-password" type="password" placeholder="••••" class="mt-1 w-full px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                    </div>
+                <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-800 dark:bg-indigo-950/40">
+                    <p class="text-sm font-semibold text-slate-700 dark:text-slate-200">Acesso vinculado à sua conta Google.</p>
+                    <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Não é necessário informar outra senha.</p>
                 </div>
-                <div class="flex items-center justify-between gap-3 pt-2">
-                    <button onclick="adminLogin()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2">
-                        <i data-lucide="log-in" class="w-4 h-4"></i> Entrar
-                    </button>
-                    <p class="text-xs text-slate-400">Dica: credenciais são locais (GitHub Pages).</p>
-                </div>
+                <button type="button" onclick="adminLogin()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i> Continuar com a conta Google
+                </button>
             </div>
 
             <!-- CONTENT -->
@@ -2381,6 +2371,12 @@ tr.bg-green-50 td {
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const provider = new GoogleAuthProvider();
+    const GOOGLE_ADMIN_ACCESS = Object.freeze({
+        'dantefrota@gmail.com': { username: 'Dante', role: 'super' },
+        'fellipemendonca87@gmail.com': { username: 'Felipe', role: 'admin' }
+    });
+    let currentFirebaseUser = null;
+    let adminSession = null; // sessão derivada exclusivamente da conta Google
     
     // EXPOR O BANCO DE DADOS GLOBALMENTE
     // (Isso é crucial para que suas 8000 linhas de código funcionem sem alteração)
@@ -2402,14 +2398,16 @@ tr.bg-green-50 td {
 
     // --- MONITOR DE LOGIN ---
     onAuthStateChanged(auth, (user) => {
+        currentFirebaseUser = user || null;
         const loader = document.getElementById('app-loader');
         const __logoutBtn = document.getElementById('btn-logout');
         if(__logoutBtn) __logoutBtn.classList.toggle('hidden', !user);
 
         
         if (user) {
-            // Verifica se é você ou o Felipe
-            if (user.email === 'dantefrota@gmail.com' || user.email === 'fellipemendonca87@gmail.com') {
+            const email = String(user.email || '').trim().toLowerCase();
+            // Somente as contas autorizadas podem abrir o aplicativo e o admin.
+            if (GOOGLE_ADMIN_ACCESS[email]) {
                 console.log("Acesso autorizado:", user.email);
                 
                 // Atualiza a UI do loader
@@ -2424,6 +2422,7 @@ tr.bg-green-50 td {
                 signOut(auth);
             }
         } else {
+            adminSession = null;
             const __main = document.getElementById('main-content');
             if(__main) __main.classList.add('hidden');
             // SE NÃO ESTIVER LOGADO: Mostra botão de login no loader
@@ -2613,18 +2612,12 @@ tr.bg-green-50 td {
             return { enabled:true, floor, buffer, cfg };
         }
 
-        // SENHAS E SEGURANÇA (uso local — para segurança real, use Firebase Auth)
-        const SECURITY = {
-            Dante:  { pass: 'Apex1996', role: 'super' },
-            Felipe: { pass: '1987', role: 'admin' }
-        };
-
-        let adminSession = null; // { username, role }
-
         const _roleRank = (r) => (r === 'super' ? 2 : r === 'admin' ? 1 : 0);
-        const _findUserKey = (u) => {
-            const n = (u || '').trim().toLowerCase();
-            return Object.keys(SECURITY).find(k => k.toLowerCase() === n) || null;
+        const _firebaseAdminSession = () => {
+            const user = currentFirebaseUser || auth.currentUser;
+            const email = String(user?.email || '').trim().toLowerCase();
+            const access = GOOGLE_ADMIN_ACCESS[email];
+            return access ? { username: access.username, role: access.role, email } : null;
         };
 
         function logAdminAction(user, action){
@@ -2635,23 +2628,11 @@ tr.bg-green-50 td {
         }
 
         function promptAdminCredentials(contextMsg, minRole='admin'){
-            if(adminSession && _roleRank(adminSession.role) >= _roleRank(minRole)) return adminSession;
-
-            const uInput = prompt(`${contextMsg}
-
-Usuário administrador:`) || '';
-            if(!uInput.trim()) return null;
-
-            const pInput = prompt(translateString('Senha:')) || '';
-            if(!pInput.trim()) return null;
-
-            const key = _findUserKey(uInput);
-            if(!key || SECURITY[key].pass !== pInput.trim()){
-                alert(translateString("Credenciais inválidas. Acesso negado."));
+            const session = adminSession || _firebaseAdminSession();
+            if(!session){
+                alert('Sua conta Google não possui acesso administrativo.');
                 return null;
             }
-
-            const session = { username: key, role: SECURITY[key].role };
             if(_roleRank(session.role) < _roleRank(minRole)){
                 alert(translateString("Acesso negado: permissões insuficientes."));
                 return null;
@@ -2831,8 +2812,6 @@ let isOffline = false;
             adminSubtitle: document.getElementById('admin-subtitle'),
             adminUser: document.getElementById('admin-user'),
             adminRole: document.getElementById('admin-role'),
-            adminUsername: document.getElementById('admin-username'),
-            adminPassword: document.getElementById('admin-password'),
             adminTabPayouts: document.getElementById('admin-tab-payouts'),
             adminTabLogs: document.getElementById('admin-tab-logs'),
             adminTabStrategy: document.getElementById('admin-tab-strategy'),
@@ -5174,8 +5153,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(els.adminContent) els.adminContent.classList.toggle('hidden', !logged);
 
             if(!logged) {
-                if(els.adminSubtitle) els.adminSubtitle.textContent = 'Acesso restrito';
-                if(els.adminUsername) els.adminUsername.focus();
+                if(els.adminSubtitle) els.adminSubtitle.textContent = 'Confirme com a conta Google já conectada';
                 lucide.createIcons(); ensureInfoIcons(); bindPeriodInteractions();
                 return;
             }
@@ -5211,6 +5189,11 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
         window.openAdminPanel = (tab = 'payouts') => {
             _adminTab = tab;
+            adminSession = _firebaseAdminSession();
+            if(!adminSession){
+                alert('Sua conta Google não possui acesso administrativo.');
+                return;
+            }
             if(els.adminModal) els.adminModal.classList.remove('hidden');
             refreshAdminUI();
         };
@@ -5248,17 +5231,12 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         };
 
         window.adminLogin = () => {
-            const u = (els.adminUsername?.value || '').trim();
-            const p = (els.adminPassword?.value || '').trim();
-            const key = _findUserKey(u);
-
-            if(!key || SECURITY[key].pass !== p){
-                alert(translateString("Usuário ou senha incorretos."));
+            const session = _firebaseAdminSession();
+            if(!session){
+                alert('Sua conta Google não possui acesso administrativo.');
                 return;
             }
-
-            adminSession = { username: key, role: SECURITY[key].role };
-            if(els.adminPassword) els.adminPassword.value = '';
+            adminSession = session;
 
             logAdminAction(adminSession.username, "Login na área administrativa");
             saveToCloud();
@@ -5272,7 +5250,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 saveToCloud();
             }
             adminSession = null;
-            refreshAdminUI();
+            closeAdminPanel();
         };
 
         window.clearPayoutHistory = () => {
@@ -5707,12 +5685,8 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const fe = (document.getElementById('filter-end') || {}).value || '';
             if(fs && fe && fe < fs){ alert(translateString('A data final deve ser maior ou igual a data inicial.')); return; }
             const selectedSlot = getPeriodSelectedSlot(fe || fs || getTodayISO());
-            const strategyDefs = isPeriodGroupABSelection(selectedSlot)
-                ? [getPeriodGroupABDefinition()]
-                : isPeriodGroupABLinesSelection(selectedSlot)
-                    ? getPeriodGroupABLinesDefinitions(fe || fs || getTodayISO())
-                    : getStrategiesForDate(fe || fs || getTodayISO(), {includeInactive:false,includeHidden:false})
-                        .filter(strategy => selectedSlot === 'all' || strategy.slot === selectedSlot);
+            const strategyDefs = getStrategiesForDate(fe || fs || getTodayISO(), {includeInactive:false,includeHidden:false})
+                .filter(strategy => selectedSlot === 'all' || strategy.slot === selectedSlot);
             const csvCell = value => { const text=String(value??'').replace(/\r?\n/g,' '); return /[",\n]/.test(text)?`"${text.replace(/"/g,'""')}"`:text; };
             const lines=[];
             const headers=['Data ISO','Data',...strategyDefs.map(s=>s.label),'Resultado do Dia','Resultado Acumulado','Feriado',`Nota ${dfNoteLabel('a')}`];
@@ -5728,13 +5702,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 const blocks=getStrategyEntriesForDay(d,iso,{includeInactive:false,includeHidden:false});
                 const bySlot=new Map(blocks.map(b=>[b.slot,Number(b.legs?.subtotal||b.subtotal||0)]));
                 const holiday=!!d.holiday, noteA=dfNoteA(d), noteB=dfNoteB(d);
-                const valueForStrategy = (strategy) => isPeriodGroupABSelection(selectedSlot)
-                    ? blocks.filter(b => isPeriodGroupABLabel(b.label)).reduce((sum,b)=>sum+Number(b.legs?.subtotal||b.subtotal||0),0)
-                    : Number(bySlot.get(strategy.slot)||0);
-                const dayTotal=holiday?0:strategyDefs.reduce((sum,strategy)=>sum+valueForStrategy(strategy),0);
-                if(!strategyDefs.some(strategy=>valueForStrategy(strategy)!==0)&&!noteA.trim()&&!noteB.trim()&&!holiday)return;
+                const dayTotal=holiday?0:strategyDefs.reduce((sum,s)=>sum+Number(bySlot.get(s.slot)||0),0);
+                if(!strategyDefs.some(s=>Number(bySlot.get(s.slot)||0)!==0)&&!noteA.trim()&&!noteB.trim()&&!holiday)return;
                 if(!holiday)cumulative+=dayTotal;
-                const values=[iso,dateStr,...strategyDefs.map(strategy=>valueForStrategy(strategy).toFixed(2)),dayTotal.toFixed(2),cumulative.toFixed(2),holiday?'Sim':'Não',noteA];
+                const values=[iso,dateStr,...strategyDefs.map(s=>Number(bySlot.get(s.slot)||0).toFixed(2)),dayTotal.toFixed(2),cumulative.toFixed(2),holiday?'Sim':'Não',noteA];
                 if(dfNoteBEnabled())values.push(noteB); lines.push(values.map(csvCell).join(','));
             });
 
@@ -6073,34 +6044,6 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             getStrategiesForDate(iso, { includeInactive:true, includeHidden:true }).forEach(s => map[s.slot] = s.label);
             return map;
         }
-        // Period report composite filter: Grupo A + Grupo B
-        const PERIOD_GROUP_AB_SLOT = '__period_group_ab__';
-        const PERIOD_GROUP_AB_LINES_SLOT = '__period_group_ab_lines__';
-        function isPeriodGroupABSelection(slot){ return slot === PERIOD_GROUP_AB_SLOT; }
-        function isPeriodGroupABLinesSelection(slot){ return slot === PERIOD_GROUP_AB_LINES_SLOT; }
-        function isPeriodGroupABAnySelection(slot){ return isPeriodGroupABSelection(slot) || isPeriodGroupABLinesSelection(slot); }
-        function isPeriodGroupABLabel(label){
-            const text = String(label || '').trim();
-            return /grupo\s*a(?:\b|$)/i.test(text) || /grupo\s*b(?:\b|$)/i.test(text);
-        }
-        function periodSelectionMatchesEntry(selectedSlot, entry){
-            if(selectedSlot === 'all') return true;
-            if(isPeriodGroupABAnySelection(selectedSlot)) return isPeriodGroupABLabel(entry?.label);
-            return entry?.slot === selectedSlot;
-        }
-        function periodSelectionMatchesTrade(selectedSlot, trade){
-            if(selectedSlot === 'all') return true;
-            if(isPeriodGroupABAnySelection(selectedSlot)) return isPeriodGroupABLabel(trade?.label);
-            return trade?.strategy === selectedSlot;
-        }
-        function getPeriodGroupABDefinition(){
-            return { slot: PERIOD_GROUP_AB_SLOT, legacyKey: PERIOD_GROUP_AB_SLOT, label: 'A + B', order: 999, color: '#6366f1' };
-        }
-        function getPeriodGroupABLinesDefinitions(iso){
-            return getStrategiesForDate(iso || getTodayISO(), { includeInactive:false, includeHidden:false })
-                .filter(strategy => /grupo\s*a(?:\b|$)/i.test(String(strategy.label || '')) || /grupo\s*b(?:\b|$)/i.test(String(strategy.label || '')));
-        }
-
         function getStrategyRowsForPeriod(acc, startISO, endISO, opts={}){
             const bucketMap = new Map();
             const includeInactive = !!opts.includeInactive;
@@ -6109,18 +6052,16 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 if (iso < startISO || iso > endISO) return;
                 const e = acc.data[iso] || {};
                 if (e.holiday) return;
-                const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive, includeHidden })
-                    .filter(entry => !opts.slot || periodSelectionMatchesEntry(opts.slot, entry));
-                dayEntries.forEach(entry => {
-                    const isAB = isPeriodGroupABSelection(opts.slot);
-                    const bucketKey = isAB ? PERIOD_GROUP_AB_SLOT : `${entry.slot}__${entry.label}`;
+                getStrategyEntriesForDay(e, iso, { includeInactive, includeHidden }).forEach(entry => {
+                    if (opts.slot && opts.slot !== 'all' && entry.slot !== opts.slot) return;
+                    const bucketKey = `${entry.slot}__${entry.label}`;
                     if (!bucketMap.has(bucketKey)) {
                         bucketMap.set(bucketKey, {
                             key: bucketKey,
-                            slot: isAB ? PERIOD_GROUP_AB_SLOT : entry.slot,
-                            label: isAB ? 'A + B' : entry.label,
-                            order: isAB ? 999 : entry.order,
-                            color: isAB ? '#6366f1' : entry.color,
+                            slot: entry.slot,
+                            label: entry.label,
+                            order: entry.order,
+                            color: entry.color,
                             total:0, trades:0, wins:0, losses:0, grossWin:0, grossLoss:0,
                             winSum:0, lossSum:0, winCount:0, lossCount:0, greenDays:0, redDays:0,
                             maxDD:0, maxWinningStreak:0, maxLosingStreak:0, currentWinningStreak:0, currentLosingStreak:0,
@@ -6132,10 +6073,8 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                     const legs = dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY).map(idx => entry.legs[`leg${idx}`])
                         .map(v => (v === '' || v === null || v === undefined) ? null : Number(v))
                         .filter(v => v !== null && !isNaN(v) && v !== 0);
-                    if (!isAB) {
-                        if (subtotal > 0) s.greenDays += 1;
-                        else if (subtotal < 0) s.redDays += 1;
-                    }
+                    if (subtotal > 0) s.greenDays += 1;
+                    else if (subtotal < 0) s.redDays += 1;
                     legs.forEach(v => {
                         s.trades += 1;
                         if (v > 0) {
@@ -6163,7 +6102,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                             s.checkStats[label] = stat;
                         });
                     });
-                    if (!isAB && (subtotal !== 0 || legs.length)) {
+                    if (subtotal !== 0 || legs.length) {
                         s.total += subtotal;
                         s.cum += subtotal;
                         if (s.cum > s.peak) s.peak = s.cum;
@@ -6173,26 +6112,6 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                         s.curveData.push(s.cum);
                     }
                 });
-                if (isPeriodGroupABSelection(opts.slot)) {
-                    const ab = dayEntries.reduce((sum, entry) => sum + Number(entry.legs?.subtotal || 0), 0);
-                    const abTrades = dayEntries.reduce((count, entry) => {
-                        const vals = dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY).map(idx => entry.legs[`leg${idx}`])
-                            .filter(v => v !== '' && v !== null && v !== undefined && !isNaN(Number(v)) && Number(v) !== 0);
-                        return count + vals.length;
-                    }, 0);
-                    const s = bucketMap.get(PERIOD_GROUP_AB_SLOT);
-                    if (s && (ab !== 0 || abTrades)) {
-                        if (ab > 0) s.greenDays += 1;
-                        else if (ab < 0) s.redDays += 1;
-                        s.total += ab;
-                        s.cum += ab;
-                        if (s.cum > s.peak) s.peak = s.cum;
-                        const dd = s.peak - s.cum;
-                        if (dd > s.maxDD) s.maxDD = dd;
-                        s.curveLabels.push(formatDateShort(parseISODateLocal(iso)));
-                        s.curveData.push(s.cum);
-                    }
-                }
             });
             const rows = Array.from(bucketMap.values()).sort((a,b) => (a.order - b.order) || String(a.label).localeCompare(String(b.label)));
             rows.forEach(s => {
@@ -6380,10 +6299,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 if (e.holiday) return;
 
                 const blocks = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false })
-                    .filter(block => periodSelectionMatchesEntry(selectedSlot, block));
+                    .filter(block => selectedSlot === 'all' || block.slot === selectedSlot);
                 const total = blocks.reduce((sum, b) => sum + (Number(b.legs.subtotal) || 0), 0);
                 const trades = _individualTradeValuesForDay(e, iso)
-                    .filter(trade => periodSelectionMatchesTrade(selectedSlot, trade));
+                    .filter(trade => selectedSlot === 'all' || trade.strategy === selectedSlot);
                 if (total !== 0 || trades.length) {
                     tradedDays += 1;
                     if(!firstTradeDay) firstTradeDay = iso;
@@ -6432,19 +6351,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(!select) return 'all';
             const previous = select.value || 'all';
             const strategies = getStrategiesForDate(iso || getTodayISO(), { includeInactive:false, includeHidden:false });
-            const hasGroupA = strategies.some(strategy => /grupo\s*a(?:\b|$)/i.test(String(strategy.label || '')));
-            const hasGroupB = strategies.some(strategy => /grupo\s*b(?:\b|$)/i.test(String(strategy.label || '')));
-            const hasGroupAB = hasGroupA && hasGroupB;
             select.innerHTML = '<option value="all">Todos</option>' + strategies.map(strategy =>
                 `<option value="${escapeHtml(strategy.slot)}">${escapeHtml(strategy.label)}</option>`
-            ).join('')
-                + (hasGroupAB ? `<option value="${PERIOD_GROUP_AB_SLOT}">A + B</option>` : '')
-                + (hasGroupAB ? `<option value="${PERIOD_GROUP_AB_LINES_SLOT}">A + B (Linhas)</option>` : '');
-            select.value = (previous === PERIOD_GROUP_AB_SLOT && hasGroupAB)
-                ? PERIOD_GROUP_AB_SLOT
-                : (previous === PERIOD_GROUP_AB_LINES_SLOT && hasGroupAB)
-                    ? PERIOD_GROUP_AB_LINES_SLOT
-                    : (strategies.some(strategy => strategy.slot === previous) ? previous : 'all');
+            ).join('');
+            select.value = strategies.some(strategy => strategy.slot === previous) ? previous : 'all';
             return select.value || 'all';
         }
 
@@ -6483,13 +6393,9 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             let peak = 0;
             let maxDD = 0;
 
-            const chartStrategyDefs = isPeriodGroupABSelection(selectedSlot)
-                ? [{ ...getPeriodGroupABDefinition(), data: [], hasTrades:false }]
-                : isPeriodGroupABLinesSelection(selectedSlot)
-                    ? getPeriodGroupABLinesDefinitions(end).map(cfg => ({ ...cfg, legacyKey: cfg.legacyKey || cfg.slot, data: [], hasTrades:false }))
-                    : getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
-                        .filter(cfg => selectedSlot === 'all' || cfg.slot === selectedSlot)
-                        .map(cfg => ({ ...cfg, legacyKey: cfg.legacyKey || cfg.slot, data: [], hasTrades:false }));
+            const chartStrategyDefs = getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
+                .filter(cfg => selectedSlot === 'all' || cfg.slot === selectedSlot)
+                .map(cfg => ({ ...cfg, legacyKey: cfg.legacyKey || cfg.slot, data: [], hasTrades:false }));
             const strategyCum = {};
             chartStrategyDefs.forEach(cfg => { strategyCum[cfg.legacyKey] = 0; });
 
@@ -6499,11 +6405,11 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 if(e.holiday) return;
 
                 const tradeVals = _individualTradeValuesForDay(e, iso)
-                    .filter(t => periodSelectionMatchesTrade(selectedSlot, t))
+                    .filter(t => selectedSlot === 'all' || t.strategy === selectedSlot)
                     .map(t => Number(t.value || 0)).filter(v => !isNaN(v) && v !== 0);
                 const blocks = _strategyBlocksForDay(e, iso);
                 const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false })
-                    .filter(entry => periodSelectionMatchesEntry(selectedSlot, entry));
+                    .filter(entry => selectedSlot === 'all' || entry.slot === selectedSlot);
                 const dayTotal = dayEntries.reduce((s,b)=> s + (Number(b.legs.subtotal) || 0), 0);
 
                 tradeVals.forEach(tv => {
@@ -6536,14 +6442,9 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                     chartLabels.push(formatDateShort(parseISODateLocal(iso)));
                     chartStrategyDefs.forEach(cfg => {
                         const key = cfg.legacyKey;
-                        if(isPeriodGroupABSelection(selectedSlot)){
-                            if(tradeVals.length) cfg.hasTrades = true;
-                            strategyCum[key] += dayTotal;
-                        }else{
-                            const block = blocks[key] || blocks[cfg.slot];
-                            if (_individualTradeValuesForDay(e, iso).some(item => item.strategy === cfg.slot)) cfg.hasTrades = true;
-                            strategyCum[key] += Number(block?.legs?.subtotal || 0);
-                        }
+                        const block = blocks[key] || blocks[cfg.slot];
+                        if (_individualTradeValuesForDay(e, iso).some(item => item.strategy === cfg.slot)) cfg.hasTrades = true;
+                        strategyCum[key] += Number(block?.legs?.subtotal || 0);
                         cfg.data.push(strategyCum[key]);
                     });
                 }
@@ -6664,7 +6565,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 const e = acc.data[iso] || {};
                 if(e.holiday) return;
                 overallTradeSequence.push(..._individualTradeValuesForDay(e, iso)
-                    .filter(t => periodSelectionMatchesTrade(selectedSlot, t))
+                    .filter(t => selectedSlot === 'all' || t.strategy === selectedSlot)
                     .map(t => t.value).filter(v => Number(v) !== 0));
             });
             let curLose = 0, maxLose = 0, curWin = 0, maxWin = 0;
@@ -7793,9 +7694,7 @@ ${period} • ${(acc?.name || 'Conta')}
             const selectedSlot = getPeriodSelectedSlot(end);
             const selectedStrategy = selectedSlot === 'all'
                 ? null
-                : (isPeriodGroupABSelection(selectedSlot) || isPeriodGroupABLinesSelection(selectedSlot)
-                    ? { label: isPeriodGroupABLinesSelection(selectedSlot) ? 'A + B (Linhas)' : 'A + B' }
-                    : getStrategiesForDate(end, { includeInactive:false, includeHidden:false }).find(strategy => strategy.slot === selectedSlot));
+                : getStrategiesForDate(end, { includeInactive:false, includeHidden:false }).find(strategy => strategy.slot === selectedSlot);
             const title = 'Análise por Período';
             const rangeText = `${formatDateShort(parseISODateLocal(start))} - ${formatDateShort(parseISODateLocal(end))} • ${acc?.name || 'Conta'} • ${selectedStrategy?.label || 'Todos'}`;
             const metricResult = (els.customResult?.textContent || '--').trim();
@@ -7850,25 +7749,15 @@ ${period} • ${(acc?.name || 'Conta')}
                 try {
                     if (!window.Chart) return null;
                     let chartLabels = [];
-                    const pdfChartStrategyDefs = isPeriodGroupABSelection(selectedSlot)
-                        ? [{ ...getPeriodGroupABDefinition(), key: PERIOD_GROUP_AB_SLOT, label:'A + B', borderColor:'#6366f1', data:[] }]
-                        : isPeriodGroupABLinesSelection(selectedSlot)
-                            ? getPeriodGroupABLinesDefinitions(end).map(cfg => ({
-                                ...cfg,
-                                key: cfg.legacyKey || cfg.slot,
-                                label: cfg.label,
-                                borderColor: cfg.color || (strategyMetaBySlot(cfg.slot)?.color) || '#4f46e5',
-                                data:[]
-                            }))
-                            : getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
-                            .filter(cfg => selectedSlot === 'all' || cfg.slot === selectedSlot)
-                            .map(cfg => ({
-                                ...cfg,
-                                key: cfg.legacyKey || cfg.slot,
-                                label: cfg.label,
-                                borderColor: cfg.color || (strategyMetaBySlot(cfg.slot)?.color) || '#4f46e5',
-                                data:[]
-                            }));
+                    const pdfChartStrategyDefs = getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
+                        .filter(cfg => selectedSlot === 'all' || cfg.slot === selectedSlot)
+                        .map(cfg => ({
+                            ...cfg,
+                            key: cfg.legacyKey || cfg.slot,
+                            label: cfg.label,
+                            borderColor: cfg.color || (strategyMetaBySlot(cfg.slot)?.color) || '#4f46e5',
+                            data:[]
+                        }));
                     const strategyCum = {};
                     pdfChartStrategyDefs.forEach(ds => { strategyCum[ds.key] = 0; });
                     const datasets = pdfChartStrategyDefs;
@@ -7878,19 +7767,15 @@ ${period} • ${(acc?.name || 'Conta')}
                         if (e.holiday) return;
                         const blocks = _strategyBlocksForDay(e, iso);
                         const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false })
-                            .filter(entry => periodSelectionMatchesEntry(selectedSlot, entry));
+                            .filter(entry => selectedSlot === 'all' || entry.slot === selectedSlot);
                         const dayTotal = dayEntries.reduce((sum,b)=> sum + (Number(b.legs.subtotal) || 0), 0);
                         const selectedDayTrades = _individualTradeValuesForDay(e, iso)
-                            .filter(trade => periodSelectionMatchesTrade(selectedSlot, trade));
+                            .filter(trade => selectedSlot === 'all' || trade.strategy === selectedSlot);
                         if (dayTotal === 0 && !selectedDayTrades.length) return;
                         chartLabels.push(formatDateShort(parseISODateLocal(iso)));
                         datasets.forEach(ds => {
-                            if(isPeriodGroupABSelection(selectedSlot)){
-                                strategyCum[ds.key] += dayTotal;
-                            }else{
-                                const block = blocks[ds.key] || blocks[ds.slot];
-                                strategyCum[ds.key] += Number(block?.legs?.subtotal || 0);
-                            }
+                            const block = blocks[ds.key] || blocks[ds.slot];
+                            strategyCum[ds.key] += Number(block?.legs?.subtotal || 0);
                             ds.data.push(strategyCum[ds.key]);
                         });
                     });
