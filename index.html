@@ -6908,7 +6908,12 @@ function renderCalendar(acc) {
                 const breakoutLabel = CURRENT_LANG === 'en' ? 'Breakout' : 'Barra ignorada';
                 const getBlockCheckLabels = (block) => {
                     const raw = Array.isArray(block.checkLabels) ? block.checkLabels : (block.breakout ? [breakoutLabel] : []);
-                    return raw.map(v => String(v || '').trim()).filter(Boolean).slice(0, DF_MAX_CHECKS_PER_TRADE);
+                    return raw.slice(0, DF_MAX_CHECKS_PER_TRADE)
+                        .map((value, index) => ({
+                            label: String(value || '').trim(),
+                            checkIndex: index + 1
+                        }))
+                        .filter(item => item.label);
                 };
                 const getTradeCheckValue = (block, idx, checkIndex) => {
                     const key = checkIndex === 1 ? `breakout${idx}` : `flag${checkIndex}_${idx}`;
@@ -6917,11 +6922,10 @@ function renderCalendar(acc) {
                 const renderTradeCheckTags = (block, idx) => {
                     const labels = getBlockCheckLabels(block);
                     if(!labels.length) return '';
-                    return `<div class="df-trade-checks">${labels.map((label, pos) => {
-                        const checkIndex = pos + 1;
-                        return `<label class="df-trade-check-pill" title="${escapeHtml(label)}">
-                            <input type="checkbox" class="rounded border-slate-300 dark:border-slate-600" ${getTradeCheckValue(block, idx, checkIndex) ? 'checked' : ''} onchange="window.updateTradeCheck('${iso}','${block.slot}',${idx},${checkIndex},this.checked)">
-                            <span>${escapeHtml(label)}</span>
+                    return `<div class="df-trade-checks">${labels.map(item => {
+                        return `<label class="df-trade-check-pill" title="${escapeHtml(item.label)}">
+                            <input type="checkbox" class="rounded border-slate-300 dark:border-slate-600" ${getTradeCheckValue(block, idx, item.checkIndex) ? 'checked' : ''} onchange="window.updateTradeCheck('${iso}','${block.slot}',${idx},${item.checkIndex},this.checked)">
+                            <span>${escapeHtml(item.label)}</span>
                         </label>`;
                     }).join('')}</div>`;
                 };
@@ -11803,20 +11807,15 @@ const DF_MARKET_REGION_CHECK_LABELS = [
 ];
 
 function dfNormalizeCheckLabels(rawLabels, meta){
-    const base = Array.isArray(rawLabels)
-        ? rawLabels.map(v => String(v || '').trim()).filter(Boolean)
+    // Cada posicao e uma identidade persistente (flag1..flag8). Nao remova
+    // vazios nem compacte a lista: isso mudaria o significado do historico.
+    // Os nomes sugeridos sao apenas placeholders no editor, nunca obrigatorios.
+    const source = Array.isArray(rawLabels)
+        ? rawLabels
         : (meta && meta.breakout ? ['Barra ignorada', 'Rompimento', 'Reteste'] : []);
-    const normalizedKeys = new Set(base.map(v => v.toLocaleLowerCase('pt-BR')));
-    DF_MARKET_REGION_CHECK_LABELS.forEach(label => {
-        const key = label.toLocaleLowerCase('pt-BR');
-        if(!normalizedKeys.has(key)){
-            base.push(label);
-            normalizedKeys.add(key);
-        }
-    });
-    const result = base.slice(0, DF_MAX_CHECKS_PER_TRADE);
-    while(result.length < DF_MAX_CHECKS_PER_TRADE) result.push('');
-    return result;
+    return Array.from({ length: DF_MAX_CHECKS_PER_TRADE }, (_, index) =>
+        String(source[index] ?? '').trim()
+    );
 }
 
 function dfNormalizeTradeCount(value, fallback = DF_DEFAULT_TRADES_PER_STRATEGY){
@@ -12217,7 +12216,7 @@ renderStrategyManager = function(){
                     ${Array.from({length:DF_MAX_CHECKS_PER_TRADE},(_,index)=>{
                         const n=index+1;
                         const value=(s.checkLabels&&s.checkLabels[index])||'';
-                        const placeholder=index<2?`Check ${n}`:(DF_MARKET_REGION_CHECK_LABELS[index-2]||`Check ${n}`);
+                        const placeholder='Deixe em branco para desativar';
                         return `<label class="df-strategy-check-label">Item ${n}<input type="text" value="${escapeHtml(value)}" data-field="checkLabel${n}" placeholder="${escapeHtml(placeholder)}" aria-label="Nome do item ${n} de ${escapeHtml(s.label || 'estratégia')}" class="px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100"></label>`;
                     }).join('')}
                 </div>
@@ -12229,7 +12228,7 @@ renderStrategyManager = function(){
     dfRenderNoteSettingsEditor();
 
     if(els.strategyManagerStatus){
-        els.strategyManagerStatus.textContent = 'Use ↑ e ↓ para mudar apenas a posição. Cada trade aceita até 8 checks, incluindo Gamma Wall, Flip Zone, Call Wall, Put Wall e VAP.';
+        els.strategyManagerStatus.textContent = 'Cada trade aceita até 8 itens editáveis. Campos vazios ficam desativados e não aparecem no calendário nem nos relatórios.';
         els.strategyManagerStatus.className = 'text-xs text-slate-500 dark:text-slate-400';
     }
 
