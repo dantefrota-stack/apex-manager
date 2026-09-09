@@ -5686,7 +5686,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(fs && fe && fe < fs){ alert(translateString('A data final deve ser maior ou igual a data inicial.')); return; }
             const selectedSlot = getPeriodSelectedSlot(fe || fs || getTodayISO());
             const strategyDefs = getStrategiesForDate(fe || fs || getTodayISO(), {includeInactive:false,includeHidden:false})
-                .filter(strategy => selectedSlot === 'all' || strategy.slot === selectedSlot);
+                .filter(strategy => isPeriodStrategySelected(selectedSlot, strategy.slot, fe || fs || getTodayISO()));
             const csvCell = value => { const text=String(value??'').replace(/\r?\n/g,' '); return /[",\n]/.test(text)?`"${text.replace(/"/g,'""')}"`:text; };
             const lines=[];
             const headers=['Data ISO','Data',...strategyDefs.map(s=>s.label),'Resultado do Dia','Resultado Acumulado','Feriado',`Nota ${dfNoteLabel('a')}`];
@@ -6053,7 +6053,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 const e = acc.data[iso] || {};
                 if (e.holiday) return;
                 getStrategyEntriesForDay(e, iso, { includeInactive, includeHidden }).forEach(entry => {
-                    if (opts.slot && opts.slot !== 'all' && entry.slot !== opts.slot) return;
+                    if (opts.slot && !isPeriodStrategySelected(opts.slot, entry.slot, endISO)) return;
                     const bucketKey = `${entry.slot}__${entry.label}`;
                     if (!bucketMap.has(bucketKey)) {
                         bucketMap.set(bucketKey, {
@@ -6299,10 +6299,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 if (e.holiday) return;
 
                 const blocks = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false })
-                    .filter(block => selectedSlot === 'all' || block.slot === selectedSlot);
+                    .filter(block => isPeriodStrategySelected(selectedSlot, block.slot, endISO));
                 const total = blocks.reduce((sum, b) => sum + (Number(b.legs.subtotal) || 0), 0);
                 const trades = _individualTradeValuesForDay(e, iso)
-                    .filter(trade => selectedSlot === 'all' || trade.strategy === selectedSlot);
+                    .filter(trade => isPeriodStrategySelected(selectedSlot, trade.strategy, endISO));
                 if (total !== 0 || trades.length) {
                     tradedDays += 1;
                     if(!firstTradeDay) firstTradeDay = iso;
@@ -6346,15 +6346,37 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             return byKey;
         }
 
+        const PERIOD_GROUPS_AB_VALUE = 'groups_ab';
+
+        function getPeriodGroupsABSlots(iso){
+            const strategies = getStrategiesForDate(iso || getTodayISO(), { includeInactive:false, includeHidden:false });
+            const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const groupA = strategies.find(strategy => /\b(grupo|group)\s*a\b/.test(normalize(strategy.label)));
+            const groupB = strategies.find(strategy => /\b(grupo|group)\s*b\b/.test(normalize(strategy.label)));
+            return groupA && groupB ? [groupA.slot, groupB.slot] : [];
+        }
+
+        function isPeriodStrategySelected(selectedSlot, strategySlot, iso){
+            if (!selectedSlot || selectedSlot === 'all') return true;
+            if (selectedSlot === PERIOD_GROUPS_AB_VALUE) return getPeriodGroupsABSlots(iso).includes(strategySlot);
+            return strategySlot === selectedSlot;
+        }
+
         function syncPeriodStrategyFilter(iso){
             const select = document.getElementById('period-strategy-filter');
             if(!select) return 'all';
             const previous = select.value || 'all';
             const strategies = getStrategiesForDate(iso || getTodayISO(), { includeInactive:false, includeHidden:false });
-            select.innerHTML = '<option value="all">Todos</option>' + strategies.map(strategy =>
+            const combinedOption = getPeriodGroupsABSlots(iso).length === 2
+                ? `<option value="${PERIOD_GROUPS_AB_VALUE}">${escapeHtml(translateString('25/75 - Grupos A + B'))}</option>`
+                : '';
+            select.innerHTML = '<option value="all">Todos</option>' + combinedOption + strategies.map(strategy =>
                 `<option value="${escapeHtml(strategy.slot)}">${escapeHtml(strategy.label)}</option>`
             ).join('');
-            select.value = strategies.some(strategy => strategy.slot === previous) ? previous : 'all';
+            const previousIsValid = previous === PERIOD_GROUPS_AB_VALUE
+                ? getPeriodGroupsABSlots(iso).length === 2
+                : strategies.some(strategy => strategy.slot === previous);
+            select.value = previousIsValid ? previous : 'all';
             return select.value || 'all';
         }
 
@@ -6394,7 +6416,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             let maxDD = 0;
 
             const chartStrategyDefs = getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
-                .filter(cfg => selectedSlot === 'all' || cfg.slot === selectedSlot)
+                .filter(cfg => isPeriodStrategySelected(selectedSlot, cfg.slot, end))
                 .map(cfg => ({ ...cfg, legacyKey: cfg.legacyKey || cfg.slot, data: [], hasTrades:false }));
             const strategyCum = {};
             chartStrategyDefs.forEach(cfg => { strategyCum[cfg.legacyKey] = 0; });
@@ -6405,11 +6427,11 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 if(e.holiday) return;
 
                 const tradeVals = _individualTradeValuesForDay(e, iso)
-                    .filter(t => selectedSlot === 'all' || t.strategy === selectedSlot)
+                    .filter(t => isPeriodStrategySelected(selectedSlot, t.strategy, end))
                     .map(t => Number(t.value || 0)).filter(v => !isNaN(v) && v !== 0);
                 const blocks = _strategyBlocksForDay(e, iso);
                 const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false })
-                    .filter(entry => selectedSlot === 'all' || entry.slot === selectedSlot);
+                    .filter(entry => isPeriodStrategySelected(selectedSlot, entry.slot, end));
                 const dayTotal = dayEntries.reduce((s,b)=> s + (Number(b.legs.subtotal) || 0), 0);
 
                 tradeVals.forEach(tv => {
@@ -6565,7 +6587,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 const e = acc.data[iso] || {};
                 if(e.holiday) return;
                 overallTradeSequence.push(..._individualTradeValuesForDay(e, iso)
-                    .filter(t => selectedSlot === 'all' || t.strategy === selectedSlot)
+                    .filter(t => isPeriodStrategySelected(selectedSlot, t.strategy, end))
                     .map(t => t.value).filter(v => Number(v) !== 0));
             });
             let curLose = 0, maxLose = 0, curWin = 0, maxWin = 0;
@@ -7696,11 +7718,13 @@ ${period} • ${(acc?.name || 'Conta')}
                 return Promise.resolve(false);
             }
             const selectedSlot = getPeriodSelectedSlot(end);
-            const selectedStrategy = selectedSlot === 'all'
-                ? null
-                : getStrategiesForDate(end, { includeInactive:false, includeHidden:false }).find(strategy => strategy.slot === selectedSlot);
+            const selectedStrategyLabel = selectedSlot === 'all'
+                ? 'Todos'
+                : (selectedSlot === PERIOD_GROUPS_AB_VALUE
+                    ? '25/75 - Grupos A + B'
+                    : (getStrategiesForDate(end, { includeInactive:false, includeHidden:false }).find(strategy => strategy.slot === selectedSlot)?.label || 'Todos'));
             const title = 'Análise por Período';
-            const rangeText = `${formatDateShort(parseISODateLocal(start))} - ${formatDateShort(parseISODateLocal(end))} • ${acc?.name || 'Conta'} • ${selectedStrategy?.label || 'Todos'}`;
+            const rangeText = `${formatDateShort(parseISODateLocal(start))} - ${formatDateShort(parseISODateLocal(end))} • ${acc?.name || 'Conta'} • ${selectedStrategyLabel}`;
             const metricResult = (els.customResult?.textContent || '--').trim();
             const metricWin = (els.customWinrate?.textContent || '--').trim();
             const metricBest = (els.customBest?.textContent || '--').trim();
@@ -7754,7 +7778,7 @@ ${period} • ${(acc?.name || 'Conta')}
                     if (!window.Chart) return null;
                     let chartLabels = [];
                     const pdfChartStrategyDefs = getStrategiesForDate(end, { includeInactive:false, includeHidden:false })
-                        .filter(cfg => selectedSlot === 'all' || cfg.slot === selectedSlot)
+                        .filter(cfg => isPeriodStrategySelected(selectedSlot, cfg.slot, end))
                         .map(cfg => ({
                             ...cfg,
                             key: cfg.legacyKey || cfg.slot,
@@ -7771,10 +7795,10 @@ ${period} • ${(acc?.name || 'Conta')}
                         if (e.holiday) return;
                         const blocks = _strategyBlocksForDay(e, iso);
                         const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false })
-                            .filter(entry => selectedSlot === 'all' || entry.slot === selectedSlot);
+                            .filter(entry => isPeriodStrategySelected(selectedSlot, entry.slot, end));
                         const dayTotal = dayEntries.reduce((sum,b)=> sum + (Number(b.legs.subtotal) || 0), 0);
                         const selectedDayTrades = _individualTradeValuesForDay(e, iso)
-                            .filter(trade => selectedSlot === 'all' || trade.strategy === selectedSlot);
+                            .filter(trade => isPeriodStrategySelected(selectedSlot, trade.strategy, end));
                         if (dayTotal === 0 && !selectedDayTrades.length) return;
                         chartLabels.push(formatDateShort(parseISODateLocal(iso)));
                         datasets.forEach(ds => {
@@ -9023,6 +9047,7 @@ async function saveToCloudNow() {
             "Mês 1":"Month 1",
             "Mês 1-3":"Month 1-3",
             "Análise por Período":"Period Analysis",
+            "25/75 - Grupos A + B":"25/75 - Groups A + B",
             "Saldo Atual (Equity)":"Current Balance (Equity)",
             "SALDO ATUAL (EQUITY)":"CURRENT BALANCE (EQUITY)",
             "Início":"Start",
