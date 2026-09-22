@@ -6486,6 +6486,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(analyticsWinLossChart) analyticsWinLossChart.destroy();
             const total = wins + losses;
             const isEN = CURRENT_LANG === 'en';
+            const isDark = document.body.classList.contains('dark');
             analyticsWinLossChart = new Chart(canvas.getContext('2d'), {
                 type:'doughnut',
                 data:{
@@ -6493,7 +6494,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                     datasets:[{
                         data: total ? [wins, losses] : [1],
                         backgroundColor: total ? ['#10b981','#f43f5e'] : ['#1e293b'],
-                        borderColor:'#0f172a', borderWidth:4, hoverOffset:3
+                        borderColor:isDark ? '#0f172a' : '#ffffff', borderWidth:4, hoverOffset:3
                     }]
                 },
                 options:{
@@ -6530,6 +6531,9 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const canvas = document.getElementById('analyticsProjectionChart');
             if(!metrics || !canvas || typeof Chart === 'undefined') return;
             const isEN = CURRENT_LANG === 'en';
+            const isDark = document.body.classList.contains('dark');
+            const projectionGridColor = isDark ? 'rgba(51,65,85,.55)' : 'rgba(203,213,225,.58)';
+            const projectionTextColor = isDark ? '#64748b' : '#64748b';
             const slider = document.getElementById('analytics-projection-rate');
             const p = Math.max(.01, Math.min(.99, Number(slider?.value || metrics.winRate || 50) / 100));
             const months = analyticsProjectionMonths;
@@ -6575,7 +6579,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                     {label:isEN?'Lower 90% bound':'Limite inferior 90%',data:lower,borderColor:'rgba(45,212,191,.28)',backgroundColor:'rgba(45,212,191,.12)',borderWidth:1,borderDash:[5,5],pointRadius:0,tension:.28,fill:'-1'},
                     {label:isEN?'Expected result':'Resultado esperado',data:expected,borderColor:'#22d3ee',backgroundColor:'rgba(34,211,238,.08)',borderWidth:2.6,pointRadius:months <= 3 ? 3 : 1.5,pointHoverRadius:5,tension:.32,fill:false}
                 ]},
-                options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${formatCurrency(ctx.raw)}`}}},scales:{x:{grid:{display:false},ticks:{color:'#64748b',maxRotation:0}},y:{grid:{color:'rgba(51,65,85,.55)'},ticks:{color:'#64748b',callback:(value)=>formatCurrency(value)}}},animation:{duration:420}}
+                options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${formatCurrency(ctx.raw)}`}}},scales:{x:{grid:{display:false},ticks:{color:projectionTextColor,maxRotation:0}},y:{grid:{color:projectionGridColor},ticks:{color:projectionTextColor,callback:(value)=>formatCurrency(value)}}},animation:{duration:420}}
             });
             window.analyticsProjectionChart = analyticsProjectionChart;
         }
@@ -6906,8 +6910,12 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(chartInstance) chartInstance.destroy();
             const isDark = document.body.classList.contains('dark');
             const isInsideAnalytics = !!canvas.closest('#visual-analytics-dashboard');
-            const gridColor = isInsideAnalytics ? 'rgba(51,65,85,.55)' : (isDark ? '#334155' : '#f3f4f6');
-            const textColor = isInsideAnalytics ? '#94a3b8' : (isDark ? '#94a3b8' : '#64748b');
+            const gridColor = isInsideAnalytics
+                ? (isDark ? 'rgba(51,65,85,.55)' : 'rgba(203,213,225,.58)')
+                : (isDark ? '#334155' : '#f3f4f6');
+            const textColor = isInsideAnalytics
+                ? (isDark ? '#94a3b8' : '#64748b')
+                : (isDark ? '#94a3b8' : '#64748b');
             const normalized = Array.isArray(datasets) ? datasets : [{ label: (CURRENT_LANG==='en' ? 'Cumulative Profit' : 'Lucro Acumulado'), data: datasets || [], borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.10)' }];
             chartInstance = new Chart(ctx, {
                 type: 'line',
@@ -14174,6 +14182,63 @@ We normalize daily buckets so:
   @media (max-width:1023px){.df-analytics-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}.df-analytics-main-grid,.df-analytics-lower-grid{grid-template-columns:1fr;}.df-analytics-donut-wrap{height:210px}.df-projection-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
   @media (max-width:640px){#visual-analytics-dashboard{padding:15px;border-radius:16px}.df-analytics-head{flex-direction:column}.df-analytics-tabs{width:100%}.df-analytics-tabs button{flex:1;padding:8px 6px}.df-analytics-kpis,.df-projection-kpis{grid-template-columns:1fr}.df-analytics-kpi{min-height:86px}.df-analytics-main-grid,.df-analytics-lower-grid{gap:8px}.df-analytics-chart-wrap{height:220px}.df-strategy-row{grid-template-columns:minmax(82px,.75fr) minmax(110px,1.5fr) 74px;gap:7px}.df-projection-toolbar{grid-template-columns:1fr;gap:13px}.df-analytics-chart-wrap.projection{height:240px}}
   @media print{#visual-analytics-dashboard{background:#fff!important;color:#0f172a!important;border:1px solid #cbd5e1!important;box-shadow:none!important}.df-analytics-tabs,.df-projection-toolbar{display:none!important}.df-analytics-kpi,.df-analytics-panel{background:#fff!important;border-color:#cbd5e1!important}.df-analytics-kpi strong,.df-analytics-panel-head span:first-child,.df-strategy-label,.df-strategy-value,.df-analytics-metric-grid strong,.df-analytics-donut-center strong{color:#0f172a!important}.df-analytics-main-grid{grid-template-columns:2fr 1fr!important}.df-analytics-lower-grid{grid-template-columns:1.4fr .8fr!important}}
+</style>
+
+<style id="df-visual-analytics-light-theme">
+  /* Light mode: keep the analytical character while matching the rest of the app. */
+  body:not(.dark) #visual-analytics-dashboard{
+    background:
+      radial-gradient(circle at 92% 0%,rgba(20,184,166,.10),transparent 28%),
+      radial-gradient(circle at 0% 100%,rgba(99,102,241,.08),transparent 32%),
+      linear-gradient(145deg,#ffffff,#f8fafc 72%);
+    border-color:#dbe4f0;
+    color:#334155;
+    box-shadow:0 18px 48px rgba(15,23,42,.10);
+  }
+  body:not(.dark) #visual-analytics-dashboard:before{background:linear-gradient(115deg,rgba(255,255,255,.72),transparent 34%);}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-eyebrow{color:#0f766e;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-live-dot{background:#10b981;box-shadow:0 0 0 5px rgba(16,185,129,.09),0 0 14px rgba(16,185,129,.35);}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-head h3{color:#0f172a;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-head p{color:#64748b;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-tabs{background:#f1f5f9;border-color:#dbe4f0;box-shadow:inset 0 1px 2px rgba(15,23,42,.04);}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-tabs button{color:#64748b;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-tabs button:hover{color:#0f172a;background:#e2e8f0;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-tabs button.active{color:#052e2b;background:linear-gradient(135deg,#5eead4,#34d399);box-shadow:0 7px 18px rgba(16,185,129,.17);}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-kpi{background:rgba(255,255,255,.91);border-color:#dbe4f0;box-shadow:0 8px 22px rgba(15,23,42,.055);}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-kpi:after{opacity:.10;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-kpi span{color:#64748b;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-kpi strong{color:#0f172a;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-kpi small{color:#64748b;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-kpi-icon{background:currentColor;border-color:transparent;box-shadow:inset 0 0 0 1px rgba(255,255,255,.68);}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-kpi-icon svg{color:#fff;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-panel{background:rgba(255,255,255,.88);border-color:#dbe4f0;box-shadow:0 7px 20px rgba(15,23,42,.04);}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-panel-head span:first-child{color:#334155;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-panel-head small{color:#64748b;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-chip{color:#0f766e!important;background:#ccfbf1;border-color:#99f6e4;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-chip.projection{color:#6d28d9!important;background:#ede9fe;border-color:#ddd6fe;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-donut-center strong{color:#0f172a;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-donut-center span{color:#64748b;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-legend{color:#64748b;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-legend b{color:#334155;}
+  body:not(.dark) #visual-analytics-dashboard .df-strategy-label{color:#334155;}
+  body:not(.dark) #visual-analytics-dashboard .df-strategy-track{background:#e8eef5;border-color:#d5deea;}
+  body:not(.dark) #visual-analytics-dashboard .df-strategy-track:after{background:#94a3b8;}
+  body:not(.dark) #visual-analytics-dashboard .df-strategy-value{color:#334155;}
+  body:not(.dark) #visual-analytics-dashboard .df-strategy-value.positive{color:#059669;}
+  body:not(.dark) #visual-analytics-dashboard .df-strategy-value.negative{color:#e11d48;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-metric-grid>div{background:#f8fafc;border-color:#e2e8f0;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-metric-grid span{color:#64748b;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-metric-grid strong{color:#1e293b;}
+  body:not(.dark) #visual-analytics-dashboard .df-analytics-empty{color:#64748b;}
+  body:not(.dark) #visual-analytics-dashboard .df-projection-toolbar{background:rgba(255,255,255,.88);border-color:#dbe4f0;box-shadow:0 7px 20px rgba(15,23,42,.04);}
+  body:not(.dark) #visual-analytics-dashboard .df-projection-toolbar>div>span,
+  body:not(.dark) #visual-analytics-dashboard .df-projection-toolbar label>span{color:#64748b;}
+  body:not(.dark) #visual-analytics-dashboard .df-projection-toolbar label b{color:#0f766e;}
+  body:not(.dark) #visual-analytics-dashboard .df-projection-periods button{background:#f1f5f9;border-color:#dbe4f0;color:#64748b;}
+  body:not(.dark) #visual-analytics-dashboard .df-projection-periods button:hover{background:#e2e8f0;color:#0f172a;}
+  body:not(.dark) #visual-analytics-dashboard .df-projection-periods button.active{background:#10b981;border-color:#10b981;color:#052e2b;}
+  body:not(.dark) #visual-analytics-dashboard .df-projection-legend,
+  body:not(.dark) #visual-analytics-dashboard .df-projection-disclaimer{color:#64748b!important;}
 </style>
 
 <style id="df-v15-layout-styles">
