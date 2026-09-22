@@ -1332,7 +1332,7 @@ tr.bg-green-50 td {
                     </div>
                 </div>
 
-                <div class="flex gap-2 mb-4">
+                <div class="flex flex-wrap gap-2 mb-4">
                     <button id="admin-tab-payouts" onclick="setAdminTab('payouts')" class="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         <i data-lucide="wallet" class="w-4 h-4"></i> Saques
                     </button>
@@ -1341,6 +1341,9 @@ tr.bg-green-50 td {
                     </button>
                     <button id="admin-tab-strategy" onclick="setAdminTab('strategy')" class="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center gap-2">
                         <i data-lucide="sliders-horizontal" class="w-4 h-4"></i> Estratégias
+                    </button>
+                    <button id="admin-tab-dashboard" onclick="setAdminTab('dashboard')" class="px-3 py-2 rounded-lg text-sm font-semibold bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Painel
                     </button>
                 </div>
 
@@ -1435,6 +1438,29 @@ tr.bg-green-50 td {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <div id="admin-pane-dashboard" class="hidden space-y-3">
+                    <div>
+                        <h4 class="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                            <i data-lucide="panels-top-left" class="w-4 h-4 text-indigo-500"></i> Organização do Painel
+                        </h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Escolha quais áreas aparecem na tela principal. As preferências ficam salvas neste dispositivo.</p>
+                    </div>
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/40 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-start gap-3 min-w-0">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 flex items-center justify-center flex-none">
+                                <i data-lucide="layout-template" class="w-5 h-5"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-sm font-bold text-slate-800 dark:text-slate-100">Janelas Visíveis</div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Ative ou oculte o painel de performance, análises, calendário, saldos, saques, ciclos e insights.</div>
+                            </div>
+                        </div>
+                        <button type="button" onclick="window.openDashboardVisibilitySettings && window.openDashboardVisibilitySettings()" class="px-4 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold whitespace-nowrap flex items-center justify-center gap-2">
+                            <i data-lucide="settings-2" class="w-4 h-4"></i> Configurar janelas
+                        </button>
                     </div>
                 </div>
 
@@ -2897,10 +2923,12 @@ let isOffline = false;
             adminTabPayouts: document.getElementById('admin-tab-payouts'),
             adminTabLogs: document.getElementById('admin-tab-logs'),
             adminTabStrategy: document.getElementById('admin-tab-strategy'),
+            adminTabDashboard: document.getElementById('admin-tab-dashboard'),
             adminTabAI: document.getElementById('admin-tab-ai'),
             adminPanePayouts: document.getElementById('admin-pane-payouts'),
             adminPaneLogs: document.getElementById('admin-pane-logs'),
             adminPaneStrategy: document.getElementById('admin-pane-strategy'),
+            adminPaneDashboard: document.getElementById('admin-pane-dashboard'),
             adminPaneAI: document.getElementById('admin-pane-ai'),
             adminLogsList: document.getElementById('admin-logs-list'),
             adminClearPayoutsBtn: document.getElementById('admin-clear-payouts-btn'),
@@ -5290,6 +5318,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(els.adminPanePayouts) els.adminPanePayouts.classList.toggle('hidden', tab !== 'payouts');
             if(els.adminPaneLogs) els.adminPaneLogs.classList.toggle('hidden', tab !== 'logs');
             if(els.adminPaneStrategy) els.adminPaneStrategy.classList.toggle('hidden', tab !== 'strategy');
+            if(els.adminPaneDashboard) els.adminPaneDashboard.classList.toggle('hidden', tab !== 'dashboard');
             if(els.adminPaneAI) els.adminPaneAI.classList.toggle('hidden', tab !== 'ai');
 
             if(els.adminTabPayouts){
@@ -5303,6 +5332,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(els.adminTabStrategy){
                 els.adminTabStrategy.className = "px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 " + 
                     (tab === 'strategy' ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100");
+            }
+            if(els.adminTabDashboard){
+                els.adminTabDashboard.className = "px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 " +
+                    (tab === 'dashboard' ? "bg-indigo-600 text-white" : "bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100");
             }
             if(els.adminTabAI){
                 els.adminTabAI.className = "px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 " + 
@@ -9258,6 +9291,12 @@ async function saveToCloudNow() {
             "arquivo(s) na fila":"file(s) queued",
 
             "Área Administrativa":"Admin Area",
+            "Painel":"Dashboard",
+            "Organização do Painel":"Dashboard Organization",
+            "Escolha quais áreas aparecem na tela principal. As preferências ficam salvas neste dispositivo.":"Choose which areas appear on the main screen. Preferences are saved on this device.",
+            "Janelas Visíveis":"Visible Panels",
+            "Ative ou oculte o painel de performance, análises, calendário, saldos, saques, ciclos e insights.":"Show or hide performance, analytics, calendar, balances, payouts, cycles, and insights.",
+            "Configurar janelas":"Configure panels",
             "Accounts Summary":"Accounts Summary",
             "Nova Conta":"New Account",
             "FAVORITAS":"FAVORITES",
@@ -14535,8 +14574,6 @@ tr.bg-green-50 td {
 
 
 <style id="df-v15-visibility-styles">
-  #df-v15-visibility-fab{position:fixed; right:20px; bottom:20px; z-index:80; border:none; border-radius:999px; padding:12px 16px; font-weight:800; font-size:13px; background:#4f46e5; color:#fff; box-shadow:0 16px 40px rgba(79,70,229,.35); cursor:pointer;}
-  #df-v15-visibility-fab:hover{filter:brightness(.96);}
   #df-v15-visibility-modal{position:fixed; inset:0; z-index:85; display:none;}
   #df-v15-visibility-modal.open{display:block;}
   #df-v15-visibility-modal .df-backdrop{position:absolute; inset:0; background:rgba(2,6,23,.58); backdrop-filter:blur(3px);}
@@ -14568,7 +14605,6 @@ tr.bg-green-50 td {
   @media (max-width: 768px){
     #df-v15-visibility-modal .df-panel{margin:12px auto; width:min(100vw - 16px, 100%); max-height:calc(100vh - 24px); display:flex; flex-direction:column;}
     #df-v15-visibility-modal .df-body{grid-template-columns:1fr; overflow:auto; padding-bottom:16px;}
-    #df-v15-visibility-fab{right:14px; bottom:14px; padding:11px 14px; font-size:12px;}
   }
 
 /* Corrige faixa verde COMPLETA (linha inteira) */
@@ -14599,7 +14635,6 @@ tr.bg-green-50 td {
 </style>
 
 <div class="no-print" id="df-v15-visibility-root">
-  <button id="df-v15-visibility-fab" type="button">Janelas Visíveis</button>
   <div id="df-v15-visibility-modal" aria-hidden="true">
     <div class="df-backdrop" data-close="1"></div>
     <div class="df-panel">
@@ -14709,6 +14744,7 @@ tr.bg-green-50 td {
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
   }
+  window.openDashboardVisibilitySettings = openModal;
   function closeModal(){
     var modal = document.getElementById('df-v15-visibility-modal');
     if (!modal) return;
@@ -14716,12 +14752,10 @@ tr.bg-green-50 td {
     modal.setAttribute('aria-hidden', 'true');
   }
   function bind(){
-    var fab = document.getElementById('df-v15-visibility-fab');
     var closeBtn = document.getElementById('df-v15-visibility-close');
     var doneBtn = document.getElementById('df-v15-visibility-done');
     var resetBtn = document.getElementById('df-v15-visibility-reset');
     var modal = document.getElementById('df-v15-visibility-modal');
-    if (fab && !fab.dataset.bound) { fab.dataset.bound='1'; fab.addEventListener('click', openModal); }
     if (closeBtn && !closeBtn.dataset.bound) { closeBtn.dataset.bound='1'; closeBtn.addEventListener('click', closeModal); }
     if (doneBtn && !doneBtn.dataset.bound) { doneBtn.dataset.bound='1'; doneBtn.addEventListener('click', function(){ updateFromInputs(); closeModal(); }); }
     if (resetBtn && !resetBtn.dataset.bound) { resetBtn.dataset.bound='1'; resetBtn.addEventListener('click', function(){ var s = getDefaultState(); saveState(s); syncInputs(s); applyState(s); }); }
