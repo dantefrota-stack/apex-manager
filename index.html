@@ -6617,11 +6617,41 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             window.analyticsProjectionChart = analyticsProjectionChart;
         }
 
+        function getAnalyticsProjectionSettings(){
+            const acc = getActive();
+            const raw = (acc && acc.analyticsProjectionSettings && typeof acc.analyticsProjectionSettings === 'object')
+                ? acc.analyticsProjectionSettings
+                : {};
+            const expectedWinRate = Number(raw.expectedWinRate);
+            const months = Number(raw.months);
+            return {
+                expectedWinRate: Number.isFinite(expectedWinRate) && expectedWinRate >= 1 && expectedWinRate <= 99 ? Math.round(expectedWinRate) : null,
+                months: [1,3,6,12].includes(months) ? months : 12
+            };
+        }
+
+        function saveAnalyticsProjectionSettings(){
+            const acc = getActive();
+            const slider = document.getElementById('analytics-projection-rate');
+            if(!acc || !slider) return;
+            acc.analyticsProjectionSettings = {
+                expectedWinRate: Math.max(1, Math.min(99, Math.round(Number(slider.value || 50)))),
+                months: [1,3,6,12].includes(Number(analyticsProjectionMonths)) ? Number(analyticsProjectionMonths) : 12
+            };
+            try{ dfPersistAfterUserInput(); }catch(e){
+                try{ saveToCloud(); }catch(err){}
+            }
+        }
+
         function bindAnalyticsProjectionControls(){
             const slider = document.getElementById('analytics-projection-rate');
             if(slider && slider.dataset.bound !== '1'){
                 slider.dataset.bound = '1';
-                slider.addEventListener('input', ()=>{ slider.dataset.userAdjusted = '1'; renderAnalyticsProjection(); });
+                slider.addEventListener('input', renderAnalyticsProjection);
+                slider.addEventListener('change', ()=>{
+                    saveAnalyticsProjectionSettings();
+                    renderAnalyticsProjection();
+                });
             }
             document.querySelectorAll('.df-projection-periods button[data-months]').forEach(button => {
                 if(button.dataset.bound === '1') return;
@@ -6629,6 +6659,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 button.addEventListener('click', ()=>{
                     analyticsProjectionMonths = Math.max(1, Number(button.dataset.months || 12));
                     document.querySelectorAll('.df-projection-periods button[data-months]').forEach(item => item.classList.toggle('active', item === button));
+                    saveAnalyticsProjectionSettings();
                     renderAnalyticsProjection();
                 });
             });
@@ -6678,7 +6709,12 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             renderAnalyticsStrategyBars(metrics.rows);
             bindAnalyticsProjectionControls();
             const slider = document.getElementById('analytics-projection-rate');
-            if(slider && slider.dataset.userAdjusted !== '1') slider.value = String(Math.max(1, Math.min(99, Math.round(rate || 50))));
+            const projectionSettings = getAnalyticsProjectionSettings();
+            analyticsProjectionMonths = projectionSettings.months;
+            document.querySelectorAll('.df-projection-periods button[data-months]').forEach(button => {
+                button.classList.toggle('active', Number(button.dataset.months) === analyticsProjectionMonths);
+            });
+            if(slider) slider.value = String(projectionSettings.expectedWinRate ?? Math.max(1, Math.min(99, Math.round(rate || 50))));
             renderAnalyticsProjection();
             try{ if(window.lucide && lucide.createIcons) lucide.createIcons(); }catch(e){}
         }
