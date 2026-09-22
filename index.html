@@ -1945,12 +1945,90 @@ tr.bg-green-50 td {
     <div class="container mx-auto px-4 py-6 space-y-6">
         
         <div class="space-y-6">
-            <div class="dashboard-card p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="font-bold text-slate-800 flex items-center gap-2"><i data-lucide="bar-chart" class="w-4 h-4 text-indigo-600"></i> Evolução da Performance</h3>
+            <section id="visual-analytics-dashboard" class="dashboard-card df-analytics-shell">
+                <div class="df-analytics-head">
+                    <div>
+                        <div class="df-analytics-eyebrow"><span class="df-analytics-live-dot"></span> Análises da conta</div>
+                        <h3>Painel de Performance</h3>
+                        <p id="analytics-period-label">Dados reais do período selecionado</p>
+                    </div>
+                    <div class="df-analytics-tabs no-print" role="tablist" aria-label="Modo do painel analítico">
+                        <button type="button" class="active" id="analytics-tab-real" onclick="setAnalyticsMode('real')" role="tab" aria-selected="true">Desempenho Real</button>
+                        <button type="button" id="analytics-tab-projection" onclick="setAnalyticsMode('projection')" role="tab" aria-selected="false">Projeção Estatística</button>
+                    </div>
                 </div>
-                <div class="relative h-64 w-full"><canvas id="equityChart"></canvas></div>
-            </div>
+
+                <div id="analytics-real-panel" role="tabpanel" aria-labelledby="analytics-tab-real">
+                    <div class="df-analytics-kpis">
+                        <article class="df-analytics-kpi tone-emerald">
+                            <div><span>Resultado do período</span><strong id="analytics-kpi-result">--</strong><small id="analytics-kpi-result-sub">0 dias operados</small></div>
+                            <div class="df-analytics-kpi-icon"><i data-lucide="wallet-cards"></i></div>
+                        </article>
+                        <article class="df-analytics-kpi tone-cyan">
+                            <div><span>Trades realizados</span><strong id="analytics-kpi-trades">--</strong><small id="analytics-kpi-trades-sub">0 ganhos / 0 perdas</small></div>
+                            <div class="df-analytics-kpi-icon"><i data-lucide="activity"></i></div>
+                        </article>
+                        <article class="df-analytics-kpi tone-violet">
+                            <div><span>Taxa de acerto</span><strong id="analytics-kpi-winrate">--</strong><small id="analytics-kpi-winrate-sub">Payoff --</small></div>
+                            <div class="df-analytics-kpi-icon"><i data-lucide="target"></i></div>
+                        </article>
+                        <article class="df-analytics-kpi tone-rose">
+                            <div><span>Drawdown máximo</span><strong id="analytics-kpi-drawdown">--</strong><small id="analytics-kpi-drawdown-sub">Sequência: 0 perdas</small></div>
+                            <div class="df-analytics-kpi-icon"><i data-lucide="shield-alert"></i></div>
+                        </article>
+                    </div>
+
+                    <div class="df-analytics-main-grid">
+                        <article class="df-analytics-panel df-analytics-equity-panel">
+                            <div class="df-analytics-panel-head"><div><span>Evolução da Performance</span><small>Resultado acumulado por estratégia</small></div><span class="df-analytics-chip">REAL</span></div>
+                            <div class="df-analytics-chart-wrap"><canvas id="equityChart"></canvas></div>
+                        </article>
+                        <article class="df-analytics-panel df-analytics-donut-panel">
+                            <div class="df-analytics-panel-head"><div><span>Distribuição dos Trades</span><small>Ganhos versus perdas</small></div></div>
+                            <div class="df-analytics-donut-wrap">
+                                <canvas id="analyticsWinLossChart"></canvas>
+                                <div class="df-analytics-donut-center"><strong id="analytics-donut-rate">--</strong><span>Win rate</span></div>
+                            </div>
+                            <div class="df-analytics-legend"><span><i class="win"></i> Ganhos <b id="analytics-legend-wins">0</b></span><span><i class="loss"></i> Perdas <b id="analytics-legend-losses">0</b></span></div>
+                        </article>
+                    </div>
+
+                    <div class="df-analytics-lower-grid">
+                        <article class="df-analytics-panel">
+                            <div class="df-analytics-panel-head"><div><span>Comparativo por Estratégia</span><small>Resultado líquido no período</small></div></div>
+                            <div id="analytics-strategy-bars" class="df-strategy-bars"><div class="df-analytics-empty">Sem operações no período selecionado.</div></div>
+                        </article>
+                        <article class="df-analytics-panel">
+                            <div class="df-analytics-panel-head"><div><span>Eficiência & Consistência</span><small>Leitura rápida dos principais indicadores</small></div></div>
+                            <div class="df-analytics-metric-grid">
+                                <div><span>Profit Factor</span><strong id="analytics-metric-pf">--</strong></div>
+                                <div><span>Expectância/trade</span><strong id="analytics-metric-expectancy">--</strong></div>
+                                <div><span>Dias verdes</span><strong id="analytics-metric-green-days">--</strong></div>
+                                <div><span>Melhor / pior dia</span><strong id="analytics-metric-best-worst">--</strong></div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+
+                <div id="analytics-projection-panel" class="hidden" role="tabpanel" aria-labelledby="analytics-tab-projection">
+                    <div class="df-projection-toolbar no-print">
+                        <div><span>Horizonte</span><div class="df-projection-periods"><button type="button" data-months="1">1M</button><button type="button" data-months="3">3M</button><button type="button" data-months="6">6M</button><button type="button" data-months="12" class="active">1 Ano</button></div></div>
+                        <label><span>Taxa de acerto esperada <b id="analytics-projection-rate-label">50%</b></span><input id="analytics-projection-rate" type="range" min="1" max="99" step="1" value="50"></label>
+                    </div>
+                    <div class="df-analytics-kpis df-projection-kpis">
+                        <article class="df-analytics-kpi tone-emerald"><div><span>Resultado esperado</span><strong id="analytics-projection-result">--</strong><small id="analytics-projection-months">12 meses</small></div><div class="df-analytics-kpi-icon"><i data-lucide="trending-up"></i></div></article>
+                        <article class="df-analytics-kpi tone-cyan"><div><span>Trades estimados</span><strong id="analytics-projection-trades">--</strong><small>Baseado na frequência histórica</small></div><div class="df-analytics-kpi-icon"><i data-lucide="calendar-range"></i></div></article>
+                        <article class="df-analytics-kpi tone-violet"><div><span>Probabilidade positiva</span><strong id="analytics-projection-probability">--</strong><small>Estimativa estatística aproximada</small></div><div class="df-analytics-kpi-icon"><i data-lucide="sigma"></i></div></article>
+                        <article class="df-analytics-kpi tone-amber"><div><span>Faixa provável 90%</span><strong id="analytics-projection-range">--</strong><small>Limite inferior / superior</small></div><div class="df-analytics-kpi-icon"><i data-lucide="chart-no-axes-combined"></i></div></article>
+                    </div>
+                    <article class="df-analytics-panel df-projection-chart-panel">
+                        <div class="df-analytics-panel-head"><div><span>Projeção Temporal</span><small id="analytics-projection-basis">Calculada a partir do desempenho histórico selecionado</small></div><span class="df-analytics-chip projection">ESTIMATIVA</span></div>
+                        <div class="df-analytics-chart-wrap projection"><canvas id="analyticsProjectionChart"></canvas></div>
+                        <div class="df-projection-legend"><span><i class="expected"></i> Resultado esperado</span><span><i class="range"></i> Faixa de incerteza de 90%</span></div>
+                    </article>
+                    <p class="df-projection-disclaimer"><i data-lucide="info"></i> Projeção matemática baseada no período selecionado. Não constitui promessa nem garantia de resultado futuro.</p>
+                </div>
+            </section>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <div id="period-analysis-card" class="dashboard-card period-v4 p-4 bg-slate-50 border border-slate-200 dark:bg-slate-800 dark:border-slate-700 flex flex-col">
@@ -2383,7 +2461,11 @@ tr.bg-green-50 td {
     window.db = getFirestore(app); 
     
     // Variáveis globais de controle
-    let chartInstance = null; 
+    let chartInstance = null;
+    let analyticsWinLossChart = null;
+    let analyticsProjectionChart = null;
+    let analyticsProjectionMonths = 12;
+    let analyticsLastMetrics = null;
     let db = window.db; // Atalho para o código legado
 
 
@@ -6384,6 +6466,186 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             return syncPeriodStrategyFilter(iso || (els.filterEnd && els.filterEnd.value) || getTodayISO());
         }
 
+        function dfSetAnalyticsText(id, value){
+            const el = document.getElementById(id);
+            if(el) el.textContent = value;
+            return el;
+        }
+
+        function dfNormalCdf(x){
+            const sign = x < 0 ? -1 : 1;
+            const z = Math.abs(x) / Math.sqrt(2);
+            const t = 1 / (1 + 0.3275911 * z);
+            const erf = sign * (1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-z * z));
+            return 0.5 * (1 + erf);
+        }
+
+        function renderAnalyticsWinLoss(wins, losses){
+            const canvas = document.getElementById('analyticsWinLossChart');
+            if(!canvas || typeof Chart === 'undefined') return;
+            if(analyticsWinLossChart) analyticsWinLossChart.destroy();
+            const total = wins + losses;
+            const isEN = CURRENT_LANG === 'en';
+            analyticsWinLossChart = new Chart(canvas.getContext('2d'), {
+                type:'doughnut',
+                data:{
+                    labels: total ? (isEN ? ['Wins','Losses'] : ['Ganhos','Perdas']) : [isEN ? 'No trades' : 'Sem trades'],
+                    datasets:[{
+                        data: total ? [wins, losses] : [1],
+                        backgroundColor: total ? ['#10b981','#f43f5e'] : ['#1e293b'],
+                        borderColor:'#0f172a', borderWidth:4, hoverOffset:3
+                    }]
+                },
+                options:{
+                    responsive:true, maintainAspectRatio:false, cutout:'72%',
+                    plugins:{
+                        legend:{display:false},
+                        tooltip:{enabled:!!total,callbacks:{label:(ctx)=>`${ctx.label}: ${ctx.raw}`}}
+                    },
+                    animation:{duration:420}
+                }
+            });
+            window.analyticsWinLossChart = analyticsWinLossChart;
+        }
+
+        function renderAnalyticsStrategyBars(rows){
+            const root = document.getElementById('analytics-strategy-bars');
+            if(!root) return;
+            const active = (rows || []).filter(row => row && (Number(row.trades || 0) > 0 || Number(row.total || 0) !== 0));
+            if(!active.length){
+                root.innerHTML = '<div class="df-analytics-empty">Sem operações no período selecionado.</div>';
+                return;
+            }
+            const maxAbs = Math.max(...active.map(row => Math.abs(Number(row.total || 0))), 1);
+            root.innerHTML = active.map(row => {
+                const total = Number(row.total || 0);
+                const tone = total > 0 ? 'positive' : (total < 0 ? 'negative' : '');
+                const width = Math.max(total === 0 ? 0 : 2, Math.min(50, (Math.abs(total) / maxAbs) * 50));
+                return `<div class="df-strategy-row"><span class="df-strategy-label" title="${escapeHtml(row.label)}">${escapeHtml(row.label)}</span><div class="df-strategy-track"><span class="df-strategy-fill ${tone}" style="width:${width.toFixed(2)}%"></span></div><span class="df-strategy-value ${tone}">${formatCurrency(total)}</span></div>`;
+            }).join('');
+        }
+
+        function renderAnalyticsProjection(){
+            const metrics = analyticsLastMetrics;
+            const canvas = document.getElementById('analyticsProjectionChart');
+            if(!metrics || !canvas || typeof Chart === 'undefined') return;
+            const isEN = CURRENT_LANG === 'en';
+            const slider = document.getElementById('analytics-projection-rate');
+            const p = Math.max(.01, Math.min(.99, Number(slider?.value || metrics.winRate || 50) / 100));
+            const months = analyticsProjectionMonths;
+            const avgWin = Math.max(0, Number(metrics.avgWin || 0));
+            const avgLossAbs = Math.max(0, Math.abs(Number(metrics.avgLoss || 0)));
+            const tradesPerMonth = metrics.tradedDays > 0 ? Math.max(1, Math.round((metrics.totalTrades / metrics.tradedDays) * 21)) : 0;
+            const meanTrade = (p * avgWin) - ((1 - p) * avgLossAbs);
+            const varianceTrade = p * Math.pow(avgWin - meanTrade, 2) + (1 - p) * Math.pow((-avgLossAbs) - meanTrade, 2);
+            const labels = ['Início'];
+            const expected = [0], upper = [0], lower = [0];
+            for(let month=1; month<=months; month++){
+                const trades = tradesPerMonth * month;
+                const mean = trades * meanTrade;
+                const sd = Math.sqrt(Math.max(0, trades * varianceTrade));
+                labels.push(month === 12 ? (isEN ? '1 Year' : '1 Ano') : `${month}M`);
+                expected.push(mean);
+                upper.push(mean + 1.645 * sd);
+                lower.push(mean - 1.645 * sd);
+            }
+            const finalExpected = expected[expected.length - 1] || 0;
+            const finalUpper = upper[upper.length - 1] || 0;
+            const finalLower = lower[lower.length - 1] || 0;
+            const finalSd = (finalUpper - finalExpected) / 1.645;
+            const probabilityPositive = tradesPerMonth > 0
+                ? (finalSd > 0 ? (1 - dfNormalCdf((0 - finalExpected) / finalSd)) : (finalExpected > 0 ? 1 : 0))
+                : 0;
+
+            dfSetAnalyticsText('analytics-projection-rate-label', `${Math.round(p * 100)}%`);
+            dfSetAnalyticsText('analytics-projection-result', tradesPerMonth ? formatCurrency(finalExpected) : '--');
+            dfSetAnalyticsText('analytics-projection-months', `${months} ${isEN ? (months === 1 ? 'month' : 'months') : (months === 1 ? 'mês' : 'meses')}`);
+            dfSetAnalyticsText('analytics-projection-trades', tradesPerMonth ? String(tradesPerMonth * months) : '--');
+            dfSetAnalyticsText('analytics-projection-probability', tradesPerMonth ? `${(probabilityPositive * 100).toFixed(1)}%` : '--');
+            dfSetAnalyticsText('analytics-projection-range', tradesPerMonth ? `${formatCurrency(finalLower)} / ${formatCurrency(finalUpper)}` : '--');
+            dfSetAnalyticsText('analytics-projection-basis', tradesPerMonth
+                ? (isEN ? `Basis: ${tradesPerMonth} trades/month • average win ${formatCurrency(avgWin)} • average loss ${formatCurrency(-avgLossAbs)}` : `Base: ${tradesPerMonth} trades/mês • ganho médio ${formatCurrency(avgWin)} • perda média ${formatCurrency(-avgLossAbs)}`)
+                : (isEN ? 'Insufficient data in the selected period' : 'Dados insuficientes no período selecionado'));
+
+            if(analyticsProjectionChart) analyticsProjectionChart.destroy();
+            analyticsProjectionChart = new Chart(canvas.getContext('2d'), {
+                type:'line',
+                data:{labels,datasets:[
+                    {label:isEN?'Upper 90% bound':'Limite superior 90%',data:upper,borderColor:'rgba(45,212,191,.28)',backgroundColor:'rgba(45,212,191,.12)',borderWidth:1,borderDash:[5,5],pointRadius:0,tension:.28,fill:false},
+                    {label:isEN?'Lower 90% bound':'Limite inferior 90%',data:lower,borderColor:'rgba(45,212,191,.28)',backgroundColor:'rgba(45,212,191,.12)',borderWidth:1,borderDash:[5,5],pointRadius:0,tension:.28,fill:'-1'},
+                    {label:isEN?'Expected result':'Resultado esperado',data:expected,borderColor:'#22d3ee',backgroundColor:'rgba(34,211,238,.08)',borderWidth:2.6,pointRadius:months <= 3 ? 3 : 1.5,pointHoverRadius:5,tension:.32,fill:false}
+                ]},
+                options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${formatCurrency(ctx.raw)}`}}},scales:{x:{grid:{display:false},ticks:{color:'#64748b',maxRotation:0}},y:{grid:{color:'rgba(51,65,85,.55)'},ticks:{color:'#64748b',callback:(value)=>formatCurrency(value)}}},animation:{duration:420}}
+            });
+            window.analyticsProjectionChart = analyticsProjectionChart;
+        }
+
+        function bindAnalyticsProjectionControls(){
+            const slider = document.getElementById('analytics-projection-rate');
+            if(slider && slider.dataset.bound !== '1'){
+                slider.dataset.bound = '1';
+                slider.addEventListener('input', ()=>{ slider.dataset.userAdjusted = '1'; renderAnalyticsProjection(); });
+            }
+            document.querySelectorAll('.df-projection-periods button[data-months]').forEach(button => {
+                if(button.dataset.bound === '1') return;
+                button.dataset.bound = '1';
+                button.addEventListener('click', ()=>{
+                    analyticsProjectionMonths = Math.max(1, Number(button.dataset.months || 12));
+                    document.querySelectorAll('.df-projection-periods button[data-months]').forEach(item => item.classList.toggle('active', item === button));
+                    renderAnalyticsProjection();
+                });
+            });
+        }
+
+        window.setAnalyticsMode = (mode) => {
+            const projection = mode === 'projection';
+            document.getElementById('analytics-real-panel')?.classList.toggle('hidden', projection);
+            document.getElementById('analytics-projection-panel')?.classList.toggle('hidden', !projection);
+            const realButton = document.getElementById('analytics-tab-real');
+            const projectionButton = document.getElementById('analytics-tab-projection');
+            realButton?.classList.toggle('active', !projection);
+            projectionButton?.classList.toggle('active', projection);
+            realButton?.setAttribute('aria-selected', projection ? 'false' : 'true');
+            projectionButton?.setAttribute('aria-selected', projection ? 'true' : 'false');
+            if(projection) setTimeout(renderAnalyticsProjection, 0);
+            else setTimeout(()=>{ try{ chartInstance?.resize(); analyticsWinLossChart?.resize(); }catch(e){} }, 0);
+        };
+
+        function renderVisualAnalyticsDashboard(metrics){
+            if(!metrics || !document.getElementById('visual-analytics-dashboard')) return;
+            analyticsLastMetrics = metrics;
+            const isEN = CURRENT_LANG === 'en';
+            const rate = metrics.totalTrades > 0 ? (metrics.wins / metrics.totalTrades) * 100 : 0;
+            const payoff = metrics.avgLoss ? (metrics.avgWin / Math.abs(metrics.avgLoss)) : (metrics.avgWin > 0 ? Infinity : 0);
+            const selectedLabel = document.getElementById('period-strategy-filter')?.selectedOptions?.[0]?.textContent?.trim() || 'Todos';
+            const startLabel = formatDateShort(parseISODateLocal(metrics.start));
+            const endLabel = formatDateShort(parseISODateLocal(metrics.end));
+            dfSetAnalyticsText('analytics-period-label', `${startLabel} — ${endLabel} • ${selectedLabel}`);
+            const resultEl = dfSetAnalyticsText('analytics-kpi-result', formatCurrency(metrics.sum));
+            if(resultEl) resultEl.style.color = metrics.sum > 0 ? '#34d399' : (metrics.sum < 0 ? '#fb7185' : '#f8fafc');
+            dfSetAnalyticsText('analytics-kpi-result-sub', `${metrics.tradedDays} ${isEN ? (metrics.tradedDays === 1 ? 'trading day' : 'trading days') : (metrics.tradedDays === 1 ? 'dia operado' : 'dias operados')}`);
+            dfSetAnalyticsText('analytics-kpi-trades', String(metrics.totalTrades));
+            dfSetAnalyticsText('analytics-kpi-trades-sub', `${metrics.wins} ${isEN?'wins':'ganhos'} / ${metrics.losses} ${isEN?'losses':'perdas'}`);
+            dfSetAnalyticsText('analytics-kpi-winrate', `${rate.toFixed(metrics.totalTrades ? 1 : 0)}%`);
+            dfSetAnalyticsText('analytics-kpi-winrate-sub', `Payoff ${payoff === Infinity ? '∞' : (metrics.losses ? payoff.toFixed(2) : '--')}`);
+            dfSetAnalyticsText('analytics-kpi-drawdown', metrics.tradedDays ? formatCurrency(-metrics.maxDD) : '--');
+            dfSetAnalyticsText('analytics-kpi-drawdown-sub', isEN ? `Streak: ${metrics.maxLose} losses` : `Sequência: ${metrics.maxLose} perdas`);
+            dfSetAnalyticsText('analytics-donut-rate', `${rate.toFixed(metrics.totalTrades ? 1 : 0)}%`);
+            dfSetAnalyticsText('analytics-legend-wins', String(metrics.wins));
+            dfSetAnalyticsText('analytics-legend-losses', String(metrics.losses));
+            dfSetAnalyticsText('analytics-metric-pf', metrics.pf === Infinity ? '∞' : (metrics.grossLoss > 0 ? metrics.pf.toFixed(2) : '--'));
+            dfSetAnalyticsText('analytics-metric-expectancy', metrics.totalTrades ? formatCurrency(metrics.overallExpectancy) : '--');
+            dfSetAnalyticsText('analytics-metric-green-days', metrics.tradedDays ? `${metrics.greenDays} / ${metrics.tradedDays} (${Math.round(metrics.greenDays / metrics.tradedDays * 100)}%)` : '--');
+            dfSetAnalyticsText('analytics-metric-best-worst', metrics.tradedDays > 1 && isFinite(metrics.best) && isFinite(metrics.worst) ? `${formatCurrency(metrics.best)} / ${formatCurrency(metrics.worst)}` : '--');
+            renderAnalyticsWinLoss(metrics.wins, metrics.losses);
+            renderAnalyticsStrategyBars(metrics.rows);
+            bindAnalyticsProjectionControls();
+            const slider = document.getElementById('analytics-projection-rate');
+            if(slider && slider.dataset.userAdjusted !== '1') slider.value = String(Math.max(1, Math.min(99, Math.round(rate || 50))));
+            renderAnalyticsProjection();
+            try{ if(window.lucide && lucide.createIcons) lucide.createIcons(); }catch(e){}
+        }
+
 
         function filterReportInternal() {
             const start = els.filterStart.value; 
@@ -6630,6 +6892,11 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const worstRow = document.querySelector('span#custom-worst')?.closest('div');
             if(bestRow) bestRow.style.display = singleDayMode ? 'none' : '';
             if(worstRow) worstRow.style.display = singleDayMode ? 'none' : '';
+            renderVisualAnalyticsDashboard({
+                start, end, selectedSlot, sum, totalTrades, wins, losses, tradedDays, greenDays, redDays,
+                grossWin, grossLoss, avgWin, avgLoss, pf, maxDD, best, worst, maxLose, maxWin,
+                overallExpectancy, rows: dfPeriodStrategyRows
+            });
         }
 
         function updateChart(labels, datasets) {
@@ -6638,8 +6905,9 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const ctx = canvas.getContext('2d');
             if(chartInstance) chartInstance.destroy();
             const isDark = document.body.classList.contains('dark');
-            const gridColor = isDark ? '#334155' : '#f3f4f6';
-            const textColor = isDark ? '#94a3b8' : '#64748b';
+            const isInsideAnalytics = !!canvas.closest('#visual-analytics-dashboard');
+            const gridColor = isInsideAnalytics ? 'rgba(51,65,85,.55)' : (isDark ? '#334155' : '#f3f4f6');
+            const textColor = isInsideAnalytics ? '#94a3b8' : (isDark ? '#94a3b8' : '#64748b');
             const normalized = Array.isArray(datasets) ? datasets : [{ label: (CURRENT_LANG==='en' ? 'Cumulative Profit' : 'Lucro Acumulado'), data: datasets || [], borderColor: '#4f46e5', backgroundColor: 'rgba(79, 70, 229, 0.10)' }];
             chartInstance = new Chart(ctx, {
                 type: 'line',
@@ -6651,7 +6919,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                         borderColor: ds.borderColor || '#4f46e5',
                         backgroundColor: ds.backgroundColor || 'rgba(79, 70, 229, 0.10)',
                         borderWidth: 2.4,
-                        pointRadius: (ds.data && ds.data.length <= 2) ? 4 : 2,
+                        pointRadius: (ds.data && ds.data.length <= 2) ? 4 : 1.8,
                         pointHoverRadius: 5,
                         pointHitRadius: 12,
                         fill: false,
@@ -6665,7 +6933,8 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: true, labels: { color: textColor, usePointStyle: true, boxWidth: 10 } } },
+                    interaction:{mode:'index',intersect:false},
+                    plugins: { legend: { display: true, labels: { color: textColor, usePointStyle: true, boxWidth: 10, padding:14, font:{size:10,weight:'600'} } }, tooltip:{callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${formatCurrency(ctx.raw)}`}} },
                     scales: { y: { grid: { color: gridColor }, ticks: { color: textColor } }, x: { grid: { display: false }, ticks: { color: textColor } } }
                 }
             });
@@ -9048,6 +9317,42 @@ async function saveToCloudNow() {
             "Mês 1-3":"Month 1-3",
             "Análise por Período":"Period Analysis",
             "25/75 - Grupos A + B":"25/75 - Groups A + B",
+            "Análises da conta":"Account analytics",
+            "Painel de Performance":"Performance Dashboard",
+            "Indicadores, gráficos e projeção estatística":"Indicators, charts, and statistical projection",
+            "Dados reais do período selecionado":"Actual data for the selected period",
+            "Desempenho Real":"Actual Performance",
+            "Projeção Estatística":"Statistical Projection",
+            "Resultado do período":"Period Result",
+            "Trades realizados":"Trades Completed",
+            "Taxa de acerto":"Win Rate",
+            "Drawdown máximo":"Maximum Drawdown",
+            "Resultado acumulado por estratégia":"Cumulative result by strategy",
+            "Distribuição dos Trades":"Trade Distribution",
+            "Ganhos versus perdas":"Wins versus losses",
+            "Win rate":"Win rate",
+            "Ganhos":"Wins",
+            "Perdas":"Losses",
+            "Comparativo por Estratégia":"Strategy Comparison",
+            "Resultado líquido no período":"Net result for the period",
+            "Eficiência & Consistência":"Efficiency & Consistency",
+            "Leitura rápida dos principais indicadores":"Quick view of key indicators",
+            "Expectância/trade":"Expectancy/trade",
+            "Dias verdes":"Green days",
+            "Melhor / pior dia":"Best / worst day",
+            "Horizonte":"Horizon",
+            "Taxa de acerto esperada":"Expected win rate",
+            "Resultado esperado":"Expected result",
+            "Trades estimados":"Estimated trades",
+            "Baseado na frequência histórica":"Based on historical frequency",
+            "Probabilidade positiva":"Probability of profit",
+            "Estimativa estatística aproximada":"Approximate statistical estimate",
+            "Faixa provável 90%":"Likely 90% range",
+            "Limite inferior / superior":"Lower / upper bound",
+            "Projeção Temporal":"Time Projection",
+            "Calculada a partir do desempenho histórico selecionado":"Calculated from the selected historical performance",
+            "Faixa de incerteza de 90%":"90% uncertainty range",
+            "Projeção matemática baseada no período selecionado. Não constitui promessa nem garantia de resultado futuro.":"Mathematical projection based on the selected period. It is not a promise or guarantee of future results.",
             "Saldo Atual (Equity)":"Current Balance (Equity)",
             "SALDO ATUAL (EQUITY)":"CURRENT BALANCE (EQUITY)",
             "Início":"Start",
@@ -9636,6 +9941,7 @@ if(composed !== core) return lead + composed + trail;
             CURRENT_LANG = (String(lang).toLowerCase().startsWith('en')) ? 'en' : 'pt';
             try{ localStorage.setItem(LANG_STORAGE_KEY, CURRENT_LANG); }catch(e){}
             applyLanguage();
+            try{ filterReportInternal(); }catch(e){}
         }
         window.setLanguage = setLanguage;
 
@@ -13805,6 +14111,71 @@ We normalize daily buckets so:
 
 
 
+<style id="df-visual-analytics-styles">
+  #visual-analytics-dashboard{position:relative;overflow:hidden;padding:22px;background:radial-gradient(circle at 92% 0%,rgba(20,184,166,.13),transparent 27%),radial-gradient(circle at 0% 100%,rgba(99,102,241,.14),transparent 32%),#070b14;border:1px solid #172033;border-radius:20px;color:#e2e8f0;box-shadow:0 22px 55px rgba(15,23,42,.18);font-family:Inter,ui-sans-serif,system-ui,sans-serif;}
+  #visual-analytics-dashboard:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.025),transparent 34%);}
+  .df-analytics-head{position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:16px;}
+  .df-analytics-eyebrow{display:flex;align-items:center;gap:7px;font-size:10px;line-height:1;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#5eead4;margin-bottom:7px;}
+  .df-analytics-live-dot{width:7px;height:7px;border-radius:50%;background:#34d399;box-shadow:0 0 0 5px rgba(52,211,153,.08),0 0 16px rgba(52,211,153,.75);}
+  #visual-analytics-dashboard .df-analytics-head h3{font-size:20px;line-height:1.15;font-weight:900;color:#f8fafc;margin:0;letter-spacing:-.02em;}
+  #visual-analytics-dashboard .df-analytics-head p{font-size:11px;color:#94a3b8;margin:5px 0 0;}
+  .df-analytics-tabs{display:flex;gap:4px;padding:4px;border-radius:12px;background:#0d1422;border:1px solid #1e293b;}
+  .df-analytics-tabs button{border:0;border-radius:9px;background:transparent;color:#94a3b8;padding:8px 12px;font-size:11px;font-weight:800;cursor:pointer;transition:.2s ease;white-space:nowrap;}
+  .df-analytics-tabs button:hover{color:#e2e8f0;background:rgba(51,65,85,.45);}
+  .df-analytics-tabs button.active{background:linear-gradient(135deg,#14b8a6,#10b981);color:#04110e;box-shadow:0 7px 18px rgba(16,185,129,.2);}
+  .df-analytics-kpis{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:10px;}
+  .df-analytics-kpi{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:96px;padding:14px;border-radius:15px;background:rgba(15,23,42,.82);border:1px solid rgba(51,65,85,.78);box-shadow:0 8px 24px rgba(0,0,0,.12);}
+  .df-analytics-kpi:after{content:"";position:absolute;right:-18px;top:-20px;width:84px;height:84px;border-radius:50%;filter:blur(18px);opacity:.16;background:currentColor;}
+  .df-analytics-kpi>div:first-child{min-width:0;position:relative;z-index:1;}
+  .df-analytics-kpi span{display:block;color:#94a3b8;font-size:10px;line-height:1.2;font-weight:800;letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px;}
+  .df-analytics-kpi strong{display:block;color:#f8fafc;font-size:21px;line-height:1.1;font-weight:900;letter-spacing:-.035em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .df-analytics-kpi small{display:block;color:#64748b;font-size:10px;line-height:1.25;font-weight:600;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .df-analytics-kpi-icon{position:relative;z-index:1;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex:0 0 auto;background:rgba(255,255,255,.04);border:1px solid currentColor;}
+  .df-analytics-kpi-icon svg{width:16px;height:16px;}
+  .df-analytics-kpi.tone-emerald{color:#34d399}.df-analytics-kpi.tone-cyan{color:#22d3ee}.df-analytics-kpi.tone-violet{color:#a78bfa}.df-analytics-kpi.tone-rose{color:#fb7185}.df-analytics-kpi.tone-amber{color:#fbbf24}
+  .df-analytics-main-grid{position:relative;display:grid;grid-template-columns:minmax(0,2.05fr) minmax(250px,.95fr);gap:10px;margin-bottom:10px;}
+  .df-analytics-lower-grid{position:relative;display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,.75fr);gap:10px;}
+  .df-analytics-panel{min-width:0;padding:14px;border-radius:15px;background:rgba(15,23,42,.72);border:1px solid rgba(51,65,85,.72);}
+  .df-analytics-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:9px;}
+  .df-analytics-panel-head span:first-child{display:block;font-size:11px;font-weight:900;letter-spacing:.055em;text-transform:uppercase;color:#cbd5e1;}
+  .df-analytics-panel-head small{display:block;font-size:10px;line-height:1.25;color:#64748b;margin-top:3px;}
+  .df-analytics-chip{display:inline-flex;align-items:center;border-radius:999px;padding:4px 7px;font-size:9px!important;line-height:1;font-weight:900!important;letter-spacing:.08em!important;color:#5eead4!important;background:rgba(20,184,166,.09);border:1px solid rgba(45,212,191,.18);}
+  .df-analytics-chip.projection{color:#c4b5fd!important;background:rgba(139,92,246,.1);border-color:rgba(167,139,250,.2);}
+  .df-analytics-chart-wrap{position:relative;height:238px;width:100%;}
+  .df-analytics-donut-panel{display:flex;flex-direction:column;}
+  .df-analytics-donut-wrap{position:relative;height:184px;min-height:184px;display:flex;align-items:center;justify-content:center;margin:auto;}
+  .df-analytics-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;}
+  .df-analytics-donut-center strong{font-size:24px;line-height:1;font-weight:900;color:#f8fafc;letter-spacing:-.04em;}
+  .df-analytics-donut-center span{font-size:9px;text-transform:uppercase;letter-spacing:.11em;color:#64748b;font-weight:800;margin-top:5px;}
+  .df-analytics-legend{display:flex;justify-content:center;gap:18px;font-size:10px;color:#94a3b8;margin-top:5px;}
+  .df-analytics-legend span{display:flex;align-items:center;gap:6px}.df-analytics-legend i{width:8px;height:8px;border-radius:50%;display:inline-block}.df-analytics-legend i.win{background:#10b981;box-shadow:0 0 10px rgba(16,185,129,.45)}.df-analytics-legend i.loss{background:#f43f5e;box-shadow:0 0 10px rgba(244,63,94,.4)}.df-analytics-legend b{color:#e2e8f0;}
+  .df-strategy-bars{display:grid;gap:9px;min-height:112px;align-content:center;}
+  .df-strategy-row{display:grid;grid-template-columns:minmax(105px,.7fr) minmax(180px,2fr) 90px;gap:10px;align-items:center;}
+  .df-strategy-label{font-size:10px;font-weight:800;color:#cbd5e1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .df-strategy-track{position:relative;height:9px;border-radius:999px;background:#111827;border:1px solid #1f2937;overflow:hidden;}
+  .df-strategy-track:after{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;background:#475569;z-index:2;}
+  .df-strategy-fill{position:absolute;top:1px;bottom:1px;min-width:2px;border-radius:999px;transition:width .45s ease;}
+  .df-strategy-fill.positive{left:50%;background:linear-gradient(90deg,#14b8a6,#34d399);box-shadow:0 0 12px rgba(52,211,153,.3);}
+  .df-strategy-fill.negative{right:50%;background:linear-gradient(90deg,#fb7185,#f43f5e);box-shadow:0 0 12px rgba(244,63,94,.3);}
+  .df-strategy-value{text-align:right;font-size:10px;font-weight:900;color:#e2e8f0;white-space:nowrap;}.df-strategy-value.positive{color:#34d399}.df-strategy-value.negative{color:#fb7185}
+  .df-analytics-metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .df-analytics-metric-grid>div{min-width:0;padding:11px;border-radius:11px;background:rgba(2,6,23,.42);border:1px solid rgba(51,65,85,.58);}
+  .df-analytics-metric-grid span{display:block;font-size:9px;line-height:1.2;text-transform:uppercase;letter-spacing:.06em;font-weight:800;color:#64748b;margin-bottom:5px;}
+  .df-analytics-metric-grid strong{display:block;font-size:13px;line-height:1.2;font-weight:900;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .df-analytics-empty{font-size:11px;color:#64748b;text-align:center;padding:28px 10px;}
+  .df-projection-toolbar{position:relative;display:grid;grid-template-columns:auto minmax(280px,1fr);gap:24px;align-items:end;margin-bottom:12px;padding:12px 14px;border-radius:14px;background:rgba(15,23,42,.72);border:1px solid rgba(51,65,85,.72);}
+  .df-projection-toolbar>div>span,.df-projection-toolbar label>span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.08em;font-weight:800;color:#64748b;margin-bottom:7px;}.df-projection-toolbar label b{color:#5eead4;margin-left:5px;}
+  .df-projection-periods{display:flex;gap:4px;}.df-projection-periods button{border:1px solid #334155;background:#111827;color:#94a3b8;border-radius:8px;padding:6px 10px;font-size:10px;font-weight:900;cursor:pointer}.df-projection-periods button.active{background:#10b981;border-color:#10b981;color:#03120e;}
+  #analytics-projection-rate{width:100%;accent-color:#10b981;cursor:pointer;}
+  .df-projection-kpis{margin-bottom:10px;}
+  .df-projection-chart-panel{position:relative;}.df-analytics-chart-wrap.projection{height:285px;}
+  .df-projection-legend{display:flex;justify-content:center;gap:18px;margin-top:5px;font-size:9px;color:#64748b;}.df-projection-legend span{display:flex;align-items:center;gap:6px}.df-projection-legend i{display:inline-block;width:18px;height:3px;border-radius:999px}.df-projection-legend i.expected{background:#22d3ee}.df-projection-legend i.range{background:rgba(45,212,191,.26);border-top:1px dashed #2dd4bf;}
+  .df-projection-disclaimer{display:flex;align-items:center;justify-content:center;gap:7px;margin:10px 0 0!important;font-size:10px!important;color:#64748b!important;text-align:center;}.df-projection-disclaimer svg{width:13px;height:13px;flex:0 0 auto;}
+  @media (max-width:1023px){.df-analytics-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}.df-analytics-main-grid,.df-analytics-lower-grid{grid-template-columns:1fr;}.df-analytics-donut-wrap{height:210px}.df-projection-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media (max-width:640px){#visual-analytics-dashboard{padding:15px;border-radius:16px}.df-analytics-head{flex-direction:column}.df-analytics-tabs{width:100%}.df-analytics-tabs button{flex:1;padding:8px 6px}.df-analytics-kpis,.df-projection-kpis{grid-template-columns:1fr}.df-analytics-kpi{min-height:86px}.df-analytics-main-grid,.df-analytics-lower-grid{gap:8px}.df-analytics-chart-wrap{height:220px}.df-strategy-row{grid-template-columns:minmax(82px,.75fr) minmax(110px,1.5fr) 74px;gap:7px}.df-projection-toolbar{grid-template-columns:1fr;gap:13px}.df-analytics-chart-wrap.projection{height:240px}}
+  @media print{#visual-analytics-dashboard{background:#fff!important;color:#0f172a!important;border:1px solid #cbd5e1!important;box-shadow:none!important}.df-analytics-tabs,.df-projection-toolbar{display:none!important}.df-analytics-kpi,.df-analytics-panel{background:#fff!important;border-color:#cbd5e1!important}.df-analytics-kpi strong,.df-analytics-panel-head span:first-child,.df-strategy-label,.df-strategy-value,.df-analytics-metric-grid strong,.df-analytics-donut-center strong{color:#0f172a!important}.df-analytics-main-grid{grid-template-columns:2fr 1fr!important}.df-analytics-lower-grid{grid-template-columns:1.4fr .8fr!important}}
+</style>
+
 <style id="df-v15-layout-styles">
   /* Stable layout layer built on the working v14 file */
   #global-insights-card{height:auto !important; max-height:none !important;}
@@ -14177,7 +14548,7 @@ tr.bg-green-50 td {
       <div class="df-body">
         <div class="df-group">
           <div class="df-group-title">Estrutura Principal</div>
-          <label class="df-option"><input type="checkbox" data-card-key="evolution" checked><span><div class="df-option-title">Evolução da Performance</div><div class="df-option-sub">Gráfico principal de evolução</div></span></label>
+          <label class="df-option"><input type="checkbox" data-card-key="evolution" checked><span><div class="df-option-title">Painel de Performance</div><div class="df-option-sub">Indicadores, gráficos e projeção estatística</div></span></label>
           <label class="df-option"><input type="checkbox" data-card-key="period" checked><span><div class="df-option-title">Análise por Período</div><div class="df-option-sub">Filtros, KPIs e exportações</div></span></label>
           <label class="df-option"><input type="checkbox" data-card-key="calendar" checked><span><div class="df-option-title">Calendário de Trades</div><div class="df-option-sub">Tabela mensal de operações</div></span></label>
         </div>
