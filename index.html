@@ -1986,34 +1986,34 @@ tr.bg-green-50 td {
 
                 <div id="analytics-real-panel" role="tabpanel" aria-labelledby="analytics-tab-real">
                     <div class="df-analytics-kpis">
-                        <article class="df-analytics-kpi tone-emerald">
+                        <article class="df-analytics-kpi tone-emerald" role="button" tabindex="0" data-analytics-jump="result" onclick="window.analyticsJumpTo && window.analyticsJumpTo('result')" onkeydown="window.analyticsKpiKeydown && window.analyticsKpiKeydown(event,'result')" aria-label="Ver detalhes do resultado do período" title="Ver evolução do resultado no período">
                             <div><span>Resultado do período</span><strong id="analytics-kpi-result">--</strong><small id="analytics-kpi-result-sub">0 dias operados</small></div>
                             <div class="df-analytics-kpi-icon"><i data-lucide="wallet-cards"></i></div>
                         </article>
-                        <article class="df-analytics-kpi tone-cyan">
+                        <article class="df-analytics-kpi tone-cyan" role="button" tabindex="0" data-analytics-jump="trades" onclick="window.analyticsJumpTo && window.analyticsJumpTo('trades')" onkeydown="window.analyticsKpiKeydown && window.analyticsKpiKeydown(event,'trades')" aria-label="Ver detalhes dos trades realizados" title="Ver distribuição dos trades">
                             <div><span>Trades realizados</span><strong id="analytics-kpi-trades">--</strong><small id="analytics-kpi-trades-sub">0 ganhos / 0 perdas</small></div>
                             <div class="df-analytics-kpi-icon"><i data-lucide="activity"></i></div>
                         </article>
-                        <article class="df-analytics-kpi tone-violet">
+                        <article class="df-analytics-kpi tone-violet" role="button" tabindex="0" data-analytics-jump="winrate" onclick="window.analyticsJumpTo && window.analyticsJumpTo('winrate')" onkeydown="window.analyticsKpiKeydown && window.analyticsKpiKeydown(event,'winrate')" aria-label="Ver detalhes da taxa de acerto" title="Ver taxa de acerto e distribuição de ganhos e perdas">
                             <div><span>Taxa de acerto</span><strong id="analytics-kpi-winrate">--</strong><small id="analytics-kpi-winrate-sub">Payoff --</small></div>
                             <div class="df-analytics-kpi-icon"><i data-lucide="target"></i></div>
                         </article>
-                        <article class="df-analytics-kpi tone-rose">
+                        <article class="df-analytics-kpi tone-rose" role="button" tabindex="0" data-analytics-jump="drawdown" onclick="window.analyticsJumpTo && window.analyticsJumpTo('drawdown')" onkeydown="window.analyticsKpiKeydown && window.analyticsKpiKeydown(event,'drawdown')" aria-label="Ver detalhes do drawdown máximo" title="Ver risco e consistência do período">
                             <div><span>Drawdown máximo</span><strong id="analytics-kpi-drawdown">--</strong><small id="analytics-kpi-drawdown-sub">Sequência: 0 perdas</small></div>
                             <div class="df-analytics-kpi-icon"><i data-lucide="shield-alert"></i></div>
                         </article>
                     </div>
 
                     <div class="df-analytics-main-grid">
-                        <article class="df-analytics-panel df-analytics-equity-panel">
+                        <article id="analytics-detail-result" class="df-analytics-panel df-analytics-equity-panel">
                             <div class="df-analytics-panel-head"><div><span>Evolução da Performance</span><small>Resultado acumulado por estratégia</small></div><span class="df-analytics-chip">REAL</span></div>
                             <div class="df-analytics-chart-wrap"><canvas id="equityChart"></canvas></div>
                         </article>
-                        <article class="df-analytics-panel df-analytics-donut-panel">
+                        <article id="analytics-detail-trades" class="df-analytics-panel df-analytics-donut-panel">
                             <div class="df-analytics-panel-head"><div><span>Distribuição dos Trades</span><small>Ganhos versus perdas</small></div></div>
                             <div class="df-analytics-donut-wrap">
                                 <canvas id="analyticsWinLossChart"></canvas>
-                                <div class="df-analytics-donut-center"><strong id="analytics-donut-rate">--</strong><span>Win rate</span></div>
+                                <div id="analytics-detail-winrate" class="df-analytics-donut-center"><strong id="analytics-donut-rate">--</strong><span>Win rate</span></div>
                             </div>
                             <div class="df-analytics-legend"><span><i class="win"></i> Ganhos <b id="analytics-legend-wins">0</b></span><span><i class="loss"></i> Perdas <b id="analytics-legend-losses">0</b></span></div>
                         </article>
@@ -2170,7 +2170,7 @@ tr.bg-green-50 td {
                     </div>
                 </div>
 
-                <div class="period-section">
+                <div id="period-risk-section" class="period-section">
                     <div class="period-section-title">
                         <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-orange-600"></i>
                         <span>Risco & Consistência</span>
@@ -6664,6 +6664,34 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 });
             });
         }
+
+        window.analyticsJumpTo = function(kind){
+            const targets = { result:'analytics-detail-result', trades:'analytics-detail-trades', winrate:'analytics-detail-winrate', drawdown:'period-risk-section' };
+            const targetId = targets[kind];
+            if(!targetId) return;
+            const target = document.getElementById(targetId);
+            if(!target) return;
+            const scrollTarget = (kind === 'winrate') ? (document.getElementById('analytics-detail-trades') || target) : target;
+            try{
+                const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+                scrollTarget.scrollIntoView({behavior: reduceMotion ? 'auto' : 'smooth', block:'center', inline:'nearest'});
+            }catch(e){ try{ scrollTarget.scrollIntoView(); }catch(_){} }
+            const highlightTarget = (kind === 'winrate') ? (document.getElementById('analytics-detail-trades') || target) : target;
+            try{
+                highlightTarget.classList.remove('df-analytics-jump-target');
+                void highlightTarget.offsetWidth;
+                highlightTarget.classList.add('df-analytics-jump-target');
+                setTimeout(()=>highlightTarget.classList.remove('df-analytics-jump-target'),1300);
+            }catch(e){}
+        };
+
+        window.analyticsKpiKeydown = function(event, kind){
+            if(!event) return;
+            if(event.key === 'Enter' || event.key === ' '){
+                event.preventDefault();
+                window.analyticsJumpTo(kind);
+            }
+        };
 
         window.setAnalyticsMode = (mode) => {
             const projection = mode === 'projection';
@@ -14208,6 +14236,14 @@ We normalize daily buckets so:
   .df-analytics-tabs button.active{background:linear-gradient(135deg,#14b8a6,#10b981);color:#04110e;box-shadow:0 7px 18px rgba(16,185,129,.2);}
   .df-analytics-kpis{position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:10px;}
   .df-analytics-kpi{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:96px;padding:14px;border-radius:15px;background:rgba(15,23,42,.82);border:1px solid rgba(51,65,85,.78);box-shadow:0 8px 24px rgba(0,0,0,.12);}
+  .df-analytics-kpi[data-analytics-jump]{cursor:pointer;outline:none;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background-color .18s ease;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+  .df-analytics-kpi[data-analytics-jump]:focus-visible{border-color:currentColor;box-shadow:0 0 0 3px rgba(99,102,241,.20),0 12px 28px rgba(0,0,0,.18);}
+  .df-analytics-kpi[data-analytics-jump]:active{transform:translateY(0) scale(.985);}
+  @media (hover:hover){.df-analytics-kpi[data-analytics-jump]:hover{transform:translateY(-3px);border-color:currentColor;box-shadow:0 14px 30px rgba(0,0,0,.18);}.df-analytics-kpi[data-analytics-jump]:hover .df-analytics-kpi-icon{transform:scale(1.06);}}
+  .df-analytics-kpi-icon{transition:transform .18s ease;}
+  .df-analytics-jump-target{animation:dfAnalyticsJumpPulse 1.15s ease;}
+  @keyframes dfAnalyticsJumpPulse{0%{box-shadow:0 0 0 0 rgba(99,102,241,0);}30%{box-shadow:0 0 0 4px rgba(99,102,241,.24),0 14px 34px rgba(15,23,42,.12);}100%{box-shadow:0 0 0 0 rgba(99,102,241,0);}}
+  @media (prefers-reduced-motion:reduce){.df-analytics-kpi[data-analytics-jump],.df-analytics-kpi-icon{transition:none;}.df-analytics-jump-target{animation:none;}}
   .df-analytics-kpi:after{content:"";position:absolute;right:-18px;top:-20px;width:84px;height:84px;border-radius:50%;filter:blur(18px);opacity:.16;background:currentColor;}
   .df-analytics-kpi>div:first-child{min-width:0;position:relative;z-index:1;}
   .df-analytics-kpi span{display:block;color:#94a3b8;font-size:10px;line-height:1.2;font-weight:800;letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px;}
