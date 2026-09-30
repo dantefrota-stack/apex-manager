@@ -1201,6 +1201,70 @@ tr.bg-green-50 td {
 
 </style>
 
+
+<style id="df-analytics-detail-modal-style">
+  .df-analytics-detail-dialog{width:min(1120px,96vw);height:min(820px,92vh);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;}
+  .df-analytics-detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:20px 22px 16px;border-bottom:1px solid #e2e8f0;background:linear-gradient(135deg,#fff,#f8fafc);}
+  body.dark .df-analytics-detail-head{border-color:#334155;background:linear-gradient(135deg,#0f172a,#111827);}
+  .df-analytics-detail-eyebrow{font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:#6366f1;margin-bottom:5px;}
+  .df-analytics-detail-title{font-size:22px!important;line-height:1.15!important;font-weight:900!important;color:#0f172a!important;margin:0!important;}
+  body.dark .df-analytics-detail-title{color:#f8fafc!important;}
+  .df-analytics-detail-subtitle{font-size:12px;color:#64748b;margin-top:5px;white-space:normal;}
+  .df-analytics-detail-close{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#64748b;border:1px solid #e2e8f0;background:#fff;flex:0 0 auto;}
+  .df-analytics-detail-close:hover{background:#f1f5f9;color:#0f172a;}
+  body.dark .df-analytics-detail-close{background:#1e293b;border-color:#334155;color:#cbd5e1;}
+  .df-analytics-detail-close svg{width:18px;height:18px;}
+  .df-analytics-detail-body{flex:1 1 auto;overflow:auto;padding:18px 22px 22px;background:#f8fafc;}
+  body.dark .df-analytics-detail-body{background:#0b1220;}
+  .df-analytics-detail-footer{padding:12px 22px;border-top:1px solid #e2e8f0;background:#fff;display:flex;justify-content:flex-end;}
+  body.dark .df-analytics-detail-footer{border-color:#334155;background:#0f172a;}
+  .df-analytics-detail-back{display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:10px;background:#4f46e5;color:#fff;font-size:12px;font-weight:800;}
+  .df-analytics-detail-back:hover{background:#4338ca;}
+  .df-analytics-detail-back svg{width:15px;height:15px;}
+  .df-detail-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(320px,.85fr);gap:12px;margin-bottom:14px;}
+  .df-detail-main-card,.df-detail-card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px;box-shadow:0 5px 18px rgba(15,23,42,.04);}
+  body.dark .df-detail-main-card,body.dark .df-detail-card{background:#111827;border-color:#334155;box-shadow:none;}
+  .df-detail-main-card .df-detail-label{font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#64748b;}
+  .df-detail-main-card .df-detail-value{font-size:30px;line-height:1.1;font-weight:900;color:#0f172a;margin-top:6px;letter-spacing:-.035em;}
+  body.dark .df-detail-main-card .df-detail-value{color:#f8fafc;}
+  .df-detail-main-card .df-detail-copy{font-size:12px;line-height:1.45;color:#64748b;margin-top:8px;max-width:760px;}
+  .df-detail-mini-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+  .df-detail-mini{border:1px solid #e2e8f0;border-radius:12px;padding:10px 11px;background:#f8fafc;min-width:0;}
+  body.dark .df-detail-mini{border-color:#334155;background:#0f172a;}
+  .df-detail-mini span{display:block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#64748b;margin-bottom:4px;}
+  .df-detail-mini strong{display:block;font-size:14px;line-height:1.2;font-weight:900;color:#1e293b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  body.dark .df-detail-mini strong{color:#e2e8f0;}
+  .df-detail-section{margin-top:14px;}
+  .df-detail-section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px;font-size:12px;font-weight:900;color:#334155;}
+  body.dark .df-detail-section-title{color:#e2e8f0;}
+  .df-detail-section-title small{font-size:10px;color:#94a3b8;font-weight:700;}
+  .df-detail-strategy-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+  .df-detail-strategy{padding:11px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#fff;min-width:0;}
+  body.dark .df-detail-strategy{background:#111827;border-color:#334155;}
+  .df-detail-strategy-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+  .df-detail-strategy-name{font-size:11px;font-weight:800;color:#475569;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  body.dark .df-detail-strategy-name{color:#cbd5e1;}
+  .df-detail-strategy-value{font-size:12px;font-weight:900;white-space:nowrap;}
+  .df-detail-strategy-meta{font-size:10px;color:#94a3b8;margin-top:5px;}
+  .df-detail-table-wrap{overflow:auto;border:1px solid #e2e8f0;border-radius:14px;background:#fff;}
+  body.dark .df-detail-table-wrap{border-color:#334155;background:#111827;}
+  .df-detail-table{width:100%;border-collapse:collapse;min-width:680px;font-size:11px;}
+  .df-detail-table th{position:sticky;top:0;z-index:2;background:#f8fafc;color:#64748b;text-align:left;font-size:9px;text-transform:uppercase;letter-spacing:.055em;padding:9px 10px;border-bottom:1px solid #e2e8f0;}
+  body.dark .df-detail-table th{background:#0f172a;border-color:#334155;color:#94a3b8;}
+  .df-detail-table td{padding:9px 10px;border-bottom:1px solid #f1f5f9;color:#475569;vertical-align:top;}
+  body.dark .df-detail-table td{border-color:#1f2937;color:#cbd5e1;}
+  .df-detail-table tr:last-child td{border-bottom:0;}
+  .df-detail-money{font-weight:900;text-align:right;white-space:nowrap;}
+  .df-detail-pos{color:#059669!important}.df-detail-neg{color:#e11d48!important}.df-detail-neutral{color:#64748b!important;}
+  .df-detail-badge{display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;font-size:9px;font-weight:800;background:#f1f5f9;color:#64748b;margin:1px 3px 1px 0;}
+  body.dark .df-detail-badge{background:#1e293b;color:#cbd5e1;}
+  .df-detail-empty{padding:28px;text-align:center;color:#94a3b8;font-size:12px;}
+  .df-detail-dd-note{padding:10px 12px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:11px;line-height:1.45;margin-bottom:10px;}
+  body.dark .df-detail-dd-note{background:rgba(124,45,18,.18);border-color:#7c2d12;color:#fdba74;}
+  @media(max-width:900px){.df-detail-hero{grid-template-columns:1fr}.df-detail-strategy-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.df-analytics-detail-dialog{width:97vw;height:94vh;}}
+  @media(max-width:600px){.df-analytics-detail-head{padding:16px}.df-analytics-detail-body{padding:14px}.df-analytics-detail-footer{padding:10px 14px}.df-analytics-detail-title{font-size:19px!important}.df-detail-main-card .df-detail-value{font-size:25px}.df-detail-mini-grid{grid-template-columns:1fr 1fr}.df-detail-strategy-grid{grid-template-columns:1fr}.df-detail-table{min-width:610px}}
+</style>
+
 </head>
 <body class="pb-12 transition-colors duration-300">
 
@@ -1290,7 +1354,26 @@ tr.bg-green-50 td {
         </div>
     </div>
 
-        <!-- ADMIN MODAL -->
+        <!-- ANALYTICS KPI DETAIL MODAL -->
+    <div id="analytics-detail-modal" class="hidden fixed inset-0 z-[140] p-3 md:p-6" role="dialog" aria-modal="true" aria-labelledby="analytics-detail-title">
+        <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm" onclick="window.closeAnalyticsDetail && window.closeAnalyticsDetail()"></div>
+        <div class="df-analytics-detail-dialog relative mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl">
+            <div class="df-analytics-detail-head">
+                <div class="min-w-0">
+                    <div id="analytics-detail-eyebrow" class="df-analytics-detail-eyebrow">Detalhes do indicador</div>
+                    <h3 id="analytics-detail-title" class="df-analytics-detail-title">Resumo</h3>
+                    <p id="analytics-detail-subtitle" class="df-analytics-detail-subtitle"></p>
+                </div>
+                <button type="button" onclick="window.closeAnalyticsDetail && window.closeAnalyticsDetail()" class="df-analytics-detail-close" aria-label="Fechar"><i data-lucide="x"></i></button>
+            </div>
+            <div id="analytics-detail-body" class="df-analytics-detail-body"></div>
+            <div class="df-analytics-detail-footer">
+                <button type="button" onclick="window.closeAnalyticsDetail && window.closeAnalyticsDetail()" class="df-analytics-detail-back"><i data-lucide="arrow-left"></i><span>Voltar ao painel</span></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN MODAL -->
     <div id="admin-modal" class="fixed inset-0 z-[60] hidden no-print">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="closeAdminPanel()"></div>
 
@@ -1986,19 +2069,19 @@ tr.bg-green-50 td {
 
                 <div id="analytics-real-panel" role="tabpanel" aria-labelledby="analytics-tab-real">
                     <div class="df-analytics-kpis">
-                        <article class="df-analytics-kpi tone-emerald" role="button" tabindex="0" data-analytics-jump="result" onclick="window.analyticsJumpTo && window.analyticsJumpTo('result')" onkeydown="window.analyticsKpiKeydown && window.analyticsKpiKeydown(event,'result')" aria-label="Ver detalhes do resultado do período" title="Ver evolução do resultado no período">
+                        <article class="df-analytics-kpi tone-emerald" role="button" tabindex="0" data-analytics-jump="result" onclick="window.analyticsJumpTo && window.analyticsJumpTo('result')" onkeydown="window.analyticsKpiKeydown && window.analyticsKpiKeydown(event,'result')" aria-label="Ver detalhes do resultado do período" title="Abrir resumo das operações que formam este resultado">
                             <div><span>Resultado do período</span><strong id="analytics-kpi-result">--</strong><small id="analytics-kpi-result-sub">0 dias operados</small></div>
                             <div class="df-analytics-kpi-icon"><i data-lucide="wallet-cards"></i></div>
                         </article>
-                        <article class="df-analytics-kpi tone-cyan" role="button" tabindex="0" data-analytics-jump="trades" onclick="window.analyticsJumpTo && window.analyticsJumpTo('trades')" onkeydown="window.analyticsKpiKeydown && window.analyticsKpiKeydown(event,'trades')" aria-label="Ver detalhes dos trades realizados" title="Ver distribuição dos trades">
+                        <article class="df-analytics-kpi tone-cyan" role="button" tabindex="0" data-analytics-jump="trades" onclick="window.analyticsJumpTo && window.analyticsJumpTo('trades')" onkeydown="window.analyticsKpiKeydown && window.analyticsKpiKeydown(event,'trades')" aria-label="Ver detalhes dos trades realizados" title="Abrir lista dos trades que compõem este total">
                             <div><span>Trades realizados</span><strong id="analytics-kpi-trades">--</strong><small id="analytics-kpi-trades-sub">0 ganhos / 0 perdas</small></div>
                             <div class="df-analytics-kpi-icon"><i data-lucide="activity"></i></div>
                         </article>
-                        <article class="df-analytics-kpi tone-violet" role="button" tabindex="0" data-analytics-jump="winrate" onclick="window.analyticsJumpTo && window.analyticsJumpTo('winrate')" onkeydown="window.analyticsKpiKeydown && window.analyticsKpiKeydown(event,'winrate')" aria-label="Ver detalhes da taxa de acerto" title="Ver taxa de acerto e distribuição de ganhos e perdas">
+                        <article class="df-analytics-kpi tone-violet" role="button" tabindex="0" data-analytics-jump="winrate" onclick="window.analyticsJumpTo && window.analyticsJumpTo('winrate')" onkeydown="window.analyticsKpiKeydown && window.analyticsKpiKeydown(event,'winrate')" aria-label="Ver detalhes da taxa de acerto" title="Abrir resumo dos ganhos e perdas que formam esta taxa">
                             <div><span>Taxa de acerto</span><strong id="analytics-kpi-winrate">--</strong><small id="analytics-kpi-winrate-sub">Payoff --</small></div>
                             <div class="df-analytics-kpi-icon"><i data-lucide="target"></i></div>
                         </article>
-                        <article class="df-analytics-kpi tone-rose" role="button" tabindex="0" data-analytics-jump="drawdown" onclick="window.analyticsJumpTo && window.analyticsJumpTo('drawdown')" onkeydown="window.analyticsKpiKeydown && window.analyticsKpiKeydown(event,'drawdown')" aria-label="Ver detalhes do drawdown máximo" title="Ver risco e consistência do período">
+                        <article class="df-analytics-kpi tone-rose" role="button" tabindex="0" data-analytics-jump="drawdown" onclick="window.analyticsJumpTo && window.analyticsJumpTo('drawdown')" onkeydown="window.analyticsKpiKeydown && window.analyticsKpiKeydown(event,'drawdown')" aria-label="Ver detalhes do drawdown máximo" title="Abrir resumo do período que formou este drawdown">
                             <div><span>Drawdown máximo</span><strong id="analytics-kpi-drawdown">--</strong><small id="analytics-kpi-drawdown-sub">Sequência: 0 perdas</small></div>
                             <div class="df-analytics-kpi-icon"><i data-lucide="shield-alert"></i></div>
                         </article>
@@ -6665,33 +6748,251 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             });
         }
 
+        window.closeAnalyticsDetail = function(){
+            const modal = document.getElementById('analytics-detail-modal');
+            if(!modal) return;
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        };
+
+        function dfAnalyticsDetailTradeRows(){
+            const metrics = analyticsLastMetrics;
+            const acc = getActive();
+            if(!metrics || !acc || !acc.data) return [];
+            const summary = _periodTradeSummary(acc, metrics.start, metrics.end, metrics.selectedSlot || 'all');
+            const rows = [];
+            (summary.byDay || []).forEach(day => {
+                (day.blocks || []).forEach(block => {
+                    const indexes = window.dfTradeIndexesForBlock
+                        ? window.dfTradeIndexesForBlock(block)
+                        : dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY);
+                    indexes.forEach(tradeIndex => {
+                        const raw = block?.legs?.[`leg${tradeIndex}`];
+                        if(raw === '' || raw === null || raw === undefined) return;
+                        const value = Number(raw);
+                        if(!Number.isFinite(value) || value === 0) return;
+                        const labels = (Array.isArray(block.checkLabels) ? block.checkLabels : []).map(v => String(v || '').trim());
+                        const checks = [];
+                        labels.forEach((label, idx) => {
+                            if(!label) return;
+                            const checkIndex = idx + 1;
+                            const key = checkIndex === 1 ? `breakout${tradeIndex}` : `flag${checkIndex}_${tradeIndex}`;
+                            if(block?.legs?.[key]) checks.push(label);
+                        });
+                        rows.push({
+                            iso: day.iso,
+                            date: formatDateShort(parseISODateLocal(day.iso)),
+                            strategy: block.label || block.slot,
+                            slot: block.slot,
+                            tradeIndex,
+                            value,
+                            checks
+                        });
+                    });
+                });
+            });
+            return rows;
+        }
+
+        function dfAnalyticsDetailStrategyRows(trades){
+            const metrics = analyticsLastMetrics;
+            const source = Array.isArray(metrics?.rows) ? metrics.rows.filter(Boolean) : [];
+            if(source.length) return source.filter(row => Number(row.trades || 0) > 0 || Number(row.total || 0) !== 0);
+            const map = new Map();
+            (trades || []).forEach(t => {
+                if(!map.has(t.strategy)) map.set(t.strategy,{label:t.strategy,total:0,trades:0,wins:0,losses:0,winRate:0});
+                const row = map.get(t.strategy);
+                row.total += t.value;
+                row.trades += 1;
+                if(t.value > 0) row.wins += 1; else if(t.value < 0) row.losses += 1;
+                row.winRate = row.trades ? row.wins / row.trades : 0;
+            });
+            return Array.from(map.values());
+        }
+
+        function dfAnalyticsDetailDrawdown(){
+            const metrics = analyticsLastMetrics;
+            const acc = getActive();
+            if(!metrics || !acc || !acc.data) return {maxDD:0,peakDate:null,troughDate:null,rows:[]};
+            const summary = _periodTradeSummary(acc, metrics.start, metrics.end, metrics.selectedSlot || 'all');
+            const days = summary.byDay || [];
+            let cumulative = 0;
+            let peak = 0;
+            let peakIndex = -1;
+            let peakDate = null;
+            let maxDD = 0;
+            let maxPeakIndex = -1;
+            let troughIndex = -1;
+            const all = days.map((day, idx) => {
+                cumulative += Number(day.total || 0);
+                if(cumulative > peak){
+                    peak = cumulative;
+                    peakIndex = idx;
+                    peakDate = day.iso;
+                }
+                const dd = peak - cumulative;
+                if(dd > maxDD){
+                    maxDD = dd;
+                    maxPeakIndex = peakIndex;
+                    troughIndex = idx;
+                }
+                return {iso:day.iso,date:formatDateShort(parseISODateLocal(day.iso)),dayTotal:Number(day.total||0),cumulative,dd,peak};
+            });
+            const rangeStart = maxPeakIndex >= 0 ? maxPeakIndex : 0;
+            const rows = troughIndex >= 0 ? all.slice(rangeStart, troughIndex + 1) : [];
+            return {
+                maxDD,
+                peakDate: maxPeakIndex >= 0 ? all[maxPeakIndex]?.iso : null,
+                troughDate: troughIndex >= 0 ? all[troughIndex]?.iso : null,
+                rows
+            };
+        }
+
+        function dfAnalyticsDetailStrategyHtml(rows){
+            if(!rows || !rows.length) return '<div class="df-detail-empty">Sem estratégias com operações neste período.</div>';
+            return '<div class="df-detail-strategy-grid">' + rows.map(row => {
+                const total = Number(row.total || 0);
+                const tone = total > 0 ? 'df-detail-pos' : (total < 0 ? 'df-detail-neg' : 'df-detail-neutral');
+                const wr = Number(row.trades || 0) ? Math.round((Number(row.winRate || 0))*100) : 0;
+                return `<div class="df-detail-strategy"><div class="df-detail-strategy-head"><span class="df-detail-strategy-name" title="${escapeHtml(row.label || '')}">${escapeHtml(row.label || '--')}</span><span class="df-detail-strategy-value ${tone}">${formatCurrency(total)}</span></div><div class="df-detail-strategy-meta">${Number(row.trades || 0)} trades • ${Number(row.wins || 0)}G / ${Number(row.losses || 0)}P • WR ${wr}%</div></div>`;
+            }).join('') + '</div>';
+        }
+
+        function dfAnalyticsDetailTradesTable(trades, opts={}){
+            if(!trades || !trades.length) return '<div class="df-detail-empty">Nenhuma operação encontrada no período selecionado.</div>';
+            const showStatus = opts.showStatus !== false;
+            return `<div class="df-detail-table-wrap"><table class="df-detail-table"><thead><tr><th>Data</th><th>Estratégia</th><th>Operação</th><th>Contexto marcado</th>${showStatus?'<th>Status</th>':''}<th style="text-align:right">Resultado</th></tr></thead><tbody>${trades.map(t => {
+                const positive = t.value > 0;
+                const context = (t.checks || []).length ? t.checks.map(v=>`<span class="df-detail-badge">${escapeHtml(v)}</span>`).join('') : '<span class="text-slate-400">—</span>';
+                return `<tr><td>${escapeHtml(t.date)}</td><td><b>${escapeHtml(t.strategy)}</b></td><td>Trade ${t.tradeIndex}</td><td>${context}</td>${showStatus?`<td><span class="df-detail-badge ${positive?'df-detail-pos':'df-detail-neg'}">${positive?'Ganho':'Perda'}</span></td>`:''}<td class="df-detail-money ${positive?'df-detail-pos':'df-detail-neg'}">${formatCurrency(t.value)}</td></tr>`;
+            }).join('')}</tbody></table></div>`;
+        }
+
+        function dfAnalyticsOpenDetail(kind){
+            const metrics = analyticsLastMetrics;
+            if(!metrics) return;
+            const modal = document.getElementById('analytics-detail-modal');
+            const titleEl = document.getElementById('analytics-detail-title');
+            const subtitleEl = document.getElementById('analytics-detail-subtitle');
+            const eyebrowEl = document.getElementById('analytics-detail-eyebrow');
+            const body = document.getElementById('analytics-detail-body');
+            if(!modal || !titleEl || !body) return;
+
+            const trades = dfAnalyticsDetailTradeRows();
+            const strategies = dfAnalyticsDetailStrategyRows(trades);
+            const selectedLabel = document.getElementById('period-strategy-filter')?.selectedOptions?.[0]?.textContent?.trim() || 'Todos';
+            const periodLabel = `${formatDateShort(parseISODateLocal(metrics.start))} — ${formatDateShort(parseISODateLocal(metrics.end))} • ${selectedLabel}`;
+            const rate = Number(metrics.totalTrades || 0) ? (Number(metrics.wins || 0) / Number(metrics.totalTrades || 0)) * 100 : 0;
+            const payoff = Number(metrics.avgLoss || 0) ? (Number(metrics.avgWin || 0) / Math.abs(Number(metrics.avgLoss || 0))) : null;
+
+            subtitleEl.textContent = periodLabel;
+            eyebrowEl.textContent = 'Composição do indicador';
+
+            if(kind === 'result'){
+                titleEl.textContent = 'Resultado do período';
+                const grossPositive = trades.filter(t=>t.value>0).reduce((s,t)=>s+t.value,0);
+                const grossNegative = trades.filter(t=>t.value<0).reduce((s,t)=>s+t.value,0);
+                body.innerHTML = `
+                  <div class="df-detail-hero">
+                    <div class="df-detail-main-card">
+                      <div class="df-detail-label">Resultado líquido</div>
+                      <div class="df-detail-value ${Number(metrics.sum||0)>=0?'df-detail-pos':'df-detail-neg'}">${formatCurrency(Number(metrics.sum||0))}</div>
+                      <div class="df-detail-copy">Este valor é a soma das operações abaixo no período e filtro atualmente selecionados.</div>
+                    </div>
+                    <div class="df-detail-card"><div class="df-detail-mini-grid">
+                      <div class="df-detail-mini"><span>Ganhos brutos</span><strong class="df-detail-pos">${formatCurrency(grossPositive)}</strong></div>
+                      <div class="df-detail-mini"><span>Perdas brutas</span><strong class="df-detail-neg">${formatCurrency(grossNegative)}</strong></div>
+                      <div class="df-detail-mini"><span>Operações</span><strong>${trades.length}</strong></div>
+                      <div class="df-detail-mini"><span>Dias operados</span><strong>${Number(metrics.tradedDays||0)}</strong></div>
+                    </div></div>
+                  </div>
+                  <div class="df-detail-section"><div class="df-detail-section-title"><span>Composição por estratégia</span><small>Subtotal de cada grupo</small></div>${dfAnalyticsDetailStrategyHtml(strategies)}</div>
+                  <div class="df-detail-section"><div class="df-detail-section-title"><span>Operações que formam o resultado</span><small>${trades.length} operações</small></div>${dfAnalyticsDetailTradesTable(trades,{showStatus:true})}</div>`;
+            } else if(kind === 'trades'){
+                titleEl.textContent = 'Trades realizados';
+                body.innerHTML = `
+                  <div class="df-detail-hero">
+                    <div class="df-detail-main-card">
+                      <div class="df-detail-label">Total de trades</div>
+                      <div class="df-detail-value">${Number(metrics.totalTrades||0)}</div>
+                      <div class="df-detail-copy">A lista abaixo mostra exatamente quais operações estão sendo contadas neste total.</div>
+                    </div>
+                    <div class="df-detail-card"><div class="df-detail-mini-grid">
+                      <div class="df-detail-mini"><span>Ganhos</span><strong class="df-detail-pos">${Number(metrics.wins||0)}</strong></div>
+                      <div class="df-detail-mini"><span>Perdas</span><strong class="df-detail-neg">${Number(metrics.losses||0)}</strong></div>
+                      <div class="df-detail-mini"><span>Dias operados</span><strong>${Number(metrics.tradedDays||0)}</strong></div>
+                      <div class="df-detail-mini"><span>Média / trade</span><strong>${Number(metrics.totalTrades||0)?formatCurrency(Number(metrics.sum||0)/Number(metrics.totalTrades||0)):'--'}</strong></div>
+                    </div></div>
+                  </div>
+                  <div class="df-detail-section"><div class="df-detail-section-title"><span>Distribuição por estratégia</span><small>Quantidade e resultado</small></div>${dfAnalyticsDetailStrategyHtml(strategies)}</div>
+                  <div class="df-detail-section"><div class="df-detail-section-title"><span>Lista dos trades contabilizados</span><small>${trades.length} operações</small></div>${dfAnalyticsDetailTradesTable(trades,{showStatus:true})}</div>`;
+            } else if(kind === 'winrate'){
+                titleEl.textContent = 'Taxa de acerto';
+                body.innerHTML = `
+                  <div class="df-detail-hero">
+                    <div class="df-detail-main-card">
+                      <div class="df-detail-label">Win rate</div>
+                      <div class="df-detail-value">${rate.toFixed(Number(metrics.totalTrades||0)?1:0)}%</div>
+                      <div class="df-detail-copy">${Number(metrics.wins||0)} ganhos em ${Number(metrics.totalTrades||0)} trades. Abaixo você vê quais operações foram classificadas como ganho ou perda.</div>
+                    </div>
+                    <div class="df-detail-card"><div class="df-detail-mini-grid">
+                      <div class="df-detail-mini"><span>Ganhos</span><strong class="df-detail-pos">${Number(metrics.wins||0)}</strong></div>
+                      <div class="df-detail-mini"><span>Perdas</span><strong class="df-detail-neg">${Number(metrics.losses||0)}</strong></div>
+                      <div class="df-detail-mini"><span>Média ganho</span><strong class="df-detail-pos">${Number(metrics.wins||0)?formatCurrency(Number(metrics.avgWin||0)):'--'}</strong></div>
+                      <div class="df-detail-mini"><span>Média perda</span><strong class="df-detail-neg">${Number(metrics.losses||0)?formatCurrency(Number(metrics.avgLoss||0)):'--'}</strong></div>
+                      <div class="df-detail-mini"><span>Payoff</span><strong>${payoff===null?'--':payoff.toFixed(2)}</strong></div>
+                      <div class="df-detail-mini"><span>Expectância</span><strong>${Number(metrics.totalTrades||0)?formatCurrency(Number(metrics.overallExpectancy||0)):'--'}</strong></div>
+                    </div></div>
+                  </div>
+                  <div class="df-detail-section"><div class="df-detail-section-title"><span>Acerto por estratégia</span><small>Win rate de cada grupo</small></div>${dfAnalyticsDetailStrategyHtml(strategies)}</div>
+                  <div class="df-detail-section"><div class="df-detail-section-title"><span>Operações usadas no cálculo</span><small>Ganho x perda</small></div>${dfAnalyticsDetailTradesTable(trades,{showStatus:true})}</div>`;
+            } else if(kind === 'drawdown'){
+                titleEl.textContent = 'Drawdown máximo';
+                const dd = dfAnalyticsDetailDrawdown();
+                const peakTxt = dd.peakDate ? formatDateShort(parseISODateLocal(dd.peakDate)) : 'Início do período';
+                const troughTxt = dd.troughDate ? formatDateShort(parseISODateLocal(dd.troughDate)) : '--';
+                body.innerHTML = `
+                  <div class="df-detail-hero">
+                    <div class="df-detail-main-card">
+                      <div class="df-detail-label">Maior queda do pico</div>
+                      <div class="df-detail-value df-detail-neg">${formatCurrency(-Number(dd.maxDD||0))}</div>
+                      <div class="df-detail-copy">O drawdown mostra quanto o resultado acumulado caiu a partir de um pico anterior até o ponto mais baixo subsequente no período selecionado.</div>
+                    </div>
+                    <div class="df-detail-card"><div class="df-detail-mini-grid">
+                      <div class="df-detail-mini"><span>Pico</span><strong>${peakTxt}</strong></div>
+                      <div class="df-detail-mini"><span>Fundo</span><strong>${troughTxt}</strong></div>
+                      <div class="df-detail-mini"><span>Maior sequência</span><strong>${Number(metrics.maxLose||0)} perdas</strong></div>
+                      <div class="df-detail-mini"><span>Resultado período</span><strong class="${Number(metrics.sum||0)>=0?'df-detail-pos':'df-detail-neg'}">${formatCurrency(Number(metrics.sum||0))}</strong></div>
+                    </div></div>
+                  </div>
+                  <div class="df-detail-dd-note">A tabela abaixo mostra somente o trecho que formou o maior drawdown. “Acumulado” é o resultado somado até o dia; “DD” é a distância daquele ponto para o pico vigente.</div>
+                  <div class="df-detail-section"><div class="df-detail-section-title"><span>Sequência que formou o drawdown</span><small>${dd.rows.length} dias</small></div>
+                    ${dd.rows.length ? `<div class="df-detail-table-wrap"><table class="df-detail-table"><thead><tr><th>Data</th><th style="text-align:right">Resultado do dia</th><th style="text-align:right">Acumulado</th><th style="text-align:right">DD</th></tr></thead><tbody>${dd.rows.map(r=>`<tr><td>${escapeHtml(r.date)}</td><td class="df-detail-money ${r.dayTotal>=0?'df-detail-pos':'df-detail-neg'}">${formatCurrency(r.dayTotal)}</td><td class="df-detail-money">${formatCurrency(r.cumulative)}</td><td class="df-detail-money df-detail-neg">${formatCurrency(-r.dd)}</td></tr>`).join('')}</tbody></table></div>` : '<div class="df-detail-empty">Não houve drawdown no período selecionado.</div>'}
+                  </div>`;
+            }
+
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            try{ if(window.lucide && lucide.createIcons) lucide.createIcons(); }catch(e){}
+        }
+
         window.analyticsJumpTo = function(kind){
-            const targets = { result:'analytics-detail-result', trades:'analytics-detail-trades', winrate:'analytics-detail-winrate', drawdown:'period-risk-section' };
-            const targetId = targets[kind];
-            if(!targetId) return;
-            const target = document.getElementById(targetId);
-            if(!target) return;
-            const scrollTarget = (kind === 'winrate') ? (document.getElementById('analytics-detail-trades') || target) : target;
-            try{
-                const reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-                scrollTarget.scrollIntoView({behavior: reduceMotion ? 'auto' : 'smooth', block:'center', inline:'nearest'});
-            }catch(e){ try{ scrollTarget.scrollIntoView(); }catch(_){} }
-            const highlightTarget = (kind === 'winrate') ? (document.getElementById('analytics-detail-trades') || target) : target;
-            try{
-                highlightTarget.classList.remove('df-analytics-jump-target');
-                void highlightTarget.offsetWidth;
-                highlightTarget.classList.add('df-analytics-jump-target');
-                setTimeout(()=>highlightTarget.classList.remove('df-analytics-jump-target'),1300);
-            }catch(e){}
+            dfAnalyticsOpenDetail(kind);
         };
 
         window.analyticsKpiKeydown = function(event, kind){
             if(!event) return;
             if(event.key === 'Enter' || event.key === ' '){
                 event.preventDefault();
-                window.analyticsJumpTo(kind);
+                dfAnalyticsOpenDetail(kind);
             }
         };
+
+        document.addEventListener('keydown', function(event){
+            if(event.key === 'Escape' && !document.getElementById('analytics-detail-modal')?.classList.contains('hidden')){
+                window.closeAnalyticsDetail();
+            }
+        });
 
         window.setAnalyticsMode = (mode) => {
             const projection = mode === 'projection';
