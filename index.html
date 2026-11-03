@@ -8375,6 +8375,365 @@ ${period} • ${(acc?.name || 'Conta')}
         }
 
         function pdfFilteredReportInternal() {
+    const start = els.filterStart.value;
+    const end = els.filterEnd.value;
+    if(!start || !end){
+        alert(translateString('Selecione a data inicial e final para gerar o PDF.'));
+        return;
+    }
+    if(end < start){
+        alert(translateString('A data final deve ser maior ou igual a data inicial.'));
+        return;
+    }
+
+    try { filterReport(); } catch(e) {}
+
+    const acc = getActive();
+    if(!acc || !acc.data){
+        alert('Não há dados disponíveis para gerar o relatório.');
+        return Promise.resolve(false);
+    }
+
+    const selectedSlot = getPeriodSelectedSlot(end);
+    const selectedStrategyLabel = selectedSlot === 'all'
+        ? 'Todos'
+        : (selectedSlot === PERIOD_GROUPS_AB_VALUE
+            ? '25/75 - Grupos A + B'
+            : (getStrategiesForDate(end, { includeInactive:false, includeHidden:false }).find(strategy => strategy.slot === selectedSlot)?.label || 'Todos'));
+
+    const GAIN_VALUE = 600;
+    const LOSS_VALUE = -200;
+    const TIME_VALUE = 0;
+    const ns = (typeof dfGetNoteSettings === 'function') ? dfGetNoteSettings() : {aTitle:'Grupo A',aSubtitle:'contas 1 a 10',bTitle:'Grupo B',bSubtitle:'contas 11 a 20',bEnabled:true};
+
+    const normalizeText = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const groupFromLabel = label => {
+        const n = normalizeText(label);
+        if(/\b(grupo|group)\s*a\b/.test(n)) return 'A';
+        if(/\b(grupo|group)\s*b\b/.test(n)) return 'B';
+        return String(label || '-').trim() || '-';
+    };
+    const isBlankTrade = raw => raw === '' || raw === null || raw === undefined;
+    const resultClass = value => value > 0 ? 'GAIN' : (value < 0 ? 'LOSS' : 'TIME');
+    const normalizedFinancial = result => result === 'GAIN' ? GAIN_VALUE : (result === 'LOSS' ? LOSS_VALUE : TIME_VALUE);
+
+    const markedLabelsForTrade = (block, tradeIndex) => {
+        const labels = Array.isArray(block && block.checkLabels) ? block.checkLabels : [];
+        const out = [];
+        labels.forEach((label, labelIndex) => {
+            label = String(label || '').trim();
+            if(!label) return;
+            const checkIndex = labelIndex + 1;
+            const key = checkIndex === 1 ? ('breakout' + tradeIndex) : ('flag' + checkIndex + '_' + tradeIndex);
+            if(block && block.legs && block.legs[key]) out.push(label);
+        });
+        return out;
+    };
+
+    const directionFromLabels = labels => {
+        const compra = (labels || []).find(label => /\b(compra|buy|long)\b/i.test(normalizeText(label)));
+        if(compra) return 'Compra';
+        const venda = (labels || []).find(label => /\b(venda|sell|short)\b/i.test(normalizeText(label)));
+        if(venda) return 'Venda';
+        return 'N/D';
+    };
+
+    const collectTradesForDay = iso => {
+        const entry = acc.data[iso] || {};
+        if(entry.holiday) return [];
+        const blocks = getStrategyEntriesForDay(entry, iso, { includeInactive:false, includeHidden:false })
+            .filter(block => isPeriodStrategySelected(selectedSlot, block.slot, end));
+        const rows = [];
+        blocks.forEach(block => {
+            const indexes = window.dfTradeIndexesForBlock
+                ? window.dfTradeIndexesForBlock(block)
+                : dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY);
+            indexes.forEach(tradeIndex => {
+                const raw = block && block.legs ? block.legs['leg' + tradeIndex] : '';
+                if(isBlankTrade(raw)) return;
+                const numeric = Number(raw);
+                if(!Number.isFinite(numeric)) return;
+                const result = resultClass(numeric);
+                const marked = markedLabelsForTrade(block, tradeIndex);
+                rows.push({
+                    iso,
+                    group: groupFromLabel(block.label),
+                    strategy: String(block.label || block.slot || '-'),
+                    tradeIndex,
+                    direction: directionFromLabels(marked),
+                    marked,
+                    rawValue: numeric,
+                    result,
+                    financial: normalizedFinancial(result)
+                });
+            });
+        });
+        return rows;
+    };
+
+    const businessDates = [];
+    try{
+        const d0 = parseISODateLocal(start);
+        const d1 = parseISODateLocal(end);
+        for(let d = new Date(d0); d <= d1; d.setDate(d.getDate()+1)){
+            const dow = d.getDay();
+            if(dow === 0 || dow === 6) continue;
+            const iso = toISODateLocal(d);
+            if(acc.data[iso] && acc.data[iso].holiday) continue;
+            businessDates.push(iso);
+        }
+    }catch(e){}
+
+    const tradesByDate = new Map();
+    businessDates.forEach(iso => tradesByDate.set(iso, collectTradesForDay(iso)));
+    const firstTrade = businessDates.map(iso => tradesByDate.get(iso) || []).find(rows => rows.length);
+    let lastGroup = firstTrade && firstTrade[0] ? firstTrade[0].group : '-';
+    const detailRows = [];
+    const dailyRows = [];
+    const actualTrades = [];
+
+    businessDates.forEach(iso => {
+        const trades = tradesByDate.get(iso) || [];
+        if(!trades.length){
+            detailRows.push({iso, group:lastGroup, tradeIndex:'-', direction:'-', result:'SEM TRADE', financial:0, marked:[], observation:'Grupo mantido; não alterna'});
+            dailyRows.push({iso, group:lastGroup, trades:0, gain:0, loss:0, time:0, result:0});
+            return;
+        }
+
+        actualTrades.push(...trades);
+        const dayGroupMap = new Map();
+        trades.forEach(trade => {
+            const group = trade.group || '-';
+            if(!dayGroupMap.has(group)) dayGroupMap.set(group, {iso, group, trades:0, gain:0, loss:0, time:0, result:0});
+            const day = dayGroupMap.get(group);
+            day.trades += 1;
+            if(trade.result === 'GAIN') day.gain += 1;
+            else if(trade.result === 'LOSS') day.loss += 1;
+            else day.time += 1;
+            day.result += trade.financial;
+
+            const otherContexts = (trade.marked || []).filter(label => !/\b(compra|buy|long|venda|sell|short)\b/i.test(normalizeText(label)));
+            let observation = trade.result === 'TIME'
+                ? 'Saída por tempo'
+                : (trade.result === 'GAIN' ? 'GAIN' : 'LOSS');
+            if(otherContexts.length) observation += '; ' + otherContexts.join(', ');
+            if(trade.group === 'A' || trade.group === 'B') observation += '; grupo alterna na próxima sessão com trade';
+
+            detailRows.push({...trade, observation});
+        });
+        dayGroupMap.forEach(row => dailyRows.push(row));
+        const groups = Array.from(dayGroupMap.keys());
+        if(groups.length === 1) lastGroup = groups[0];
+    });
+
+    const summary = actualTrades.reduce((s, trade) => {
+        s.trades += 1;
+        if(trade.result === 'GAIN') s.gain += 1;
+        else if(trade.result === 'LOSS') s.loss += 1;
+        else s.time += 1;
+        s.result += trade.financial;
+        return s;
+    }, {trades:0,gain:0,loss:0,time:0,result:0});
+
+    const groupMap = new Map();
+    actualTrades.forEach(trade => {
+        const key = trade.group || '-';
+        if(!groupMap.has(key)) groupMap.set(key,{group:key,trades:0,gain:0,loss:0,time:0,result:0});
+        const row = groupMap.get(key);
+        row.trades += 1;
+        if(trade.result === 'GAIN') row.gain += 1;
+        else if(trade.result === 'LOSS') row.loss += 1;
+        else row.time += 1;
+        row.result += trade.financial;
+    });
+    const groupRows = Array.from(groupMap.values()).sort((a,b)=>String(a.group).localeCompare(String(b.group)));
+    const totalRate = summary.trades ? (summary.gain / summary.trades) : 0;
+    const assertiveRate = (summary.gain + summary.loss) ? (summary.gain / (summary.gain + summary.loss)) : 0;
+
+    const ensureJsPDF = () => window.dfEnsureJsPDF
+        ? window.dfEnsureJsPDF()
+        : Promise.reject(new Error('Gerador de PDF não inicializado'));
+
+    const buildFileName = () => {
+        const safe = s => String(s || '').replace(/[^a-z0-9\-_]+/gi,'_').replace(/_+/g,'_').replace(/^_|_$/g,'');
+        return (safe(acc.name || acc.id || 'conta') + '_Relatorio_Detalhado_' + safe(start + '_' + end)).slice(0,120) + '.pdf';
+    };
+
+    return ensureJsPDF().then(JsPDF => {
+        const doc = new JsPDF({unit:'pt',format:'letter',orientation:'landscape'});
+        const pageW = 792, pageH = 612, margin = 28, contentW = pageW - margin*2;
+        const navy = [20,55,82], text = [31,41,55], muted = [100,116,139], line = [203,213,225], alt = [248,250,252];
+        let y = 34;
+
+        const fmtDate = iso => formatDateShort(parseISODateLocal(iso));
+        const monthNames = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+        let monthTitle = 'período';
+        try{ monthTitle = monthNames[parseISODateLocal(end).getMonth()] + ' de ' + parseISODateLocal(end).getFullYear(); }catch(e){}
+        const title = 'Relatório detalhado - ' + monthTitle;
+        const subtitle = fmtDate(start) + ' a ' + fmtDate(end) + ' | ' + (acc.name || 'Conta') + ' | ' + selectedStrategyLabel;
+
+        const header = (sectionTitle, sectionSubtitle) => {
+            doc.setFont('helvetica','bold'); doc.setFontSize(19); doc.setTextColor(navy[0],navy[1],navy[2]);
+            doc.text(sectionTitle || title, margin, 34);
+            doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+            doc.text(sectionSubtitle || subtitle, margin, 51);
+            y = 70;
+        };
+        const newPage = (sectionTitle, sectionSubtitle) => { doc.addPage(); header(sectionTitle, sectionSubtitle); };
+        const ensureSpace = (h, sectionTitle) => { if(y + h > pageH - 35) newPage(sectionTitle || title, subtitle); };
+        const money = value => 'US$ ' + Number(value || 0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+        const pct = value => (Number(value || 0)*100).toFixed(1).replace('.',',') + '%';
+
+        const drawBox = (x,y0,w,h,fill=[240,246,250],stroke=navy) => {
+            doc.setFillColor(fill[0],fill[1],fill[2]); doc.setDrawColor(stroke[0],stroke[1],stroke[2]);
+            doc.rect(x,y0,w,h,'FD');
+        };
+
+        const drawSimpleTable = (headers, rows, widths, opts={}) => {
+            const x0 = margin;
+            const headerH = opts.headerH || 24;
+            const baseRowH = opts.rowH || 21;
+            const aligns = opts.aligns || headers.map(()=> 'left');
+            const fontSize = opts.fontSize || 8.5;
+            const drawHeader = () => {
+                doc.setFillColor(navy[0],navy[1],navy[2]); doc.setDrawColor(navy[0],navy[1],navy[2]);
+                doc.rect(x0,y,contentW,headerH,'FD');
+                let x=x0;
+                doc.setFont('helvetica','bold'); doc.setFontSize(fontSize); doc.setTextColor(255,255,255);
+                headers.forEach((h,i)=>{
+                    const a=aligns[i]||'left';
+                    const tx=a==='right'?x+widths[i]-7:(a==='center'?x+widths[i]/2:x+7);
+                    doc.text(String(h),tx,y+15,{align:a}); x+=widths[i];
+                });
+                y += headerH;
+            };
+            drawHeader();
+            rows.forEach((row,rowIndex)=>{
+                const prepared = row.map((cell,i)=>{
+                    const maxW = Math.max(20,widths[i]-14);
+                    return doc.splitTextToSize(String(cell===undefined||cell===null?'':cell),maxW);
+                });
+                const maxLines = Math.max(1,...prepared.map(lines=>lines.length));
+                const rowH = Math.max(baseRowH, 8 + maxLines*(fontSize+2));
+                if(y + rowH > pageH - 35){
+                    newPage(opts.continueTitle || title, subtitle);
+                    drawHeader();
+                }
+                if(rowIndex%2===1){ doc.setFillColor(alt[0],alt[1],alt[2]); doc.rect(x0,y,contentW,rowH,'F'); }
+                doc.setDrawColor(line[0],line[1],line[2]); doc.line(x0,y+rowH,x0+contentW,y+rowH);
+                let x=x0;
+                doc.setFont('helvetica','normal'); doc.setFontSize(fontSize); doc.setTextColor(text[0],text[1],text[2]);
+                prepared.forEach((lines,i)=>{
+                    const a=aligns[i]||'left';
+                    const tx=a==='right'?x+widths[i]-7:(a==='center'?x+widths[i]/2:x+7);
+                    const ty=y+13;
+                    lines.forEach((ln,li)=>doc.text(String(ln),tx,ty+li*(fontSize+2),{align:a}));
+                    x+=widths[i];
+                });
+                y += rowH;
+            });
+            y += 10;
+        };
+
+        header(title, subtitle);
+
+        drawBox(margin,y,contentW,62);
+        doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(navy[0],navy[1],navy[2]);
+        doc.text('Padrão financeiro vigente',margin+12,y+17);
+        doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(text[0],text[1],text[2]);
+        const standard = 'GAIN = +US$ 600,00 | LOSS = -US$ 200,00 | TIME = US$ 0,00. Valor positivo = GAIN; negativo = LOSS; zero explicitamente preenchido = TIME; campo vazio = sem trade.';
+        doc.text(doc.splitTextToSize(standard,contentW-24),margin+12,y+34);
+        y += 76;
+
+        doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(navy[0],navy[1],navy[2]);
+        doc.text('Resumo oficial',margin,y); y+=8;
+        drawSimpleTable(
+            ['Trades','GAIN','LOSS','TIME','Resultado','Taxa alvo / total','Assertividade excl. TIME'],
+            [[summary.trades,summary.gain,summary.loss,summary.time,money(summary.result),pct(totalRate),pct(assertiveRate)]],
+            [72,72,72,72,130,145,173],
+            {aligns:['center','center','center','center','right','center','center'],fontSize:9,rowH:30,continueTitle:title}
+        );
+
+        doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(navy[0],navy[1],navy[2]);
+        doc.text('Regra oficial de grupos',margin,y); y+=15;
+        doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(text[0],text[1],text[2]);
+        const groupRule = 'O relatório usa o grupo registrado em cada estratégia. Dias úteis sem trade mantêm o último grupo identificado. Se houver trades de mais de um grupo no mesmo dia, cada grupo é mostrado separadamente no consolidado.';
+        doc.text(doc.splitTextToSize(groupRule,contentW),margin,y); y+=31;
+        const groupIdentity = [];
+        if(ns.aTitle || ns.aSubtitle) groupIdentity.push((ns.aTitle || 'Grupo A') + (ns.aSubtitle ? ' = ' + ns.aSubtitle : ''));
+        if(ns.bEnabled && (ns.bTitle || ns.bSubtitle)) groupIdentity.push((ns.bTitle || 'Grupo B') + (ns.bSubtitle ? ' = ' + ns.bSubtitle : ''));
+        if(groupIdentity.length){
+            doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+            doc.text(groupIdentity.join(' | '),margin,y); y+=17;
+        }
+        if(groupRows.length){
+            drawSimpleTable(
+                ['Grupo','Trades','GAIN','LOSS','TIME','Resultado'],
+                groupRows.map(r=>[r.group,r.trades,r.gain,r.loss,r.time,money(r.result)]),
+                [160,100,100,100,100,176],
+                {aligns:['left','center','center','center','center','right'],fontSize:9,rowH:25,continueTitle:title}
+            );
+        }
+
+        newPage('Detalhamento diário - ' + fmtDate(start) + ' a ' + fmtDate(end), subtitle);
+        doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+        doc.text('Cada linha representa um trade estruturado no sistema. Direção Compra/Venda vem dos checkboxes marcados; quando não existe marcação correspondente, aparece N/D.',margin,y); y+=15;
+        drawSimpleTable(
+            ['Data','Grupo','Trade','Direção','Resultado','Financeiro','Observação'],
+            detailRows.map(r=>[fmtDate(r.iso),r.group,r.tradeIndex,r.direction,r.result,money(r.financial),r.observation || '']),
+            [70,58,48,72,72,92,324],
+            {aligns:['left','center','center','center','center','right','left'],fontSize:7.5,rowH:18,continueTitle:'Detalhamento diário - continuação'}
+        );
+
+        ensureSpace(80,'Consolidado por dia');
+        doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(navy[0],navy[1],navy[2]);
+        doc.text('Consolidado por dia',margin,y); y+=10;
+        drawSimpleTable(
+            ['Data','Grupo','Trades','GAIN','LOSS','TIME','Resultado do dia'],
+            dailyRows.map(r=>[fmtDate(r.iso),r.group,r.trades,r.gain,r.loss,r.time,money(r.result)]),
+            [88,76,88,88,88,88,220],
+            {aligns:['left','center','center','center','center','center','right'],fontSize:8.5,rowH:21,continueTitle:'Consolidado por dia - continuação'}
+        );
+
+        ensureSpace(140,'Notas de metodologia e rastreabilidade');
+        doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(navy[0],navy[1],navy[2]);
+        doc.text('Notas de metodologia e rastreabilidade',margin,y); y+=18;
+        doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(text[0],text[1],text[2]);
+        const notes = [
+            'Este PDF usa exclusivamente os trades estruturados salvos no sistema para o período e filtro selecionados.',
+            'Classificação: valor positivo = GAIN; valor negativo = LOSS; valor zero explicitamente preenchido = TIME; campo vazio = sem trade.',
+            'Normalização financeira do relatório: GAIN +US$ 600,00; LOSS -US$ 200,00; TIME US$ 0,00.',
+            'Dias marcados como feriado no sistema são excluídos. Dias úteis sem trade aparecem como SEM TRADE.',
+            'Direção Compra/Venda é extraída das marcações configuradas na estratégia. Se não houver marcação de direção, o relatório usa N/D.',
+            'O relatório não inventa nem reconstrói trades que não estejam registrados nos campos estruturados do sistema.'
+        ];
+        notes.forEach(note=>{
+            const lines = doc.splitTextToSize('• ' + note,contentW-8);
+            if(y + lines.length*12 > pageH-35) newPage('Notas de metodologia e rastreabilidade',subtitle);
+            doc.text(lines,margin+4,y); y += lines.length*12 + 3;
+        });
+
+        const pages = doc.getNumberOfPages();
+        for(let p=1;p<=pages;p++){
+            doc.setPage(p);
+            doc.setDrawColor(226,232,240); doc.line(margin,pageH-24,pageW-margin,pageH-24);
+            doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+            doc.text('DF Strategic | Relatório detalhado',margin,pageH-11);
+            doc.text('Página ' + p + '/' + pages,pageW-margin,pageH-11,{align:'right'});
+        }
+
+        const filename = buildFileName();
+        if(window.dfSavePdfDocument) return window.dfSavePdfDocument(doc,filename);
+        doc.save(filename);
+        return true;
+    }).catch(err=>{
+        console.error('Falha ao gerar relatório detalhado:',err);
+        alert('Não foi possível gerar o PDF detalhado. ' + (err && err.message ? err.message : ''));
+        return false;
+    });
+}
+
+function pdfLegacyFilteredReportInternal() {
             const start = els.filterStart.value;
             const end = els.filterEnd.value;
             if(!start || !end) {
