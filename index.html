@@ -8491,12 +8491,14 @@ ${period} • ${(acc?.name || 'Conta')}
     const detailRows = [];
     const dailyRows = [];
     const actualTrades = [];
+    const noTradeDates = [];
 
     businessDates.forEach(iso => {
         const trades = tradesByDate.get(iso) || [];
         if(!trades.length){
-            detailRows.push({iso, group:lastGroup, tradeIndex:'-', direction:'-', result:'SEM TRADE', financial:0, marked:[], observation:'Grupo mantido; não alterna'});
-            dailyRows.push({iso, group:lastGroup, trades:0, gain:0, loss:0, time:0, result:0});
+            // Dias sem operações não são linhas financeiras: evitar inflar o PDF.
+            // Zero preenchido explicitamente permanece um trade TIME.
+            noTradeDates.push(iso);
             return;
         }
 
@@ -8685,17 +8687,25 @@ ${period} • ${(acc?.name || 'Conta')}
             {aligns:['left','center','center','center','center','right','left'],fontSize:7.5,rowH:18,continueTitle:'Detalhamento diário - continuação'}
         );
 
-        ensureSpace(80,'Consolidado por dia');
+        // Manter título e primeiras linhas juntos; nenhuma linha sem operação entra no consolidado.
+        ensureSpace(48 + Math.min(Math.max(dailyRows.length,1),4)*21,'Consolidado por dia');
         doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(navy[0],navy[1],navy[2]);
-        doc.text('Consolidado por dia',margin,y); y+=10;
-        drawSimpleTable(
-            ['Data','Grupo','Trades','GAIN','LOSS','TIME','Resultado do dia'],
-            dailyRows.map(r=>[fmtDate(r.iso),r.group,r.trades,r.gain,r.loss,r.time,money(r.result)]),
-            [88,76,88,88,88,88,220],
-            {aligns:['left','center','center','center','center','center','right'],fontSize:8.5,rowH:21,continueTitle:'Consolidado por dia - continuação'}
-        );
+        doc.text('Consolidado por dia',margin,y); y+=16;
+        if(dailyRows.length){
+            drawSimpleTable(
+                ['Data','Grupo','Trades','GAIN','LOSS','TIME','Resultado do dia'],
+                dailyRows.map(r=>[fmtDate(r.iso),r.group,r.trades,r.gain,r.loss,r.time,money(r.result)]),
+                [88,76,88,88,88,88,220],
+                {aligns:['left','center','center','center','center','center','right'],fontSize:8.5,rowH:21,continueTitle:'Consolidado por dia - continuação'}
+            );
+        }else{
+            doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(muted[0],muted[1],muted[2]);
+            doc.text('Não houve trades registrados no período e filtro selecionados.',margin,y+12);
+            y += 28;
+        }
 
-        ensureSpace(140,'Notas de metodologia e rastreabilidade');
+        // Reservar espaço real para notas e evitar título órfão ou texto colado na tabela.
+        ensureSpace(175,'Notas de metodologia e rastreabilidade');
         doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(navy[0],navy[1],navy[2]);
         doc.text('Notas de metodologia e rastreabilidade',margin,y); y+=18;
         doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(text[0],text[1],text[2]);
@@ -8703,7 +8713,7 @@ ${period} • ${(acc?.name || 'Conta')}
             'Este PDF usa exclusivamente os trades estruturados salvos no sistema para o período e filtro selecionados.',
             'Classificação: valor positivo = GAIN; valor negativo = LOSS; valor zero explicitamente preenchido = TIME; campo vazio = sem trade.',
             'Normalização financeira do relatório: GAIN +US$ 600,00; LOSS -US$ 200,00; TIME US$ 0,00.',
-            'Dias marcados como feriado no sistema são excluídos. Dias úteis sem trade aparecem como SEM TRADE.',
+            'Sábados, domingos, feriados e dias úteis sem trades registrados são omitidos das tabelas de operações e consolidado.',
             'Direção Compra/Venda é extraída das marcações configuradas na estratégia. Se não houver marcação de direção, o relatório usa N/D.',
             'O relatório não inventa nem reconstrói trades que não estejam registrados nos campos estruturados do sistema.'
         ];
@@ -8712,6 +8722,16 @@ ${period} • ${(acc?.name || 'Conta')}
             if(y + lines.length*12 > pageH-35) newPage('Notas de metodologia e rastreabilidade',subtitle);
             doc.text(lines,margin+4,y); y += lines.length*12 + 3;
         });
+        // Rastreabilidade compacta: 1 linha em vez de tabelas cheias de zeros.
+        if(noTradeDates.length){
+            const noTradeText = 'Dias úteis sem trades registrados (' + noTradeDates.length + '), omitidos das tabelas: ' +
+                noTradeDates.map(fmtDate).join(', ') + '.';
+            const noTradeLines = doc.splitTextToSize(noTradeText,contentW-8);
+            if(y + noTradeLines.length*12 + 12 > pageH-35) newPage('Notas de metodologia e rastreabilidade',subtitle);
+            doc.setFont('helvetica','italic'); doc.setFontSize(8.5); doc.setTextColor(muted[0],muted[1],muted[2]);
+            doc.text(noTradeLines,margin+4,y+7);
+            y += noTradeLines.length*12 + 12;
+        }
 
         const pages = doc.getNumberOfPages();
         for(let p=1;p<=pages;p++){
