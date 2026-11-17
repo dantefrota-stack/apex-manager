@@ -2141,7 +2141,16 @@ tr.bg-green-50 td {
 
                     <div class="df-analytics-main-grid">
                         <article id="analytics-detail-result" class="df-analytics-panel df-analytics-equity-panel">
-                            <div class="df-analytics-panel-head"><div><span>Evolução da Performance</span><small>Resultado acumulado por estratégia</small></div><span class="df-analytics-chip">REAL</span></div>
+                            <div class="df-analytics-panel-head">
+                                <div><span id="analytics-performance-chart-title">Evolução da Performance</span><small id="analytics-performance-chart-subtitle">Resultado acumulado por estratégia</small></div>
+                                <div class="df-chart-head-actions no-print">
+                                    <div class="df-chart-mode-toggle" role="group" aria-label="Visualização do gráfico de performance">
+                                        <button type="button" id="analytics-chart-mode-evolution" class="active" onclick="setAnalyticsPerformanceChartMode('evolution')">Evolução</button>
+                                        <button type="button" id="analytics-chart-mode-branches" onclick="setAnalyticsPerformanceChartMode('branches')">Ramificações</button>
+                                    </div>
+                                    <span class="df-analytics-chip">REAL</span>
+                                </div>
+                            </div>
                             <div class="df-analytics-chart-wrap"><canvas id="equityChart"></canvas></div>
                         </article>
                         <article id="analytics-detail-trades" class="df-analytics-panel df-analytics-donut-panel">
@@ -2638,6 +2647,7 @@ tr.bg-green-50 td {
     let analyticsProjectionChart = null;
     let analyticsProjectionMonths = 12;
     let analyticsLastMetrics = null;
+    let analyticsPerformanceChartMode = 'evolution';
     let db = window.db; // Atalho para o código legado
 
 
@@ -7209,6 +7219,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             });
             if(slider) slider.value = String(projectionSettings.expectedWinRate ?? Math.max(1, Math.min(99, Math.round(rate || 50))));
             renderAnalyticsProjection();
+            renderAnalyticsPerformanceChart(metrics);
             try{ if(window.lucide && lucide.createIcons) lucide.createIcons(); }catch(e){}
         }
 
@@ -7324,8 +7335,6 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 chartLabels = ['Início', chartLabels[0]];
                 chartDatasets = chartDatasets.map(ds => ({ ...ds, data: [0, ...(ds.data || [])] }));
             }
-            updateChart(chartLabels, chartDatasets);
-
             const strat = _computeStrategyAnalytics(acc, start, end, selectedSlot, tradeFilters);
             const dfPeriodStrategyRows = Array.isArray(strat.__rows)
                 ? strat.__rows
@@ -7458,11 +7467,130 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(bestRow) bestRow.style.display = singleDayMode ? 'none' : '';
             if(worstRow) worstRow.style.display = singleDayMode ? 'none' : '';
             renderVisualAnalyticsDashboard({
-                start, end, selectedSlot, tradeFilters, sum, totalTrades, wins, losses, tradedDays, greenDays, redDays,
+                start, end, selectedSlot, tradeFilters, evolutionLabels:chartLabels, evolutionDatasets:chartDatasets,
+                sum, totalTrades, wins, losses, tradedDays, greenDays, redDays,
                 grossWin, grossLoss, avgWin, avgLoss, pf, maxDD, best, worst, maxLose, maxWin,
                 overallExpectancy, rows: dfPeriodStrategyRows
             });
         }
+
+        function dfBranchChartData(metrics){
+            const acc = getActive();
+            if(!metrics || !acc || !acc.data) return {labels:[],datasets:[]};
+            const definitions = getStrategiesForDate(metrics.end, { includeInactive:false, includeHidden:false })
+                .filter(strategy => isPeriodStrategySelected(metrics.selectedSlot || 'all', strategy.slot, metrics.end));
+            const definitionMap = new Map(definitions.map(strategy => [strategy.slot, strategy]));
+            const orderedLabels = [];
+            const labelKeys = new Set();
+            definitions.forEach(strategy => (Array.isArray(strategy.checkLabels) ? strategy.checkLabels : []).forEach(rawLabel => {
+                const label = String(rawLabel || '').trim();
+                if(!label || dfPeriodDirectionForLabels([label]) !== 'other') return;
+                const key = dfNormalizePeriodMarker(label);
+                if(!labelKeys.has(key)){ labelKeys.add(key); orderedLabels.push(label); }
+            }));
+
+            const totals = new Map();
+            const counts = new Map();
+            definitions.forEach(strategy => {
+                totals.set(strategy.slot, new Map());
+                counts.set(strategy.slot, new Map());
+            });
+            Object.keys(acc.data || {}).sort().forEach(iso => {
+                if(iso < metrics.start || iso > metrics.end) return;
+                const entry = acc.data[iso] || {};
+                if(entry.holiday) return;
+                _individualTradeValuesForDay(entry, iso, metrics.tradeFilters || null)
+                    .filter(trade => definitionMap.has(trade.strategy))
+                    .forEach(trade => {
+                        (trade.markedLabels || []).forEach(rawLabel => {
+                            const label = String(rawLabel || '').trim();
+                            if(!label || dfPeriodDirectionForLabels([label]) !== 'other') return;
+                            const key = dfNormalizePeriodMarker(label);
+                            const strategyTotals = totals.get(trade.strategy);
+                            const strategyCounts = counts.get(trade.strategy);
+                            strategyTotals.set(key, Number(strategyTotals.get(key) || 0) + Number(trade.value || 0));
+                            strategyCounts.set(key, Number(strategyCounts.get(key) || 0) + 1);
+                            if(!labelKeys.has(key)){ labelKeys.add(key); orderedLabels.push(label); }
+                        });
+                    });
+            });
+
+            const activeLabels = orderedLabels.filter(label => {
+                const key = dfNormalizePeriodMarker(label);
+                return definitions.some(strategy => Number(counts.get(strategy.slot)?.get(key) || 0) > 0);
+            });
+            const alphaColor = color => /^#[0-9a-f]{6}$/i.test(String(color || '')) ? `${color}bf` : color;
+            const datasets = definitions.map((strategy, index) => {
+                const color = strategy.color || (index % 2 === 0 ? '#2563eb' : '#7c3aed');
+                return {
+                    label: strategy.label,
+                    data: activeLabels.map(label => Number(totals.get(strategy.slot)?.get(dfNormalizePeriodMarker(label)) || 0)),
+                    tradeCounts: activeLabels.map(label => Number(counts.get(strategy.slot)?.get(dfNormalizePeriodMarker(label)) || 0)),
+                    backgroundColor: alphaColor(color),
+                    borderColor: color
+                };
+            }).filter(dataset => dataset.tradeCounts.some(count => count > 0));
+            return {labels:activeLabels,datasets};
+        }
+
+        function renderAnalyticsBranchChart(metrics){
+            const canvas = document.getElementById('equityChart');
+            if(!canvas || typeof Chart === 'undefined') return;
+            if(chartInstance) chartInstance.destroy();
+            const isDark = document.body.classList.contains('dark');
+            const gridColor = isDark ? 'rgba(51,65,85,.55)' : 'rgba(203,213,225,.58)';
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+            const branchData = dfBranchChartData(metrics);
+            chartInstance = new Chart(canvas.getContext('2d'), {
+                type:'bar',
+                data:{
+                    labels:branchData.labels,
+                    datasets:branchData.datasets.map(dataset => ({
+                        ...dataset,
+                        borderWidth:1.4,
+                        borderRadius:6,
+                        borderSkipped:false,
+                        maxBarThickness:42
+                    }))
+                },
+                options:{
+                    responsive:true,
+                    maintainAspectRatio:false,
+                    interaction:{mode:'index',intersect:false},
+                    plugins:{
+                        legend:{display:true,labels:{color:textColor,usePointStyle:true,boxWidth:10,padding:14,font:{size:10,weight:'600'}}},
+                        tooltip:{callbacks:{label:(ctx)=>{
+                            const count=Number(ctx.dataset.tradeCounts?.[ctx.dataIndex]||0);
+                            return `${ctx.dataset.label}: ${formatCurrency(ctx.raw)} (${count} ${count===1?'trade':'trades'})`;
+                        }}}
+                    },
+                    scales:{
+                        y:{grid:{color:gridColor},ticks:{color:textColor,callback:value=>formatCurrency(Number(value||0))}},
+                        x:{grid:{display:false},ticks:{color:textColor,maxRotation:28,minRotation:0,autoSkip:false,font:{size:9}}}
+                    }
+                }
+            });
+            window.chartInstance = chartInstance;
+        }
+
+        function renderAnalyticsPerformanceChart(metrics){
+            const evolutionButton = document.getElementById('analytics-chart-mode-evolution');
+            const branchesButton = document.getElementById('analytics-chart-mode-branches');
+            const title = document.getElementById('analytics-performance-chart-title');
+            const subtitle = document.getElementById('analytics-performance-chart-subtitle');
+            const branches = analyticsPerformanceChartMode === 'branches';
+            evolutionButton?.classList.toggle('active', !branches);
+            branchesButton?.classList.toggle('active', branches);
+            if(title) title.textContent = branches ? translateString('Ramificações por Grupo') : translateString('Evolução da Performance');
+            if(subtitle) subtitle.textContent = branches ? translateString('Resultado líquido por setup/item') : translateString('Resultado acumulado por estratégia');
+            if(branches) renderAnalyticsBranchChart(metrics);
+            else updateChart(metrics?.evolutionLabels || [], metrics?.evolutionDatasets || []);
+        }
+
+        window.setAnalyticsPerformanceChartMode = function(mode){
+            analyticsPerformanceChartMode = mode === 'branches' ? 'branches' : 'evolution';
+            if(analyticsLastMetrics) renderAnalyticsPerformanceChart(analyticsLastMetrics);
+        };
 
         function updateChart(labels, datasets) {
             const canvas = document.getElementById('equityChart');
@@ -10273,6 +10401,10 @@ async function saveToCloudNow() {
             "Novembro":"November",
             "Dezembro":"December",
             "Evolução da Performance":"Performance Evolution",
+            "Evolução":"Evolution",
+            "Ramificações":"Branches",
+            "Ramificações por Grupo":"Branches by Group",
+            "Resultado líquido por setup/item":"Net result by setup/item",
             "Mês 1":"Month 1",
             "Mês 1-3":"Month 1-3",
             "Análise por Período":"Period Analysis",
@@ -15116,6 +15248,11 @@ We normalize daily buckets so:
   .df-analytics-panel-head small{display:block;font-size:10px;line-height:1.25;color:#64748b;margin-top:3px;}
   .df-analytics-chip{display:inline-flex;align-items:center;border-radius:999px;padding:4px 7px;font-size:9px!important;line-height:1;font-weight:900!important;letter-spacing:.08em!important;color:#5eead4!important;background:rgba(20,184,166,.09);border:1px solid rgba(45,212,191,.18);}
   .df-analytics-chip.projection{color:#c4b5fd!important;background:rgba(139,92,246,.1);border-color:rgba(167,139,250,.2);}
+  .df-chart-head-actions{display:flex;align-items:center;gap:7px;flex:0 0 auto;}
+  .df-chart-mode-toggle{display:flex;gap:2px;padding:2px;border-radius:9px;background:#0b1220;border:1px solid #253047;}
+  .df-chart-mode-toggle button{border:0;border-radius:7px;background:transparent;color:#64748b;padding:5px 7px;font-size:9px;line-height:1;font-weight:850;cursor:pointer;transition:.18s ease;white-space:nowrap;}
+  .df-chart-mode-toggle button:hover{color:#cbd5e1;background:rgba(51,65,85,.45);}
+  .df-chart-mode-toggle button.active{color:#e0e7ff;background:rgba(79,70,229,.42);box-shadow:0 3px 10px rgba(79,70,229,.18);}
   .df-analytics-chart-wrap{position:relative;height:238px;width:100%;}
   .df-analytics-donut-panel{display:flex;flex-direction:column;}
   .df-analytics-donut-wrap{position:relative;height:184px;min-height:184px;display:flex;align-items:center;justify-content:center;margin:auto;}
@@ -15147,7 +15284,7 @@ We normalize daily buckets so:
   .df-projection-legend{display:flex;justify-content:center;gap:18px;margin-top:5px;font-size:9px;color:#64748b;}.df-projection-legend span{display:flex;align-items:center;gap:6px}.df-projection-legend i{display:inline-block;width:18px;height:3px;border-radius:999px}.df-projection-legend i.expected{background:#22d3ee}.df-projection-legend i.range{background:rgba(45,212,191,.26);border-top:1px dashed #2dd4bf;}
   .df-projection-disclaimer{display:flex;align-items:center;justify-content:center;gap:7px;margin:10px 0 0!important;font-size:10px!important;color:#64748b!important;text-align:center;}.df-projection-disclaimer svg{width:13px;height:13px;flex:0 0 auto;}
   @media (max-width:1023px){.df-analytics-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}.df-analytics-main-grid,.df-analytics-lower-grid{grid-template-columns:1fr;}.df-analytics-donut-wrap{height:210px}.df-projection-kpis{grid-template-columns:repeat(2,minmax(0,1fr));}}
-  @media (max-width:640px){#visual-analytics-dashboard{padding:15px;border-radius:16px}.df-analytics-head{flex-direction:column}.df-analytics-tabs{width:100%}.df-analytics-tabs button{flex:1;padding:8px 6px}.df-analytics-kpis,.df-projection-kpis{grid-template-columns:1fr}.df-analytics-kpi{min-height:86px}.df-analytics-main-grid,.df-analytics-lower-grid{gap:8px}.df-analytics-chart-wrap{height:220px}.df-strategy-row{grid-template-columns:minmax(82px,.75fr) minmax(110px,1.5fr) 74px;gap:7px}.df-projection-toolbar{grid-template-columns:1fr;gap:13px}.df-analytics-chart-wrap.projection{height:240px}}
+  @media (max-width:640px){#visual-analytics-dashboard{padding:15px;border-radius:16px}.df-analytics-head{flex-direction:column}.df-analytics-tabs{width:100%}.df-analytics-tabs button{flex:1;padding:8px 6px}.df-analytics-kpis,.df-projection-kpis{grid-template-columns:1fr}.df-analytics-kpi{min-height:86px}.df-analytics-main-grid,.df-analytics-lower-grid{gap:8px}.df-analytics-panel-head{flex-wrap:wrap}.df-chart-head-actions{width:100%;justify-content:space-between}.df-analytics-chart-wrap{height:220px}.df-strategy-row{grid-template-columns:minmax(82px,.75fr) minmax(110px,1.5fr) 74px;gap:7px}.df-projection-toolbar{grid-template-columns:1fr;gap:13px}.df-analytics-chart-wrap.projection{height:240px}}
   @media print{#visual-analytics-dashboard{background:#fff!important;color:#0f172a!important;border:1px solid #cbd5e1!important;box-shadow:none!important}.df-analytics-tabs,.df-projection-toolbar{display:none!important}.df-analytics-kpi,.df-analytics-panel{background:#fff!important;border-color:#cbd5e1!important}.df-analytics-kpi strong,.df-analytics-panel-head span:first-child,.df-strategy-label,.df-strategy-value,.df-analytics-metric-grid strong,.df-analytics-donut-center strong{color:#0f172a!important}.df-analytics-main-grid{grid-template-columns:2fr 1fr!important}.df-analytics-lower-grid{grid-template-columns:1.4fr .8fr!important}}
 </style>
 
