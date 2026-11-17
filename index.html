@@ -778,6 +778,20 @@ body.dark #period-analysis-card.period-v4 .period-strategy-active{
   height:34px;
   padding:0 !important;
 }
+#period-analysis-card.period-v4 .period-subfilter-bar{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+  margin:-1px 0 7px;
+}
+#period-analysis-card.period-v4 .period-subfilter-bar select{
+  width:100%;
+  height:34px;
+  min-width:0;
+  padding:6px 9px;
+  border-radius:10px;
+  font-size:11px;
+}
 #period-analysis-card.period-v4 .period-summary-grid{
   display:grid !important;
   grid-template-columns:repeat(4,minmax(0,1fr)) !important;
@@ -969,6 +983,9 @@ body.dark #period-analysis-card.period-v4 .period-mini-value{
     max-width:48%;
   }
   #period-analysis-card.period-v4 .period-filter-bar{
+    grid-template-columns:1fr !important;
+  }
+  #period-analysis-card.period-v4 .period-subfilter-bar{
     grid-template-columns:1fr !important;
   }
   #period-analysis-card.period-v4 .period-filter-bar button{
@@ -2187,6 +2204,14 @@ tr.bg-green-50 td {
                         <option value="all" selected>Todas as estratégias</option>
                     </select>
                     <button type="button" onclick="filterReport()" class="bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700" title="Analisar período"><i data-lucide="search" class="w-4 h-4"></i></button>
+                </div>
+                <div class="period-subfilter-bar no-print">
+                    <select id="period-direction-filter" onchange="filterReport()" class="border bg-white text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100" aria-label="Filtrar por direção" title="Filtrar por direção">
+                        <option value="all" selected>Todas as direções</option>
+                    </select>
+                    <select id="period-item-filter" onchange="filterReport()" class="border bg-white text-slate-700 dark:bg-slate-700 dark:border-slate-600 dark:text-slate-100" aria-label="Filtrar por setup ou item" title="Filtrar por setup ou item">
+                        <option value="all" selected>Todos os setups/itens</option>
+                    </select>
                 </div>
 
                 <div class="period-summary-grid text-sm">
@@ -5921,6 +5946,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const fe = (document.getElementById('filter-end') || {}).value || '';
             if(fs && fe && fe < fs){ alert(translateString('A data final deve ser maior ou igual a data inicial.')); return; }
             const selectedSlot = getPeriodSelectedSlot(fe || fs || getTodayISO());
+            const tradeFilters = getPeriodTradeFilters(fe || fs || getTodayISO(), selectedSlot);
             const strategyDefs = getStrategiesForDate(fe || fs || getTodayISO(), {includeInactive:false,includeHidden:false})
                 .filter(strategy => isPeriodStrategySelected(selectedSlot, strategy.slot, fe || fs || getTodayISO()));
             const csvCell = value => { const text=String(value??'').replace(/\r?\n/g,' '); return /[",\n]/.test(text)?`"${text.replace(/"/g,'""')}"`:text; };
@@ -5935,8 +5961,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 if(fe && iso > fe) return;
                 const d = acc.data[iso] || {};
                 const dateStr = formatDateShort(parseISODateLocal(iso));
-                const blocks=getStrategyEntriesForDay(d,iso,{includeInactive:false,includeHidden:false});
-                const bySlot=new Map(blocks.map(b=>[b.slot,Number(b.legs?.subtotal||b.subtotal||0)]));
+                const selectedTrades = _individualTradeValuesForDay(d, iso, tradeFilters)
+                    .filter(trade => isPeriodStrategySelected(selectedSlot, trade.strategy, fe || fs || getTodayISO()));
+                const bySlot = new Map();
+                selectedTrades.forEach(trade => bySlot.set(trade.strategy, Number(bySlot.get(trade.strategy)||0) + Number(trade.value||0)));
                 const holiday=!!d.holiday, noteA=dfNoteA(d), noteB=dfNoteB(d);
                 const dayTotal=holiday?0:strategyDefs.reduce((sum,s)=>sum+Number(bySlot.get(s.slot)||0),0);
                 if(!strategyDefs.some(s=>Number(bySlot.get(s.slot)||0)!==0)&&!noteA.trim()&&!noteB.trim()&&!holiday)return;
@@ -5946,7 +5974,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             });
 
             if(fs && fe){
-                const rows = getStrategyRowsForPeriod(acc, fs, fe, { includeInactive:false, includeHidden:false, slot:selectedSlot });
+                const rows = getStrategyRowsForPeriod(acc, fs, fe, { includeInactive:false, includeHidden:false, slot:selectedSlot, tradeFilters });
                 lines.push(''); lines.push('Resumo por Estratégia');
                 lines.push(['Estratégia','Resultado','Trades','Wins','Losses','Win Rate','Avg Win','Avg Loss','Profit Factor','Payoff','Expectancy','Max Drawdown'].map(csvCell).join(','));
                 rows.forEach((s)=>{
@@ -6305,13 +6333,17 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                         });
                     }
                     const s = bucketMap.get(bucketKey);
-                    const subtotal = Number(entry.legs.subtotal || 0);
-                    const legs = dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY).map(idx => entry.legs[`leg${idx}`])
-                        .map(v => (v === '' || v === null || v === undefined) ? null : Number(v))
-                        .filter(v => v !== null && !isNaN(v) && v !== 0);
-                    if (subtotal > 0) s.greenDays += 1;
-                    else if (subtotal < 0) s.redDays += 1;
-                    legs.forEach(v => {
+                    const legs = dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY)
+                        .map(tradeIndex => ({ tradeIndex, raw:entry.legs[`leg${tradeIndex}`] }))
+                        .filter(item => item.raw !== '' && item.raw !== null && item.raw !== undefined)
+                        .map(item => ({ ...item, value:Number(item.raw) }))
+                        .filter(item => Number.isFinite(item.value) && item.value !== 0)
+                        .filter(item => dfTradeMatchesPeriodFilters(entry, item.tradeIndex, opts.tradeFilters));
+                    const subtotal = legs.reduce((sum, item) => sum + item.value, 0);
+                    if (legs.length && subtotal > 0) s.greenDays += 1;
+                    else if (legs.length && subtotal < 0) s.redDays += 1;
+                    legs.forEach(item => {
+                        const v = item.value;
                         s.trades += 1;
                         if (v > 0) {
                             s.wins += 1; s.grossWin += v; s.winSum += v; s.winCount += 1;
@@ -6325,9 +6357,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                     });
                     const checkLabels = (Array.isArray(entry.checkLabels) ? entry.checkLabels : [])
                         .map(v => String(v || '').trim()).slice(0, DF_MAX_CHECKS_PER_TRADE);
-                    dfTradeIndexesForCount(entry.tradeCount).forEach(tradeIndex => {
-                        const rawTrade = entry.legs[`leg${tradeIndex}`];
-                        if(rawTrade === '' || rawTrade === null || rawTrade === undefined) return;
+                    legs.forEach(({tradeIndex}) => {
                         checkLabels.forEach((label, labelIndex) => {
                             if(!label) return;
                             const checkIndex = labelIndex + 1;
@@ -6511,19 +6541,60 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
         }
 
 
-        function _individualTradeValuesForDay(e, iso){
+        function dfNormalizePeriodMarker(value){
+            return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+        }
+
+        function dfMarkedLabelsForTrade(block, tradeIndex){
+            const labels = Array.isArray(block && block.checkLabels) ? block.checkLabels : [];
+            const marked = [];
+            labels.slice(0, DF_MAX_CHECKS_PER_TRADE).forEach((rawLabel, labelIndex) => {
+                const label = String(rawLabel || '').trim();
+                if(!label) return;
+                const checkIndex = labelIndex + 1;
+                const key = checkIndex === 1 ? `breakout${tradeIndex}` : `flag${checkIndex}_${tradeIndex}`;
+                if(block && block.legs && block.legs[key]) marked.push(label);
+            });
+            return marked;
+        }
+
+        function dfPeriodDirectionForLabels(labels){
+            const normalized = (labels || []).map(dfNormalizePeriodMarker);
+            if(normalized.some(label => /(^|[\s\-_/])(compra|buy|long)($|[\s\-_/])/.test(label))) return 'buy';
+            if(normalized.some(label => /(^|[\s\-_/])(venda|sell|short)($|[\s\-_/])/.test(label))) return 'sell';
+            return 'other';
+        }
+
+        function dfTradeMatchesPeriodFilters(block, tradeIndex, filters){
+            if(!filters || (!filters.direction || filters.direction === 'all') && (!filters.item || filters.item === 'all')) return true;
+            const markedLabels = dfMarkedLabelsForTrade(block, tradeIndex);
+            if(filters.direction && filters.direction !== 'all' && dfPeriodDirectionForLabels(markedLabels) !== filters.direction) return false;
+            if(filters.item && filters.item !== 'all'){
+                const selected = dfNormalizePeriodMarker(filters.item);
+                if(!markedLabels.some(label => dfNormalizePeriodMarker(label) === selected)) return false;
+            }
+            return true;
+        }
+
+        function _individualTradeValuesForDay(e, iso, filters=null){
             const blocks = getStrategyEntriesForDay(e || {}, iso || getTodayISO(), { includeInactive:false, includeHidden:false });
             const out = [];
             blocks.forEach((block) => {
-                const legVals = (window.dfTradeIndexesForBlock ? window.dfTradeIndexesForBlock(block) : dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY)).map(idx => block.legs[`leg${idx}`])
-                    .map(v => (v === '' || v === null || v === undefined) ? null : Number(v))
-                    .filter(v => v !== null && !isNaN(v) && v !== 0);
-                legVals.forEach((v, idx) => out.push({ strategy:block.slot, tradeIndex: idx + 1, value:v, label:block.label }));
+                const indexes = window.dfTradeIndexesForBlock ? window.dfTradeIndexesForBlock(block) : dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY);
+                indexes.forEach(tradeIndex => {
+                    const raw = block.legs[`leg${tradeIndex}`];
+                    if(raw === '' || raw === null || raw === undefined) return;
+                    const value = Number(raw);
+                    if(!Number.isFinite(value) || value === 0) return;
+                    if(!dfTradeMatchesPeriodFilters(block, tradeIndex, filters)) return;
+                    const markedLabels = dfMarkedLabelsForTrade(block, tradeIndex);
+                    out.push({ strategy:block.slot, tradeIndex, value, label:block.label, markedLabels, direction:dfPeriodDirectionForLabels(markedLabels) });
+                });
             });
             return out;
         }
 
-        function _periodTradeSummary(acc, startISO, endISO, selectedSlot='all'){
+        function _periodTradeSummary(acc, startISO, endISO, selectedSlot='all', tradeFilters=null){
             let tradedDays = 0;
             let firstTradeDay = null;
             let lastTradeDay = null;
@@ -6536,9 +6607,9 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
                 const blocks = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false })
                     .filter(block => isPeriodStrategySelected(selectedSlot, block.slot, endISO));
-                const total = blocks.reduce((sum, b) => sum + (Number(b.legs.subtotal) || 0), 0);
-                const trades = _individualTradeValuesForDay(e, iso)
+                const trades = _individualTradeValuesForDay(e, iso, tradeFilters)
                     .filter(trade => isPeriodStrategySelected(selectedSlot, trade.strategy, endISO));
+                const total = trades.reduce((sum, trade) => sum + Number(trade.value || 0), 0);
                 if (total !== 0 || trades.length) {
                     tradedDays += 1;
                     if(!firstTradeDay) firstTradeDay = iso;
@@ -6570,8 +6641,8 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             return (winRate * avgWin) - ((1 - winRate) * Math.abs(avgLoss));
         }
 
-        function _computeStrategyAnalytics(acc, startISO, endISO, selectedSlot='all'){
-            const rows = getStrategyRowsForPeriod(acc, startISO, endISO, { includeInactive:false, includeHidden:false, slot:selectedSlot });
+        function _computeStrategyAnalytics(acc, startISO, endISO, selectedSlot='all', tradeFilters=null){
+            const rows = getStrategyRowsForPeriod(acc, startISO, endISO, { includeInactive:false, includeHidden:false, slot:selectedSlot, tradeFilters });
             const byKey = {};
             rows.forEach(row => {
                 const legacyKey = (strategyMetaBySlot(row.slot) || {}).legacyKey || row.slot;
@@ -6624,6 +6695,70 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
 
         function getPeriodSelectedSlot(iso){
             return syncPeriodStrategyFilter(iso || (els.filterEnd && els.filterEnd.value) || getTodayISO());
+        }
+
+        function syncPeriodTradeFilters(iso, selectedSlot){
+            const directionSelect = document.getElementById('period-direction-filter');
+            const itemSelect = document.getElementById('period-item-filter');
+            const strategies = getStrategiesForDate(iso || getTodayISO(), { includeInactive:false, includeHidden:false })
+                .filter(strategy => isPeriodStrategySelected(selectedSlot || 'all', strategy.slot, iso || getTodayISO()));
+            const labelMap = new Map();
+            strategies.forEach(strategy => (Array.isArray(strategy.checkLabels) ? strategy.checkLabels : []).forEach(rawLabel => {
+                const label = String(rawLabel || '').trim();
+                if(!label) return;
+                const key = dfNormalizePeriodMarker(label);
+                if(!labelMap.has(key)) labelMap.set(key, label);
+            }));
+
+            const labels = Array.from(labelMap.values());
+            const hasBuy = labels.some(label => dfPeriodDirectionForLabels([label]) === 'buy');
+            const hasSell = labels.some(label => dfPeriodDirectionForLabels([label]) === 'sell');
+            const setupLabels = labels.filter(label => dfPeriodDirectionForLabels([label]) === 'other');
+
+            if(directionSelect){
+                const previous = directionSelect.value || 'all';
+                directionSelect.innerHTML = `<option value="all">${escapeHtml(translateString('Todas as direções'))}</option>` +
+                    (hasBuy ? `<option value="buy">${escapeHtml(translateString('Compra'))}</option>` : '') +
+                    (hasSell ? `<option value="sell">${escapeHtml(translateString('Venda'))}</option>` : '');
+                directionSelect.value = Array.from(directionSelect.options).some(option => option.value === previous) ? previous : 'all';
+            }
+            if(itemSelect){
+                const previous = itemSelect.value || 'all';
+                itemSelect.innerHTML = `<option value="all">${escapeHtml(translateString('Todos os setups/itens'))}</option>` + setupLabels.map(label =>
+                    `<option value="${escapeHtml(label)}">${escapeHtml(label)}</option>`
+                ).join('');
+                itemSelect.value = Array.from(itemSelect.options).some(option => option.value === previous) ? previous : 'all';
+            }
+
+            const filters = {
+                direction: directionSelect?.value || 'all',
+                item: itemSelect?.value || 'all',
+                directionLabel: directionSelect?.selectedOptions?.[0]?.textContent?.trim() || translateString('Todas as direções'),
+                itemLabel: itemSelect?.selectedOptions?.[0]?.textContent?.trim() || translateString('Todos os setups/itens')
+            };
+            filters.active = filters.direction !== 'all' || filters.item !== 'all';
+            const strategyLabel = document.getElementById('period-strategy-filter')?.selectedOptions?.[0]?.textContent?.trim() || translateString('Todas as estratégias');
+            const activeBadge = document.getElementById('period-strategy-active');
+            if(activeBadge){
+                const parts = [strategyLabel];
+                if(filters.direction !== 'all') parts.push(filters.directionLabel);
+                if(filters.item !== 'all') parts.push(filters.itemLabel);
+                activeBadge.textContent = parts.join(' • ');
+                activeBadge.title = `${translateString('Filtro ativo')}: ${parts.join(' • ')}`;
+            }
+            return filters;
+        }
+
+        function getPeriodTradeFilters(iso, selectedSlot){
+            return syncPeriodTradeFilters(iso || (els.filterEnd && els.filterEnd.value) || getTodayISO(), selectedSlot || getPeriodSelectedSlot(iso));
+        }
+
+        function dfPeriodFilterDescription(filters){
+            if(!filters || !filters.active) return '';
+            const parts = [];
+            if(filters.direction !== 'all') parts.push(filters.directionLabel);
+            if(filters.item !== 'all') parts.push(filters.itemLabel);
+            return parts.join(' + ');
         }
 
         function dfSetAnalyticsText(id, value){
@@ -6803,35 +6938,18 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const metrics = analyticsLastMetrics;
             const acc = getActive();
             if(!metrics || !acc || !acc.data) return [];
-            const summary = _periodTradeSummary(acc, metrics.start, metrics.end, metrics.selectedSlot || 'all');
+            const summary = _periodTradeSummary(acc, metrics.start, metrics.end, metrics.selectedSlot || 'all', metrics.tradeFilters || null);
             const rows = [];
             (summary.byDay || []).forEach(day => {
-                (day.blocks || []).forEach(block => {
-                    const indexes = window.dfTradeIndexesForBlock
-                        ? window.dfTradeIndexesForBlock(block)
-                        : dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY);
-                    indexes.forEach(tradeIndex => {
-                        const raw = block?.legs?.[`leg${tradeIndex}`];
-                        if(raw === '' || raw === null || raw === undefined) return;
-                        const value = Number(raw);
-                        if(!Number.isFinite(value) || value === 0) return;
-                        const labels = (Array.isArray(block.checkLabels) ? block.checkLabels : []).map(v => String(v || '').trim());
-                        const checks = [];
-                        labels.forEach((label, idx) => {
-                            if(!label) return;
-                            const checkIndex = idx + 1;
-                            const key = checkIndex === 1 ? `breakout${tradeIndex}` : `flag${checkIndex}_${tradeIndex}`;
-                            if(block?.legs?.[key]) checks.push(label);
-                        });
-                        rows.push({
-                            iso: day.iso,
-                            date: formatDateShort(parseISODateLocal(day.iso)),
-                            strategy: block.label || block.slot,
-                            slot: block.slot,
-                            tradeIndex,
-                            value,
-                            checks
-                        });
+                (day.trades || []).forEach(trade => {
+                    rows.push({
+                        iso: day.iso,
+                        date: formatDateShort(parseISODateLocal(day.iso)),
+                        strategy: trade.label || trade.strategy,
+                        slot: trade.strategy,
+                        tradeIndex: trade.tradeIndex,
+                        value: Number(trade.value || 0),
+                        checks: Array.isArray(trade.markedLabels) ? trade.markedLabels : []
                     });
                 });
             });
@@ -6858,7 +6976,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const metrics = analyticsLastMetrics;
             const acc = getActive();
             if(!metrics || !acc || !acc.data) return {maxDD:0,peakDate:null,troughDate:null,rows:[]};
-            const summary = _periodTradeSummary(acc, metrics.start, metrics.end, metrics.selectedSlot || 'all');
+            const summary = _periodTradeSummary(acc, metrics.start, metrics.end, metrics.selectedSlot || 'all', metrics.tradeFilters || null);
             const days = summary.byDay || [];
             let cumulative = 0;
             let peak = 0;
@@ -6925,7 +7043,8 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const trades = dfAnalyticsDetailTradeRows();
             const strategies = dfAnalyticsDetailStrategyRows(trades);
             const selectedLabel = document.getElementById('period-strategy-filter')?.selectedOptions?.[0]?.textContent?.trim() || translateString('Todas as estratégias');
-            const periodLabel = `${formatDateShort(parseISODateLocal(metrics.start))} — ${formatDateShort(parseISODateLocal(metrics.end))} • ${selectedLabel}`;
+            const markerLabel = dfPeriodFilterDescription(metrics.tradeFilters);
+            const periodLabel = `${formatDateShort(parseISODateLocal(metrics.start))} — ${formatDateShort(parseISODateLocal(metrics.end))} • ${selectedLabel}${markerLabel ? ` • ${markerLabel}` : ''}`;
             const rate = Number(metrics.totalTrades || 0) ? (Number(metrics.wins || 0) / Number(metrics.totalTrades || 0)) * 100 : 0;
             const payoff = Number(metrics.avgLoss || 0) ? (Number(metrics.avgWin || 0) / Math.abs(Number(metrics.avgLoss || 0))) : null;
 
@@ -7059,9 +7178,10 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const rate = metrics.totalTrades > 0 ? (metrics.wins / metrics.totalTrades) * 100 : 0;
             const payoff = metrics.avgLoss ? (metrics.avgWin / Math.abs(metrics.avgLoss)) : (metrics.avgWin > 0 ? Infinity : 0);
             const selectedLabel = document.getElementById('period-strategy-filter')?.selectedOptions?.[0]?.textContent?.trim() || translateString('Todas as estratégias');
+            const markerLabel = dfPeriodFilterDescription(metrics.tradeFilters);
             const startLabel = formatDateShort(parseISODateLocal(metrics.start));
             const endLabel = formatDateShort(parseISODateLocal(metrics.end));
-            dfSetAnalyticsText('analytics-period-label', `${startLabel} — ${endLabel} • ${selectedLabel}`);
+            dfSetAnalyticsText('analytics-period-label', `${startLabel} — ${endLabel} • ${selectedLabel}${markerLabel ? ` • ${markerLabel}` : ''}`);
             const resultEl = dfSetAnalyticsText('analytics-kpi-result', formatCurrency(metrics.sum));
             if(resultEl) resultEl.style.color = metrics.sum > 0 ? '#34d399' : (metrics.sum < 0 ? '#fb7185' : '#f8fafc');
             dfSetAnalyticsText('analytics-kpi-result-sub', `${metrics.tradedDays} ${isEN ? (metrics.tradedDays === 1 ? 'trading day' : 'trading days') : (metrics.tradedDays === 1 ? 'dia operado' : 'dias operados')}`);
@@ -7100,6 +7220,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const acc = getActive();
             if(!acc || !acc.data) return;
             const selectedSlot = getPeriodSelectedSlot(end);
+            const tradeFilters = getPeriodTradeFilters(end, selectedSlot);
 
             let sum = 0;
             let wins = 0;
@@ -7134,13 +7255,11 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 const e = acc.data[iso] || {};
                 if(e.holiday) return;
 
-                const tradeVals = _individualTradeValuesForDay(e, iso)
+                const dayTrades = _individualTradeValuesForDay(e, iso, tradeFilters)
                     .filter(t => isPeriodStrategySelected(selectedSlot, t.strategy, end))
-                    .map(t => Number(t.value || 0)).filter(v => !isNaN(v) && v !== 0);
-                const blocks = _strategyBlocksForDay(e, iso);
-                const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false })
-                    .filter(entry => isPeriodStrategySelected(selectedSlot, entry.slot, end));
-                const dayTotal = dayEntries.reduce((s,b)=> s + (Number(b.legs.subtotal) || 0), 0);
+                    .filter(t => Number.isFinite(Number(t.value)) && Number(t.value) !== 0);
+                const tradeVals = dayTrades.map(t => Number(t.value));
+                const dayTotal = tradeVals.reduce((total, value) => total + value, 0);
 
                 tradeVals.forEach(tv => {
                     totalTrades += 1;
@@ -7172,9 +7291,9 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                     chartLabels.push(formatDateShort(parseISODateLocal(iso)));
                     chartStrategyDefs.forEach(cfg => {
                         const key = cfg.legacyKey;
-                        const block = blocks[key] || blocks[cfg.slot];
-                        if (_individualTradeValuesForDay(e, iso).some(item => item.strategy === cfg.slot)) cfg.hasTrades = true;
-                        strategyCum[key] += Number(block?.legs?.subtotal || 0);
+                        const strategyTrades = dayTrades.filter(item => item.strategy === cfg.slot);
+                        if(strategyTrades.length) cfg.hasTrades = true;
+                        strategyCum[key] += strategyTrades.reduce((total, item) => total + Number(item.value || 0), 0);
                         cfg.data.push(strategyCum[key]);
                     });
                 }
@@ -7195,7 +7314,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             const rate = totalTrades > 0 ? ((wins/totalTrades)*100).toFixed(0)+"%" : "0%";
             els.customWinrate.textContent = `${rate}`;
 
-            const periodSummary = _periodTradeSummary(acc, start, end, selectedSlot);
+            const periodSummary = _periodTradeSummary(acc, start, end, selectedSlot, tradeFilters);
             const singleDayMode = periodSummary.tradedDays <= 1;
 
             els.customBest.textContent = (!singleDayMode && best > -Infinity) ? formatCurrency(best) : "--";
@@ -7207,7 +7326,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             }
             updateChart(chartLabels, chartDatasets);
 
-            const strat = _computeStrategyAnalytics(acc, start, end, selectedSlot);
+            const strat = _computeStrategyAnalytics(acc, start, end, selectedSlot, tradeFilters);
             const dfPeriodStrategyRows = Array.isArray(strat.__rows)
                 ? strat.__rows
                 : [strat.t2550, strat.t4040, strat.t3570, strat.t4080, strat.ct].filter(Boolean);
@@ -7294,7 +7413,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
                 if(iso < start || iso > end) return;
                 const e = acc.data[iso] || {};
                 if(e.holiday) return;
-                overallTradeSequence.push(..._individualTradeValuesForDay(e, iso)
+                overallTradeSequence.push(..._individualTradeValuesForDay(e, iso, tradeFilters)
                     .filter(t => isPeriodStrategySelected(selectedSlot, t.strategy, end))
                     .map(t => t.value).filter(v => Number(v) !== 0));
             });
@@ -7339,7 +7458,7 @@ Tem certeza ABSOLUTA? Os dados serão perdidos.`)) {
             if(bestRow) bestRow.style.display = singleDayMode ? 'none' : '';
             if(worstRow) worstRow.style.display = singleDayMode ? 'none' : '';
             renderVisualAnalyticsDashboard({
-                start, end, selectedSlot, sum, totalTrades, wins, losses, tradedDays, greenDays, redDays,
+                start, end, selectedSlot, tradeFilters, sum, totalTrades, wins, losses, tradedDays, greenDays, redDays,
                 grossWin, grossLoss, avgWin, avgLoss, pf, maxDD, best, worst, maxLose, maxWin,
                 overallExpectancy, rows: dfPeriodStrategyRows
             });
@@ -8318,6 +8437,10 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             els.inpMonth.value = acc.monthType;
             const periodStrategyFilter = document.getElementById('period-strategy-filter');
             if(periodStrategyFilter) periodStrategyFilter.value = 'all';
+            const periodDirectionFilter = document.getElementById('period-direction-filter');
+            if(periodDirectionFilter) periodDirectionFilter.value = 'all';
+            const periodItemFilter = document.getElementById('period-item-filter');
+            if(periodItemFilter) periodItemFilter.value = 'all';
 
             // Conta selecionada é por-dispositivo (localStorage). Não salvar na nuvem aqui para evitar loops.
 
@@ -8333,6 +8456,7 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             const start=els.filterStart?.value||dataDates[0]||getTodayISO();
             const end=els.filterEnd?.value||dataDates[dataDates.length-1]||getTodayISO();
             const selectedSlot = getPeriodSelectedSlot(end);
+            const tradeFilters = getPeriodTradeFilters(end, selectedSlot);
             const period = hasRange
                 ? `(${formatDateShort(parseISODateLocal(start))} - ${formatDateShort(parseISODateLocal(end))})`
                 : "(Geral)";
@@ -8345,7 +8469,7 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             const riskMaxLosing = (document.getElementById('risk-max-losing')?.textContent || '--').trim();
             const riskExpectancyOverall = (document.getElementById('risk-expectancy-overall')?.textContent || '--').trim();
 
-            const strat = _computeStrategyAnalytics(acc, start, end, selectedSlot);
+            const strat = _computeStrategyAnalytics(acc, start, end, selectedSlot, tradeFilters);
             const strategies=(Array.isArray(strat.__rows)?strat.__rows:[]).filter(Boolean);
             const reportCheckRows = strategies.flatMap(strategy => (strategy.checkRows || []).map(item => ({
                 strategy: strategy.label,
@@ -8357,14 +8481,13 @@ if (!store.accounts[id]) id = Object.keys(store.accounts)[0];
             const rankedStrategies=strategies.filter(r=>Number(r.trades||0)>0||Number(r.total||0)!==0);
             const bestStrategy=rankedStrategies.slice().sort((a,b)=>b.total-a.total)[0]||null;
             const worstStrategy=rankedStrategies.slice().sort((a,b)=>a.total-b.total)[0]||null;
-            const periodSummary = _periodTradeSummary(acc, start, end, selectedSlot);
+            const periodSummary = _periodTradeSummary(acc, start, end, selectedSlot, tradeFilters);
             const singleDayMode = periodSummary.tradedDays <= 1;
 
             let detailsText = '';
             if(singleDayMode && periodSummary.byDay.length === 1){
                 const day = periodSummary.byDay[0];
-                const fmtLeg = (legs, idx) => formatTradeLegDisplay(legs, idx);
-                const operationLines=(day.blocks||[]).map(block=>{const indexes=window.dfTradeIndexesForBlock?window.dfTradeIndexesForBlock(block):dfTradeIndexesForCount(DF_MAX_TRADES_PER_STRATEGY);return `• ${block.label} → ${indexes.map(idx=>`T${idx} ${fmtLeg(block.legs,idx)}`).join(' | ')} | Total ${formatCurrency(block.legs?.subtotal||0)}`;}).join('\n');
+                const operationLines=(day.trades||[]).map(trade=>`• ${trade.label} → T${trade.tradeIndex} ${formatCurrency(trade.value)}${(trade.markedLabels||[]).length?` | ${(trade.markedLabels||[]).join(', ')}`:''}`).join('\n');
                 detailsText =
 `
 *Operações do Dia* (${formatDateShort(parseISODateLocal(day.iso))})
@@ -8399,7 +8522,7 @@ ${operationLines}`;
 
             const text =
 `*Performance Report - DF Strategic* 📊
-${period} • ${(acc?.name || 'Conta')}
+${period} • ${(acc?.name || 'Conta')}${dfPeriodFilterDescription(tradeFilters) ? ` • ${dfPeriodFilterDescription(tradeFilters)}` : ''}
 
 *Resultado:* ${res}
 *Win Rate:* ${win}
@@ -8438,6 +8561,8 @@ ${period} • ${(acc?.name || 'Conta')}
     }
 
     const selectedSlot = getPeriodSelectedSlot(end);
+    const tradeFilters = getPeriodTradeFilters(end, selectedSlot);
+    const tradeFilterDescription = dfPeriodFilterDescription(tradeFilters);
     const selectedStrategyLabel = selectedSlot === 'all'
         ? translateString('Todas as estratégias')
         : (selectedSlot === PERIOD_GROUPS_AB_VALUE
@@ -8496,6 +8621,7 @@ ${period} • ${(acc?.name || 'Conta')}
                 if(isBlankTrade(raw)) return;
                 const numeric = Number(raw);
                 if(!Number.isFinite(numeric)) return;
+                if(!dfTradeMatchesPeriodFilters(block, tradeIndex, tradeFilters)) return;
                 const result = resultClass(numeric);
                 const marked = markedLabelsForTrade(block, tradeIndex);
                 rows.push({
@@ -8615,7 +8741,7 @@ ${period} • ${(acc?.name || 'Conta')}
         let monthTitle = 'período';
         try{ monthTitle = monthNames[parseISODateLocal(end).getMonth()] + ' de ' + parseISODateLocal(end).getFullYear(); }catch(e){}
         const title = 'Relatório detalhado - ' + monthTitle;
-        const subtitle = fmtDate(start) + ' a ' + fmtDate(end) + ' | ' + (acc.name || 'Conta') + ' | ' + selectedStrategyLabel;
+        const subtitle = fmtDate(start) + ' a ' + fmtDate(end) + ' | ' + (acc.name || 'Conta') + ' | ' + selectedStrategyLabel + (tradeFilterDescription ? ' | ' + tradeFilterDescription : '');
 
         const header = (sectionTitle, sectionSubtitle) => {
             doc.setFont('helvetica','bold'); doc.setFontSize(19); doc.setTextColor(navy[0],navy[1],navy[2]);
@@ -8816,13 +8942,15 @@ function pdfLegacyFilteredReportInternal() {
                 return Promise.resolve(false);
             }
             const selectedSlot = getPeriodSelectedSlot(end);
+            const tradeFilters = getPeriodTradeFilters(end, selectedSlot);
+            const tradeFilterDescription = dfPeriodFilterDescription(tradeFilters);
             const selectedStrategyLabel = selectedSlot === 'all'
                 ? translateString('Todas as estratégias')
                 : (selectedSlot === PERIOD_GROUPS_AB_VALUE
                     ? '25/75 - Grupos A + B'
                     : (getStrategiesForDate(end, { includeInactive:false, includeHidden:false }).find(strategy => strategy.slot === selectedSlot)?.label || translateString('Todas as estratégias')));
             const title = 'Análise por Período';
-            const rangeText = `${formatDateShort(parseISODateLocal(start))} - ${formatDateShort(parseISODateLocal(end))} • ${acc?.name || 'Conta'} • ${selectedStrategyLabel}`;
+            const rangeText = `${formatDateShort(parseISODateLocal(start))} - ${formatDateShort(parseISODateLocal(end))} • ${acc?.name || 'Conta'} • ${selectedStrategyLabel}${tradeFilterDescription ? ` • ${tradeFilterDescription}` : ''}`;
             const metricResult = (els.customResult?.textContent || '--').trim();
             const metricWin = (els.customWinrate?.textContent || '--').trim();
             const metricBest = (els.customBest?.textContent || '--').trim();
@@ -8837,7 +8965,7 @@ function pdfLegacyFilteredReportInternal() {
             const kpiAvgDay = (els.kpiAvgDay?.textContent || '--').trim();
             const kpiMaxDD = (els.kpiMaxDD?.textContent || '--').trim();
 
-            const strat = _computeStrategyAnalytics(acc, start, end, selectedSlot);
+            const strat = _computeStrategyAnalytics(acc, start, end, selectedSlot, tradeFilters);
             const strategies=(Array.isArray(strat.__rows)?strat.__rows:[]).filter(Boolean);
             const reportCheckRows = strategies.flatMap(strategy => (strategy.checkRows || []).map(item => ({
                 strategy: strategy.label,
@@ -8853,7 +8981,7 @@ function pdfLegacyFilteredReportInternal() {
             const riskMaxWinning = (document.getElementById('risk-max-winning')?.textContent || '--').trim();
             const riskExpectancyOverall = (document.getElementById('risk-expectancy-overall')?.textContent || '--').trim();
             const riskDaysBalance = (document.getElementById('risk-days-balance')?.textContent || '--').trim();
-            const periodSummary = _periodTradeSummary(acc, start, end, selectedSlot);
+            const periodSummary = _periodTradeSummary(acc, start, end, selectedSlot, tradeFilters);
             const singleDayMode = periodSummary.tradedDays <= 1;
 
             const ensureJsPDF = () => window.dfEnsureJsPDF
@@ -8891,17 +9019,14 @@ function pdfLegacyFilteredReportInternal() {
                         if (iso < start || iso > end) return;
                         const e = acc.data[iso] || {};
                         if (e.holiday) return;
-                        const blocks = _strategyBlocksForDay(e, iso);
-                        const dayEntries = getStrategyEntriesForDay(e, iso, { includeInactive:false, includeHidden:false })
-                            .filter(entry => isPeriodStrategySelected(selectedSlot, entry.slot, end));
-                        const dayTotal = dayEntries.reduce((sum,b)=> sum + (Number(b.legs.subtotal) || 0), 0);
-                        const selectedDayTrades = _individualTradeValuesForDay(e, iso)
+                        const selectedDayTrades = _individualTradeValuesForDay(e, iso, tradeFilters)
                             .filter(trade => isPeriodStrategySelected(selectedSlot, trade.strategy, end));
+                        const dayTotal = selectedDayTrades.reduce((sum, trade) => sum + Number(trade.value || 0), 0);
                         if (dayTotal === 0 && !selectedDayTrades.length) return;
                         chartLabels.push(formatDateShort(parseISODateLocal(iso)));
                         datasets.forEach(ds => {
-                            const block = blocks[ds.key] || blocks[ds.slot];
-                            strategyCum[ds.key] += Number(block?.legs?.subtotal || 0);
+                            strategyCum[ds.key] += selectedDayTrades.filter(trade => trade.strategy === ds.slot)
+                                .reduce((sum, trade) => sum + Number(trade.value || 0), 0);
                             ds.data.push(strategyCum[ds.key]);
                         });
                     });
@@ -10153,6 +10278,11 @@ async function saveToCloudNow() {
             "Análise por Período":"Period Analysis",
             "Todas as estratégias":"All strategies",
             "Filtro de estratégia ativo":"Active strategy filter",
+            "Todas as direções":"All directions",
+            "Todos os setups/itens":"All setups/items",
+            "Filtro ativo":"Active filter",
+            "Compra":"Buy",
+            "Venda":"Sell",
             "25/75 - Grupos A + B":"25/75 - Groups A + B",
             "Análises da conta":"Account analytics",
             "Painel de Performance":"Performance Dashboard",
